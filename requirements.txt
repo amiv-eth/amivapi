@@ -1,0 +1,15 @@
+Cerberus==0.7.2
+-e git+git@github.com:nicolaiarocci/eve.git@84a458fa4dc1b6fc27f2e5ea1a634ac80d2e3956#egg=Eve-origin/sqlalchemy
+Events==0.2.1
+Flask==0.10.1
+Flask-PyMongo==0.3.0
+Flask-SQLAlchemy==2.0
+Jinja2==2.7.3
+MarkupSafe==0.23
+SQLAlchemy==0.9.8
+Werkzeug==0.9.6
+argparse==1.2.1
+itsdangerous==0.24
+pymongo==2.7.2
+simplejson==3.6.5
+wsgiref==0.1.2
