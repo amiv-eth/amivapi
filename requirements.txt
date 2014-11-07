@@ -15,3 +15,4 @@ itsdangerous==0.24
 pymongo==2.7.2
 simplejson==3.6.5
 wsgiref==0.1.2
+requests==2.4.3
