@@ -1,5 +1,3 @@
-from eve import ID_FIELD
-
 from amivapi import models
 
 RESOURCES = {

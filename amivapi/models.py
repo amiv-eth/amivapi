@@ -15,7 +15,7 @@ from sqlalchemy import (
     DECIMAL,
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.orm import relationship, synonym, backref
 
 from eve.io.sql.decorators import registerSchema
 
@@ -54,6 +54,7 @@ class GroupMembership(Base):
 
 @registerSchema("users")
 class User(Base):
+    password = Column(Unicode(50))
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
     birthday = Column(Date)
@@ -97,6 +98,9 @@ class EmailForward(Base):
 @registerSchema("sessions")
 class Session(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    token = Column(CHAR(64))
+
+    # user = relationship(User, backref=backref('sessions'))
 
 
 @registerSchema("events")
