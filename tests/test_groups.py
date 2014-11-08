@@ -14,7 +14,8 @@ class TestGroup(TestCase):
 
             # Create some users
             for i in range(1, 5):
-                data = {'firstname': 'first'+str(i),
+                data = {'username': 'user'+str(i),
+                        'firstname': 'first'+str(i),
                         'lastname': 'last'+str(i),
                         'password': 'gaygaygay',
                         'email': 'user'+str(i)+'@amiv.ethz.ch',

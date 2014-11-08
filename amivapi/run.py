@@ -1,25 +1,22 @@
-from os.path import abspath, dirname, join
-
 from eve import Eve
 from eve.io.sql import SQL, ValidatorSQL
 from eve_docs import eve_docs
 from flask.ext.bootstrap import Bootstrap
 
-from amivapi import schema, models
+from amivapi import schema, models, config
 
-ROOT_PATH = abspath(join(dirname(__file__), ".."))
 
 eve_settings = {
     'DOMAIN': schema.RESOURCES,
-    'DATE_FORMAT': "%Y-%m-%dT%H:%M:%SZ",
+    'DATE_FORMAT': config.DATE_FORMAT,
     'RESOURCE_METHODS': ['GET', 'POST'],
     'ITEM_METHODS': ['GET', 'PATCH', 'PUT', 'DELETE'],
 
-    'BANDWIDTH_SAVER': False,
-    'XML': False,
+    'BANDWIDTH_SAVER': config.BANDWIDTH_SAVER,
+    'XML': config.XML,
 
-    'SQLALCHEMY_DATABASE_URI': "sqlite:///%s/data.db" % ROOT_PATH,
-    'SQLALCHEMY_ECHO': True,
+    'SQLALCHEMY_DATABASE_URI': config.SQLALCHEMY_DATABASE_URI,
+    'SQLALCHEMY_ECHO': config.SQLALCHEMY_ECHO,
 }
 
 app = Eve(settings=eve_settings, data=SQL, validator=ValidatorSQL)
@@ -33,7 +30,6 @@ db.create_all()
 # Generate and expose docs via eve-docs extension
 Bootstrap(app)
 app.register_blueprint(eve_docs, url_prefix="/docs")
-
 
 if __name__ == '__main__':
     app.run(debug=True)

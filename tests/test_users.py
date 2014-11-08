@@ -13,7 +13,8 @@ class TestUser(TestCase):
         with TestServer():
 
             # Create a user
-            data = {'firstname': 'Lord',
+            data = {'username': 'lord',
+                    'firstname': 'Lord',
                     'lastname': 'Gay',
                     'password': 'gaygaygay',
                     'email': 'lord@amiv.ethz.ch',
@@ -36,7 +37,8 @@ class TestUser(TestCase):
 
     def test_invalid_gender(self):
         with TestServer():
-            data = {'firstname': 'Lord',
+            data = {'username': 'lord',
+                    'firstname': 'Lord',
                     'lastname': 'Gay',
                     'password': 'gaygaygay',
                     'email': 'lord@amiv.ethz.ch',
@@ -46,7 +48,8 @@ class TestUser(TestCase):
 
     def test_invalid_email(self):
         with TestServer():
-            data = {'firstname': 'Lord',
+            data = {'username': 'lord',
+                    'firstname': 'Lord',
                     'lastname': 'Gay',
                     'password': 'gaygaygay',
                     'email': 'no',

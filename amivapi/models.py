@@ -54,6 +54,7 @@ class GroupMembership(Base):
 
 @registerSchema("users")
 class User(Base):
+    username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(Unicode(50))
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
@@ -98,7 +99,7 @@ class EmailForward(Base):
 @registerSchema("sessions")
 class Session(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    token = Column(CHAR(64))
+    signature = Column(CHAR(64))
 
     # user = relationship(User, backref=backref('sessions'))
 
