@@ -54,4 +54,5 @@ docs/_build/
 target/
 
 # AMIV stuff
-data.db
+*.db
+config/
