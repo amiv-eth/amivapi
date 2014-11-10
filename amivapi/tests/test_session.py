@@ -1,27 +1,13 @@
-from unittest import TestCase
-import requests
-
-from common import apiurl, TestServer
+from amivapi.tests import util
 
 
-class TestSession(TestCase):
+class SessionResourceTest(util.WebTest):
 
-    def test_login(self):
+    def test_create_session(self):
+        password = u"some-really-secure-password"
+        user = self.new_user(password=password)
 
-        # Run a development server while doing this unit test
-        with TestServer():
-
-            # Create a user by mail
-            data = {'firstname': 'Lord',
-                    'lastname': 'Gay',
-                    'password': 'gaygaygay',
-                    'email': 'lord@amiv.ethz.ch',
-                    'gender': 'male'}
-            r = requests.post(apiurl + '/users', data)
-            self.assertTrue(r.status_code == 201)
-
-            # Try to login with the user
-            data = {'username': 'lord@amiv.ethz.ch',
-                    'password': 'gaygaygay'}
-            r = requests.post(apiurl + '/sessions', data)
-            self.assertTrue(r.status_code == 201)
+        self.api.post("/sessions", data={
+            'username': user.username,
+            'password': password,
+        }, status_code=201)

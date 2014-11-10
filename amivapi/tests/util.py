@@ -1,4 +1,5 @@
 import json
+import random
 import unittest
 
 from eve.io.sql import sql
@@ -6,7 +7,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 
-from amivapi import bootstrap, tests
+from amivapi import bootstrap, models, tests
 
 
 class TestClient(FlaskClient):
@@ -65,3 +66,28 @@ class WebTest(unittest.TestCase):
         self.db.remove = self.db.flush
 
         self.api = app.test_client()
+
+    _count = 0
+
+    def next_count(self):
+        self._count += 1
+        return self._count
+
+    def new_user(self, **kwargs):
+        count = self.next_count()
+        user = models.User(username=u"test-user-%i" % count,
+                           firstname=u"Test",
+                           lastname=u"Use" + ("r" * count),
+                           email=u"testuser-%i@example.net" % count,
+                           gender=random.choice(["male", "female"]),
+                           **kwargs)
+        self.db.add(user)
+        self.db.flush()
+        return user
+
+    def new_group(self):
+        count = self.next_count()
+        group = models.Group(name=u"Group-%i" % count)
+        self.db.add(group)
+        self.db.flush()
+        return group
