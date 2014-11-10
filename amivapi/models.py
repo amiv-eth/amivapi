@@ -68,7 +68,7 @@ class User(Base):
     gender = Column(Enum("male", "female"), nullable=False)
     email = Column(Unicode(100), nullable=False, unique=True)
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
-                        nullable=False, default="none")
+                        nullable=False, default="none", server_default="none")
 
     # groups = relationship(GroupMembership)
 
