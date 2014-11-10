@@ -1,4 +1,5 @@
 import datetime as dt
+
 from sqlalchemy import (
     Column,
     Unicode,
@@ -15,7 +16,7 @@ from sqlalchemy import (
     DECIMAL,
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import relationship, synonym, backref
+from sqlalchemy.orm import relationship, synonym
 
 from eve.io.sql.decorators import registerSchema
 
