@@ -17,6 +17,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.schema import Table
 
 from eve.io.sql.decorators import registerSchema
 
@@ -45,14 +46,19 @@ Base = declarative_base(cls=BaseModel)
 
 
 class GroupMembership(Base):
-    """Intermediate table for many-to-many mapping."""
+    """Intermediate table for 'many-to-many' mapping
+        split into one-to-many from Group and many-to-one with User
+    We need to use a class here in stead of a table because of additional data
+        expiry_date
+    """
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
     expiry_date = Column(DateTime)
 
-    # group = relationship("Group")
+    user = relationship("User", backref="groups")
 
 
+# TODO(hermann): schauen, ob in dem schema auch "groups" drin vorkommt
 @registerSchema("users")
 class User(Base):
     username = Column(Unicode(50), unique=True, nullable=False)
@@ -71,14 +77,13 @@ class User(Base):
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
 
-    # groups = relationship(GroupMembership)
-
 
 @registerSchema("groups")
 class Group(Base):
     name = Column(Unicode(30))
 
-    # members = relationship("User", secondary="GroupMember")
+    """Data Mapping, one-to-many with GroupMembership"""
+    members = relationship("GroupMembership", backref="group")
 
 
 class EmailForwardSubscriber(Base):
@@ -105,6 +110,18 @@ class Session(Base):
     # user = relationship(User, backref=backref('sessions'))
 
 
+#@registerSchema("signups")
+# TODO(hermann): We need some additional schema and logic here
+class EventSignup(Base):
+    event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    email = Column(Unicode(100))
+    extra_data = Column(Text)
+
+    """Data-Mapping: many-to-one"""
+    user = relationship("User")
+
+
 @registerSchema("events")
 class Event(Base):
     title = Column(Unicode(50))
@@ -121,13 +138,8 @@ class Event(Base):
 
     # images
 
-
-@registerSchema("signups")
-class EventSignup(Base):
-    event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    email = Column(Unicode(100))
-    extra_data = Column(Text)
+    """Data-Mapping: one-to-many with EventSignup"""
+    signups = relationship("EventSignup", backref="event")
 
 
 @registerSchema("files")
@@ -136,6 +148,17 @@ class File(Base):
     type = Column(String(30))
     size = Column(Integer)
     content_url = Column(String(200))
+
+
+"""
+Mapping from StudyDocuments to File
+We don't want to have an extra Column in Files, therefore we need this table
+"""
+studydocuments_files_association = Table(
+    'studydocuments_files_association', Base.metadata,
+    Column("file_id", Integer, ForeignKey("Files.id")),
+    Column("studydocument", Integer, ForeignKey("StudyDocuments.id"))
+)
 
 
 @registerSchema("studydocuments")
@@ -149,6 +172,9 @@ class StudyDocument(Base):
     semester = Column(Integer)
     author_id = Column(Integer, ForeignKey("Users.id"), nullable=True)
     author_name = Column(Unicode(100))
+
+    """Mapping to Files"""
+    files = relationship("File", secondary=studydocuments_files_association)
 
 
 @registerSchema("joboffers")
