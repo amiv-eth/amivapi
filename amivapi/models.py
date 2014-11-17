@@ -45,19 +45,6 @@ class BaseModel(object):
 Base = declarative_base(cls=BaseModel)
 
 
-class GroupMembership(Base):
-    """Intermediate table for 'many-to-many' mapping
-        split into one-to-many from Group and many-to-one with User
-    We need to use a class here in stead of a table because of additional data
-        expiry_date
-    """
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
-    expiry_date = Column(DateTime)
-
-    user = relationship("User", backref="groups")
-
-
 # TODO(hermann): schauen, ob in dem schema auch "groups" drin vorkommt
 @registerSchema("users")
 class User(Base):
@@ -83,7 +70,22 @@ class Group(Base):
     name = Column(Unicode(30))
 
     """Data Mapping, one-to-many with GroupMembership"""
-    members = relationship("GroupMembership", backref="group")
+#    members = relationship("GroupMembership", backref="group")
+
+
+@registerSchema("groupmemberships")
+class GroupMembership(Base):
+    """Intermediate table for 'many-to-many' mapping
+        split into one-to-many from Group and many-to-one with User
+    We need to use a class here in stead of a table because of additional data
+        expiry_date
+    """
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
+    expiry_date = Column(DateTime)
+
+    user = relationship("User", backref="groups")
+    group = relationship("Group", backref="members")
 
 
 class EmailForwardSubscriber(Base):
@@ -110,18 +112,6 @@ class Session(Base):
     # user = relationship(User, backref=backref('sessions'))
 
 
-#@registerSchema("signups")
-# TODO(hermann): We need some additional schema and logic here
-class EventSignup(Base):
-    event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    email = Column(Unicode(100))
-    extra_data = Column(Text)
-
-    """Data-Mapping: many-to-one"""
-    user = relationship("User")
-
-
 @registerSchema("events")
 class Event(Base):
     title = Column(Unicode(50))
@@ -138,8 +128,19 @@ class Event(Base):
 
     # images
 
-    """Data-Mapping: one-to-many with EventSignup"""
-    signups = relationship("EventSignup", backref="event")
+
+@registerSchema("signups")
+class EventSignup(Base):
+    event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    email = Column(Unicode(100))
+    extra_data = Column(Text)
+
+    """Data-Mapping: many-to-one"""
+    user = relationship("User")
+
+    """Data-Mapping: many-to-one"""
+    event = relationship("Event", backref="signups")
 
 
 @registerSchema("files")
