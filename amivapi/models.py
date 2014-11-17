@@ -88,20 +88,31 @@ class GroupMembership(Base):
     group = relationship("Group", backref="members")
 
 
-class EmailForwardSubscriber(Base):
-    """Intermediate table for many-to-many mapping."""
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    forward_id = Column(
-        Integer, ForeignKey("EmailForwards.id"), nullable=False)
-
-
-@registerSchema("emails")
+@registerSchema("emailforwards")
 class EmailForward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
 
     owner = relationship(User)
-    subscriber = relationship(EmailForwardSubscriber)
+
+
+@registerSchema("emailforwardusersubscribers")
+class EmailForwardUserSubscriber(Base):
+    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    forward_id = Column(
+        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+
+    forward = relationship("EmailForward", backref="user_subscribers")
+    user = relationship("User")
+
+
+@registerSchema("emailforwardaddresssubscribers")
+class EmailForwardAddressSubscriber(Base):
+    address = Column(Unicode(100));
+    forward_id = Column(
+        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+
+    forward = relationship("EmailForward", backref="address_subscribers")
 
 
 @registerSchema("sessions")
