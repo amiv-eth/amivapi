@@ -10,3 +10,10 @@ def load_domain(config):
     config['EMBEDDING'] = True
     domain['users']['embedding'] = True
 
+    """ Make it possible to retrive a user with his username (/users/name) """
+    domain['users'].update({
+        'additional_lookup': {
+            'url': 'regex(".*[\w].*")',
+            'field': 'username',
+        }
+    })
