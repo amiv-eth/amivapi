@@ -6,7 +6,7 @@ from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 
-from amivapi import models
+from amivapi import models, schemas
 
 
 def get_config(environment):
@@ -19,11 +19,7 @@ def get_config(environment):
         raise IOError(str(e) + "\nYou can create it by running "
                              + "`python manage.py create_config`.")
 
-    domain = config['DOMAIN'] = {}
-    for obj_name in dir(models):
-        obj = getattr(models, obj_name)
-        if hasattr(obj, "_eve_schema"):
-            domain.update(obj._eve_schema)
+    schemas.load_domain(config)
 
     return config
 
