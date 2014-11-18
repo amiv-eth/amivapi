@@ -88,31 +88,31 @@ class GroupMembership(Base):
     group = relationship("Group", backref="members")
 
 
-@registerSchema("emailforwards")
-class EmailForward(Base):
+@registerSchema("forwards")
+class Forward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
 
     owner = relationship(User)
 
 
-@registerSchema("emailforwardusersubscribers")
-class EmailForwardUserSubscriber(Base):
+@registerSchema("forwardusers")
+class ForwardUser(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     forward_id = Column(
-        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+        Integer, ForeignKey("Forwards.id"), nullable=False)
 
-    forward = relationship("EmailForward", backref="user_subscribers")
+    forward = relationship("Forward", backref="user_subscribers")
     user = relationship("User")
 
 
-@registerSchema("emailforwardaddresssubscribers")
-class EmailForwardAddressSubscriber(Base):
+@registerSchema("forwardaddresses")
+class ForwardAddress(Base):
     address = Column(Unicode(100));
     forward_id = Column(
-        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+        Integer, ForeignKey("Forwards.id"), nullable=False)
 
-    forward = relationship("EmailForward", backref="address_subscribers")
+    forward = relationship("Forward", backref="address_subscribers")
 
 
 @registerSchema("sessions")
