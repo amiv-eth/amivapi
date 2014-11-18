@@ -46,7 +46,6 @@ Base = declarative_base(cls=BaseModel)
 
 
 # TODO(hermann): schauen, ob in dem schema auch "groups" drin vorkommt
-@registerSchema("users")
 class User(Base):
     username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(Unicode(50))
@@ -65,7 +64,6 @@ class User(Base):
                         nullable=False, default="none", server_default="none")
 
 
-@registerSchema("groups")
 class Group(Base):
     name = Column(Unicode(30))
 
@@ -73,7 +71,6 @@ class Group(Base):
 #    members = relationship("GroupMembership", backref="group")
 
 
-@registerSchema("groupmemberships")
 class GroupMembership(Base):
     """Intermediate table for 'many-to-many' mapping
         split into one-to-many from Group and many-to-one with User
@@ -88,34 +85,30 @@ class GroupMembership(Base):
     group = relationship("Group", backref="members")
 
 
-@registerSchema("emailforwards")
-class EmailForward(Base):
+class Forward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
 
     owner = relationship(User)
 
 
-@registerSchema("emailforwardusersubscribers")
-class EmailForwardUserSubscriber(Base):
+class ForwardUser(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     forward_id = Column(
-        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+        Integer, ForeignKey("Forwards.id"), nullable=False)
 
-    forward = relationship("EmailForward", backref="user_subscribers")
+    forward = relationship("Forward", backref="user_subscribers")
     user = relationship("User")
 
 
-@registerSchema("emailforwardaddresssubscribers")
-class EmailForwardAddressSubscriber(Base):
+class ForwardAddress(Base):
     address = Column(Unicode(100));
     forward_id = Column(
-        Integer, ForeignKey("EmailForwards.id"), nullable=False)
+        Integer, ForeignKey("Forwards.id"), nullable=False)
 
-    forward = relationship("EmailForward", backref="address_subscribers")
+    forward = relationship("Forward", backref="address_subscribers")
 
 
-@registerSchema("sessions")
 class Session(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     signature = Column(CHAR(64))
@@ -123,7 +116,6 @@ class Session(Base):
     # user = relationship(User, backref=backref('sessions'))
 
 
-@registerSchema("events")
 class Event(Base):
     title = Column(Unicode(50))
     time_start = Column(DateTime)
@@ -140,7 +132,6 @@ class Event(Base):
     # images
 
 
-@registerSchema("signups")
 class EventSignup(Base):
     event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
@@ -154,7 +145,6 @@ class EventSignup(Base):
     event = relationship("Event", backref="signups")
 
 
-@registerSchema("files")
 class File(Base):
     name = Column(Unicode(100))
     type = Column(String(30))
@@ -173,7 +163,6 @@ studydocuments_files_association = Table(
 )
 
 
-@registerSchema("studydocuments")
 class StudyDocument(Base):
     name = Column(Unicode(100))
     type = Column(String(30))
@@ -189,7 +178,6 @@ class StudyDocument(Base):
     files = relationship("File", secondary=studydocuments_files_association)
 
 
-@registerSchema("joboffers")
 class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
