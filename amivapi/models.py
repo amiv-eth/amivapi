@@ -19,8 +19,6 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.schema import Table
 
-from eve.io.sql.decorators import registerSchema
-
 
 class BaseModel(object):
     """Mixin for common columns."""
@@ -102,7 +100,7 @@ class ForwardUser(Base):
 
 
 class ForwardAddress(Base):
-    address = Column(Unicode(100));
+    address = Column(Unicode(100))
     forward_id = Column(
         Integer, ForeignKey("Forwards.id"), nullable=False)
 

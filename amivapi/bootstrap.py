@@ -5,6 +5,7 @@ from eve.io.sql import SQL, ValidatorSQL
 from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
+from flask import g
 
 from amivapi import models, rest_logic, schemas
 
@@ -37,6 +38,8 @@ def create_app(environment, create_db=False):
 
     # Generate and expose docs via eve-docs extension
     Bootstrap(app)
+    with app.app_context():
+        g.db = db.session
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(rest_logic.logics)
     return app

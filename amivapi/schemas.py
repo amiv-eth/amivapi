@@ -14,6 +14,7 @@ registerSchema('files')(models.File)
 registerSchema('studydocuments')(models.StudyDocument)
 registerSchema('joboffers')(models.JobOffer)
 
+
 def load_domain(config):
     domain = config['DOMAIN'] = {}
     for obj_name in dir(models):
@@ -23,6 +24,8 @@ def load_domain(config):
 
     config['EMBEDDING'] = True
     domain['users']['embedding'] = True
+
+    domain['groupmemberships']['resource_methods'] = ['GET']
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
