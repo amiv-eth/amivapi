@@ -6,7 +6,7 @@ from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 
-from amivapi import models
+from amivapi import models, rest_logic
 
 
 def get_config(environment):
@@ -42,5 +42,5 @@ def create_app(environment, create_db=False):
     # Generate and expose docs via eve-docs extension
     Bootstrap(app)
     app.register_blueprint(eve_docs, url_prefix="/docs")
-
+    app.register_blueprint(rest_logic.logics)
     return app
