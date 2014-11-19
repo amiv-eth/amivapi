@@ -61,3 +61,6 @@ def load_domain(config):
             'field': 'username',
         }
     })
+
+    domain['groupmemberships']['schema']['group_id']['data_relation']['resource'] = 'groups'
+    domain['groupmemberships']['schema']['user_id']['data_relation']['resource'] = 'users'
