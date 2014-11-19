@@ -20,6 +20,7 @@ from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.schema import Table
 
 from eve.io.sql.decorators import registerSchema
+from eve.io.sql.structures import SQLAResult
 
 
 class BaseModel(object):
@@ -45,7 +46,6 @@ class BaseModel(object):
 Base = declarative_base(cls=BaseModel)
 
 
-# TODO(hermann): schauen, ob in dem schema auch "groups" drin vorkommt
 class User(Base):
     username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(Unicode(50))
@@ -67,9 +67,6 @@ class User(Base):
 class Group(Base):
     name = Column(Unicode(30))
 
-    """Data Mapping, one-to-many with GroupMembership"""
-#    members = relationship("GroupMembership", backref="group")
-
 
 class GroupMembership(Base):
     """Intermediate table for 'many-to-many' mapping
@@ -84,12 +81,20 @@ class GroupMembership(Base):
     user = relationship("User", backref="groups")
     group = relationship("Group", backref="members")
 
+    """ This is necessary to make a projection of the groups field of a user or the members field of a group possible. Eve will try to jsonify the value returned by SQL Alchemy, but this will fail if the value is a relation. For a relation SQL Alchemy will return an object or a list of objects. This function will make those serializable by jsonify. What is returned by this function will be the value for the field, which references a GroupMembership """
+    def _asdict(self):
+        return dict(SQLAResult(self, ['id', 'user_id', 'group_id', 'expiry_date']))
+
 
 class Forward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
 
     owner = relationship(User)
+
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, ['id', 'address', 'owner_id']))
 
 
 class ForwardUser(Base):
@@ -100,6 +105,10 @@ class ForwardUser(Base):
     forward = relationship("Forward", backref="user_subscribers")
     user = relationship("User")
 
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, ['id', 'user_id', 'user']))
+
 
 class ForwardAddress(Base):
     address = Column(Unicode(100));
@@ -108,12 +117,16 @@ class ForwardAddress(Base):
 
     forward = relationship("Forward", backref="address_subscribers")
 
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, ['id', 'address']))
+
 
 class Session(Base):
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
     signature = Column(CHAR(64))
 
-    # user = relationship(User, backref=backref('sessions'))
+    user = relationship("User", backref="sessions")
 
 
 class Event(Base):
@@ -132,6 +145,25 @@ class Event(Base):
     # images
 
 
+
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, [
+            'id',
+            'title',
+            'time_start',
+            'time_end',
+            'location',
+            'description',
+            'is_public',
+            'price',
+            'spots',
+            'time_register_start',
+            'time_register_end',
+            'additional_fields'
+        ]))
+
+
 class EventSignup(Base):
     event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
@@ -144,12 +176,29 @@ class EventSignup(Base):
     """Data-Mapping: many-to-one"""
     event = relationship("Event", backref="signups")
 
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, [
+            'email',
+            'user',
+            'extra_data'
+        ]))
+
 
 class File(Base):
     name = Column(Unicode(100))
     type = Column(String(30))
     size = Column(Integer)
     content_url = Column(String(200))
+
+    """ See GroupMembership._asdict() for explanaition why this is here"""
+    def _asdict(self):
+        return dict(SQLAResult(self, [
+            'name',
+            'type',
+            'size',
+            'content_url'
+        ]))
 
 
 """

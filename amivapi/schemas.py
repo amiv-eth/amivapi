@@ -21,8 +21,37 @@ def load_domain(config):
         if hasattr(obj, "_eve_schema"):
             domain.update(obj._eve_schema)
 
-    config['EMBEDDING'] = True
-    domain['users']['embedding'] = True
+    """ Definition of projected fields """
+    domain['users']['datasource']['projection'].update({
+        'groups': 1
+    })
+    domain['groups']['datasource']['projection'].update({
+        'members': 1
+    })
+    domain['forwards']['datasource']['projection'].update({
+        'user_subscribers': 1,
+        'address_subscribers': 1
+    })
+    domain['forwardusers']['datasource']['projection'].update({
+        'forward': 1,
+        'user': 1
+    })
+    domain['forwardaddresses']['datasource']['projection'].update({
+        'forward': 1
+    })
+    domain['sessions']['datasource']['projection'].update({
+        'user': 1
+    })
+    domain['events']['datasource']['projection'].update({
+        'signups': 1
+    })
+    domain['signups']['datasource']['projection'].update({
+        'event': 1,
+        'user': 1
+    })
+    domain['studydocuments']['datasource']['projection'].update({
+        'files': 1
+    })
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
