@@ -19,7 +19,6 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.schema import Table
 
-from eve.io.sql.decorators import registerSchema
 from eve.io.sql.structures import SQLAResult
 
 
@@ -81,9 +80,20 @@ class GroupMembership(Base):
     user = relationship("User", backref="groups")
     group = relationship("Group", backref="members")
 
-    """ This is necessary to make a projection of the groups field of a user or the members field of a group possible. Eve will try to jsonify the value returned by SQL Alchemy, but this will fail if the value is a relation. For a relation SQL Alchemy will return an object or a list of objects. This function will make those serializable by jsonify. What is returned by this function will be the value for the field, which references a GroupMembership """
+    """ This is necessary to make a projection of the groups field of a user or
+    the members field of a group possible. Eve will try to jsonify the value
+    returned by SQL Alchemy, but this will fail if the value is a relation. For
+    a relation SQL Alchemy will return an object or a list of objects. This
+    function will make those serializable by jsonify. What is returned by this
+    function will be the value for the field, which references a
+    GroupMembership """
     def _asdict(self):
-        return dict(SQLAResult(self, ['id', 'user_id', 'group_id', 'expiry_date']))
+        return dict(SQLAResult(self, [
+            'id',
+            'user_id',
+            'group_id',
+            'expiry_date'
+        ]))
 
 
 class Forward(Base):
@@ -111,7 +121,7 @@ class ForwardUser(Base):
 
 
 class ForwardAddress(Base):
-    address = Column(Unicode(100));
+    address = Column(Unicode(100))
     forward_id = Column(
         Integer, ForeignKey("Forwards.id"), nullable=False)
 
@@ -143,8 +153,6 @@ class Event(Base):
     additional_fields = Column(Text)
 
     # images
-
-
 
     """ See GroupMembership._asdict() for explanaition why this is here"""
     def _asdict(self):

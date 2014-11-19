@@ -14,6 +14,7 @@ registerSchema('files')(models.File)
 registerSchema('studydocuments')(models.StudyDocument)
 registerSchema('joboffers')(models.JobOffer)
 
+
 def load_domain(config):
     domain = config['DOMAIN'] = {}
     for obj_name in dir(models):
@@ -21,7 +22,7 @@ def load_domain(config):
         if hasattr(obj, "_eve_schema"):
             domain.update(obj._eve_schema)
 
-    """ Definition of projected fields """
+    """ Definition of additional projected fields """
     domain['users']['datasource']['projection'].update({
         'groups': 1
     })
