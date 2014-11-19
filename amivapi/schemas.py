@@ -62,5 +62,6 @@ def load_domain(config):
         }
     })
 
+    # domain['groupmemberships']['resource_methods'] = ['GET']
     domain['groupmemberships']['schema']['group_id']['data_relation']['resource'] = 'groups'
     domain['groupmemberships']['schema']['user_id']['data_relation']['resource'] = 'users'
