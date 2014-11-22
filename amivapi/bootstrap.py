@@ -7,7 +7,7 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, rest_logic, schemas
+from amivapi import models, rest_logic, schemas, event_hooks
 
 
 def get_config(environment):
@@ -42,4 +42,9 @@ def create_app(environment, create_db=False):
         g.db = db.session
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(rest_logic.logics)
+
+    # Add event hooks
+    app.on_pre_GET_users += event_hooks.pre_users_get_callback
+    app.on_post_GET_users += event_hooks.post_users_get_callback
+
     return app
