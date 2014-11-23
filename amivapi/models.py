@@ -21,8 +21,6 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.schema import Table
 
-from eve.io.sql.structures import SQLAResult
-
 
 """ Eve exspects the resource names to be equal to the table names. Therefore
 we generate all names from the Class names. Please choose classnames carefully,
@@ -63,10 +61,12 @@ class BaseModel(object):
         """
         relationships = inspect(self.__class__).relationships.keys()
         mapper = inspect(self)
-        attrs = [a.key for a in mapper.attrs if \
-                a.key not in relationships \
-                and not a.key in mapper.expired_attributes]
-        attrs += [a.__name__ for a in inspect(self.__class__).all_orm_descriptors if a.extension_type is hybrid.HYBRID_PROPERTY]
+        attrs = [a.key for a in mapper.attrs if
+                 a.key not in relationships
+                 and a.key not in mapper.expired_attributes]
+        attrs += [a.__name__ for a in
+                  inspect(self.__class__).all_orm_descriptors
+                  if a.extension_type is hybrid.HYBRID_PROPERTY]
         return dict([(c, getattr(self, c, None)) for c in attrs])
 
 

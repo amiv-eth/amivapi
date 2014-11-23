@@ -7,9 +7,8 @@ def load_domain(config):
     for cls_name, cls in getmembers(models):
         if(isclass(cls)
                 and cls.__module__ == "amivapi.models"
-                and cls.__expose__ == True):
+                and cls.__expose__ is True):
             registerSchema(cls.__tablename__)(cls)
-
 
     domain = config['DOMAIN'] = {}
     for obj_name in dir(models):
@@ -28,26 +27,30 @@ def load_domain(config):
         'user_subscribers': 1,
         'address_subscribers': 1
     })
-    domain[models.ForwardUser.__tablename__]['datasource']['projection'].update({
-        'forward': 1,
-        'user': 1
-    })
-    domain[models.ForwardAddress.__tablename__]['datasource']['projection'].update({
-        'forward': 1
-    })
+    domain[models.ForwardUser.__tablename__]['datasource']['projection'] \
+        .update({
+            'forward': 1,
+            'user': 1
+        })
+    domain[models.ForwardAddress.__tablename__]['datasource']['projection'] \
+        .update({
+            'forward': 1
+        })
     domain[models.Session.__tablename__]['datasource']['projection'].update({
         'user': 1
     })
     domain[models.Event.__tablename__]['datasource']['projection'].update({
         'signups': 1
     })
-    domain[models.EventSignup.__tablename__]['datasource']['projection'].update({
-        'event': 1,
-        'user': 1
-    })
-    domain[models.StudyDocument.__tablename__]['datasource']['projection'].update({
-        'files': 1
-    })
+    domain[models.EventSignup.__tablename__]['datasource']['projection'] \
+        .update({
+            'event': 1,
+            'user': 1
+        })
+    domain[models.StudyDocument.__tablename__]['datasource']['projection'] \
+        .update({
+            'files': 1
+        })
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
@@ -56,7 +59,3 @@ def load_domain(config):
             'field': 'username',
         }
     })
-
-    # domain['groupmemberships']['resource_methods'] = ['GET']
-    domain['groupmemberships']['schema']['group_id']['data_relation']['resource'] = 'groups'
-    domain['groupmemberships']['schema']['user_id']['data_relation']['resource'] = 'users'
