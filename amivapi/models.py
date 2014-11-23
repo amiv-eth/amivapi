@@ -24,13 +24,24 @@ from sqlalchemy.schema import Table
 from eve.io.sql.structures import SQLAResult
 
 
+""" Eve exspects the resource names to be equal to the table names. Therefore
+we generate all names from the Class names. Please choose classnames carefully,
+as changing them might break a lot of code """
+
+
 class BaseModel(object):
     """Mixin for common columns."""
+
+    """__abstract__ makes SQL Alchemy not create a table for this class """
     __abstract__ = True
+
+    """ All classes which overwrite this with True will get exposed as a
+    resource """
+    __expose__ = False
 
     @declared_attr
     def __tablename__(cls):
-        return "%ss" % cls.__name__
+        return "%ss" % cls.__name__.lower()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
@@ -60,6 +71,7 @@ Base = declarative_base(cls=BaseModel)
 
 
 class User(Base):
+    __expose__ = True
     username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(Unicode(50))
     firstname = Column(Unicode(50), nullable=False)
@@ -78,6 +90,7 @@ class User(Base):
 
 
 class Group(Base):
+    __expose__ = True
     name = Column(Unicode(30))
 
 
@@ -87,8 +100,9 @@ class GroupMembership(Base):
     We need to use a class here in stead of a table because of additional data
         expiry_date
     """
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
-    group_id = Column(Integer, ForeignKey("Groups.id"), nullable=False)
+    __expose__ = True
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     expiry_date = Column(DateTime)
 
     user = relationship("User", backref="groups")
@@ -96,37 +110,42 @@ class GroupMembership(Base):
 
 
 class Forward(Base):
+    __expose__ = True
     address = Column(Unicode(100), unique=True)
-    owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     owner = relationship(User)
 
 
 class ForwardUser(Base):
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    __expose__ = True
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
-        Integer, ForeignKey("Forwards.id"), nullable=False)
+        Integer, ForeignKey("forwards.id"), nullable=False)
 
     forward = relationship("Forward", backref="user_subscribers")
     user = relationship("User")
 
 
 class ForwardAddress(Base):
+    __expose__ = True
     address = Column(Unicode(100))
     forward_id = Column(
-        Integer, ForeignKey("Forwards.id"), nullable=False)
+        Integer, ForeignKey("forwards.id"), nullable=False)
 
     forward = relationship("Forward", backref="address_subscribers")
 
 
 class Session(Base):
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    __expose__ = True
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     signature = Column(CHAR(64))
 
     user = relationship("User", backref="sessions")
 
 
 class Event(Base):
+    __expose__ = True
     title = Column(Unicode(50))
     time_start = Column(DateTime)
     time_end = Column(DateTime)
@@ -143,8 +162,9 @@ class Event(Base):
 
 
 class EventSignup(Base):
-    event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
+    __expose__ = True
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     email = Column(Unicode(100))
     extra_data = Column(Text)
 
@@ -156,6 +176,7 @@ class EventSignup(Base):
 
 
 class File(Base):
+    __expose__ = True
     name = Column(Unicode(100))
     type = Column(String(30))
     size = Column(Integer)
@@ -168,12 +189,13 @@ We don't want to have an extra Column in Files, therefore we need this table
 """
 studydocuments_files_association = Table(
     'studydocuments_files_association', Base.metadata,
-    Column("file_id", Integer, ForeignKey("Files.id")),
-    Column("studydocument", Integer, ForeignKey("StudyDocuments.id"))
+    Column("file_id", Integer, ForeignKey("files.id")),
+    Column("studydocument", Integer, ForeignKey("studydocuments.id"))
 )
 
 
 class StudyDocument(Base):
+    __expose__ = True
     name = Column(Unicode(100))
     type = Column(String(30))
     exam_session = Column(String(10))
@@ -181,7 +203,7 @@ class StudyDocument(Base):
     lecture = Column(Unicode(100))
     professor = Column(Unicode(100))
     semester = Column(Integer)
-    author_id = Column(Integer, ForeignKey("Users.id"), nullable=True)
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     author_name = Column(Unicode(100))
 
     """Mapping to Files"""
@@ -189,9 +211,10 @@ class StudyDocument(Base):
 
 
 class JobOffer(Base):
+    __expose__ = True
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo_id = Column(Integer, ForeignKey("Files.id"))
-    pdf_id = Column(Integer, ForeignKey("Files.id"))
+    logo_id = Column(Integer, ForeignKey("files.id"))
+    pdf_id = Column(Integer, ForeignKey("files.id"))
     time_end = Column(DateTime)

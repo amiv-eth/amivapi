@@ -1,21 +1,16 @@
 from amivapi import models
 from eve.io.sql.decorators import registerSchema
-
-registerSchema('users')(models.User)
-registerSchema('groups')(models.Group)
-registerSchema('groupmemberships')(models.GroupMembership)
-registerSchema('forwards')(models.Forward)
-registerSchema('forwardusers')(models.ForwardUser)
-registerSchema('forwardaddresses')(models.ForwardAddress)
-registerSchema('sessions')(models.Session)
-registerSchema('events')(models.Event)
-registerSchema('signups')(models.EventSignup)
-registerSchema('files')(models.File)
-registerSchema('studydocuments')(models.StudyDocument)
-registerSchema('joboffers')(models.JobOffer)
+from inspect import getmembers, isclass
 
 
 def load_domain(config):
+    for cls_name, cls in getmembers(models):
+        if(isclass(cls)
+                and cls.__module__ == "amivapi.models"
+                and cls.__expose__ == True):
+            registerSchema(cls.__tablename__)(cls)
+
+
     domain = config['DOMAIN'] = {}
     for obj_name in dir(models):
         obj = getattr(models, obj_name)
@@ -37,7 +32,7 @@ def load_domain(config):
         'forward': 1,
         'user': 1
     })
-    domain['forwardaddresses']['datasource']['projection'].update({
+    domain['forwardaddresss']['datasource']['projection'].update({
         'forward': 1
     })
     domain['sessions']['datasource']['projection'].update({
@@ -46,7 +41,7 @@ def load_domain(config):
     domain['events']['datasource']['projection'].update({
         'signups': 1
     })
-    domain['signups']['datasource']['projection'].update({
+    domain['eventsignups']['datasource']['projection'].update({
         'event': 1,
         'user': 1
     })
