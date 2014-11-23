@@ -18,34 +18,34 @@ def load_domain(config):
             domain.update(obj._eve_schema)
 
     """ Definition of additional projected fields """
-    domain['users']['datasource']['projection'].update({
+    domain[models.User.__tablename__]['datasource']['projection'].update({
         'groups': 1
     })
-    domain['groups']['datasource']['projection'].update({
+    domain[models.Group.__tablename__]['datasource']['projection'].update({
         'members': 1
     })
-    domain['forwards']['datasource']['projection'].update({
+    domain[models.Forward.__tablename__]['datasource']['projection'].update({
         'user_subscribers': 1,
         'address_subscribers': 1
     })
-    domain['forwardusers']['datasource']['projection'].update({
+    domain[models.ForwardUser.__tablename__]['datasource']['projection'].update({
         'forward': 1,
         'user': 1
     })
-    domain['forwardaddresss']['datasource']['projection'].update({
+    domain[models.ForwardAddress.__tablename__]['datasource']['projection'].update({
         'forward': 1
     })
-    domain['sessions']['datasource']['projection'].update({
+    domain[models.Session.__tablename__]['datasource']['projection'].update({
         'user': 1
     })
-    domain['events']['datasource']['projection'].update({
+    domain[models.Event.__tablename__]['datasource']['projection'].update({
         'signups': 1
     })
-    domain['eventsignups']['datasource']['projection'].update({
+    domain[models.EventSignup.__tablename__]['datasource']['projection'].update({
         'event': 1,
         'user': 1
     })
-    domain['studydocuments']['datasource']['projection'].update({
+    domain[models.StudyDocument.__tablename__]['datasource']['projection'].update({
         'files': 1
     })
 

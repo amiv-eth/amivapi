@@ -41,6 +41,9 @@ class BaseModel(object):
 
     @declared_attr
     def __tablename__(cls):
+        """ Correct English attaches 'es' to plural forms which end in 's' """
+        if cls.__name__.lower()[-1:] == 's':
+            return "%ses" % cls.__name__.lower()
         return "%ss" % cls.__name__.lower()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
