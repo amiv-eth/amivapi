@@ -2,6 +2,7 @@ import datetime as dt
 
 from sqlalchemy import (
     Column,
+    inspect,
     Unicode,
     UnicodeText,
     CHAR,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     Boolean,
     DECIMAL,
 )
+from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.schema import Table
@@ -40,6 +42,18 @@ class BaseModel(object):
     _updated = Column(
         DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)
     _etag = Column(String(50))
+
+    def jsonify(self):
+        """
+        Used to dump related objects to json
+        """
+        relationships = inspect(self.__class__).relationships.keys()
+        mapper = inspect(self)
+        attrs = [a.key for a in mapper.attrs if \
+                a.key not in relationships \
+                and not a.key in mapper.expired_attributes]
+        attrs += [a.__name__ for a in inspect(self.__class__).all_orm_descriptors if a.extension_type is hybrid.HYBRID_PROPERTY]
+        return dict([(c, getattr(self, c, None)) for c in attrs])
 
 
 Base = declarative_base(cls=BaseModel)
@@ -80,31 +94,12 @@ class GroupMembership(Base):
     user = relationship("User", backref="groups")
     group = relationship("Group", backref="members")
 
-    """ This is necessary to make a projection of the groups field of a user or
-    the members field of a group possible. Eve will try to jsonify the value
-    returned by SQL Alchemy, but this will fail if the value is a relation. For
-    a relation SQL Alchemy will return an object or a list of objects. This
-    function will make those serializable by jsonify. What is returned by this
-    function will be the value for the field, which references a
-    GroupMembership """
-    def _asdict(self):
-        return dict(SQLAResult(self, [
-            'id',
-            'user_id',
-            'group_id',
-            'expiry_date'
-        ]))
-
 
 class Forward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("Users.id"), nullable=False)
 
     owner = relationship(User)
-
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, ['id', 'address', 'owner_id']))
 
 
 class ForwardUser(Base):
@@ -115,10 +110,6 @@ class ForwardUser(Base):
     forward = relationship("Forward", backref="user_subscribers")
     user = relationship("User")
 
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, ['id', 'user_id', 'user']))
-
 
 class ForwardAddress(Base):
     address = Column(Unicode(100))
@@ -126,10 +117,6 @@ class ForwardAddress(Base):
         Integer, ForeignKey("Forwards.id"), nullable=False)
 
     forward = relationship("Forward", backref="address_subscribers")
-
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, ['id', 'address']))
 
 
 class Session(Base):
@@ -154,23 +141,6 @@ class Event(Base):
 
     # images
 
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, [
-            'id',
-            'title',
-            'time_start',
-            'time_end',
-            'location',
-            'description',
-            'is_public',
-            'price',
-            'spots',
-            'time_register_start',
-            'time_register_end',
-            'additional_fields'
-        ]))
-
 
 class EventSignup(Base):
     event_id = Column(Integer, ForeignKey("Events.id"), nullable=False)
@@ -184,29 +154,12 @@ class EventSignup(Base):
     """Data-Mapping: many-to-one"""
     event = relationship("Event", backref="signups")
 
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, [
-            'email',
-            'user',
-            'extra_data'
-        ]))
-
 
 class File(Base):
     name = Column(Unicode(100))
     type = Column(String(30))
     size = Column(Integer)
     content_url = Column(String(200))
-
-    """ See GroupMembership._asdict() for explanaition why this is here"""
-    def _asdict(self):
-        return dict(SQLAResult(self, [
-            'name',
-            'type',
-            'size',
-            'content_url'
-        ]))
 
 
 """
