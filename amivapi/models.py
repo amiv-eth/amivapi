@@ -160,7 +160,7 @@ class Session(Base):
     __projected_fields__ = ['user']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    signature = Column(CHAR(64))
+    token = Column(CHAR(2048))
 
     user = relationship("User", backref="sessions")
 

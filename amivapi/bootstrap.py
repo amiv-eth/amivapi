@@ -1,4 +1,6 @@
 from os.path import abspath, dirname, join
+import codecs
+import rsa
 
 from eve import Eve
 from eve.io.sql import SQL, ValidatorSQL
@@ -7,7 +9,7 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks
+from amivapi import models, confirm, schemas, event_hooks, auth
 
 
 def get_config(environment):
@@ -21,6 +23,16 @@ def get_config(environment):
                              + "`python manage.py create_config`.")
 
     schemas.load_domain(config)
+
+    # Load private key to sign login tokens
+    key_file = join(config_dir, "%s-login-private.pem" % environment)
+    try:
+        config['LOGIN_PRIVATE_KEY'] = rsa.PrivateKey.load_pkcs1(
+                codecs.open(key_file, "r", "utf-8").read(),
+                format='PEM')
+    except IOError as e:
+        raise IOError(str(e) + "\nYour private key is missing. Run "
+                            + "`python manage.py create_config` to create it!")
 
     return config
 
@@ -51,5 +63,7 @@ def create_app(environment, create_db=False):
     app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
     app.on_pre_POST_groupmemberships += event_hooks.\
         pre_groupmemberships_post_callback
+
+    app.register_blueprint(auth.login)
 
     return app

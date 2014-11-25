@@ -33,3 +33,5 @@ def load_domain(config):
             'required': False,
         },
     })
+
+    domain[models.Session.__tablename__]['resource_methods'] = ['GET']
