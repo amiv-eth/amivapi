@@ -7,7 +7,7 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, rest_logic, schemas
+from amivapi import models, rest_logic, schemas, event_hooks
 
 
 def get_config(environment):
