@@ -4,17 +4,14 @@ from inspect import getmembers, isclass
 
 
 def load_domain(config):
+    domain = config['DOMAIN'] = {}
+
     for cls_name, cls in getmembers(models):
         if(isclass(cls)
                 and cls.__module__ == "amivapi.models"
                 and cls.__expose__ is True):
             registerSchema(cls.__tablename__)(cls)
-
-    domain = config['DOMAIN'] = {}
-    for obj_name in dir(models):
-        obj = getattr(models, obj_name)
-        if hasattr(obj, "_eve_schema"):
-            domain.update(obj._eve_schema)
+            domain.update(cls._eve_schema)
 
     """ Definition of additional projected fields """
     domain[models.User.__tablename__]['datasource']['projection'].update({
