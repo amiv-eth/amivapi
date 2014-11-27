@@ -1,4 +1,7 @@
 from flask import current_app as app
+from flask import abort
+from eve.utils import debug_error_message
+
 from amivapi import models
 
 
@@ -11,9 +14,19 @@ def post_users_get_callback(request, lookup):
 
 
 def pre_signups_post_callback(request):
-    if request.form['email'] == "" and request.form['userid'] != -1:
-        userid = request.form['user_id']
+    #for the moment we only support json formatted data
+    data = request.get_json()
+    if data.get('email') is None and data.get('user_id') == -1:
+        abort(422, description=debug_error_message(
+            'You need to provide an email or a valid user_id'
+        ))
+    if data.get('email') is None and data.get('user_id') != -1:
+        userid = data.get('user_id')
         db = app.data.driver.session
-        email = db.query(models.User).get(userid).email
-        request.form['email'] = email
-    return request
+        user = db.query(models.User).get(userid)
+        if user is None:
+            abort(422, description=debug_error_message(
+                'The user could not be found'
+            ))
+        data['email'] = user.email
+        print "added %s to signup of user %d" % (user.email, userid)
