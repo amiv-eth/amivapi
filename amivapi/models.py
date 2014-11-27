@@ -37,6 +37,11 @@ class BaseModel(object):
     resource """
     __expose__ = False
 
+    """ This is a list of fields, which are added to the projection created by
+    eve. Add any additional field to be delivered on GET requests by default
+    in the subclasses. """
+    __projected_fields__ = []
+
     @declared_attr
     def __tablename__(cls):
         """ Correct English attaches 'es' to plural forms which end in 's' """
@@ -75,6 +80,8 @@ Base = declarative_base(cls=BaseModel)
 
 class User(Base):
     __expose__ = True
+    __projected_fields__ = ['groups']
+
     username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(Unicode(50))
     firstname = Column(Unicode(50), nullable=False)
@@ -94,6 +101,8 @@ class User(Base):
 
 class Group(Base):
     __expose__ = True
+    __projected_fields__ = ['members']
+
     name = Column(Unicode(30))
 
 
@@ -104,6 +113,7 @@ class GroupMembership(Base):
         expiry_date
     """
     __expose__ = True
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     expiry_date = Column(DateTime)
@@ -114,6 +124,8 @@ class GroupMembership(Base):
 
 class Forward(Base):
     __expose__ = True
+    __projected_fields__ = ['user_subscribers', 'address_subscribers']
+
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
@@ -122,6 +134,8 @@ class Forward(Base):
 
 class ForwardUser(Base):
     __expose__ = True
+    __projected_fields__ = ['forward', 'user']
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
         Integer, ForeignKey("forwards.id"), nullable=False)
@@ -132,6 +146,8 @@ class ForwardUser(Base):
 
 class ForwardAddress(Base):
     __expose__ = True
+    __projected_fields__ = ['forward']
+
     address = Column(Unicode(100))
     forward_id = Column(
         Integer, ForeignKey("forwards.id"), nullable=False)
@@ -141,6 +157,8 @@ class ForwardAddress(Base):
 
 class Session(Base):
     __expose__ = True
+    __projected_fields__ = ['user']
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     signature = Column(CHAR(64))
 
@@ -149,6 +167,8 @@ class Session(Base):
 
 class Event(Base):
     __expose__ = True
+    __projected_fields__ = ['signups']
+
     title = Column(Unicode(50))
     time_start = Column(DateTime)
     time_end = Column(DateTime)
@@ -166,6 +186,8 @@ class Event(Base):
 
 class EventSignup(Base):
     __expose__ = True
+    __projected_fields__ = ['event', 'user']
+
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     email = Column(Unicode(100))
@@ -180,6 +202,7 @@ class EventSignup(Base):
 
 class File(Base):
     __expose__ = True
+
     name = Column(Unicode(100))
     type = Column(String(30))
     size = Column(Integer)
@@ -199,6 +222,8 @@ studydocuments_files_association = Table(
 
 class StudyDocument(Base):
     __expose__ = True
+    __projected_fields__ = ['files']
+
     name = Column(Unicode(100))
     type = Column(String(30))
     exam_session = Column(String(10))
