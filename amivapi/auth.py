@@ -1,16 +1,20 @@
-from flask import Blueprint, abort, request
-import json
-from datetime import datetime
 import hashlib
-from datetime import timedelta
-from flask import current_app as app
+import json
 import rsa
+from os import urandom
+from datetime import datetime
 from base64 import b64encode, b64decode
 
-from models import User, Session
+from flask import current_app as app
+from flask import Blueprint, abort, request
+
 from eve.render import send_response
 from eve.methods.post import post_internal
+from eve.auth import TokenAuth
 
+from sqlalchemy.orm.exc import NoResultFound
+
+from models import User, Session
 
 """
 This file provides token based authentification. A user can POST the /sessions
@@ -29,6 +33,7 @@ followed by the time of login in the DATE_FORMAT specified in the config
 followed by the servers login secret(see TokenAuth._create_signature)
 """
 
+
 def _create_signature(user_id, login_time):
     msg = "{:0=10d}".format(user_id) \
           + login_time.strftime(app.config['DATE_FORMAT'])
@@ -40,11 +45,6 @@ def createToken(user_id):
     time = datetime.now()
     signature = _create_signature(user_id, time)
 
-    # Don't confuse database session and Session objects of the data model!
-#    session = Session(user_id=user_id, signature=signature)
-#    app.data.driver.session.add(session)
-#    app.data.driver.session.commit()
-
     return b64encode(json.dumps({
         'user_id': user_id,
         'login_time': time.strftime(app.config['DATE_FORMAT']),
@@ -52,61 +52,73 @@ def createToken(user_id):
     }))
 
 
-class TokenAuth:
+class TokenAuth(TokenAuth):
+    def check_auth(self, token, allowed_roles, resource, method):
+        dbsession = app.data.driver.session
 
-    def __init__(self, token):
-
-        self.token = json.loads(token)
-        self.user_id = self.token['user_id']
-
-        self.time = datetime.strptime(
-            self.token['login_time'],
-            app.config['DATE_FORMAT']
-            )
-
-        # Log out if login_time is too far in the past
-        if datetime.now() > self.time + timedelta(seconds=app.config['LOGIN_TIMEOUT']):
-            abort(419)
-
-        self.signature = self._create_signature(self.user_id, self.time)
-
-        if self.signature != self.token['signature']:
+        try:
+            sess = dbsession.query(Session).filter(Session.token == token).one()
+        except NoResultFound:
             abort(401)
 
-        # Check if token is in database
-        if models.Session.query \
-                .filter_by(signature=self.signature, user_id=self.user_id) \
-                .count() != 1:
-            abort(401)
-
-    def deleteToken(self):
-        session = models.Session.query \
-            .filter_by(signature=self.signature) \
-            .first()
-
-        db.session.delete(session)
-        db.session.commit()
+        return True
 
 
 login = Blueprint('login', __name__)
 
+
 @login.route('/sessions', methods=['POST'])
 def process_login():
     user = app.data.driver.session.query(User).filter_by(
-        username=request.form['username'],
-        password=request.form['password']).all()
+        username=request.form['username']).all()
 
-    if len(user) == 1:
-        # User is in database, log in
+    if(len(user) == 1):
+        (salt, hashed_password) = user[0].password.split('$')
+        salt = b64decode(salt)
+        hashed_password = b64decode(hashed_password)
+
+        if hashed_password != hashlib.pbkdf2_hmac(
+                'SHA256',
+                request.form['password'],
+                salt,
+                100000
+        ):
+            abort(401)
+
         token = createToken(user[0].id)
-        response = post_internal('sessions',
-                {
-                    'user_id': user[0].id,
-                    'token': token
-                })
+        response = post_internal(
+            'sessions',
+            {
+                'user_id': user[0].id,
+                'token': token
+            }
+        )
         return send_response('sessions', response)
 
     # Try to import user via ldap
     abort(501)
 
 
+def create_new_hash(password):
+    salt = urandom(16)
+    return (
+        b64encode(salt) +
+        '$' +
+        b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
+    )
+
+
+""" Hooks to hash passwords when user entries are changed in the database """
+
+
+def hash_password_before_insert(users):
+    for u in users:
+        u['password'] = create_new_hash(u['password'])
+
+
+def hash_password_before_update(users):
+    hash_password_before_insert(users)
+
+
+def hash_password_before_replace(users, original_users):
+    hash_password_before_insert(users)

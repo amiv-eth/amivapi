@@ -83,7 +83,7 @@ class User(Base):
     __projected_fields__ = ['groups']
 
     username = Column(Unicode(50), unique=True, nullable=False)
-    password = Column(Unicode(50))
+    password = Column(CHAR(100))  # base64 encoded hash data
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
     birthday = Column(Date)
@@ -160,7 +160,7 @@ class Session(Base):
     __projected_fields__ = ['user']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(CHAR(2048))
+    token = Column(CHAR(10424), unique=True)
 
     user = relationship("User", backref="sessions")
 

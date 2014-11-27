@@ -39,7 +39,7 @@ def get_config(environment):
 
 def create_app(environment, create_db=False):
     config = get_config(environment)
-    app = Eve(settings=config, data=SQL, validator=ValidatorSQL)
+    app = Eve(settings=config, data=SQL, validator=ValidatorSQL, auth=auth.TokenAuth)
 
     # Bind SQLAlchemy
     db = app.data.driver
@@ -65,5 +65,9 @@ def create_app(environment, create_db=False):
         pre_groupmemberships_post_callback
 
     app.register_blueprint(auth.login)
+
+    app.on_insert_users += auth.hash_password_before_insert
+    app.on_replace_users += auth.hash_password_before_replace
+    app.on_update_users += auth.hash_password_before_update
 
     return app
