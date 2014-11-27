@@ -60,6 +60,12 @@ class BaseModel(object):
         DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)
     _etag = Column(String(50))
 
+    """ This needs to be a function, as it has a ForeignKey in a mixin. The
+    function makes binding at a later point possible """
+    @declared_attr
+    def _author(cls):
+        return Column(Integer, ForeignKey("users.id"), nullable=False)
+
     def jsonify(self):
         """
         Used to dump related objects to json
@@ -118,7 +124,7 @@ class GroupMembership(Base):
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     expiry_date = Column(DateTime)
 
-    user = relationship("User", backref="groups")
+    user = relationship("User", foreign_keys=user_id, backref="groups")
     group = relationship("Group", backref="members")
 
 
@@ -129,7 +135,7 @@ class Forward(Base):
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    owner = relationship(User)
+    owner = relationship(User, foreign_keys=owner_id)
 
 
 class ForwardUser(Base):
@@ -141,7 +147,7 @@ class ForwardUser(Base):
         Integer, ForeignKey("forwards.id"), nullable=False)
 
     forward = relationship("Forward", backref="user_subscribers")
-    user = relationship("User")
+    user = relationship("User", foreign_keys=user_id)
 
 
 class ForwardAddress(Base):
@@ -162,7 +168,7 @@ class Session(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token = Column(CHAR(10424), unique=True)
 
-    user = relationship("User", backref="sessions")
+    user = relationship("User", foreign_keys=user_id, backref="sessions")
 
 
 class Event(Base):
@@ -194,7 +200,7 @@ class EventSignup(Base):
     extra_data = Column(Text)
 
     """Data-Mapping: many-to-one"""
-    user = relationship("User")
+    user = relationship("User", foreign_keys=user_id)
 
     """Data-Mapping: many-to-one"""
     event = relationship("Event", backref="signups")
@@ -231,7 +237,6 @@ class StudyDocument(Base):
     lecture = Column(Unicode(100))
     professor = Column(Unicode(100))
     semester = Column(Integer)
-    author_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     author_name = Column(Unicode(100))
 
     """Mapping to Files"""

@@ -61,6 +61,9 @@ class TokenAuth(TokenAuth):
         except NoResultFound:
             abort(401)
 
+        # this is used by eve for the _author field
+        self.set_request_auth_value(sess.user_id)
+
         return True
 
 
