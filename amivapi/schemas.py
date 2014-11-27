@@ -15,7 +15,7 @@ def load_domain(config):
 
             for field in cls.__projected_fields__:
                 domain[cls.__tablename__]['datasource']['projection'].update(
-                    { field: 1 }
+                    {field: 1}
                 )
 
     """ Make it possible to retrive a user with his username (/users/name) """
