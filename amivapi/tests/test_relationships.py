@@ -24,19 +24,21 @@ class DataRelationshipTest(util.WebTest):
         groupid = group.json['id']
 
         #make new Group-Assignment with wrong expiry
+        expiry = dt.datetime(2000, 11, 11)
         membership = self.api.post("/groupmemberships", data={
             'user_id': userid,
             'group_id': groupid,
-            'expiry_date': dt.datetime(2000, 11, 11)
+            'expiry_date': expiry.isoformat(),
         }, status_code=422)
         assignmentCount = self.db.query(models.GroupMembership).count()
         self.assertEquals(assignmentCount, 0)
 
         #make new Group-Assignment with right data
+        expiry = dt.datetime(2123, 11, 11)
         membership = self.api.post("/groupmemberships", data={
             'user_id': userid,
             'group_id': groupid,
-            'expiry_date': dt.datetime(2123, 11, 11),
+            'expiry_date': expiry.isoformat(),
         }, status_code=201)
 
         #has assignment got into the db?
@@ -76,7 +78,7 @@ class DataRelationshipTest(util.WebTest):
             'event_id': eventid,
             'user_id': 1,
         }, status_code=422)
-        signupCount = self.db.query(EventSignup).count()
+        signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
 
         #sign up user 1 to wrong event
@@ -84,7 +86,7 @@ class DataRelationshipTest(util.WebTest):
             'event_id': eventid + 10,
             'user_id': 1,
         }, status_code=422)
-        signupCount = self.db.query(EventSignup).count()
+        signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
 
         #sign up user 1 with wrong departement
@@ -93,7 +95,7 @@ class DataRelationshipTest(util.WebTest):
             'user_id': 1,
             'additional_data': "{'departement': 'INFK'}"
         }, status_code=422)
-        signupCount = self.db.query(EventSignup).count()
+        signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
 
         #sign up user 1 and do everything right
@@ -104,7 +106,7 @@ class DataRelationshipTest(util.WebTest):
         }, status_code=201)
         signup1 = signup.json['id']
 
-        signupCount = self.db.query(EventSignup).count()
+        signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 1)
 
         signups = self.api.get("/signups", status_code=200)
@@ -122,7 +124,7 @@ class DataRelationshipTest(util.WebTest):
             'additional_data': "{'departement': 'ITET'}",
         }, status_code=201)
 
-        signupCount = self.db.query(EventSignup).count()
+        signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 2)
 
     """def test_Studydocuments(self):
