@@ -6,7 +6,7 @@ from datetime import datetime
 from base64 import b64encode, b64decode
 
 from flask import current_app as app
-from flask import Blueprint, abort, request
+from flask import Blueprint, abort, request, g
 
 from eve.render import send_response
 from eve.methods.post import post_internal
@@ -14,7 +14,8 @@ from eve.auth import TokenAuth
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from models import User, Session
+import models
+import permission_matrix
 
 """
 This file provides token based authentification. A user can POST the /sessions
@@ -54,7 +55,6 @@ def create_new_hash(password):
         b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
     )
 
-
 """ Creates a new token for the specified user. The new token is based on the
 current time, so the return value will change every second.
 """
@@ -72,18 +72,43 @@ def createToken(user_id):
 
 
 class TokenAuth(TokenAuth):
+    """ We could have used eve's allowed_roles parameter, but that does not
+    support roles on endpoint level, but only on resource level """
     def check_auth(self, token, allowed_roles, resource, method):
         dbsession = app.data.driver.session
 
         try:
-            sess = dbsession.query(Session).filter(Session.token == token).one()
+            sess = dbsession.query(models.Session).filter(
+                models.Session.token == token).one()
         except NoResultFound:
             abort(401)
 
-        # this is used by eve for the _author field
-        self.set_request_auth_value(sess.user_id)
+        g.logged_in_user = sess.user_id
 
-        return True
+        if sess.user_id == 0:
+            g.resource_admin_access = True
+            return True
+
+        """ Check if user has endpoint admin access
+        (so can perform this method with any parameters) """
+        g.resource_admin_access = False
+
+        permissions = dbsession.query(models.Permission) \
+            .filter(models.Permission.user_id == sess.user_id).all()
+        for permission in permissions:
+            try:
+                if permission_matrix. \
+                        roles[permission.role][resource][method] == 1:
+                    g.resource_admin_access = True
+                    return True
+            except KeyError:
+                pass
+
+        """ User does not have admin access, check if he might still
+        perform the action """
+# TODO(Conrad)
+
+        return False
 
 
 """ Authentification related endpoints """
@@ -102,7 +127,7 @@ If the user is not found we try to import the user via LDAP, if he is found we u
 
 @auth.route('/sessions', methods=['POST'])
 def process_login():
-    user = app.data.driver.session.query(User).filter_by(
+    user = app.data.driver.session.query(models.User).filter_by(
         username=request.form['username']).all()
 
     if(len(user) == 1):

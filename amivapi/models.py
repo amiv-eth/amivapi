@@ -105,14 +105,7 @@ class User(Base):
                         nullable=False, default="none", server_default="none")
 
 
-class Group(Base):
-    __expose__ = True
-    __projected_fields__ = ['members']
-
-    name = Column(Unicode(30))
-
-
-class GroupMembership(Base):
+class Permission(Base):
     """Intermediate table for 'many-to-many' mapping
         split into one-to-many from Group and many-to-one with User
     We need to use a class here in stead of a table because of additional data
@@ -121,11 +114,10 @@ class GroupMembership(Base):
     __expose__ = True
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+    role = Column(CHAR(20), nullable=False)
     expiry_date = Column(DateTime)
 
-    user = relationship("User", foreign_keys=user_id, backref="groups")
-    group = relationship("Group", backref="members")
+    user = relationship("User", foreign_keys=user_id, backref="permissions")
 
 
 class Forward(Base):
