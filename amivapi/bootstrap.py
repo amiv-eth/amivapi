@@ -70,4 +70,7 @@ def create_app(environment, create_db=False):
     app.on_replace_users += auth.hash_password_before_replace
     app.on_update_users += auth.hash_password_before_update
 
+    app.on_insert += auth.set_author_on_insert
+    app.on_replace += auth.set_author_on_replace
+
     return app

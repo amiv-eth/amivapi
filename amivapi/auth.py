@@ -160,6 +160,17 @@ def process_login():
 """ Auth related hooks """
 
 
+""" Hooks to add _author field to all database inserts """
+
+
+def set_author_on_insert(resource, items):
+    for i in items:
+        i['_author'] = g.logged_in_user
+
+def set_author_on_replace(resource, items, original):
+    set_author_on_insert(resource, items)
+
+
 """ Hooks to hash passwords when user entries are changed in the database """
 
 
@@ -167,10 +178,8 @@ def hash_password_before_insert(users):
     for u in users:
         u['password'] = create_new_hash(u['password'])
 
-
 def hash_password_before_update(users):
     hash_password_before_insert(users)
-
 
 def hash_password_before_replace(users, original_users):
     hash_password_before_insert(users)
