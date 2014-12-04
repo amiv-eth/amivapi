@@ -22,6 +22,5 @@ DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
+PUBLIC_METHODS = ['GET']  # This is the only way to make / public
 XML = False
-PUBLIC_METHODS = ['GET']
-PUBLIC_ITEM_METHODS = ['GET']
