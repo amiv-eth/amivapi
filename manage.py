@@ -2,9 +2,10 @@ import codecs
 import datetime as dt
 from os import mkdir
 from os.path import abspath, dirname, join, exists, expanduser
-import random
-import string
 import rsa
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import OperationalError
 
 from flask import Flask
 from flask.ext.script import (
@@ -15,13 +16,22 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings
+from amivapi import settings, bootstrap
+from amivapi.models import User
+from amivapi.auth import create_new_hash
 
 
-# Using a "fake" flask app, since the create_config command is usually used to
-# create a dev-config, which would already be required by the real Flask app
-# to load properly
-manager = Manager(Flask("amivapi"))
+def real_or_dummy_app(config=None):
+    if config:
+        return bootstrap.create_app(config)
+
+    # When no config is given, us a fake flask app, so that commands which do
+    # not require a real app instance still work.
+    return Flask("amivapi")
+
+
+manager = Manager(real_or_dummy_app)
+manager.add_option("-c", "--config", dest="config", required=False)
 
 
 def make_config(name, **config):
@@ -36,8 +46,11 @@ def make_config(name, **config):
         for key, value in sorted(config.items()):
             f.write("%s = %r\n" % (key.upper(), value))
 
+
 # Create public/private keys to sign login tokens
 def create_key_files(environment):
+    print("Creating public/private key pair. This may take a while...")
+
     public_key_file = join(settings.ROOT_DIR, "config", "%s-login-private.pem" % environment)
     private_key_file = join(settings.ROOT_DIR, "config", "%s-login-public.pem" % environment)
     (private_key, public_key) = rsa.newkeys(2048)
@@ -47,6 +60,7 @@ def create_key_files(environment):
 
     with codecs.open(private_key_file, "w", encoding="utf-8") as f:
         f.write(private_key.save_pkcs1(format='PEM'))
+
 
 @manager.command
 def create_config():
@@ -90,12 +104,88 @@ def create_config():
 
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
+    config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
+
     # Write everything to file
     # Note: The file is opened in non-binary mode, because we want python to
     # auto-convert newline characters to the underlying platform.
     make_config(target_file, **config)
 
     create_key_files(environment)
+
+    print("Run manage.py create_database to create a database!")
+
+
+@manager.command
+def create_database():
+    """ Creates the database, a root user and an anonymous user """
+    # FIXME(Conrad): Is there a prettier way to check for a passed config environment?
+    if manager.app.__class__.__name__ != "Eve":
+        print("Please specify an environment with -c")
+        exit(0)
+
+    db = manager.app.data.driver
+    db.create_all()
+    session = db.session
+
+    try:
+        root = session.query(User).filter(User.id == 0).one()
+        print("There seems to be a root user already. To change his passwort use " +
+              "python manage.py set_root_password!")
+        exit(0)
+    except NoResultFound:
+        pass
+
+    root = User(
+        id=0,
+        _author=0,
+        username="root",
+        password=create_new_hash("root"),
+        firstname=u"Lord",
+        lastname=u"Root",
+        gender="male",
+        email=manager.app.config['ROOT_MAIL'],
+        membership="none"
+    )
+    session.add(root)
+
+    anonymous = User(
+        id=-1,
+        _author=0,
+        username="anonymous",
+        password=create_new_hash(""),
+        firstname=u"Anon",
+        lastname=u"X",
+        gender="male",
+        email=u"nobody@example.com",
+        membership="none"
+    )
+    session.add(anonymous)
+
+    session.commit()
+
+
+@manager.command
+def set_root_password():
+    """Sets the root password. """
+
+    # FIXME(Conrad): Is there a prettier way to check for a passed config environment?
+    if manager.app.__class__.__name__ != "Eve":
+        print("Please specify an environment with -c")
+        exit(0)
+
+    session = manager.app.data.driver.session
+
+    try:
+        root = session.query(User).filter(User.id == 0).one()
+    except OperationalError:
+        print ("No root user found, please create the database using " +
+               "`python manage.py create_database`")
+        exit(0)
+
+    root.password = create_new_hash(prompt("New root password"))
+
+    session.commit()
 
 
 if __name__ == "__main__":
