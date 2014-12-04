@@ -41,6 +41,25 @@ def _create_signature(user_id, login_time):
     return b64encode(rsa.sign(msg, app.config['LOGIN_PRIVATE_KEY'], 'SHA-256'))
 
 
+""" Creates a new hash for a password. This generates a random salt, so it can
+not be used to check hashes!
+"""
+
+
+def create_new_hash(password):
+    salt = urandom(16)
+    return (
+        b64encode(salt) +
+        '$' +
+        b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
+    )
+
+
+""" Creates a new token for the specified user. The new token is based on the
+current time, so the return value will change every second.
+"""
+
+
 def createToken(user_id):
     time = datetime.now()
     signature = _create_signature(user_id, time)
@@ -67,10 +86,21 @@ class TokenAuth(TokenAuth):
         return True
 
 
-login = Blueprint('login', __name__)
+""" Authentification related endpoints """
+
+auth = Blueprint('auth', __name__)
 
 
-@login.route('/sessions', methods=['POST'])
+""" Handle POST to /sessions
+
+A POST to /sessions exspects a username and password. If they are correct a
+token is created and used to register a session in the database, which is sent back to the user.
+
+If the user is not found we try to import the user via LDAP, if he is found we update his data
+"""
+
+
+@auth.route('/sessions', methods=['POST'])
 def process_login():
     user = app.data.driver.session.query(User).filter_by(
         username=request.form['username']).all()
@@ -102,13 +132,7 @@ def process_login():
     abort(501)
 
 
-def create_new_hash(password):
-    salt = urandom(16)
-    return (
-        b64encode(salt) +
-        '$' +
-        b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
-    )
+""" Auth related hooks """
 
 
 """ Hooks to hash passwords when user entries are changed in the database """

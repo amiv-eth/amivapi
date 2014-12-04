@@ -64,7 +64,7 @@ def create_app(environment, create_db=False):
     app.on_pre_POST_groupmemberships += event_hooks.\
         pre_groupmemberships_post_callback
 
-    app.register_blueprint(auth.login)
+    app.register_blueprint(auth.auth)
 
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace
