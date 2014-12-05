@@ -73,4 +73,10 @@ def create_app(environment, create_db=False):
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
 
+    app.on_pre_GET += auth.pre_get_permission_filter
+    app.on_pre_POST += auth.pre_post_permission_filter
+    app.on_pre_PUT += auth.pre_put_permission_filter
+    app.on_pre_DELETE += auth.pre_delete_permission_filter
+    app.on_pre_PATCH += auth.pre_patch_permission_filter
+
     return app

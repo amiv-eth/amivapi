@@ -13,6 +13,7 @@ from eve.methods.post import post_internal
 from eve.auth import TokenAuth
 
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.inspection import inspect
 
 import models
 import permission_matrix
@@ -71,6 +72,45 @@ def createToken(user_id):
     }))
 
 
+""" Utility function to get class associated with a resource """
+
+
+def getClassForResource(resource):
+    resource_def = app.config['DOMAIN'][resource]
+    return getattr(models, resource_def['datasource']['source'])
+
+
+""" This function (HACK ALERT) tries to figure out where relationship would
+point to if an object was created with the passed request. If somebody finds
+a better way to check permissions please consider changing this. We depend
+on a lot of knowledge of relationship internals. """
+
+
+def resolve_future_field(resource, request, field):
+    resource_class = getClassForResource(resource)
+
+    field_parts = field.split('.')  # This looks like an emoticon
+
+    if len(field_parts) == 1:
+        return request.form[field]
+
+    relationship = inspect(resource_class).relationships[field_parts[0]]
+
+    query = app.data.driver.session.query(relationship.target)
+    for l, r in relationship.local_remote_pairs:
+        query = query.filter(r.__eq__(request.form[l.name]))
+
+    value = query.one()
+
+    for part in field_parts[1:]:
+        value = getattr(value, part)
+
+    return value
+
+
+""" Beginning of actual authentification process """
+
+
 class TokenAuth(TokenAuth):
     """ We could have used eve's allowed_roles parameter, but that does not
     support roles on endpoint level, but only on resource level """
@@ -106,7 +146,11 @@ class TokenAuth(TokenAuth):
 
         """ User does not have admin access, check if he might still
         perform the action """
-# TODO(Conrad)
+
+        cls = getClassForResource(resource)
+        if hasattr(cls, '__affected_user__') or hasattr(cls, '__owner__'):
+            """ In this case the permissions are per object """
+            return True
 
         return False
 
@@ -160,6 +204,52 @@ def process_login():
 
 
 """ Auth related hooks """
+
+
+""" Permission filters for all requests """
+
+
+def pre_get_permission_filter(resource, request, lookup):
+    if g.resource_admin_access:
+        return
+
+    abort(501)
+
+
+def pre_post_permission_filter(resource, request):
+    if g.resource_admin_access:
+        return
+
+    resource_class = getClassForResource(resource)
+    try:
+        allowed_id_field = getattr(resource_class, '__owner__')
+    except AttributeError:
+        abort(403)
+
+    if resolve_future_field(resource, request, allowed_id_field) \
+            != g.logged_in_user:
+        abort(403)
+
+
+def pre_put_permission_filter(resource, request, lookup):
+    if g.resource_admin_access:
+        return
+
+    abort(501)
+
+
+def pre_patch_permission_filter(resource, request, lookup):
+    if g.resource_admin_access:
+        return
+
+    abort(501)
+
+
+def pre_delete_permission_filter(resource, request, lookup):
+    if g.resource_admin_access:
+        return
+
+    abort(501)
 
 
 """ Hooks to add _author field to all database inserts """

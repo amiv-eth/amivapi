@@ -18,6 +18,9 @@ def load_domain(config):
                     {field: 1}
                 )
 
+            domain[cls.__tablename__]['public_methods'] \
+                = cls.__public_methods__
+
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
         'additional_lookup': {

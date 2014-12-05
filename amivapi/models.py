@@ -27,6 +27,40 @@ we generate all names from the Class names. Please choose classnames carefully,
 as changing them might break a lot of code """
 
 
+""" About Authentification
+
+Every endpoint(so combination of resource and method) has different means of
+authentification.
+
+To turn off authentification completely set the property
+__public_methods__ to contain the method. If authentification is turned off,
+then the logintoken off the user is not even considered and any action will be
+done by user -1(anonymous).
+
+Everything from now on requires the method to not be public.
+
+If the user has a role, which is listed to be an admin for the endpoint in
+permission_matrix.py, then g.resource_admin_access will be set during the
+request. Furthermore no filters will be applied based on permissions to any
+requests to that endpoint.
+
+A class can set an __affected_user__ property. That property describes which
+field is used to refer to the user, who is affected by the object. That user
+will automatically be able to GET this object.
+If __user_can_DELETE__ or __user_can_PATCH__ is set, then the affected user can
+also DELETE or PATCH the object respectively.
+
+A class can have an __owner__ property. That property describes a field, which
+contains the user id of somebody who can GET the object and use PATCH, PUT,
+DELETE and POST to change or add objects owned by him. This works even through
+a relation.
+
+For more details see the following files:
+auth.py
+permission_matrix.py
+"""
+
+
 class BaseModel(object):
     """Mixin for common columns."""
 
@@ -41,6 +75,8 @@ class BaseModel(object):
     eve. Add any additional field to be delivered on GET requests by default
     in the subclasses. """
     __projected_fields__ = []
+
+    __public_methods__ = []
 
     @declared_attr
     def __tablename__(cls):
@@ -88,6 +124,9 @@ class User(Base):
     __expose__ = True
     __projected_fields__ = ['groups']
 
+    __affected_user__ = 'id'
+    __user_can_PATCH__ = 1
+
     username = Column(Unicode(50), unique=True, nullable=False)
     password = Column(CHAR(100))  # base64 encoded hash data
     firstname = Column(Unicode(50), nullable=False)
@@ -113,6 +152,8 @@ class Permission(Base):
     """
     __expose__ = True
 
+    __affected_user__ = 'user_id'
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(CHAR(20), nullable=False)
     expiry_date = Column(DateTime)
@@ -124,6 +165,9 @@ class Forward(Base):
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
+    __affected_user__ = 'owner'
+    __user_can_DELETE__ = 1
+
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
@@ -133,6 +177,10 @@ class Forward(Base):
 class ForwardUser(Base):
     __expose__ = True
     __projected_fields__ = ['forward', 'user']
+
+    __affected_user__ = 'user_id'
+    __owner__ = 'forward.owner_id'
+    __user_can_DELETE__ = 1
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
@@ -146,6 +194,8 @@ class ForwardAddress(Base):
     __expose__ = True
     __projected_fields__ = ['forward']
 
+    __owner__ = 'forward.owner_id'
+
     address = Column(Unicode(100))
     forward_id = Column(
         Integer, ForeignKey("forwards.id"), nullable=False)
@@ -157,6 +207,11 @@ class Session(Base):
     __expose__ = True
     __projected_fields__ = ['user']
 
+    __public_methods__ = ['POST']
+
+    __affected_user__ = 'user_id'
+    __user_can_DELETE__ = 1
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token = Column(CHAR(10424), unique=True)
 
@@ -166,6 +221,8 @@ class Session(Base):
 class Event(Base):
     __expose__ = True
     __projected_fields__ = ['signups']
+
+    __public_methods__ = ['GET']
 
     title = Column(Unicode(50))
     time_start = Column(DateTime)
@@ -186,6 +243,10 @@ class EventSignup(Base):
     __expose__ = True
     __projected_fields__ = ['event', 'user']
 
+    __affected_user__ = 'user_id'
+    __user_can_DELETE__ = 1
+    __user_can_PATCH__ = 1
+
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     email = Column(Unicode(100))
@@ -200,6 +261,8 @@ class EventSignup(Base):
 
 class File(Base):
     __expose__ = True
+
+    __owner__ = '_author'  # This permitts everybody to post here!
 
     name = Column(Unicode(100))
     type = Column(String(30))
@@ -222,6 +285,8 @@ class StudyDocument(Base):
     __expose__ = True
     __projected_fields__ = ['files']
 
+    __owner__ = '_author'
+
     name = Column(Unicode(100))
     type = Column(String(30))
     exam_session = Column(String(10))
@@ -237,6 +302,9 @@ class StudyDocument(Base):
 
 class JobOffer(Base):
     __expose__ = True
+
+    __public_methods__ = ['GET']
+
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
