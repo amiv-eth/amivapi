@@ -21,6 +21,9 @@ def load_domain(config):
             domain[cls.__tablename__]['public_methods'] \
                 = cls.__public_methods__
 
+            """ Users should not provide _author fields """
+            del domain[cls.__tablename__]['schema']['_author']
+
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
         'additional_lookup': {
