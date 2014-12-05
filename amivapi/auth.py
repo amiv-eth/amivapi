@@ -119,9 +119,11 @@ auth = Blueprint('auth', __name__)
 """ Handle POST to /sessions
 
 A POST to /sessions exspects a username and password. If they are correct a
-token is created and used to register a session in the database, which is sent back to the user.
+token is created and used to register a session in the database, which is sent
+back to the user.
 
-If the user is not found we try to import the user via LDAP, if he is found we update his data
+If the user is not found we try to import the user via LDAP, if he is found we
+update his data
 """
 
 
@@ -164,8 +166,10 @@ def process_login():
 
 
 def set_author_on_insert(resource, items):
+    _author = getattr(g, 'logged_in_user', -1)
     for i in items:
-        i['_author'] = g.logged_in_user
+        i['_author'] = _author
+
 
 def set_author_on_replace(resource, items, original):
     set_author_on_insert(resource, items)
@@ -178,8 +182,10 @@ def hash_password_before_insert(users):
     for u in users:
         u['password'] = create_new_hash(u['password'])
 
+
 def hash_password_before_update(users):
     hash_password_before_insert(users)
+
 
 def hash_password_before_replace(users, original_users):
     hash_password_before_insert(users)
