@@ -4,7 +4,7 @@ from eve.utils import debug_error_message
 
 import datetime as dt
 
-from amivapi import models
+from amivapi import models, utils, confirm
 
 
 def pre_users_get_callback(request, lookup):
@@ -16,8 +16,7 @@ def post_users_get_callback(request, lookup):
 
 
 def pre_signups_post_callback(request):
-    #for the moment we only support json formatted data
-    data = request.get_json()
+    data = utils.parse_data(request)
     if data.get('user_id') == -1:
         eventid = data.get('event_id')
         db = app.data.driver.session
@@ -30,20 +29,44 @@ def pre_signups_post_callback(request):
             abort(422, description=debug_error_message(
                 'The event is only open for registered users.'
             ))
-        if data.get('email') is None:
+        email = data.get('email')
+        if email is None:
             abort(422, description=debug_error_message(
                 'You need to provide an email-address or a valid user_id'
             ))
-    elif data.get('email') is None:
+        alreadysignedup = db.query(models.EventSignup).filter(
+            models.EventSignup.event_id == eventid,
+            models.EventSignup.user_id == -1,
+            models.EventSignup.email == email
+        ).first() is not None
+    else:
+        eventid = data.get('event_id')
         userid = data.get('user_id')
         db = app.data.driver.session
-        user = db.query(models.User).get(userid)
-        if user is None:
-            abort(422, description=debug_error_message(
-                'The given user_id could not be found in /users'
-            ))
-        data['email'] = user.email
-        print "added %s to signup of user %d" % (user.email, userid)
+        alreadysignedup = db.query(models.EventSignup).filter(
+            models.EventSignup.event_id == eventid,
+            models.EventSignup.user_id == userid
+        ).first() is not None
+    if alreadysignedup:
+        abort(422, description=debug_error_message(
+            'You are already signed up for this event, try to use PATCH'
+        ))
+
+
+def preSignupsInsertCallback(items):
+    confirm.confirmActions(
+        condition={'doc-key': 'user_id', 'value': -1},
+        ressource='eventsignups',
+        method='POST',
+        items=items,
+        email_field='email',
+    )
+
+
+def post_signups_post_callback(request, payload):
+    data = utils.parse_data(request)
+    if data.get('user_id') == -1:
+        confirm.return_status(payload)
 
 
 def pre_groupmembership_post_callback(request):
