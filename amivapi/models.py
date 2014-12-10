@@ -127,7 +127,7 @@ class User(Base):
     __affected_user__ = 'id'
     __user_can_PATCH__ = 1
 
-    username = Column(Unicode(50), unique=True, nullable=False)
+    username = Column(CHAR(50), unique=True, nullable=False)
     password = Column(CHAR(100))  # base64 encoded hash data
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
@@ -139,7 +139,7 @@ class User(Base):
     phone = Column(String(20))
     ldapAddress = Column(Unicode(200))
     gender = Column(Enum("male", "female"), nullable=False)
-    email = Column(Unicode(100), nullable=False, unique=True)
+    email = Column(CHAR(100), nullable=False, unique=True)
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
 
