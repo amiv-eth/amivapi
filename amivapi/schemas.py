@@ -25,3 +25,11 @@ def load_domain(config):
             'field': 'username',
         }
     })
+
+    """need to confirm this workaround"""
+    domain['eventsignups']['schema'].update({
+        '_confirmed': {
+            'type': 'boolean',
+            'required': False,
+        },
+    })
