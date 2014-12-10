@@ -8,6 +8,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 
 from flask import Flask
+from eve import Eve
 from flask.ext.script import (
     Manager,
     prompt,
@@ -51,8 +52,10 @@ def make_config(name, **config):
 def create_key_files(environment):
     print("Creating public/private key pair. This may take a while...")
 
-    public_key_file = join(settings.ROOT_DIR, "config", "%s-login-private.pem" % environment)
-    private_key_file = join(settings.ROOT_DIR, "config", "%s-login-public.pem" % environment)
+    public_key_file = join(settings.ROOT_DIR, "config",
+                           "%s-login-private.pem" % environment)
+    private_key_file = join(settings.ROOT_DIR, "config",
+                            "%s-login-public.pem" % environment)
     (private_key, public_key) = rsa.newkeys(2048)
 
     with codecs.open(public_key_file, "w", encoding="utf-8") as f:
@@ -119,8 +122,7 @@ def create_config():
 @manager.command
 def create_database():
     """ Creates the database, a root user and an anonymous user """
-    # FIXME(Conrad): Is there a prettier way to check for a passed config environment?
-    if manager.app.__class__.__name__ != "Eve":
+    if not isinstance(manager.app, Eve):
         print("Please specify an environment with -c")
         exit(0)
 
@@ -169,8 +171,7 @@ def create_database():
 def set_root_password():
     """Sets the root password. """
 
-    # FIXME(Conrad): Is there a prettier way to check for a passed config environment?
-    if manager.app.__class__.__name__ != "Eve":
+    if not isinstance(manager.app, Eve):
         print("Please specify an environment with -c")
         exit(0)
 
