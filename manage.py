@@ -4,7 +4,6 @@ from os import mkdir
 from os.path import abspath, dirname, join, exists, expanduser
 import rsa
 
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 
 from flask import Flask
@@ -20,6 +19,7 @@ from flask.ext.script import (
 from amivapi import settings, bootstrap
 from amivapi.models import User
 from amivapi.auth import create_new_hash
+from amivapi.utils import init_database
 
 
 def real_or_dummy_app(config=None):
@@ -122,49 +122,13 @@ def create_config():
 @manager.command
 def create_database():
     """ Creates the database, a root user and an anonymous user """
+
     if not isinstance(manager.app, Eve):
         print("Please specify an environment with -c")
         exit(0)
 
-    db = manager.app.data.driver
-    db.create_all()
-    session = db.session
-
-    try:
-        root = session.query(User).filter(User.id == 0).one()
-        print("There seems to be a root user already. To change his " +
-              "passwort use `python manage.py set_root_password`!")
-        exit(0)
-    except NoResultFound:
-        pass
-
-    root = User(
-        id=0,
-        _author=0,
-        username="root",
-        password=create_new_hash("root"),
-        firstname=u"Lord",
-        lastname=u"Root",
-        gender="male",
-        email=manager.app.config['ROOT_MAIL'],
-        membership="none"
-    )
-    session.add(root)
-
-    anonymous = User(
-        id=-1,
-        _author=0,
-        username="anonymous",
-        password=create_new_hash(""),
-        firstname=u"Anon",
-        lastname=u"X",
-        gender="male",
-        email=u"nobody@example.com",
-        membership="none"
-    )
-    session.add(anonymous)
-
-    session.commit()
+    # FIXME(Conrad): This should actually provide a connection, not an engine
+    init_database(manager.app.data.driver.engine, manager.app.config)
 
 
 @manager.command

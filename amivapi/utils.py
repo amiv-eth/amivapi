@@ -1,6 +1,55 @@
 import datetime as dt
 import json
+
 from eve.methods.common import payload
+
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
+
+from flask import current_app as app
+
+from amivapi import models
+from amivapi.auth import create_new_hash
+
+
+def init_database(connection, config):
+    try:
+        models.Base.metadata.create_all(connection, checkfirst=False)
+    except OperationalError:
+        print("You are trying to create a new database, but the database " +
+              "already exists!")
+        exit(0)
+
+    session = Session(bind=connection)
+
+    root = models.User(
+        id=0,
+        _author=0,
+        username="root",
+        password=create_new_hash("root"),
+        firstname=u"Lord",
+        lastname=u"Root",
+        gender="male",
+        email=config['ROOT_MAIL'],
+        membership="none"
+    )
+    session.add(root)
+
+    anonymous = models.User(
+        id=-1,
+        _author=0,
+        username="anonymous",
+        password=create_new_hash(""),
+        firstname=u"Anon",
+        lastname=u"X",
+        gender="male",
+        email=u"nobody@example.com",
+        membership="none"
+    )
+    session.add(anonymous)
+
+    session.commit()
 
 
 # if the data is in json format it will not be parsed into request.form
