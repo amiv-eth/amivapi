@@ -246,3 +246,12 @@ class JobOffer(Base):
     logo_id = Column(Integer, ForeignKey("files.id"))
     pdf_id = Column(Integer, ForeignKey("files.id"))
     time_end = Column(DateTime)
+
+
+#Confirm Actions for unregistered email-adresses
+class Confirm(Base):
+    token = Column(CHAR(20), unique=True, nullable=False)
+    method = Column(String(10))
+    ressource = Column(String(50))
+    data = Column(String(1000))
+    expiry_date = Column(DateTime)
