@@ -69,10 +69,14 @@ def post_signups_post_callback(request, payload):
         confirm.return_status(payload)
 
 
-def pre_groupmembership_post_callback(request):
-    data = request.get_json()
+def pre_permissions_post_callback(request):
+    print "lol"
+    data = utils.parse_data(request)
+    print "lol"
     now = dt.datetime.now()
+    print "lol"
     if data.get('expiry_date') < now.isoformat():
+        print "lol"
         abort(422, description=debug_error_message(
             'expiry_date needs to be in the future'
         ))

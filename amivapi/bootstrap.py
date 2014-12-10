@@ -63,8 +63,8 @@ def create_app(environment, create_db=False):
     app.on_pre_POST_eventsignups += event_hooks.pre_signups_post_callback
     app.on_insert_eventsignups += event_hooks.preSignupsInsertCallback
     app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
-    app.on_pre_POST_groupmemberships += event_hooks.\
-        pre_groupmemberships_post_callback
+    app.on_pre_POST_permissions += event_hooks.\
+        pre_permissions_post_callback
 
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace
