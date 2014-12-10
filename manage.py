@@ -132,8 +132,8 @@ def create_database():
 
     try:
         root = session.query(User).filter(User.id == 0).one()
-        print("There seems to be a root user already. To change his passwort use " +
-              "python manage.py set_root_password!")
+        print("There seems to be a root user already. To change his " +
+              "passwort use `python manage.py set_root_password`!")
         exit(0)
     except NoResultFound:
         pass

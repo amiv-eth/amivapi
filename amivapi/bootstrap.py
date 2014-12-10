@@ -28,18 +28,19 @@ def get_config(environment):
     key_file = join(config_dir, "%s-login-private.pem" % environment)
     try:
         config['LOGIN_PRIVATE_KEY'] = rsa.PrivateKey.load_pkcs1(
-                codecs.open(key_file, "r", "utf-8").read(),
-                format='PEM')
+            codecs.open(key_file, "r", "utf-8").read(),
+            format='PEM')
     except IOError as e:
         raise IOError(str(e) + "\nYour private key is missing. Run "
-                            + "`python manage.py create_config` to create it!")
+                      + "`python manage.py create_config` to create it!")
 
     return config
 
 
 def create_app(environment, create_db=False):
     config = get_config(environment)
-    app = Eve(settings=config, data=SQL, validator=ValidatorSQL, auth=auth.TokenAuth)
+    app = Eve(settings=config, data=SQL, validator=ValidatorSQL,
+              auth=auth.TokenAuth)
 
     # Bind SQLAlchemy
     db = app.data.driver
@@ -54,6 +55,7 @@ def create_app(environment, create_db=False):
         g.db = db.session
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
+    app.register_blueprint(auth.auth)
 
     # Add event hooks
     app.on_pre_GET_users += event_hooks.pre_users_get_callback
@@ -63,8 +65,6 @@ def create_app(environment, create_db=False):
     app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
     app.on_pre_POST_groupmemberships += event_hooks.\
         pre_groupmemberships_post_callback
-
-    app.register_blueprint(auth.auth)
 
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace

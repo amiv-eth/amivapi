@@ -3,8 +3,8 @@ import json
 from eve.methods.common import payload
 
 
-#if the data is in json format it will not be parsed into request.form
-#therefore we make one object for both cases which we can just use
+# if the data is in json format it will not be parsed into request.form
+# therefore we make one object for both cases which we can just use
 def parse_data(request):
     with request:
         data = payload()

@@ -313,7 +313,7 @@ class JobOffer(Base):
     time_end = Column(DateTime)
 
 
-#Confirm Actions for unregistered email-adresses
+# Confirm Actions for unregistered email-adresses
 class Confirm(Base):
     token = Column(CHAR(20), unique=True, nullable=False)
     method = Column(String(10))

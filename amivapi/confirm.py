@@ -57,7 +57,7 @@ def confirmActions(ressource, method, condition, items, email_field):
 def return_status(payload):
     """Send 202 Accepted"""
     payload.status_code = 202
-    #payload.data might get deprecated
+    # payload.data might get deprecated
     message = payload.get_data()[:payload.data.find('}')]
     message += (
         ', "_issue":"Please check your email and POST the token '
