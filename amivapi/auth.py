@@ -17,6 +17,7 @@ from sqlalchemy.inspection import inspect
 
 import models
 import permission_matrix
+import utils
 
 """
 This file provides token based authentification. A user can POST the /sessions
@@ -50,6 +51,7 @@ not be used to check hashes!
 
 def create_new_hash(password):
     salt = urandom(16)
+    password = bytearray(password, 'utf-8')
     return (
         b64encode(salt) +
         '$' +
@@ -180,10 +182,11 @@ def process_login():
         (salt, hashed_password) = user[0].password.split('$')
         salt = b64decode(salt)
         hashed_password = b64decode(hashed_password)
+        sent_password = bytearray(utils.parse_data(request)['password'], 'utf-8')
 
         if hashed_password != hashlib.pbkdf2_hmac(
                 'SHA256',
-                request.form['password'],
+                sent_password,
                 salt,
                 100000
         ):
