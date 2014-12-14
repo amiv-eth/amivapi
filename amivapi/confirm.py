@@ -30,7 +30,7 @@ def confirmActions(ressource, method, condition, items, email_field):
 
     """
     for doc in items:
-        if doc.get(condition.get('doc-key')) == condition.get('value'):
+        if condition is True:
             if doc.get('_confirmed') is not True:
                 doc.pop('_updated')
                 doc.pop('_created')

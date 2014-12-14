@@ -1,5 +1,5 @@
 from flask import current_app as app
-from flask import abort
+from flask import abort, g
 from eve.utils import debug_error_message
 
 import datetime as dt
@@ -55,7 +55,7 @@ def pre_signups_post_callback(request):
 
 def preSignupsInsertCallback(items):
     confirm.confirmActions(
-        condition={'doc-key': 'user_id', 'value': -1},
+        condition=(g.logged_in_user==-1),
         ressource='eventsignups',
         method='POST',
         items=items,
