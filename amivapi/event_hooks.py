@@ -1,5 +1,5 @@
 from flask import current_app as app
-from flask import abort, g
+from flask import abort
 from eve.utils import debug_error_message
 
 import datetime as dt
@@ -101,8 +101,7 @@ def preForwardsInsertCallback(items):
 
 
 def postForwardsPostCallback(request, payload):
-    if g.logged_in_user == -1:
-        confirm.return_status(payload)
+    confirm.return_status(payload)
 
 
 def pre_permissions_post_callback(request):
