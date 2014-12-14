@@ -121,7 +121,7 @@ class DataRelationshipTest(util.WebTest):
             'event_id': eventid,
             'user_id': -1,
             'email': "hermanthegerman@amiv.ethz.ch",
-            'additional_data': "{'departement': 'ITET'}",
+            'additional_data': "{'department': 'ITET'}",
         }, status_code=201)
 
         signupCount = self.db.query(models.EventSignup).count()
