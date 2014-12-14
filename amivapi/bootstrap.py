@@ -9,7 +9,7 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth
+from amivapi import models, confirm, schemas, event_hooks, auth, filestorage
 
 
 def get_config(environment):
@@ -56,6 +56,7 @@ def create_app(environment, create_db=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
+    app.register_blueprint(filestorage.upload)
 
     # Add event hooks
     app.on_pre_GET_users += event_hooks.pre_users_get_callback
@@ -78,5 +79,8 @@ def create_app(environment, create_db=False):
     app.on_pre_PUT += auth.pre_put_permission_filter
     app.on_pre_DELETE += auth.pre_delete_permission_filter
     app.on_pre_PATCH += auth.pre_patch_permission_filter
+
+    #File hooks
+    app.on_deleted_item_files += filestorage.post_database_delete
 
     return app

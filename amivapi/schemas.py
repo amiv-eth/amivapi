@@ -41,3 +41,6 @@ def load_domain(config):
     })
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
+
+    # File related
+    domain[models.File.__tablename__]['resource_methods'] = ['GET']
