@@ -91,7 +91,7 @@ def post_signups_post_callback(request, payload):
 def preForwardsInsertCallback(items):
     for doc in items:
         confirm.confirmActions(
-            condition=(doc['user_id'] == -1),
+            condition=True,
             ressource='forwards',
             method='POST',
             doc=doc,
