@@ -55,7 +55,7 @@ def pre_signups_post_callback(request):
 
 def preSignupsInsertCallback(items):
     confirm.confirmActions(
-        condition=(g.logged_in_user==-1),
+        condition=(g.logged_in_user == -1),
         ressource='eventsignups',
         method='POST',
         items=items,
@@ -66,6 +66,21 @@ def preSignupsInsertCallback(items):
 def post_signups_post_callback(request, payload):
     data = utils.parse_data(request)
     if data.get('user_id') == -1:
+        confirm.return_status(payload)
+
+
+def preForwardsInsertCallback(items):
+    confirm.confirmActions(
+        condition=(g.logged_in_user == -1),
+        ressource='forwards',
+        method='POST',
+        items=items,
+        email_field='address',
+    )
+
+
+def postForwardsPostCallback(request, payload):
+    if g.logged_in_user == -1:
         confirm.return_status(payload)
 
 
