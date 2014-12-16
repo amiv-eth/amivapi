@@ -19,7 +19,6 @@ from sqlalchemy import (
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
-from sqlalchemy.schema import Table
 
 
 """ Eve exspects the resource names to be equal to the table names. Therefore
@@ -77,7 +76,6 @@ class BaseModel(object):
     __projected_fields__ = []
 
     __public_methods__ = []
-
 
     @declared_attr
     def __tablename__(cls):
@@ -261,23 +259,20 @@ class EventSignup(Base):
 
 
 class File(Base):
+    """This is a file that belongs to a study document.
+
+    An additional name for the file is possible
+    A studydocument needs to be referenced
+    """
     __expose__ = True
 
     __owner__ = '_author'  # This permitts everybody to post here!
 
     name = Column(Unicode(100))
     data = Column(CHAR(100))
-
-
-"""
-Mapping from StudyDocuments to File
-We don't want to have an extra Column in Files, therefore we need this table
-"""
-studydocuments_files_association = Table(
-    'studydocuments_files_association', Base.metadata,
-    Column("file_id", Integer, ForeignKey("files.id")),
-    Column("studydocument", Integer, ForeignKey("studydocuments.id"))
-)
+    study_doc_id = Column(Integer, ForeignKey("studydocuments.id"),
+                          nullable=False)
+    study_doc = relationship("StudyDocument", backref="files")
 
 
 class StudyDocument(Base):
@@ -294,9 +289,6 @@ class StudyDocument(Base):
     professor = Column(Unicode(100))
     semester = Column(Integer)
     author_name = Column(Unicode(100))
-
-    """Mapping to Files"""
-    files = relationship("File", secondary=studydocuments_files_association)
 
 
 class JobOffer(Base):
