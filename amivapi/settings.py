@@ -28,5 +28,5 @@ XML = False
 # Eve, file storage options
 RETURN_MEDIA_AS_BASE64_STRING = False
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
-STORAGE_FOLDER = r'D:\Programmieren\amivapi\src\filedump'
+STORAGE_DIR = r'D:\Programmieren\amivapi\src\filedump'
 STORAGE_URL = r'/storage'

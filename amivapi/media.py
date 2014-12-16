@@ -39,7 +39,7 @@ class FileSystemStorage(object):
     def fullpath(self, filename):
         """Add storage path specified in config to the filename
         """
-        return path.join(self.app.config['STORAGE_FOLDER'], filename)
+        return path.join(self.app.config['STORAGE_DIR'], filename)
 
     def get(self, filename):
         """ Opens the file given by name. Returns and extended file object
