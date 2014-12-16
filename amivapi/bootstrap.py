@@ -39,7 +39,7 @@ def get_config(environment):
     return config
 
 
-def create_app(environment, create_db=False):
+def create_app(environment):
     config = get_config(environment)
     app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
               auth=auth.TokenAuth, media=FileSystemStorage)
@@ -48,8 +48,6 @@ def create_app(environment, create_db=False):
     db = app.data.driver
     models.Base.metadata.bind = db.engine
     db.Model = models.Base
-    if create_db:
-        db.create_all()
 
     # Generate and expose docs via eve-docs extension
     Bootstrap(app)
