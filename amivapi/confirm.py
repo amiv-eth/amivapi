@@ -18,21 +18,21 @@ def id_generator(size=6, chars=string.ascii_letters + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def sendConfirmmail(ressource, token, email):
+def send_confirmmail(ressource, token, email):
     print('email send with token %s to %s' % (token, email))
 
 
-def confirmActions(ressource, method, doc, items, email_field):
+def confirm_actions(ressource, method, doc, items, email_field):
     """
     :param ressource: the ressource as a string
     :param method: the method (POST, GET, DELETE) as a string
     :param condition: a dict with 'doc-key' and 'value' for the condition
 
     """
-
     if doc.get('_confirmed') is not True:
         doc.pop('_updated')
         doc.pop('_created')
+        doc.pop('_author')
         data = json.dumps(doc, cls=utils.DateTimeEncoder)
         expiry = dt.datetime.now() + dt.timedelta(days=14)
         # TODO: check uniqueness of token?
@@ -43,11 +43,12 @@ def confirmActions(ressource, method, doc, items, email_field):
             data=data,
             expiry_date=expiry,
             token=token,
+            _author=0,
         )
         db = app.data.driver.session
         db.add(thisconfirm)
         db.commit()
-        sendConfirmmail(ressource, token, doc.get(email_field))
+        send_confirmmail(ressource, token, doc.get(email_field))
         items.remove(doc)
     else:
         doc.pop('_confirmed')
@@ -66,12 +67,12 @@ def return_status(payload):
 
 
 @confirmprint.route('/confirms', methods=['POST'])
-def onPostToken():
+def on_post_token():
     data = utils.parse_data(request)
-    return executeConfirmedAction(data.get('token'))
+    return execute_confirmed_action(data.get('token'))
 
 
-def executeConfirmedAction(token):
+def execute_confirmed_action(token):
     db = app.data.driver.session
     action = db.query(Confirm).filter_by(
         token=token

@@ -39,5 +39,20 @@ def load_domain(config):
             'required': False,
         },
     })
+    domain['forwardaddresses']['schema'].update({
+        '_confirmed': {
+            'type': 'boolean',
+            'required': False,
+        }
+    })
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
+
+    """
+    HERE BEGIN SMALL DEFINITIONS FOR SOME RESSOURCES
+    """
+
+    """time_end for /events requires time_start"""
+    domain['events']['schema']['time_end'].update({
+        'dependencies': ['time_start']
+    })
