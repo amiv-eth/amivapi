@@ -18,6 +18,7 @@ from sqlalchemy.inspection import inspect
 import models
 import permission_matrix
 import utils
+from utils import get_class_for_resource
 
 """
 This file provides token based authentification. A user can POST the /sessions
@@ -74,14 +75,6 @@ def createToken(user_id):
     }))
 
 
-""" Utility function to get class associated with a resource """
-
-
-def getClassForResource(resource):
-    resource_def = app.config['DOMAIN'][resource]
-    return getattr(models, resource_def['datasource']['source'])
-
-
 """ This function (HACK ALERT) tries to figure out where relationship would
 point to if an object was created with the passed request. If somebody finds
 a better way to check permissions please consider changing this. We depend
@@ -89,7 +82,7 @@ on a lot of knowledge of relationship internals. """
 
 
 def resolve_future_field(resource, request, field):
-    resource_class = getClassForResource(resource)
+    resource_class = get_class_for_resource(resource)
 
     field_parts = field.split('.')  # This looks like an emoticon
 
@@ -149,7 +142,7 @@ class TokenAuth(TokenAuth):
         """ User does not have admin access, check if he might still
         perform the action """
 
-        cls = getClassForResource(resource)
+        cls = get_class_for_resource(resource)
         if hasattr(cls, '__affected_user__') or hasattr(cls, '__owner__'):
             """ In this case the permissions are per object """
             return True
@@ -182,7 +175,8 @@ def process_login():
         (salt, hashed_password) = user[0].password.split('$')
         salt = b64decode(salt)
         hashed_password = b64decode(hashed_password)
-        sent_password = bytearray(utils.parse_data(request)['password'], 'utf-8')
+        sent_password = bytearray(utils.parse_data(request)['password'],
+                                  'utf-8')
 
         if hashed_password != hashlib.pbkdf2_hmac(
                 'SHA256',
@@ -223,7 +217,7 @@ def pre_post_permission_filter(resource, request):
     if g.resource_admin_access:
         return
 
-    resource_class = getClassForResource(resource)
+    resource_class = get_class_for_resource(resource)
     try:
         allowed_id_field = getattr(resource_class, '__owner__')
     except AttributeError:

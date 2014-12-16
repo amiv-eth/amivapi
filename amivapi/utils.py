@@ -3,7 +3,6 @@ import json
 
 from eve.methods.common import payload
 
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -101,3 +100,10 @@ class DateTimeEncoder(json.JSONEncoder):
             }
         else:
             return json.JSONEncoder.default(self, obj)
+
+
+def get_class_for_resource(resource):
+    """ Utility function to get SQL Alchemy model associated with a resource
+    """
+    resource_def = app.config['DOMAIN'][resource]
+    return getattr(models, resource_def['datasource']['source'])
