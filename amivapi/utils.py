@@ -25,6 +25,9 @@ def init_database(connection, config):
     root = models.User(
         id=0,
         _author=0,
+        _etag='d34db33f',  # We need some etag, not important what it is
+        _created=dt.datetime.now(),
+        _updated=dt.datetime.now(),
         username="root",
         password=create_new_hash(u"root"),
         firstname=u"Lord",
@@ -38,6 +41,9 @@ def init_database(connection, config):
     anonymous = models.User(
         id=-1,
         _author=0,
+        _etag='4l3x15F4G',
+        _created=dt.datetime.now(),
+        _updated=dt.datetime.now(),
         username="anonymous",
         password=create_new_hash(u""),
         firstname=u"Anon",
