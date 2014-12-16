@@ -22,36 +22,35 @@ def sendConfirmmail(ressource, token, email):
     print('email send with token %s to %s' % (token, email))
 
 
-def confirmActions(ressource, method, condition, doc, items, email_field):
+def confirmActions(ressource, method, doc, items, email_field):
     """
     :param ressource: the ressource as a string
     :param method: the method (POST, GET, DELETE) as a string
     :param condition: a dict with 'doc-key' and 'value' for the condition
 
     """
-    
-    if condition is True:
-        if doc.get('_confirmed') is not True:
-            doc.pop('_updated')
-            doc.pop('_created')
-            data = json.dumps(doc, cls=utils.DateTimeEncoder)
-            expiry = dt.datetime.now() + dt.timedelta(days=14)
-            # TODO: check uniqueness of token?
-            token = id_generator(size=20)
-            thisconfirm = Confirm(
-                method=method,
-                ressource=ressource,
-                data=data,
-                expiry_date=expiry,
-                token=token,
-            )
-            db = app.data.driver.session
-            db.add(thisconfirm)
-            db.commit()
-            sendConfirmmail(ressource, token, doc.get(email_field))
-            items.remove(doc)
-        else:
-            doc.pop('_confirmed')
+
+    if doc.get('_confirmed') is not True:
+        doc.pop('_updated')
+        doc.pop('_created')
+        data = json.dumps(doc, cls=utils.DateTimeEncoder)
+        expiry = dt.datetime.now() + dt.timedelta(days=14)
+        # TODO: check uniqueness of token?
+        token = id_generator(size=20)
+        thisconfirm = Confirm(
+            method=method,
+            ressource=ressource,
+            data=data,
+            expiry_date=expiry,
+            token=token,
+        )
+        db = app.data.driver.session
+        db.add(thisconfirm)
+        db.commit()
+        sendConfirmmail(ressource, token, doc.get(email_field))
+        items.remove(doc)
+    else:
+        doc.pop('_confirmed')
 
 
 def return_status(payload):

@@ -140,17 +140,16 @@ def pre_signups_patch_callback(request, lookup):
 
 def preSignupsInsertCallback(items):
     for doc in items:
-        confirm.confirmActions(
-            condition=(doc['user_id'] == -1),
-            ressource='eventsignups',
-            method='POST',
-            doc=doc,
-            items=items,
-            email_field='email',
-        )
+        if doc['user_id'] == -1:
+            confirm.confirmActions(
+                ressource='eventsignups',
+                method='POST',
+                doc=doc,
+                items=items,
+                email_field='email',
+            )
         if 'extra_data' in doc:
-            extra = doc.get('extra_data')
-            doc['extra_data'] = json.dumps(extra)
+            doc['extra_data'] = json.dumps(doc.get('extra_data'))
 
 
 def post_signups_post_callback(request, payload):
@@ -159,10 +158,9 @@ def post_signups_post_callback(request, payload):
         confirm.return_status(payload)
 
 
-def preForwardsInsertCallback(items):
+def pre_forwardaddresses_insert_callback(items):
     for doc in items:
         confirm.confirmActions(
-            condition=True,
             ressource='forwards',
             method='POST',
             doc=doc,
@@ -171,7 +169,7 @@ def preForwardsInsertCallback(items):
         )
 
 
-def postForwardsPostCallback(request, payload):
+def post_forwardaddresses_post_callback(request, payload):
     confirm.return_status(payload)
 
 
