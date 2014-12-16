@@ -3,13 +3,15 @@ import codecs
 import rsa
 
 from eve import Eve
-from eve.io.sql import SQL, ValidatorSQL
+from eve.io.sql import SQL  # , ValidatorSQL
 from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth, filestorage
+from amivapi import models, confirm, schemas, event_hooks, auth, download
+from amivapi.media import FileSystemStorage
+from amivapi.validation import ValidatorAMIV
 
 
 def get_config(environment):
@@ -39,8 +41,8 @@ def get_config(environment):
 
 def create_app(environment, create_db=False):
     config = get_config(environment)
-    app = Eve(settings=config, data=SQL, validator=ValidatorSQL,
-              auth=auth.TokenAuth)
+    app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
+              auth=auth.TokenAuth, media=FileSystemStorage)
 
     # Bind SQLAlchemy
     db = app.data.driver
@@ -56,7 +58,7 @@ def create_app(environment, create_db=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
-    app.register_blueprint(filestorage.upload)
+    app.register_blueprint(download.download, url_prefix="/storage")
 
     # Add event hooks
     app.on_pre_GET_users += event_hooks.pre_users_get_callback
@@ -79,8 +81,5 @@ def create_app(environment, create_db=False):
     app.on_pre_PUT += auth.pre_put_permission_filter
     app.on_pre_DELETE += auth.pre_delete_permission_filter
     app.on_pre_PATCH += auth.pre_patch_permission_filter
-
-    #File hooks
-    app.on_deleted_item_files += filestorage.post_database_delete
 
     return app
