@@ -58,8 +58,6 @@ def create_app(environment, create_db=False):
     app.register_blueprint(auth.auth)
 
     # Add event hooks
-    app.on_pre_GET_users += event_hooks.pre_users_get_callback
-    app.on_post_GET_users += event_hooks.post_users_get_callback
     app.on_pre_POST_eventsignups += event_hooks.pre_signups_post_callback
     app.on_insert_eventsignups += event_hooks.preSignupsInsertCallback
     app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch_callback

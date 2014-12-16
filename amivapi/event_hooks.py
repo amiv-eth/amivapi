@@ -8,14 +8,6 @@ import json
 from amivapi import models, utils, confirm
 
 
-def pre_users_get_callback(request, lookup):
-    print('A GET request on the users endpoint has just been received!')
-
-
-def post_users_get_callback(request, lookup):
-    print('The GET request on the users endpoint has just been handled')
-
-
 def pre_signups_post_callback(request):
     data = utils.parse_data(request)
     db = app.data.driver.session
