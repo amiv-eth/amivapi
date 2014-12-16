@@ -11,4 +11,4 @@ download = Blueprint('download', __name__)
 
 @download.route('/<filename>', methods=['GET'])
 def download_file(filename):
-    return send_from_directory(app.config['STORAGE_FOLDER'], filename)
+    return send_from_directory(app.config['STORAGE_DIR'], filename)
