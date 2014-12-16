@@ -21,7 +21,7 @@ class ExtFile(file):
         file.__init__(self, filename)
         self.filename = path.basename(self.name)
         self.size = path.getsize(filename)
-        self.content_url = '%s/%s' % (app.config['STORAGE_URL'], self.name)
+        self.content_url = '%s/%s' % (app.config['STORAGE_URL'], self.filename)
 
 
 class FileSystemStorage(object):
