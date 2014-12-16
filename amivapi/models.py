@@ -78,6 +78,7 @@ class BaseModel(object):
 
     __public_methods__ = []
 
+
     @declared_attr
     def __tablename__(cls):
         """ Correct English attaches 'es' to plural forms which end in 's' """
@@ -229,9 +230,9 @@ class Event(Base):
     time_end = Column(DateTime)
     location = Column(Unicode(50))
     description = Column(UnicodeText)
-    is_public = Column(Boolean)
+    is_public = Column(Boolean, default=False, nullable=False)
     price = Column(DECIMAL())
-    spots = Column(Integer)
+    spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
