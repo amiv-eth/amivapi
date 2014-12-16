@@ -88,13 +88,54 @@ def pre_signups_post_callback(request):
             'extra_data': {
                 'type': 'dict',
                 'schema': json.loads(extraSchema),
-                'nullable': False,
+                'required': True,
             }
         })
         if data.get('extra_data') is None:
             abort(422, description=debug_error_message(
                 'event %d requires extra data: %s' % (eventid, extraSchema)
             ))
+    else:
+        resource_def = app.config['DOMAIN']['eventsignups']
+        resource_def['schema'].update({
+            'extra_data': {
+                'required': False,
+            }
+        })
+
+
+def pre_signups_patch_callback(request, lookup):
+    data = utils.parse_data(request)
+    if ('user_id' in data) or ('event_id' in data) or ('email' in data):
+        abort(403, description=(
+            'You only can change extra_data'
+        ))
+
+    """update schema of additional data"""
+    db = app.data.driver.session
+    event = db.query(models.EventSignup).get(lookup['_id']).event
+    eventid = event._id
+    extraSchema = event.additional_fields
+    if extraSchema is not None:
+        resource_def = app.config['DOMAIN']['eventsignups']
+        resource_def['schema'].update({
+            'extra_data': {
+                'type': 'dict',
+                'schema': json.loads(extraSchema),
+                'required': True,
+            }
+        })
+        if data.get('extra_data') is None:
+            abort(422, description=debug_error_message(
+                'event %d requires extra data: %s' % (eventid, extraSchema)
+            ))
+    else:
+        resource_def = app.config['DOMAIN']['eventsignups']
+        resource_def['schema'].update({
+            'extra_data': {
+                'required': False,
+            }
+        })
 
 
 def preSignupsInsertCallback(items):

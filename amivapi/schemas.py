@@ -32,7 +32,7 @@ def load_domain(config):
         }
     })
 
-    """need to confirm this workaround"""
+    """Workaround to signal onInsert that this request is internal"""
     domain['eventsignups']['schema'].update({
         '_confirmed': {
             'type': 'boolean',
