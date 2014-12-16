@@ -18,7 +18,6 @@ from sqlalchemy.inspection import inspect
 import models
 import permission_matrix
 import utils
-from utils import get_class_for_resource
 
 """
 This file provides token based authentification. A user can POST the /sessions
@@ -82,7 +81,7 @@ on a lot of knowledge of relationship internals. """
 
 
 def resolve_future_field(resource, request, field):
-    resource_class = get_class_for_resource(resource)
+    resource_class = utils.get_class_for_resource(resource)
 
     field_parts = field.split('.')  # This looks like an emoticon
 
@@ -119,14 +118,12 @@ class TokenAuth(TokenAuth):
             abort(401)
 
         g.logged_in_user = sess.user_id
+        g.apply_owner_filters = False
+        g.resource_admin_access = False
 
         if sess.user_id == 0:
             g.resource_admin_access = True
             return True
-
-        """ Check if user has endpoint admin access
-        (so can perform this method with any parameters) """
-        g.resource_admin_access = False
 
         permissions = dbsession.query(models.Permission) \
             .filter(models.Permission.user_id == sess.user_id).all()
@@ -139,15 +136,16 @@ class TokenAuth(TokenAuth):
             except KeyError:
                 pass
 
-        """ User does not have admin access, check if he might still
-        perform the action """
+        resource_class = utils.get_class_for_resource(resource)
 
-        cls = get_class_for_resource(resource)
-        if hasattr(cls, '__affected_user__') or hasattr(cls, '__owner__'):
-            """ In this case the permissions are per object """
+        if request.method in resource_class.__registered_methods__:
             return True
 
-        return False
+        if request.method in resource_class.__owner_methods__:
+            g.apply_owner_filters = True
+            return True
+
+        abort(403)
 
 
 """ Authentification related endpoints """
@@ -196,8 +194,7 @@ def process_login():
         )
         return send_response('sessions', response)
 
-    # Try to import user via ldap
-    abort(501)
+    abort(401)
 
 
 """ Auth related hooks """
@@ -207,46 +204,56 @@ def process_login():
 
 
 def pre_get_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
+    """ This function adds filters to the lookup parameter to only return
+    items, which are owned by the user for resources, which are neither
+    public nor open to registered users
+    """
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
         return
 
-    abort(501)
+    if not '$or' in lookup:
+        lookup.update({'$or': []})
+
+    for field in resource_class.__owner__:
+        lookup['$or'].append({field: g.logged_in_user})
 
 
+#TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
-    if g.resource_admin_access:
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
         return
 
-    resource_class = get_class_for_resource(resource)
-    try:
-        allowed_id_field = getattr(resource_class, '__owner__')
-    except AttributeError:
-        abort(403)
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
 
-    if resolve_future_field(resource, request, allowed_id_field) \
-            != g.logged_in_user:
-        abort(403)
+    for field in resource_class.__owner__:
+        if resolve_future_field(resource, request, field) \
+                == g.logged_in_user:
+            return
+
+    abort(403)
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
-        return
-
-    abort(501)
+    #pre_delete_permission_filter(resource, request, lookup)
+    #pre_post_permission_filter(resource, request)
+    return
 
 
 def pre_patch_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
-        return
-
-    abort(501)
+    pre_get_permission_filter(resource, request, lookup)
+# TODO(Conrad): Can this be parsed by the POST permission filter?
+# Then we could allow patch for owners.
 
 
 def pre_delete_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
-        return
-
-    abort(501)
+    pre_get_permission_filter(resource, request, lookup)
 
 
 """ Hooks to add _author field to all database inserts """
