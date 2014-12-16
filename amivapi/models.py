@@ -73,6 +73,7 @@ class BaseModel(object):
     __owner_methods__ = []
     __registered_methods__ = []
 
+
     @declared_attr
     def __tablename__(cls):
         """ Correct English attaches 'es' to plural forms which end in 's' """
@@ -224,9 +225,9 @@ class Event(Base):
     time_end = Column(DateTime)
     location = Column(Unicode(50))
     description = Column(UnicodeText)
-    is_public = Column(Boolean)
+    is_public = Column(Boolean, default=False, nullable=False)
     price = Column(DECIMAL())
-    spots = Column(Integer)
+    spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
@@ -260,9 +261,7 @@ class File(Base):
     __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
     name = Column(Unicode(100))
-    type = Column(String(30))
-    size = Column(Integer)
-    content_url = Column(String(200))
+    data = Column(CHAR(100))
 
 
 """
@@ -305,7 +304,7 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo_id = Column(Integer, ForeignKey("files.id"))
+    logo = CHAR(100)  # The Schema here is changed to type: media
     pdf_id = Column(Integer, ForeignKey("files.id"))
     time_end = Column(DateTime)
 
