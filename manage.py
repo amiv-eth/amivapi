@@ -116,10 +116,6 @@ def create_config():
 
     create_key_files(environment)
 
-    d = config['STORAGE_DIR']
-    if not exists(d):
-        mkdir(d)
-
     print("Run manage.py create_database to create a database!")
 
 
