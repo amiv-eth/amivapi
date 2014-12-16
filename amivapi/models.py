@@ -266,9 +266,7 @@ class File(Base):
     __owner__ = '_author'  # This permitts everybody to post here!
 
     name = Column(Unicode(100))
-    type = Column(String(30))
-    size = Column(Integer)
-    content_url = Column(String(200))
+    data = Column(CHAR(100))
 
 
 """
@@ -309,7 +307,7 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo_id = Column(Integer, ForeignKey("files.id"))
+    logo = CHAR(100)  # The Schema here is changed to type: media
     pdf_id = Column(Integer, ForeignKey("files.id"))
     time_end = Column(DateTime)
 

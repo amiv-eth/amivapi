@@ -2,6 +2,8 @@
     amivapi.media
     ~~~~~~~~~~~~
     File System based mediastorage class.
+
+    Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 """
 
 from werkzeug import secure_filename

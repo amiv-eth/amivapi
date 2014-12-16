@@ -42,5 +42,11 @@ def load_domain(config):
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    # File related
-    domain[models.File.__tablename__]['resource_methods'] = ['GET']
+    """Maybe this can be automated through the model somehow"""
+    domain['files']['schema'].update({
+        'data': {'type': 'media'}
+    })
+
+    domain['joboffers']['schema'].update({
+        'logo': {'type': 'media'}
+    })
