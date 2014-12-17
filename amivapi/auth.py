@@ -86,13 +86,13 @@ def resolve_future_field(resource, request, field):
     field_parts = field.split('.')  # This looks like an emoticon
 
     if len(field_parts) == 1:
-        return request.form[field]
+        return utils.parse_data(request)[field]
 
     relationship = inspect(resource_class).relationships[field_parts[0]]
 
     query = app.data.driver.session.query(relationship.target)
     for l, r in relationship.local_remote_pairs:
-        query = query.filter(r.__eq__(request.form[l.name]))
+        query = query.filter(r.__eq__(utils.parse_data(request)[l.name]))
 
     value = query.one()
 
@@ -167,7 +167,7 @@ update his data
 @auth.route('/sessions', methods=['POST'])
 def process_login():
     user = app.data.driver.session.query(models.User).filter_by(
-        username=request.form['username']).all()
+        username=utils.parse_data(request)['username']).all()
 
     if(len(user) == 1):
         (salt, hashed_password) = user[0].password.split('$')
