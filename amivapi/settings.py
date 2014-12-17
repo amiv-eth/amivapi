@@ -8,6 +8,7 @@ from os.path import abspath, dirname, join
 
 # Custom
 ROOT_DIR = abspath(join(dirname(__file__), ".."))
+EMAIL_REGEX = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
 # Flask
 DEBUG = False
@@ -18,9 +19,15 @@ TESTING = False
 # Eve
 ID_FIELD = "id"
 AUTH_FIELD = "_author"
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 PUBLIC_METHODS = ['GET']  # This is the only way to make / public
 XML = False
+
+# Eve, file storage options
+RETURN_MEDIA_AS_BASE64_STRING = False
+EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
+STORAGE_DIR = r'D:\Programmieren\amivapi\src\filedump'
+STORAGE_URL = r'/storage'

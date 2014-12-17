@@ -29,6 +29,7 @@ def confirm_actions(ressource, method, doc, items, email_field):
     :param condition: a dict with 'doc-key' and 'value' for the condition
 
     """
+
     if doc.get('_confirmed') is not True:
         doc.pop('_updated')
         doc.pop('_created')

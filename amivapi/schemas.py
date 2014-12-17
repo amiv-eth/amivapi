@@ -1,4 +1,4 @@
-from amivapi import models
+from amivapi import models, permission_matrix
 from eve.io.sql.decorators import registerSchema
 from inspect import getmembers, isclass
 
@@ -32,6 +32,22 @@ def load_domain(config):
         }
     })
 
+    """ Only accept email addresses for email fields """
+# FIXME(Conrad): There could be a generic way to add regexes to fields in the
+#                model
+    domain['users']['schema']['email'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['forwards']['schema']['address'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['forwardaddresses']['schema']['address'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['eventsignups']['schema']['email'].update(
+        {'regex': config['EMAIL_REGEX']})
+
+    """ Only allow existing roles for new permissions """
+    domain['permissions']['schema']['role'].update(
+        {'allowed': permission_matrix.roles.keys()})
+
     """Workaround to signal onInsert that this request is internal"""
     domain['eventsignups']['schema'].update({
         '_confirmed': {
@@ -55,4 +71,14 @@ def load_domain(config):
     """time_end for /events requires time_start"""
     domain['events']['schema']['time_end'].update({
         'dependencies': ['time_start']
+    })
+
+    """Maybe this can be automated through the model somehow"""
+
+    domain['files']['schema'].update({
+        'data': {'type': 'media'}
+    })
+
+    domain['joboffers']['schema'].update({
+        'logo': {'type': 'media'}
     })

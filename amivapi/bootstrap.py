@@ -3,13 +3,15 @@ import codecs
 import rsa
 
 from eve import Eve
-from eve.io.sql import SQL, ValidatorSQL
+from eve.io.sql import SQL  # , ValidatorSQL
 from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth
+from amivapi import models, confirm, schemas, event_hooks, auth, download
+from amivapi.media import FileSystemStorage
+from amivapi.validation import ValidatorAMIV
 
 
 def get_config(environment):
@@ -37,17 +39,19 @@ def get_config(environment):
     return config
 
 
-def create_app(environment, create_db=False):
+def create_app(environment, disableAuth=False):
     config = get_config(environment)
-    app = Eve(settings=config, data=SQL, validator=ValidatorSQL,
-              auth=auth.TokenAuth)
+    if disableAuth:
+        app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
+                  media=FileSystemStorage)
+    else:
+        app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
+                  auth=auth.TokenAuth, media=FileSystemStorage)
 
     # Bind SQLAlchemy
     db = app.data.driver
     models.Base.metadata.bind = db.engine
     db.Model = models.Base
-    if create_db:
-        db.create_all()
 
     # Generate and expose docs via eve-docs extension
     Bootstrap(app)
@@ -56,6 +60,7 @@ def create_app(environment, create_db=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
+    app.register_blueprint(download.download, url_prefix="/storage")
 
     # Add event hooks
     app.on_insert += event_hooks.pre_insert_callback
@@ -83,10 +88,11 @@ def create_app(environment, create_db=False):
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
 
-    app.on_pre_GET += auth.pre_get_permission_filter
-    app.on_pre_POST += auth.pre_post_permission_filter
-    app.on_pre_PUT += auth.pre_put_permission_filter
-    app.on_pre_DELETE += auth.pre_delete_permission_filter
-    app.on_pre_PATCH += auth.pre_patch_permission_filter
+    if not disableAuth:
+        app.on_pre_GET += auth.pre_get_permission_filter
+        app.on_pre_POST += auth.pre_post_permission_filter
+        app.on_pre_PUT += auth.pre_put_permission_filter
+        app.on_pre_DELETE += auth.pre_delete_permission_filter
+        app.on_pre_PATCH += auth.pre_patch_permission_filter
 
     return app

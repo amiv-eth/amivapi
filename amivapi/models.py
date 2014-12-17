@@ -29,9 +29,6 @@ as changing them might break a lot of code """
 
 """ About Authentification
 
-Every endpoint(so combination of resource and method) has different means of
-authentification.
-
 To turn off authentification completely set the property
 __public_methods__ to contain the method. If authentification is turned off,
 then the logintoken off the user is not even considered and any action will be
@@ -44,16 +41,12 @@ permission_matrix.py, then g.resource_admin_access will be set during the
 request. Furthermore no filters will be applied based on permissions to any
 requests to that endpoint.
 
-A class can set an __affected_user__ property. That property describes which
-field is used to refer to the user, who is affected by the object. That user
-will automatically be able to GET this object.
-If __user_can_DELETE__ or __user_can_PATCH__ is set, then the affected user can
-also DELETE or PATCH the object respectively.
+A class can have an __owner__ property. That property describes is a list of
+fields, which contains the user id of somebody who can GET the object and use
+the methods described by __owner_methods__. This works even through a relation.
 
-A class can have an __owner__ property. That property describes a field, which
-contains the user id of somebody who can GET the object and use PATCH, PUT,
-DELETE and POST to change or add objects owned by him. This works even through
-a relation.
+When a POST is allowed by the owner, then it will be permitted if the item to
+be created will be owned by the logged in user after the request is done.
 
 For more details see the following files:
 auth.py
@@ -77,7 +70,8 @@ class BaseModel(object):
     __projected_fields__ = []
 
     __public_methods__ = []
-
+    __owner_methods__ = []
+    __registered_methods__ = []
 
     @declared_attr
     def __tablename__(cls):
@@ -125,8 +119,8 @@ class User(Base):
     __expose__ = True
     __projected_fields__ = ['groups']
 
-    __affected_user__ = 'id'
-    __user_can_PATCH__ = 1
+    __owner__ = ['id']
+    __owner_methods__ = ['GET', 'PATCH']
 
     username = Column(CHAR(50), unique=True, nullable=False)
     password = Column(CHAR(100))  # base64 encoded hash data
@@ -153,7 +147,8 @@ class Permission(Base):
     """
     __expose__ = True
 
-    __affected_user__ = 'user_id'
+    __owner__ = ['user_id']
+    __owner_methods__ = ['GET']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(CHAR(20), nullable=False)
@@ -166,8 +161,8 @@ class Forward(Base):
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
-    __affected_user__ = 'owner'
-    __user_can_DELETE__ = 1
+    __owner__ = ['owner_id']
+    __owner_methods__ = ['GET', 'DELETE']
 
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -179,9 +174,8 @@ class ForwardUser(Base):
     __expose__ = True
     __projected_fields__ = ['forward', 'user']
 
-    __affected_user__ = 'user_id'
-    __owner__ = 'forward.owner_id'
-    __user_can_DELETE__ = 1
+    __owner__ = ['user_id', 'forward.owner_id']
+    __owner_methods__ = ['GET', 'POST', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
@@ -195,7 +189,8 @@ class ForwardAddress(Base):
     __expose__ = True
     __projected_fields__ = ['forward']
 
-    __owner__ = 'forward.owner_id'
+    __owner__ = ['forward.owner_id']
+    __owner_methods__ = ['GET', 'POST', 'DELETE']
 
     address = Column(Unicode(100))
     forward_id = Column(
@@ -209,9 +204,8 @@ class Session(Base):
     __projected_fields__ = ['user']
 
     __public_methods__ = ['POST']
-
-    __affected_user__ = 'user_id'
-    __user_can_DELETE__ = 1
+    __owner__ = ['user_id']
+    __owner_methods__ = ['GET']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token = Column(CHAR(10424), unique=True)
@@ -244,9 +238,8 @@ class EventSignup(Base):
     __expose__ = True
     __projected_fields__ = ['event', 'user']
 
-    __affected_user__ = 'user_id'
-    __user_can_DELETE__ = 1
-    __user_can_PATCH__ = 1
+    __owner__ = ['user_id']
+    __owner_methods__ = ['GET', 'PATCH', 'DELETE']
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -263,12 +256,11 @@ class EventSignup(Base):
 class File(Base):
     __expose__ = True
 
-    __owner__ = '_author'  # This permitts everybody to post here!
+    __owner__ = ['_author']  # This permitts everybody to post here!
+    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
     name = Column(Unicode(100))
-    type = Column(String(30))
-    size = Column(Integer)
-    content_url = Column(String(200))
+    data = Column(CHAR(100))
 
 
 """
@@ -286,7 +278,9 @@ class StudyDocument(Base):
     __expose__ = True
     __projected_fields__ = ['files']
 
-    __owner__ = '_author'
+    __owner__ = ['_author']
+    __owner_methods__ = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE']
+    __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
     type = Column(String(30))
@@ -309,7 +303,7 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo_id = Column(Integer, ForeignKey("files.id"))
+    logo = CHAR(100)  # The Schema here is changed to type: media
     pdf_id = Column(Integer, ForeignKey("files.id"))
     time_end = Column(DateTime)
 
