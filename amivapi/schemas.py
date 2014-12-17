@@ -1,4 +1,4 @@
-from amivapi import models
+from amivapi import models, permission_matrix
 from eve.io.sql.decorators import registerSchema
 from inspect import getmembers, isclass
 
@@ -43,6 +43,10 @@ def load_domain(config):
         {'regex': config['EMAIL_REGEX']})
     domain['eventsignups']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
+
+    """ Only allow existing roles for new permissions """
+    domain['permissions']['schema']['role'].update(
+        {'allowed': permission_matrix.roles.keys()})
 
     """Workaround to signal onInsert that this request is internal"""
     domain['eventsignups']['schema'].update({

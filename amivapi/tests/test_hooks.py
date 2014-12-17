@@ -41,6 +41,20 @@ class HookTest(util.WebTestNoAuth):
         self.assertEquals(permissions.json['_items'][0]['user_id'], userid)
         self.assertEquals(permissions.json['_items'][0]['role'], 'vorstand')
 
+    def test_a_Permission_invalid_role(self):
+        user = self.new_user()
+        userid = user.id
+
+        data = {
+            'user_id': userid,
+            'role': 'notafukinrole',
+            'expiry_date': dt.datetime(3000, 1, 1).strftime(DATE_FORMAT)
+        }
+        self.api.post("/permissions", data=data, status_code=422)
+
+        data['role'] = 'vorstand'
+        self.api.post("/permissions", data=data, status_code=201)
+
     def test_b_EventSignup_hooks(self):
         # make new event
         start = dt.datetime.today() + dt.timedelta(days=2)
