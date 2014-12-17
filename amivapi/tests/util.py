@@ -27,8 +27,9 @@ class TestClient(FlaskClient):
         status_code = response.status_code
         if (expected_code is not None and expected_code != status_code):
             raise AssertionError(
-                "Expected a status code of %i, but got %i instead"
-                % (expected_code, status_code))
+                "Expected a status code of %i, but got %i instead\n"
+                % (expected_code, status_code) + "Response: %s"
+                % response.json)
 
         return response
 
@@ -43,6 +44,8 @@ class TestResponse(Response):
 class WebTest(unittest.TestCase):
     """Base test class for tests against the full WSGI stack."""
 
+    disableAuth = False
+
     def setUp(self):
         super(WebTest, self).setUp()
 
@@ -53,7 +56,7 @@ class WebTest(unittest.TestCase):
         sql.db = SQLAlchemy(session_options={'bind': tests.connection})
         sql.SQL.driver = sql.db
 
-        app = bootstrap.create_app("testing")
+        app = bootstrap.create_app("testing", disableAuth=self.disableAuth)
         app.response_class = TestResponse
         app.test_client_class = TestClient
 
@@ -80,14 +83,14 @@ class WebTest(unittest.TestCase):
                            lastname=u"Use" + ("r" * count),
                            email=u"testuser-%i@example.net" % count,
                            gender=random.choice(["male", "female"]),
+                           _author=0,
                            **kwargs)
         self.db.add(user)
         self.db.flush()
         return user
 
-    def new_group(self):
-        count = self.next_count()
-        group = models.Group(name=u"Group-%i" % count)
-        self.db.add(group)
-        self.db.flush()
-        return group
+
+class WebTestNoAuth(WebTest):
+    def setUp(self):
+        self.disableAuth = True
+        super(WebTestNoAuth, self).setUp()
