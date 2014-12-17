@@ -2,7 +2,7 @@ from amivapi import models
 from amivapi.tests import util
 
 
-class IsolationTest(util.WebTest):
+class IsolationTest(util.WebTestNoAuth):
     """Test isolation between tests.
 
     The naming of the test methods is important here, because nose by default
@@ -13,36 +13,34 @@ class IsolationTest(util.WebTest):
         """Adding data to the database works."""
         self.assertEquals(self.db.identity_map, {})
 
-        user = models.User(username=u"test-user",
-                           firstname=u"John",
-                           lastname=u"Smith",
-                           email=u"testuser-1@example.net",
-                           gender="male")
-        self.db.add(user)
+        session = models.Session(user_id=0,
+                                 token="test",
+                                 _author=0)
+        self.db.add(session)
         self.db.flush()
 
         # The data is added to the database
-        users = self.db.query(models.User).all()
-        self.assertEquals(len(users), 1)
-        self.assertEquals(users[0], user)
+        sessions = self.db.query(models.Session).all()
+        self.assertEquals(len(sessions), 1)
+        self.assertEquals(sessions[0], session)
 
         # The data is also visible from the API
-        resp = self.api.get("/users", status_code=200)
+        resp = self.api.get("/sessions", status_code=200)
         self.assertEquals(len(resp.json['_items']), 1)
 
-        userid = resp.json['_items'][0]['id']
-        self.assertEquals(userid, user.id)
+        sessionid = resp.json['_items'][0]['id']
+        self.assertEquals(sessionid, session.id)
 
-        resp = self.api.get("/users/%i" % userid, status_code=200)
-        self.assertEquals(resp.json['id'], userid)
+        resp = self.api.get("/sessions/%i" % sessionid, status_code=200)
+        self.assertEquals(resp.json['id'], sessionid)
 
     def test_b(self):
         """No data from test_a has survived."""
         # The session is empty again, and the user has not been persisted.
         self.assertEquals(self.db.identity_map, {})
-        users = self.db.query(models.User).all()
-        self.assertEquals(len(users), 0)
+        sessions = self.db.query(models.Session).all()
+        self.assertEquals(len(sessions), 0)
 
         # The API also does not return users anymore
-        resp = self.api.get("/users", status_code=200)
+        resp = self.api.get("/sessions", status_code=200)
         self.assertEquals(len(resp.json['_items']), 0)
