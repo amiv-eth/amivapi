@@ -274,7 +274,8 @@ def set_author_on_replace(resource, items, original):
 
 def hash_password_before_insert(users):
     for u in users:
-        u['password'] = create_new_hash(u['password'])
+        if 'password' in u:
+            u['password'] = create_new_hash(u['password'])
 
 
 def hash_password_before_update(users):
