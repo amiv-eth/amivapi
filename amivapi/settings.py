@@ -18,7 +18,7 @@ TESTING = False
 # Eve
 ID_FIELD = "id"
 AUTH_FIELD = "_author"
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
