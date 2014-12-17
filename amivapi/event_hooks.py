@@ -49,7 +49,7 @@ def check_eventsignups(data):
         ))
 
     """check for correct signup time"""
-    now = dt.datetime.now().isoformat()
+    now = dt.datetime.now()
     if event.spots >= 0:
         if now < event.time_register_start:
             abort(422, description=(
@@ -95,27 +95,28 @@ def update_signups_schema(data):
     db = app.data.driver.session
     eventid = data.get('event_id')
     event = db.query(models.Event).get(eventid)
-    extraSchema = event.additional_fields
-    if extraSchema is not None:
-        resource_def = app.config['DOMAIN']['eventsignups']
-        resource_def['schema'].update({
-            'extra_data': {
-                'type': 'dict',
-                'schema': json.loads(extraSchema),
-                'required': True,
-            }
-        })
-        if data.get('extra_data') is None:
-            abort(422, description=debug_error_message(
-                'event %d requires extra data: %s' % (eventid, extraSchema)
-            ))
-    else:
-        resource_def = app.config['DOMAIN']['eventsignups']
-        resource_def['schema'].update({
-            'extra_data': {
-                'required': False,
-            }
-        })
+    if event is not None:
+        extraSchema = event.additional_fields
+        if extraSchema is not None:
+            resource_def = app.config['DOMAIN']['eventsignups']
+            resource_def['schema'].update({
+                'extra_data': {
+                    'type': 'dict',
+                    'schema': json.loads(extraSchema),
+                    'required': True,
+                }
+            })
+            if data.get('extra_data') is None:
+                abort(422, description=debug_error_message(
+                    'event %d requires extra data: %s' % (eventid, extraSchema)
+                ))
+        else:
+            resource_def = app.config['DOMAIN']['eventsignups']
+            resource_def['schema'].update({
+                'extra_data': {
+                    'required': False,
+                }
+            })
 
 
 def pre_signups_post_callback(request):
@@ -169,9 +170,7 @@ def check_events(data):
             abort(422, description=(
                 'time_register_start needs to be before time_register_end'
             ))
-    if data.get('time_start', '0') > data.get(
-            'time_end',
-            dt.datetime.max.strftime('%Y-%m-%dT%H:%M:%SZ')):
+    if data.get('time_start', '0') > data.get('time_end', dt.datetime.max):
         abort(422, description=(
             'time_end needs to be after time_start'
         ))
@@ -181,8 +180,7 @@ def check_events(data):
 
 
 def check_permissions(data):
-    now = dt.datetime.now()
-    if data.get('expiry_date') < now.isoformat():
+    if data.get('expiry_date') < dt.datetime.now():
         abort(422, description=debug_error_message(
             'expiry_date needs to be in the future'
         ))
