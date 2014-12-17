@@ -5,6 +5,8 @@ from amivapi.tests import util
 
 from amivapi.settings import DATE_FORMAT
 
+import json
+
 
 class HookTest(util.WebTestNoAuth):
 
@@ -18,7 +20,7 @@ class HookTest(util.WebTestNoAuth):
         self.api.post("/permissions", data={
             'user_id': userid,
             'role': 'vorstand',
-            'expiry_date': expiry.isoformat(),
+            'expiry_date': expiry.strftime(DATE_FORMAT),
         }, status_code=422)
         assignmentCount = self.db.query(models.Permission).count()
         self.assertEquals(assignmentCount, 0)
@@ -28,7 +30,7 @@ class HookTest(util.WebTestNoAuth):
         self.api.post("/permissions", data={
             'user_id': userid,
             'role': 'vorstand',
-            'expiry_date': expiry.isoformat(),
+            'expiry_date': expiry.strftime(DATE_FORMAT),
         }, status_code=201)
 
         # has assignment got into the db?
@@ -66,21 +68,23 @@ class HookTest(util.WebTestNoAuth):
             'spots': 10,
             'time_register_start': dt.datetime.now().strftime(DATE_FORMAT),
             'time_register_end': start.strftime(DATE_FORMAT),
-            'additional_fields': (
-                "{{"
-                "'name':'departement',"
-                "'type':'radiobutton',"
-                "'button1':'ITET',"
-                "'button2':'MAVT'"
-                "}}"
-            )
+            'additional_fields': json.dumps({
+                'department': {
+                    'type': 'string',
+                    'required': True,
+                    'allowed': ['itet', 'mavt'],
+                }
+            })
         }, status_code=201)
         eventid = event.json['id']
+        # make new user
+        user = self.new_user()
+        userid = user.id
 
         # Sign up user 1 without departement
         signup = self.api.post("/eventsignups", data={
             'event_id': eventid,
-            'user_id': 1,
+            'user_id': userid,
         }, status_code=422)
         signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
@@ -88,7 +92,7 @@ class HookTest(util.WebTestNoAuth):
         # sign up user 1 to wrong event
         signup = self.api.post("/eventsignups", data={
             'event_id': eventid + 10,
-            'user_id': 1,
+            'user_id': userid,
         }, status_code=422)
         signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
@@ -96,8 +100,8 @@ class HookTest(util.WebTestNoAuth):
         # sign up user 1 with wrong departement
         signup = self.api.post("/eventsignups", data={
             'event_id': eventid,
-            'user_id': 1,
-            'additional_data': "{'departement': 'INFK'}"
+            'user_id': userid,
+            'extra_data': "{'departement': 'infk'}",
         }, status_code=422)
         signupCount = self.db.query(models.EventSignup).count()
         self.assertEquals(signupCount, 0)
@@ -105,8 +109,10 @@ class HookTest(util.WebTestNoAuth):
         # sign up user 1 and do everything right
         signup = self.api.post("/eventsignups", data={
             'event_id': eventid,
-            'user_id': 1,
-            'additional_data': "{'departement': 'ITET'}",
+            'user_id': userid,
+            'extra_data': {
+                'department': 'itet',
+            }
         }, status_code=201)
         signup1 = signup.json['id']
 
@@ -114,9 +120,10 @@ class HookTest(util.WebTestNoAuth):
         self.assertEquals(signupCount, 1)
 
         signups = self.api.get("/eventsignups", status_code=200)
-        self.assertEquals(signups.json['_items'][signup1]['event_id'], eventid)
+        self.assertEquals(signups.json['_items'][signup1 - 1]['event_id'],
+                          eventid)
         self.assertEquals(
-            signups.json['_items'][signup1]['email'],
+            signups.json['_items'][signup1-1]['email'],
             "max-muster@example.net"
         )
 
@@ -125,11 +132,11 @@ class HookTest(util.WebTestNoAuth):
             'event_id': eventid,
             'user_id': -1,
             'email': "hermanthegerman@amiv.ethz.ch",
-            'additional_data': "{'department': 'ITET'}",
-        }, status_code=201)
+            'extra_data': {'department': 'itet'},
+        }, status_code=202)
 
         signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 2)
+        self.assertEquals(signupCount, 1)
 
     """def test_Studydocuments(self):
         #make new files
