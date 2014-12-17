@@ -72,3 +72,17 @@ class UserResourceTest(util.WebTestNoAuth):
 
         user_count = self.db.query(models.User).count()
         self.assertEquals(user_count, 3)
+
+    def test_user_invalid_mail(self):
+        data = {
+            'firstname': "John",
+            'lastname': "Doe",
+            'email': "youdontgetmail",
+            'gender': "male",
+            'username': "johndoe",
+            'membership': "none",
+        }
+        self.api.post("/users", data=data, status_code=422)
+
+        data['email'] = 'test@example.com'
+        self.api.post("/users", data=data, status_code=201)

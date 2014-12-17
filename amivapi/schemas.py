@@ -32,6 +32,18 @@ def load_domain(config):
         }
     })
 
+    """ Only accept email addresses for email fields """
+# FIXME(Conrad): There could be a generic way to add regexes to fields in the
+#                model
+    domain['users']['schema']['email'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['forwards']['schema']['address'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['forwardaddresses']['schema']['address'].update(
+        {'regex': config['EMAIL_REGEX']})
+    domain['eventsignups']['schema']['email'].update(
+        {'regex': config['EMAIL_REGEX']})
+
     """Workaround to signal onInsert that this request is internal"""
     domain['eventsignups']['schema'].update({
         '_confirmed': {
