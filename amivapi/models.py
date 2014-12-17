@@ -225,7 +225,7 @@ class Event(Base):
     location = Column(Unicode(50))
     description = Column(UnicodeText)
     is_public = Column(Boolean, default=False, nullable=False)
-    price = Column(DECIMAL())
+    price = Column(String(10))
     spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
