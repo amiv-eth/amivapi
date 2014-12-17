@@ -73,7 +73,6 @@ class BaseModel(object):
     __owner_methods__ = []
     __registered_methods__ = []
 
-
     @declared_attr
     def __tablename__(cls):
         """ Correct English attaches 'es' to plural forms which end in 's' """

@@ -213,14 +213,14 @@ def pre_get_permission_filter(resource, request, lookup):
             or not g.apply_owner_filters:
         return
 
-    if not '$or' in lookup:
+    if '$or' not in lookup:
         lookup.update({'$or': []})
 
     for field in resource_class.__owner__:
         lookup['$or'].append({field: g.logged_in_user})
 
 
-#TODO(Conrad): Does this work with bulk insert?
+# TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
     resource_class = utils.get_class_for_resource(resource)
     if request.method in resource_class.__public_methods__ \
@@ -241,8 +241,8 @@ def pre_post_permission_filter(resource, request):
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    #pre_delete_permission_filter(resource, request, lookup)
-    #pre_post_permission_filter(resource, request)
+    # pre_delete_permission_filter(resource, request, lookup)
+    # pre_post_permission_filter(resource, request)
     return
 
 

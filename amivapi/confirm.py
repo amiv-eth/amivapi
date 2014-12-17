@@ -29,7 +29,7 @@ def confirmActions(ressource, method, condition, doc, items, email_field):
     :param condition: a dict with 'doc-key' and 'value' for the condition
 
     """
-    
+
     if condition is True:
         if doc.get('_confirmed') is not True:
             doc.pop('_updated')
