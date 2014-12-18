@@ -205,7 +205,7 @@ class Session(Base):
 
     __public_methods__ = ['POST']
     __owner__ = ['user_id']
-    __owner_methods__ = ['GET']
+    __owner_methods__ = ['GET', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token = Column(CHAR(10424), unique=True)
