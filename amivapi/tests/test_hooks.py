@@ -78,7 +78,7 @@ class HookTest(util.WebTestNoAuth):
         }, status_code=201)
         eventid = event.json['id']
         # make new user
-        user = self.new_user()
+        user = self.new_user(email=u"testuser-1@example.net")
         userid = user.id
 
         # Sign up user 1 without departement
