@@ -8,6 +8,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
+from amivapi.auth import create_new_hash
 
 
 class TestClient(FlaskClient):
@@ -78,6 +79,9 @@ class WebTest(unittest.TestCase):
 
     def new_user(self, **kwargs):
         count = self.next_count()
+        if 'password' in kwargs:
+            kwargs['password'] = create_new_hash(kwargs['password'])
+
         user = models.User(username=u"test-user-%i" % count,
                            firstname=u"Test",
                            lastname=u"Use" + ("r" * count),
