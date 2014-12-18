@@ -63,7 +63,7 @@ current time, so the return value will change every second.
 """
 
 
-def createToken(user_id):
+def create_token(user_id):
     time = datetime.now()
     signature = _create_signature(user_id, time)
 
@@ -184,7 +184,7 @@ def process_login():
         ):
             abort(401)
 
-        token = createToken(user[0].id)
+        token = create_token(user[0].id)
         response = post_internal(
             'sessions',
             {
