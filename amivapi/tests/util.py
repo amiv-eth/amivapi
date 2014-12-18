@@ -1,6 +1,7 @@
 import json
 import random
 import unittest
+from base64 import b64encode
 
 from eve.io.sql import sql
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -20,6 +21,17 @@ class TestClient(FlaskClient):
     def open(self, *args, **kwargs):
         expected_code = kwargs.pop('status_code', None)
 
+        if 'token' in kwargs:
+            if 'headers' not in kwargs:
+                kwargs['headers'] = {}
+
+            kwargs['headers'].update({
+                'Authorization': 'Basic ' + b64encode(
+                    kwargs['token'] + ':')
+            })
+
+            kwargs.pop('token', None)
+
         if "data" in kwargs:
             kwargs['data'] = json.dumps(kwargs['data'])
             kwargs['content_type'] = "application/json"
@@ -29,8 +41,8 @@ class TestClient(FlaskClient):
         if (expected_code is not None and expected_code != status_code):
             raise AssertionError(
                 "Expected a status code of %i, but got %i instead\n"
-                % (expected_code, status_code) + "Response: %s"
-                % response.json)
+                % (expected_code, status_code) + "Response:\n%s\n%s"
+                % (response, response.json))
 
         return response
 
@@ -57,7 +69,8 @@ class WebTest(unittest.TestCase):
         sql.db = SQLAlchemy(session_options={'bind': tests.connection})
         sql.SQL.driver = sql.db
 
-        self.app = bootstrap.create_app("testing", disable_auth=self.disable_auth)
+        self.app = bootstrap.create_app("testing",
+                                        disable_auth=self.disable_auth)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
 
