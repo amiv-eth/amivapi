@@ -123,8 +123,8 @@ class HookTest(util.WebTestNoAuth):
         self.assertEquals(signups.json['_items'][signup1 - 1]['event_id'],
                           eventid)
         self.assertEquals(
-            signups.json['_items'][signup1-1]['email'],
-            "max-muster@example.net"
+            signups.json['_items'][signup1 - 1]['email'],
+            "testuser-1@example.net"
         )
 
         # sign up hermanthegerman@amiv.ethz.ch
