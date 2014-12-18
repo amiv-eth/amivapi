@@ -63,14 +63,20 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(download.download, url_prefix="/storage")
 
     # Add event hooks
-    app.on_pre_GET_users += event_hooks.pre_users_get_callback
-    app.on_post_GET_users += event_hooks.post_users_get_callback
+    app.on_insert += event_hooks.pre_insert_callback
+    app.on_update += event_hooks.pre_update_callback
+
     app.on_pre_POST_eventsignups += event_hooks.pre_signups_post_callback
-    app.on_insert_eventsignups += event_hooks.preSignupsInsertCallback
     app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch_callback
     app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
-    app.on_pre_POST_permissions += event_hooks.\
-        pre_permissions_post_callback
+    app.on_insert_eventsignups += event_hooks.signups_confirm_anonymous
+
+    app.on_insert_forwardaddresses += event_hooks.\
+        pre_forwardaddresses_insert_callback
+    app.on_post_POST_forwardaddresses += event_hooks.\
+        post_forwardaddresses_post_callback
+    app.on_pre_PATCH_forwardaddresses += event_hooks.\
+        pre_forwardaddresses_patch_callback
 
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace
