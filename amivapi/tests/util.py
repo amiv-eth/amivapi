@@ -2,6 +2,7 @@ import json
 import random
 import unittest
 from base64 import b64encode
+from datetime import datetime
 
 from eve.io.sql import sql
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -9,7 +10,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
-from amivapi.auth import create_new_hash
+from amivapi.auth import create_new_hash, create_token
 
 
 class TestClient(FlaskClient):
@@ -90,6 +91,21 @@ class WebTest(unittest.TestCase):
         self._count += 1
         return self._count
 
+    def add_metafields(func):
+        def decorated(self, *args, **kwargs):
+            if '_etag' not in kwargs:
+                kwargs['_etag'] = 'initial_etag'
+            if '_author' not in kwargs:
+                kwargs['_author'] = -1
+            if '_created' not in kwargs:
+                kwargs['_created'] = datetime.utcnow()
+            if '_updated' not in kwargs:
+                kwargs['_updated'] = datetime.utcnow()
+
+            return func(self, *args, **kwargs)
+        return decorated
+
+    @add_metafields
     def new_user(self, **kwargs):
         count = self.next_count()
         if 'password' in kwargs:
@@ -100,11 +116,23 @@ class WebTest(unittest.TestCase):
                            lastname=u"Use" + ("r" * count),
                            email=u"testuser-%i@example.net" % count,
                            gender=random.choice(["male", "female"]),
-                           _author=0,
                            **kwargs)
         self.db.add(user)
         self.db.flush()
         return user
+
+    @add_metafields
+    def new_session(self, **kwargs):
+        if 'user_id' not in kwargs:
+            kwargs['user_id'] = 0
+        if 'token' not in kwargs:
+            with self.app.app_context():
+                kwargs['token'] = create_token(kwargs['user_id'])
+
+        session = models.Session(**kwargs)
+        self.db.add(session)
+        self.db.flush()
+        return session
 
 
 class WebTestNoAuth(WebTest):
