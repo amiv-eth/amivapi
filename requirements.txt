@@ -1,5 +1,5 @@
 Cerberus==0.7.2
--e git+git@github.com:Leonidaz0r/eve.git@b694957757c626a50a3f6e49eb44a93a4bb51e3d#egg=Eve-origin/sqlalchemy
+-e git+git@github.com:Leonidaz0r/eve.git@sqlalchemy#egg=eve-sqlalchemy
 Eve-docs==0.1.4
 Events==0.2.1
 Flask==0.10.1
