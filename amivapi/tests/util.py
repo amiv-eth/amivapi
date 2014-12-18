@@ -44,7 +44,7 @@ class TestResponse(Response):
 class WebTest(unittest.TestCase):
     """Base test class for tests against the full WSGI stack."""
 
-    disableAuth = False
+    disable_auth = False
 
     def setUp(self):
         super(WebTest, self).setUp()
@@ -56,7 +56,7 @@ class WebTest(unittest.TestCase):
         sql.db = SQLAlchemy(session_options={'bind': tests.connection})
         sql.SQL.driver = sql.db
 
-        app = bootstrap.create_app("testing", disableAuth=self.disableAuth)
+        app = bootstrap.create_app("testing", disable_auth=self.disable_auth)
         app.response_class = TestResponse
         app.test_client_class = TestClient
 
@@ -92,5 +92,5 @@ class WebTest(unittest.TestCase):
 
 class WebTestNoAuth(WebTest):
     def setUp(self):
-        self.disableAuth = True
+        self.disable_auth = True
         super(WebTestNoAuth, self).setUp()

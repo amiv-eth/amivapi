@@ -39,9 +39,9 @@ def get_config(environment):
     return config
 
 
-def create_app(environment, disableAuth=False):
+def create_app(environment, disable_auth=False):
     config = get_config(environment)
-    if disableAuth:
+    if disable_auth:
         app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
                   media=FileSystemStorage)
     else:
@@ -79,7 +79,7 @@ def create_app(environment, disableAuth=False):
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
 
-    if not disableAuth:
+    if not disable_auth:
         app.on_pre_GET += auth.pre_get_permission_filter
         app.on_pre_POST += auth.pre_post_permission_filter
         app.on_pre_PUT += auth.pre_put_permission_filter
