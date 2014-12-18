@@ -17,8 +17,6 @@ def pre_insert_callback(resource, items):
 
 
 def pre_update_callback(resource, updates, original):
-    print type(updates)
-    print type(original)
     if resource in resources_hooked:
         data = original.copy()
         data.update(updates)
@@ -81,6 +79,9 @@ def check_eventsignups(data):
             models.EventSignup.event_id == eventid,
             models.EventSignup.user_id == userid
         ).first() is not None
+        email = data.get('email')
+        if email is None:
+            data['email'] = db.query(models.User).get(userid).email
     if alreadysignedup:
         abort(422, description=debug_error_message(
             'You are already signed up for this event, try to use PATCH'
