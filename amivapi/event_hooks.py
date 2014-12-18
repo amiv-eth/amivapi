@@ -1,6 +1,8 @@
 from flask import current_app as app
 from flask import abort
 from eve.utils import debug_error_message
+from eve.validation import ValidationError
+# from amivapi.validation import ValidatorAMIV
 
 import datetime as dt
 import json
@@ -171,9 +173,24 @@ def check_events(data):
             abort(422, description=(
                 'time_register_start needs to be before time_register_end'
             ))
-    if data.get('time_start', '0') > data.get('time_end', dt.datetime.max):
+    if data.get('time_start', dt.datetime.now()) > data.get('time_end',
+                                                            dt.datetime.max):
         abort(422, description=(
             'time_end needs to be after time_start'
+        ))
+    validator = app.validator('', '')
+    try:
+        schema = json.loads(data.get('additional_fields'))
+        validator.validate_schema(schema)
+    except ValidationError as e:
+            abort(422, description=(
+                'validation exception: %s' % str(e)
+            ))
+    except Exception as e:
+        # most likely a problem with the incoming payload, report back to
+        # the client as if it was a validation issue
+        abort(422, description=(
+            'exception for additional_fields: %s' % str(e)
         ))
 
 
