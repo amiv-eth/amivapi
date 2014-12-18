@@ -57,11 +57,11 @@ class WebTest(unittest.TestCase):
         sql.db = SQLAlchemy(session_options={'bind': tests.connection})
         sql.SQL.driver = sql.db
 
-        app = bootstrap.create_app("testing", disable_auth=self.disable_auth)
-        app.response_class = TestResponse
-        app.test_client_class = TestClient
+        self.app = bootstrap.create_app("testing", disable_auth=self.disable_auth)
+        self.app.response_class = TestResponse
+        self.app.test_client_class = TestClient
 
-        self.db = app.data.driver.session
+        self.db = self.app.data.driver.session
         self.addCleanup(self.db.remove)
 
         # Prevent Eve/Flask-SQLAlchemy from removing or commiting the session,
@@ -69,7 +69,7 @@ class WebTest(unittest.TestCase):
         self.db.commit = self.db.flush
         self.db.remove = self.db.flush
 
-        self.api = app.test_client()
+        self.api = self.app.test_client()
 
     _count = 0
 
