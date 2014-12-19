@@ -29,7 +29,7 @@ class EventTest(util.WebTestNoAuth):
         event_count = self.db.query(models.Event).count()
         self.assertEquals(event_count, 0)
 
-        #make new event with schema that is now json
+        # make new event with schema that is now json
         self.api.post("/events", data={
             'title': "Awesome Test Event",
             'time_start': start.strftime(DATE_FORMAT),
