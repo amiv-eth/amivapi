@@ -9,7 +9,7 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth, download
+from amivapi import models, confirm, schemas, event_hooks, auth, download, delete_hooks
 from amivapi.media import FileSystemStorage
 from amivapi.validation import ValidatorAMIV
 
@@ -84,6 +84,13 @@ def create_app(environment, disable_auth=False):
 
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
+
+    app.on_delete_item_users += delete_hooks.delete_user_cleanup
+    app.on_delete_item_forwards += delete_hooks.delete_forward_cleanup
+    app.on_delete_item_event += delete_hooks.delete_event_cleanup
+    app.on_replace_users += delete_hooks.replace_user_cleanup
+    app.on_replace_forwards += delete_hooks.replace_forward_cleanup
+    app.on_replace_event += delete_hooks.replace_event_cleanup
 
     if not disable_auth:
         app.on_pre_GET += auth.pre_get_permission_filter
