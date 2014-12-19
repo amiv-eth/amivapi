@@ -1,6 +1,7 @@
 import json
 import random
 import unittest
+import datetime as dt
 
 from eve.io.sql import sql
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -92,6 +93,34 @@ class WebTest(unittest.TestCase):
         self.db.add(user)
         self.db.flush()
         return user
+
+    def new_event(self, **kwargs):
+        count = self.next_count()
+        start = dt.datetime.today() + dt.timedelta(days=2)
+
+        event = models.Event(title=u"test-event-%i" % count,
+                             time_start=start,
+                             is_public=True,
+                             price="0",
+                             spots=0,
+                             time_register_start=dt.datetime.now(),
+                             time_register_end=start,
+                             _author=0,
+                             **kwargs)
+        self.db.add(event)
+        self.db.flush()
+        return event
+
+    def new_forward(self, **kwargs):
+        count = self.next_count()
+        forward = models.Forward(address=unicode(
+                                 "test-forward-%i@amiv.ethz.ch" % count),
+                                 owner_id=0,
+                                 _author=0,
+                                 **kwargs)
+        self.db.add(forward)
+        self.db.flush()
+        return forward
 
 
 class WebTestNoAuth(WebTest):
