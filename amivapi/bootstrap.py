@@ -9,8 +9,8 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth, download
-from amivapi.media import FileSystemStorage
+from amivapi import models, confirm, schemas, event_hooks, auth, download, \
+    media
 from amivapi.validation import ValidatorAMIV
 
 
@@ -42,7 +42,7 @@ def get_config(environment):
 def create_app(environment, create_db=False):
     config = get_config(environment)
     app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
-              auth=auth.TokenAuth, media=FileSystemStorage)
+              auth=auth.TokenAuth, media=media.FileSystemStorage)
 
     # Bind SQLAlchemy
     db = app.data.driver
@@ -82,5 +82,8 @@ def create_app(environment, create_db=False):
     app.on_pre_PUT += auth.pre_put_permission_filter
     app.on_pre_DELETE += auth.pre_delete_permission_filter
     app.on_pre_PATCH += auth.pre_patch_permission_filter
+
+    # Delete files when studydocument is deleted
+    app.on_delete_item_studydocuments += media.delete_study_files
 
     return app
