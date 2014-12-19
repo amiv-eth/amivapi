@@ -13,6 +13,26 @@ from amivapi import bootstrap, models, tests
 from amivapi.auth import create_new_hash, create_token
 
 
+def find_by_pair(dicts, key, value):
+    """ Finds an entry in a list of dicts, which has a pair key => value
+    If there is not exactly one result returns None
+
+    This is useful to find an entry in the result of a get query
+
+    Example:
+
+    users = api.get("/users")
+    root_user = find_by_pair(users, "username", "root")
+
+    This will find the entry in the response which corresponds to the root
+    user
+    """
+    found = [x for x in dicts if key in x and x[key] == value]
+    if len(found) != 1:
+        return None
+    return found[0]
+
+
 class TestClient(FlaskClient):
     """Custom test client with additional request/response checks.
 
@@ -91,48 +111,62 @@ class WebTest(unittest.TestCase):
         self._count += 1
         return self._count
 
-    def add_metafields(func):
-        def decorated(self, *args, **kwargs):
-            if '_etag' not in kwargs:
-                kwargs['_etag'] = 'initial_etag'
-            if '_author' not in kwargs:
-                kwargs['_author'] = -1
-            if '_created' not in kwargs:
-                kwargs['_created'] = datetime.utcnow()
-            if '_updated' not in kwargs:
-                kwargs['_updated'] = datetime.utcnow()
+    def create_object(model):
+        def decorate(func):
+            def decorated(self, **kwargs):
+                if '_etag' not in kwargs:
+                    kwargs['_etag'] = 'initial_etag'
+                if '_author' not in kwargs:
+                    kwargs['_author'] = -1
+                if '_created' not in kwargs:
+                    kwargs['_created'] = datetime.utcnow()
+                if '_updated' not in kwargs:
+                    kwargs['_updated'] = datetime.utcnow()
 
-            return func(self, *args, **kwargs)
-        return decorated
+                kwargs = func(self, **kwargs)
 
-    @add_metafields
+                obj = model(**kwargs)
+
+                self.db.add(obj)
+                self.db.flush()
+                return obj
+
+            return decorated
+        return decorate
+
+    @create_object(models.User)
     def new_user(self, **kwargs):
         count = self.next_count()
+        if 'username' not in kwargs:
+            kwargs['username'] = u"test-user-%i" % count
+        if 'firstname' not in kwargs:
+            kwargs['firstname'] = u"Test"
+        if 'lastname' not in kwargs:
+            kwargs['lastname'] = u"User"
+        if 'email' not in kwargs:
+            kwargs['email'] = u"testuser-%i@example.com" % count
+        if 'gender' not in kwargs:
+            kwargs['gender'] = random.choice(["male", "female"])
         if 'password' in kwargs:
             kwargs['password'] = create_new_hash(kwargs['password'])
+        return kwargs
 
-        user = models.User(username=u"test-user-%i" % count,
-                           firstname=u"Test",
-                           lastname=u"Use" + ("r" * count),
-                           email=u"testuser-%i@example.net" % count,
-                           gender=random.choice(["male", "female"]),
-                           **kwargs)
-        self.db.add(user)
-        self.db.flush()
-        return user
-
-    @add_metafields
+    @create_object(models.Session)
     def new_session(self, **kwargs):
+        """ Create a new session, default is root session """
         if 'user_id' not in kwargs:
             kwargs['user_id'] = 0
-        if 'token' not in kwargs:
-            with self.app.app_context():
-                kwargs['token'] = create_token(kwargs['user_id'])
+        with self.app.app_context():
+            kwargs['token'] = create_token(kwargs['user_id'])
+        return kwargs
 
-        session = models.Session(**kwargs)
-        self.db.add(session)
-        self.db.flush()
-        return session
+    @create_object(models.Permission)
+    def new_permission(self, **kwargs):
+        """ Add a role to a user. You must provide at least user_id and role
+        """
+        if 'expiry_date' not in kwargs:
+            kwargs['expiry_date'] = datetime(3000, 1, 1)
+        return kwargs
 
 
 class WebTestNoAuth(WebTest):
