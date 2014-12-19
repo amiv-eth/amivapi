@@ -14,11 +14,9 @@ import errno
 
 
 def delete_study_files(item):
-    lookup = []
     for file in (dict(item)['files']):
-        lookup.append(file._id)
-
-    deleteitem_internal('files', lookup)
+        lookup = {'id': (file.id)}
+        deleteitem_internal('files', **lookup)
 
 
 class ExtFile(file):
