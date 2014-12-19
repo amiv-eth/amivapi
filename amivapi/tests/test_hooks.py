@@ -59,24 +59,14 @@ class HookTest(util.WebTestNoAuth):
 
     def test_b_EventSignup_hooks(self):
         # make new event
-        start = dt.datetime.today() + dt.timedelta(days=2)
-        event = self.api.post("/events", data={
-            'title': "Awesome Test Event",
-            'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
-            'price': '0',
-            'spots': 10,
-            'time_register_start': dt.datetime.now().strftime(DATE_FORMAT),
-            'time_register_end': start.strftime(DATE_FORMAT),
-            'additional_fields': json.dumps({
-                'department': {
-                    'type': 'string',
-                    'required': True,
-                    'allowed': ['itet', 'mavt'],
-                }
-            })
-        }, status_code=201)
-        eventid = event.json['id']
+        event = self.new_event(additional_fields=json.dumps({
+            'department': {
+                'type': 'string',
+                'required': True,
+                'allowed': ['itet', 'mavt'],
+            }
+        }))
+        eventid = event.id
         # make new user
         user = self.new_user()
         userid = user.id
@@ -124,7 +114,7 @@ class HookTest(util.WebTestNoAuth):
                           eventid)
         self.assertEquals(
             signups.json['_items'][signup1 - 1]['email'],
-            "testuser-1@example.net"
+            "testuser-2@example.net"
         )
 
         # sign up hermanthegerman@amiv.ethz.ch
