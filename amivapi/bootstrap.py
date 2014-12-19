@@ -63,6 +63,9 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(download.download, url_prefix="/storage")
 
     # Add event hooks
+    # security note: hooks which are run before auth hooks should never change
+    # the database
+
     app.on_insert += event_hooks.pre_insert_callback
     app.on_update += event_hooks.pre_update_callback
 
@@ -98,5 +101,6 @@ def create_app(environment, disable_auth=False):
         app.on_pre_PUT += auth.pre_put_permission_filter
         app.on_pre_DELETE += auth.pre_delete_permission_filter
         app.on_pre_PATCH += auth.pre_patch_permission_filter
+        app.on_update += auth.update_permission_filter
 
     return app
