@@ -8,6 +8,7 @@ from os.path import abspath, dirname, join
 
 # Custom
 ROOT_DIR = abspath(join(dirname(__file__), ".."))
+EMAIL_REGEX = '^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
 # Flask
 DEBUG = False

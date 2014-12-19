@@ -4,17 +4,20 @@ from amivapi import models, settings
 from amivapi.tests import util
 
 
-class UserResourceTest(util.WebTest):
+class UserResourceTest(util.WebTestNoAuth):
 
     def test_users_collection(self):
+        # Only root and anonymous to start with
         no_users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(no_users.json['_items']), 0)
+        self.assertEquals(len(no_users.json['_items']), 2)
 
         user = self.new_user()
         users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(users.json['_items']), 1)
+        self.assertEquals(len(users.json['_items']), 3)
 
-        api_user = users.json['_items'][0]
+        api_user = (u for u in users.json['_items'] if u['username']
+                    == user.username).next()
+        print api_user
         for col in models.User.__table__.c:
             self.assertIn(col.key, api_user)
 
@@ -37,26 +40,49 @@ class UserResourceTest(util.WebTest):
     def test_create_user(self):
         # POSTing to /users with missing required fields yields an error, and
         # no document is created
-        for key in ["firstname", "lastname", "username", "email", "gender"]:
-            self.api.post("/users",
-                          data={key: "not_enough"},
-                          status_code=422)
-
-            user_count = self.db.query(models.User).count()
-            self.assertEquals(user_count, 0)
-
-        user = self.api.post("/users", data={
+        data = {
             'firstname': "John",
             'lastname': "Doe",
             'email': "john-doe@example.net",
             'gender': "male",
             'username': "johndoe",
-        }, status_code=201)
+            'membership': "none",
+        }
+        for key in ["firstname", "lastname", "username", "email", "gender",
+                    "membership"]:
+            crippled_data = data.copy()
+            crippled_data.pop(key)
+            self.api.post("/users",
+                          data=crippled_data,
+                          status_code=422)
+
+            user_count = self.db.query(models.User).count()
+            self.assertEquals(user_count, 2)
+
+        user = self.api.post("/users", data=data, status_code=201)
         userid = user.json['id']
 
         users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(users.json['_items']), 1)
-        self.assertEquals(users.json['_items'][0]['id'], userid)
+        self.assertEquals(len(users.json['_items']), 3)
+
+        retrived_user = (u for u in users.json['_items'] if u['id']
+                         == userid).next()
+        for key in data:
+            self.assertEquals(retrived_user[key], data[key])
 
         user_count = self.db.query(models.User).count()
-        self.assertEquals(user_count, 1)
+        self.assertEquals(user_count, 3)
+
+    def test_user_invalid_mail(self):
+        data = {
+            'firstname': "John",
+            'lastname': "Doe",
+            'email': "youdontgetmail",
+            'gender': "male",
+            'username': "johndoe",
+            'membership': "none",
+        }
+        self.api.post("/users", data=data, status_code=422)
+
+        data['email'] = 'test@example.com'
+        self.api.post("/users", data=data, status_code=201)

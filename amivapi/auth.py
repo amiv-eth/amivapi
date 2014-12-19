@@ -63,7 +63,7 @@ current time, so the return value will change every second.
 """
 
 
-def createToken(user_id):
+def create_token(user_id):
     time = datetime.now()
     signature = _create_signature(user_id, time)
 
@@ -74,14 +74,6 @@ def createToken(user_id):
     }))
 
 
-""" Utility function to get class associated with a resource """
-
-
-def getClassForResource(resource):
-    resource_def = app.config['DOMAIN'][resource]
-    return getattr(models, resource_def['datasource']['source'])
-
-
 """ This function (HACK ALERT) tries to figure out where relationship would
 point to if an object was created with the passed request. If somebody finds
 a better way to check permissions please consider changing this. We depend
@@ -89,18 +81,18 @@ on a lot of knowledge of relationship internals. """
 
 
 def resolve_future_field(resource, request, field):
-    resource_class = getClassForResource(resource)
+    resource_class = utils.get_class_for_resource(resource)
 
     field_parts = field.split('.')  # This looks like an emoticon
 
     if len(field_parts) == 1:
-        return request.form[field]
+        return utils.parse_data(request)[field]
 
     relationship = inspect(resource_class).relationships[field_parts[0]]
 
     query = app.data.driver.session.query(relationship.target)
     for l, r in relationship.local_remote_pairs:
-        query = query.filter(r.__eq__(request.form[l.name]))
+        query = query.filter(r.__eq__(utils.parse_data(request)[l.name]))
 
     value = query.one()
 
@@ -126,14 +118,12 @@ class TokenAuth(TokenAuth):
             abort(401)
 
         g.logged_in_user = sess.user_id
+        g.apply_owner_filters = False
+        g.resource_admin_access = False
 
         if sess.user_id == 0:
             g.resource_admin_access = True
             return True
-
-        """ Check if user has endpoint admin access
-        (so can perform this method with any parameters) """
-        g.resource_admin_access = False
 
         permissions = dbsession.query(models.Permission) \
             .filter(models.Permission.user_id == sess.user_id).all()
@@ -146,15 +136,16 @@ class TokenAuth(TokenAuth):
             except KeyError:
                 pass
 
-        """ User does not have admin access, check if he might still
-        perform the action """
+        resource_class = utils.get_class_for_resource(resource)
 
-        cls = getClassForResource(resource)
-        if hasattr(cls, '__affected_user__') or hasattr(cls, '__owner__'):
-            """ In this case the permissions are per object """
+        if request.method in resource_class.__registered_methods__:
             return True
 
-        return False
+        if request.method in resource_class.__owner_methods__:
+            g.apply_owner_filters = True
+            return True
+
+        abort(403)
 
 
 """ Authentification related endpoints """
@@ -176,13 +167,14 @@ update his data
 @auth.route('/sessions', methods=['POST'])
 def process_login():
     user = app.data.driver.session.query(models.User).filter_by(
-        username=request.form['username']).all()
+        username=utils.parse_data(request)['username']).all()
 
     if(len(user) == 1):
         (salt, hashed_password) = user[0].password.split('$')
         salt = b64decode(salt)
         hashed_password = b64decode(hashed_password)
-        sent_password = bytearray(utils.parse_data(request)['password'], 'utf-8')
+        sent_password = bytearray(utils.parse_data(request)['password'],
+                                  'utf-8')
 
         if hashed_password != hashlib.pbkdf2_hmac(
                 'SHA256',
@@ -192,7 +184,7 @@ def process_login():
         ):
             abort(401)
 
-        token = createToken(user[0].id)
+        token = create_token(user[0].id)
         response = post_internal(
             'sessions',
             {
@@ -202,8 +194,7 @@ def process_login():
         )
         return send_response('sessions', response)
 
-    # Try to import user via ldap
-    abort(501)
+    abort(401)
 
 
 """ Auth related hooks """
@@ -213,46 +204,83 @@ def process_login():
 
 
 def pre_get_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
+    """ This function adds filters to the lookup parameter to only return
+    items, which are owned by the user for resources, which are neither
+    public nor open to registered users
+    """
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
         return
 
-    abort(501)
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
+
+    if '$or' not in lookup:
+        lookup.update({'$or': []})
+
+    for field in resource_class.__owner__:
+        lookup['$or'].append({field: g.logged_in_user})
 
 
+# TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
-    if g.resource_admin_access:
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
         return
 
-    resource_class = getClassForResource(resource)
-    try:
-        allowed_id_field = getattr(resource_class, '__owner__')
-    except AttributeError:
-        abort(403)
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
 
-    if resolve_future_field(resource, request, allowed_id_field) \
-            != g.logged_in_user:
-        abort(403)
+    for field in resource_class.__owner__:
+        if resolve_future_field(resource, request, field) \
+                == g.logged_in_user:
+            return
+
+    abort(403)
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
-        return
-
-    abort(501)
+    pre_delete_permission_filter(resource, request, lookup)
+    pre_post_permission_filter(resource, request)
+    return
 
 
 def pre_patch_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
+    """ This filter let's owners only patch objects they own """
+    pre_get_permission_filter(resource, request, lookup)
+
+
+def update_permission_filter(resource, updates, original):
+    """ This filter ensures, that an owner can not change the owner
+    of his objects """
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
         return
 
-    abort(501)
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
+
+    data = original.copy()
+    data.update(updates)
+
+    for field in resource_class.__owner__:
+        if data.get(field) == g.logged_in_user:
+            return
+
+    abort(403, description=('You can not change the owner of this object'))
 
 
 def pre_delete_permission_filter(resource, request, lookup):
-    if g.resource_admin_access:
-        return
-
-    abort(501)
+    pre_get_permission_filter(resource, request, lookup)
 
 
 """ Hooks to add _author field to all database inserts """
@@ -264,8 +292,8 @@ def set_author_on_insert(resource, items):
         i['_author'] = _author
 
 
-def set_author_on_replace(resource, items, original):
-    set_author_on_insert(resource, items)
+def set_author_on_replace(resource, item, original):
+    set_author_on_insert(resource, [item])
 
 
 """ Hooks to hash passwords when user entries are changed in the database """
@@ -273,12 +301,13 @@ def set_author_on_replace(resource, items, original):
 
 def hash_password_before_insert(users):
     for u in users:
-        u['password'] = create_new_hash(u['password'])
+        if 'password' in u:
+            u['password'] = create_new_hash(u['password'])
 
 
-def hash_password_before_update(users):
-    hash_password_before_insert(users)
+def hash_password_before_update(user, original_user):
+    hash_password_before_insert([user])
 
 
-def hash_password_before_replace(users, original_users):
-    hash_password_before_insert(users)
+def hash_password_before_replace(user, original_user):
+    hash_password_before_insert([user])
