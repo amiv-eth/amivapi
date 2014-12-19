@@ -9,7 +9,14 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth, download, delete_hooks
+from amivapi import \
+    models, \
+    confirm, \
+    schemas, \
+    event_hooks, \
+    auth, \
+    download, \
+    delete_hooks
 from amivapi.media import FileSystemStorage
 from amivapi.validation import ValidatorAMIV
 
