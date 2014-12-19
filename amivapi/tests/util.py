@@ -220,6 +220,14 @@ class WebTest(unittest.TestCase):
             kwargs['title'] = u"Your job at default company-%i" % count
         return kwargs
 
+    @create_object(models.StudyDocument)
+    def new_studydocument(self, **kwargs):
+        """ Create a new study document """
+        count = self.next_count()
+        if 'name' not in kwargs:
+            kwargs['name'] = u"Your default studydoc-%i" % count
+        return kwargs
+
     @create_object(models.Confirm)
     def new_confirm(self, **kwargs):
         """ Creates a new confirm action. You must provide resource, data
