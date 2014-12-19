@@ -241,8 +241,8 @@ def pre_post_permission_filter(resource, request):
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    # pre_delete_permission_filter(resource, request, lookup)
-    # pre_post_permission_filter(resource, request)
+    pre_delete_permission_filter(resource, request, lookup)
+    pre_post_permission_filter(resource, request)
     return
 
 
@@ -265,8 +265,8 @@ def set_author_on_insert(resource, items):
         i['_author'] = _author
 
 
-def set_author_on_replace(resource, items, original):
-    set_author_on_insert(resource, items)
+def set_author_on_replace(resource, item, original):
+    set_author_on_insert(resource, [item])
 
 
 """ Hooks to hash passwords when user entries are changed in the database """
