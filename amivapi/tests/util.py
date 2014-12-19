@@ -11,6 +11,7 @@ from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
 from amivapi.auth import create_new_hash, create_token
+from amivapi.confirm import id_generator
 
 
 def find_by_pair(dicts, key, value):
@@ -151,6 +152,39 @@ class WebTest(unittest.TestCase):
             kwargs['password'] = create_new_hash(kwargs['password'])
         return kwargs
 
+    @create_object(models.Permission)
+    def new_permission(self, **kwargs):
+        """ Add a role to a user. You must provide at least user_id and role
+        """
+        if 'expiry_date' not in kwargs:
+            kwargs['expiry_date'] = datetime(3000, 1, 1)
+        return kwargs
+
+    @create_object(models.Forward)
+    def new_forward(self, **kwargs):
+        """ Create a forward """
+        count = self.next_count()
+        if 'address' not in kwargs:
+            kwargs['address'] = u"test-address-%i@example.com" % count
+        if 'owner_id' not in kwargs:
+            kwargs['owner_id'] = 0
+        return kwargs
+
+    @create_object(models.ForwardUser)
+    def new_forward_user(self, **kwargs):
+        """ Add a user to a forward. At least supply the forward_id """
+        if 'user_id' not in kwargs:
+            kwargs['user_id'] = 0
+        return kwargs
+
+    @create_object(models.ForwardAddress)
+    def new_forward_address(self, **kwargs):
+        """ Add an address to a forward. At least supply the forward_id """
+        count = self.next_count()
+        if 'address' not in kwargs:
+            kwargs['address'] = u"subscriber-%i@example.com" % count
+        return kwargs
+
     @create_object(models.Session)
     def new_session(self, **kwargs):
         """ Create a new session, default is root session """
@@ -160,10 +194,38 @@ class WebTest(unittest.TestCase):
             kwargs['token'] = create_token(kwargs['user_id'])
         return kwargs
 
-    @create_object(models.Permission)
-    def new_permission(self, **kwargs):
-        """ Add a role to a user. You must provide at least user_id and role
-        """
+    @create_object(models.Event)
+    def new_event(self, **kwargs):
+        """ Create a new event """
+        if 'is_public' not in kwargs:
+            kwargs['is_public'] = random.choice([True, False])
+        if 'spots' not in kwargs:
+            kwargs['spots'] = random.randint(0, 100)
+        return kwargs
+
+    @create_object(models.EventSignup)
+    def new_signup(self, **kwargs):
+        """ Create a signup, needs at least the event_id """
+        count = self.next_count()
+        if 'user_id' not in kwargs:
+            kwargs['user_id'] = -1
+            kwargs['email'] = u"signupper-%i@example.com" % count
+        return kwargs
+
+    @create_object(models.JobOffer)
+    def new_joboffer(self, **kwargs):
+        """ Create a new job offer """
+        count = self.next_count()
+        if 'title' not in kwargs:
+            kwargs['title'] = u"Your job at default company-%i" % count
+        return kwargs
+
+    @create_object(models.Confirm)
+    def new_confirm(self, **kwargs):
+        """ Creates a new confirm action. You must provide resource, data
+        and method """
+        if 'token' not in kwargs:
+            kwargs['token'] = "%i" % id_generator()
         if 'expiry_date' not in kwargs:
             kwargs['expiry_date'] = datetime(3000, 1, 1)
         return kwargs
