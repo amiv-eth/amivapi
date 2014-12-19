@@ -20,7 +20,6 @@ from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 
-
 """ Eve exspects the resource names to be equal to the table names. Therefore
 we generate all names from the Class names. Please choose classnames carefully,
 as changing them might break a lot of code """
@@ -300,7 +299,7 @@ class JobOffer(Base):
     title = Column(Unicode(100))
     description = Column(UnicodeText)
     logo = CHAR(100)  # The Schema here is changed to type: media
-    pdf_id = Column(Integer, ForeignKey("files.id"))
+    pdf = CHAR(100)
     time_end = Column(DateTime)
 
 
