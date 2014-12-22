@@ -173,7 +173,7 @@ class ForwardUser(Base):
     __projected_fields__ = ['forward', 'user']
 
     __owner__ = ['user_id', 'forward.owner_id']
-    __owner_methods__ = ['GET', 'POST', 'DELETE']
+    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
