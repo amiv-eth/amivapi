@@ -228,8 +228,10 @@ class Event(Base):
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
-
-    # images
+    # Images
+    img_thumbnail = CHAR(100)
+    img_web = CHAR(100)
+    img_1920_1080 = CHAR(100)
 
 
 class EventSignup(Base):
