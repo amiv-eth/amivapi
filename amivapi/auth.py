@@ -113,6 +113,8 @@ class TokenAuth(TokenAuth):
             sess = dbsession.query(models.Session).filter(
                 models.Session.token == token).one()
         except NoResultFound:
+            app.logger.debug("Access denied for %s %s: unknown token %s"
+                             % (method, resource, token))
             abort(401)
 
         g.logged_in_user = sess.user_id
@@ -120,6 +122,8 @@ class TokenAuth(TokenAuth):
         g.resource_admin_access = False
 
         if sess.user_id == 0:
+            app.logger.debug("Access granted for root user %s %s"
+                             % (method, resource))
             g.resource_admin_access = True
             return True
 
@@ -130,6 +134,10 @@ class TokenAuth(TokenAuth):
                 if permission_matrix. \
                         roles[permission.role][resource][method] == 1:
                     g.resource_admin_access = True
+                    app.logger.debug("Access granted to %s %s "
+                                     % (method, resource)
+                                     + "for user %i with role %s"
+                                     % (g.logged_in_user, permission.role))
                     return True
             except KeyError:
                 pass
@@ -137,12 +145,18 @@ class TokenAuth(TokenAuth):
         resource_class = utils.get_class_for_resource(resource)
 
         if request.method in resource_class.__registered_methods__:
+            app.logger.debug("Access granted to %s %s for registered user %i"
+                             % (method, resource, g.logged_in_user))
             return True
 
         if request.method in resource_class.__owner_methods__:
+            app.logger.debug("Access granted to %s %s for owner user %i"
+                             % (method, resource, g.logged_in_user))
             g.apply_owner_filters = True
             return True
 
+        app.logger.debug("Access denied to %s %s for unpriviledged user %i"
+                         % (method, resource, g.logged_in_user))
         abort(403)
 
 
@@ -180,6 +194,7 @@ def process_login():
                 salt,
                 100000
         ):
+            app.logger.debug("Wrong login: Password hashes do not match!")
             abort(401)
 
         token = create_token(user[0].id)
@@ -192,6 +207,7 @@ def process_login():
         )
         return send_response('sessions', response)
 
+    app.logger.debug("Wrong login: User not found!")
     abort(401)
 
 
@@ -223,8 +239,6 @@ def pre_get_permission_filter(resource, request, lookup):
 
     for field in resource_class.__owner__:
         lookup['$or'].append({field: g.logged_in_user})
-
-    print lookup
 
 
 def check_future_object_ownage_filter(resource, request, obj):
