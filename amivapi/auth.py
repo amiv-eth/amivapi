@@ -213,6 +213,11 @@ def pre_get_permission_filter(resource, request, lookup):
             or not g.apply_owner_filters:
         return
 
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
+
     if '$or' not in lookup:
         lookup.update({'$or': []})
 
@@ -241,15 +246,37 @@ def pre_post_permission_filter(resource, request):
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    # pre_delete_permission_filter(resource, request, lookup)
-    # pre_post_permission_filter(resource, request)
+    pre_delete_permission_filter(resource, request, lookup)
+    pre_post_permission_filter(resource, request)
     return
 
 
 def pre_patch_permission_filter(resource, request, lookup):
+    """ This filter let's owners only patch objects they own """
     pre_get_permission_filter(resource, request, lookup)
-# TODO(Conrad): Can this be parsed by the POST permission filter?
-# Then we could allow patch for owners.
+
+
+def update_permission_filter(resource, updates, original):
+    """ This filter ensures, that an owner can not change the owner
+    of his objects """
+    resource_class = utils.get_class_for_resource(resource)
+    if request.method in resource_class.__public_methods__ \
+            or not g.apply_owner_filters:
+        return
+
+    if not hasattr(resource_class, '__owner__'):
+        print("Warning: Resource %s has no __owner__" % resource +
+              "but defines __owner_methods__!")
+        abort(500)
+
+    data = original.copy()
+    data.update(updates)
+
+    for field in resource_class.__owner__:
+        if data.get(field) == g.logged_in_user:
+            return
+
+    abort(403, description=('You can not change the owner of this object'))
 
 
 def pre_delete_permission_filter(resource, request, lookup):
@@ -265,8 +292,8 @@ def set_author_on_insert(resource, items):
         i['_author'] = _author
 
 
-def set_author_on_replace(resource, items, original):
-    set_author_on_insert(resource, items)
+def set_author_on_replace(resource, item, original):
+    set_author_on_insert(resource, [item])
 
 
 """ Hooks to hash passwords when user entries are changed in the database """
@@ -278,9 +305,9 @@ def hash_password_before_insert(users):
             u['password'] = create_new_hash(u['password'])
 
 
-def hash_password_before_update(users):
-    hash_password_before_insert(users)
+def hash_password_before_update(user, original_user):
+    hash_password_before_insert([user])
 
 
-def hash_password_before_replace(users, original_users):
-    hash_password_before_insert(users)
+def hash_password_before_replace(user, original_user):
+    hash_password_before_insert([user])

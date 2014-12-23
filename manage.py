@@ -107,6 +107,14 @@ def create_config():
 
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
+    file_dir = prompt("Path to file storage folder",
+                      default=join(settings.ROOT_DIR, "filestorage"))
+
+    config['STORAGE_DIR'] = file_dir
+
+    if not exists(file_dir):
+        mkdir(file_dir, 0700)
+
     config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
 
     # Write everything to file

@@ -64,11 +64,14 @@ class HookTest(util.WebTestNoAuth):
                 'type': 'string',
                 'required': True,
                 'allowed': ['itet', 'mavt'],
-            }
-        }))
+            }}),
+            time_register_start=dt.datetime.utcnow(),
+            time_register_end=dt.datetime.today() + dt.timedelta(days=2),
+            is_public=True,
+        )
         eventid = event.id
         # make new user
-        user = self.new_user()
+        user = self.new_user(email=u"testuser-1@example.net")
         userid = user.id
 
         # Sign up user 1 without departement
@@ -114,7 +117,7 @@ class HookTest(util.WebTestNoAuth):
                           eventid)
         self.assertEquals(
             signups.json['_items'][signup1 - 1]['email'],
-            "testuser-2@example.net"
+            "testuser-1@example.net"
         )
 
         # sign up hermanthegerman@amiv.ethz.ch

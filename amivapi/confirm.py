@@ -56,15 +56,15 @@ def confirm_actions(ressource, method, doc, items, email_field):
 
 
 def return_status(payload):
-    """Send 202 Accepted"""
-    payload.status_code = 202
     # payload.data might get deprecated
-    message = payload.get_data()[:payload.data.find('}')]
-    message += (
-        ', "_issue":"Please check your email and POST the token '
-        'to /confirms to process your request"}'
-    )
-    payload.data = message
+    data = json.loads(payload.get_data())
+    if payload.status_code is 201 and not 'id' in data:
+        """No items actually inserted but saved in Confirm,
+        Send 202 Accepted"""
+        payload.status_code = 202
+        data.update({'_issue': 'Please check your email and POST the token '
+                    'to /confirms to process your request'})
+        payload.data = data
 
 
 @confirmprint.route('/confirms', methods=['POST'])

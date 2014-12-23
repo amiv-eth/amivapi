@@ -7,7 +7,8 @@ roles = {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
-            'PUT': 1
+            'PUT': 1,
+            'DELETE': 1,
         },
         'permissions': {
             'GET': 1,

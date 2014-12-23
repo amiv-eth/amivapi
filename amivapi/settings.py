@@ -19,7 +19,7 @@ TESTING = False
 # Eve
 ID_FIELD = "id"
 AUTH_FIELD = "_author"
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
@@ -29,5 +29,4 @@ XML = False
 # Eve, file storage options
 RETURN_MEDIA_AS_BASE64_STRING = False
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
-STORAGE_DIR = r'D:\Programmieren\amivapi\src\filedump'
 STORAGE_URL = r'/storage'

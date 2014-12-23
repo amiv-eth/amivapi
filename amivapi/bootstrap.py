@@ -9,8 +9,16 @@ from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
-from amivapi import models, confirm, schemas, event_hooks, auth, download
-from amivapi.media import FileSystemStorage
+from amivapi import \
+    models, \
+    confirm, \
+    schemas, \
+    event_hooks, \
+    auth, \
+    download, \
+    delete_hooks, \
+    media
+
 from amivapi.validation import ValidatorAMIV
 
 
@@ -41,12 +49,13 @@ def get_config(environment):
 
 def create_app(environment, disable_auth=False):
     config = get_config(environment)
+
     if disable_auth:
         app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
-                  media=FileSystemStorage)
+                  media=media.FileSystemStorage)
     else:
         app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
-                  auth=auth.TokenAuth, media=FileSystemStorage)
+                  auth=auth.TokenAuth, media=media.FileSystemStorage)
 
     # Bind SQLAlchemy
     db = app.data.driver
@@ -63,6 +72,9 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(download.download, url_prefix="/storage")
 
     # Add event hooks
+    # security note: hooks which are run before auth hooks should never change
+    # the database
+
     app.on_insert += event_hooks.pre_insert_callback
     app.on_update += event_hooks.pre_update_callback
 
@@ -85,11 +97,22 @@ def create_app(environment, disable_auth=False):
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
 
+    app.on_delete_item_users += delete_hooks.delete_user_cleanup
+    app.on_delete_item_forwards += delete_hooks.delete_forward_cleanup
+    app.on_delete_item_event += delete_hooks.delete_event_cleanup
+    app.on_replace_users += delete_hooks.replace_user_cleanup
+    app.on_replace_forwards += delete_hooks.replace_forward_cleanup
+    app.on_replace_event += delete_hooks.replace_event_cleanup
+
     if not disable_auth:
         app.on_pre_GET += auth.pre_get_permission_filter
         app.on_pre_POST += auth.pre_post_permission_filter
         app.on_pre_PUT += auth.pre_put_permission_filter
         app.on_pre_DELETE += auth.pre_delete_permission_filter
         app.on_pre_PATCH += auth.pre_patch_permission_filter
+        app.on_update += auth.update_permission_filter
+
+    # Delete files when studydocument is deleted
+    app.on_delete_item_studydocuments += media.delete_study_files
 
     return app

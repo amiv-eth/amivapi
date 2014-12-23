@@ -5,11 +5,18 @@
 
     Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 """
-
 from werkzeug import secure_filename
+
+from eve.methods.delete import deleteitem_internal
 
 from os import path, remove
 import errno
+
+
+def delete_study_files(item):
+    for file in (dict(item)['files']):
+        lookup = {'id': (file.id)}
+        deleteitem_internal('files', **lookup)
 
 
 class ExtFile(file):
