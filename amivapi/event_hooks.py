@@ -13,12 +13,16 @@ resources_hooked = ['events', 'eventsignups', 'permissions']
 
 
 def pre_insert_callback(resource, items):
+    """
+    general function to call the custom logic validation"""
     if resource in resources_hooked:
         for doc in items:
             eval("check_%s" % resource)(doc)
 
 
 def pre_update_callback(resource, updates, original):
+    """
+    general function to call the custom logic validation"""
     if resource in resources_hooked:
         data = original.copy()
         data.update(updates)
@@ -128,7 +132,7 @@ def pre_signups_post_callback(request):
 
 def signups_confirm_anonymous(items):
     """
-    need an extra hook because we want to delete the item from items"""
+    hook to confirm external signups"""
     for doc in items:
         if doc['user_id'] == -1:
             confirm.confirm_actions(
@@ -208,6 +212,8 @@ def check_permissions(data):
 
 
 def pre_forwardaddresses_insert_callback(items):
+    """
+    hook to confirm actions by external email-addresses"""
     for doc in items:
         confirm.confirm_actions(
             ressource='forwardaddresses',

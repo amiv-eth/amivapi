@@ -24,10 +24,16 @@ def send_confirmmail(ressource, token, email):
 
 def confirm_actions(ressource, method, doc, items, email_field):
     """
+    This method will save a given action for confirmation in the database
+    and send a token to the email-address given.
+    The action will be executed as soon as the token is POSTed to the resource
+    /confirms
     :param ressource: the ressource as a string
     :param method: the method (POST, GET, DELETE) as a string
-    :param condition: a dict with 'doc-key' and 'value' for the condition
-
+    :param doc: the dictionary of the data for the action
+    :param items: a list of all data processed by the hook. This is only needed
+                  to delete the doc out of this list.
+    :param email_field: the key for the email-address in doc
     """
 
     if doc.get('_confirmed') is not True:
