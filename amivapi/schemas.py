@@ -74,6 +74,11 @@ def load_domain(config):
     })
 
     """Maybe this can be automated through the model somehow"""
+    domain['events']['schema'].update({
+        'img_thumbnail': {'type': 'media'},
+        'img_web': {'type': 'media'},
+        'img_1920_1080': {'type': 'media'}
+    })
 
     domain['files']['schema'].update({
         'data': {'type': 'media'}

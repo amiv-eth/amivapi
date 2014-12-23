@@ -80,19 +80,17 @@ a better way to check permissions please consider changing this. We depend
 on a lot of knowledge of relationship internals. """
 
 
-def resolve_future_field(resource, request, field):
-    resource_class = utils.get_class_for_resource(resource)
-
+def resolve_future_field(model, payload, field):
     field_parts = field.split('.')  # This looks like an emoticon
 
     if len(field_parts) == 1:
-        return utils.parse_data(request)[field]
+        return payload[field]
 
-    relationship = inspect(resource_class).relationships[field_parts[0]]
+    relationship = inspect(model).relationships[field_parts[0]]
 
     query = app.data.driver.session.query(relationship.target)
     for l, r in relationship.local_remote_pairs:
-        query = query.filter(r.__eq__(utils.parse_data(request)[l.name]))
+        query = query.filter(r.__eq__(payload[l.name]))
 
     value = query.one()
 
@@ -115,6 +113,8 @@ class TokenAuth(TokenAuth):
             sess = dbsession.query(models.Session).filter(
                 models.Session.token == token).one()
         except NoResultFound:
+            app.logger.debug("Access denied for %s %s: unknown token %s"
+                             % (method, resource, token))
             abort(401)
 
         g.logged_in_user = sess.user_id
@@ -122,6 +122,8 @@ class TokenAuth(TokenAuth):
         g.resource_admin_access = False
 
         if sess.user_id == 0:
+            app.logger.debug("Access granted for root user %s %s"
+                             % (method, resource))
             g.resource_admin_access = True
             return True
 
@@ -132,6 +134,10 @@ class TokenAuth(TokenAuth):
                 if permission_matrix. \
                         roles[permission.role][resource][method] == 1:
                     g.resource_admin_access = True
+                    app.logger.debug("Access granted to %s %s "
+                                     % (method, resource)
+                                     + "for user %i with role %s"
+                                     % (g.logged_in_user, permission.role))
                     return True
             except KeyError:
                 pass
@@ -139,12 +145,18 @@ class TokenAuth(TokenAuth):
         resource_class = utils.get_class_for_resource(resource)
 
         if request.method in resource_class.__registered_methods__:
+            app.logger.debug("Access granted to %s %s for registered user %i"
+                             % (method, resource, g.logged_in_user))
             return True
 
         if request.method in resource_class.__owner_methods__:
+            app.logger.debug("Access granted to %s %s for owner user %i"
+                             % (method, resource, g.logged_in_user))
             g.apply_owner_filters = True
             return True
 
+        app.logger.debug("Access denied to %s %s for unpriviledged user %i"
+                         % (method, resource, g.logged_in_user))
         abort(403)
 
 
@@ -182,6 +194,7 @@ def process_login():
                 salt,
                 100000
         ):
+            app.logger.debug("Wrong login: Password hashes do not match!")
             abort(401)
 
         token = create_token(user[0].id)
@@ -194,6 +207,7 @@ def process_login():
         )
         return send_response('sessions', response)
 
+    app.logger.debug("Wrong login: User not found!")
     abort(401)
 
 
@@ -214,9 +228,11 @@ def pre_get_permission_filter(resource, request, lookup):
         return
 
     if not hasattr(resource_class, '__owner__'):
-        print("Warning: Resource %s has no __owner__" % resource +
-              "but defines __owner_methods__!")
-        abort(500)
+        app.logger.error("Warning: Resource %s has no __owner__" % resource +
+                         "but defines __owner_methods__!")
+        abort(500, description="There seems to be a major"
+              + " bug in the AMIV API. Please report how you arrived here to "
+              + "it@amiv.ethz.ch.")
 
     if '$or' not in lookup:
         lookup.update({'$or': []})
@@ -225,24 +241,44 @@ def pre_get_permission_filter(resource, request, lookup):
         lookup['$or'].append({field: g.logged_in_user})
 
 
-# TODO(Conrad): Does this work with bulk insert?
-def pre_post_permission_filter(resource, request):
+def check_future_object_ownage_filter(resource, request, obj):
+    """ Check if an object would have the currently logged in user as an owner
+    if the passed obj was created in the database or an existing object
+    patched to contain the data
+    """
     resource_class = utils.get_class_for_resource(resource)
     if request.method in resource_class.__public_methods__ \
             or not g.apply_owner_filters:
         return
 
     if not hasattr(resource_class, '__owner__'):
-        print("Warning: Resource %s has no __owner__" % resource +
-              "but defines __owner_methods__!")
-        abort(500)
+        app.logger.error("Warning: Resource %s has no __owner__" % resource +
+                         "but defines __owner_methods__!")
+        abort(500, description="There seems to be a major"
+              + " bug in the AMIV API. Please report how you arrived here to "
+              + "it@amiv.ethz.ch.")
 
-    for field in resource_class.__owner__:
-        if resolve_future_field(resource, request, field) \
-                == g.logged_in_user:
-            return
+    try:
+        for field in resource_class.__owner__:
 
+            v = resolve_future_field(resource_class, obj, field)
+            if v == g.logged_in_user:
+                app.logger.debug("Permission granted base on new owner"
+                                 + "field %s " % field + "with value %s" % v)
+                return True
+    except AttributeError:
+        app.logger.error("Unknown owner field for %s: %s" % (resource, field))
+        raise
+
+    app.logger.debug("403 Access forbidden: The sent object would not belong "
+                     + "to the logged in user after this POST.")
     abort(403)
+
+
+# TODO(Conrad): Does this work with bulk insert?
+def pre_post_permission_filter(resource, request):
+    check_future_object_ownage_filter(resource, request,
+                                      utils.parse_data(request))
 
 
 def pre_put_permission_filter(resource, request, lookup):
@@ -259,24 +295,10 @@ def pre_patch_permission_filter(resource, request, lookup):
 def update_permission_filter(resource, updates, original):
     """ This filter ensures, that an owner can not change the owner
     of his objects """
-    resource_class = utils.get_class_for_resource(resource)
-    if request.method in resource_class.__public_methods__ \
-            or not g.apply_owner_filters:
-        return
-
-    if not hasattr(resource_class, '__owner__'):
-        print("Warning: Resource %s has no __owner__" % resource +
-              "but defines __owner_methods__!")
-        abort(500)
 
     data = original.copy()
     data.update(updates)
-
-    for field in resource_class.__owner__:
-        if data.get(field) == g.logged_in_user:
-            return
-
-    abort(403, description=('You can not change the owner of this object'))
+    check_future_object_ownage_filter(resource, request, data)
 
 
 def pre_delete_permission_filter(resource, request, lookup):

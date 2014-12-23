@@ -173,7 +173,7 @@ class ForwardUser(Base):
     __projected_fields__ = ['forward', 'user']
 
     __owner__ = ['user_id', 'forward.owner_id']
-    __owner_methods__ = ['GET', 'POST', 'DELETE']
+    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     forward_id = Column(
@@ -228,8 +228,10 @@ class Event(Base):
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
-
-    # images
+    # Images
+    img_thumbnail = CHAR(100)
+    img_web = CHAR(100)
+    img_1920_1080 = CHAR(100)
 
 
 class EventSignup(Base):
