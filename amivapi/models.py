@@ -229,9 +229,9 @@ class Event(Base):
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
     # Images
-    img_thumbnail = CHAR(100)
-    img_web = CHAR(100)
-    img_1920_1080 = CHAR(100)
+    img_thumbnail = Column(CHAR(100))
+    img_web = Column(CHAR(100))
+    img_1920_1080 = Column(CHAR(100))
 
 
 class EventSignup(Base):
@@ -297,8 +297,8 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo = CHAR(100)  # The Schema here is changed to type: media
-    pdf = CHAR(100)
+    logo = Column(CHAR(100))  # The Schema here is changed to type: media
+    pdf = Column(CHAR(100))
     time_end = Column(DateTime)
 
 

@@ -81,7 +81,7 @@ def load_domain(config):
     })
 
     domain['files']['schema'].update({
-        'data': {'type': 'media'}
+        'data': {'type': 'media', 'required': True}
     })
 
     domain['joboffers']['schema'].update({

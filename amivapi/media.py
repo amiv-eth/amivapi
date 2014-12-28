@@ -53,6 +53,9 @@ class FileSystemStorage(object):
             with additional parameters. (See above)
             Returns None if no file was found.
         """
+        if not filename:
+            return None  # Without filename, there will be no file
+
         try:
             f = ExtFile(self.fullpath(filename), self.app)
             return f
