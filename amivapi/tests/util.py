@@ -9,7 +9,6 @@ from eve.io.sql import sql
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
-from werkzeug import FileStorage
 
 from amivapi import bootstrap, models, tests
 from amivapi.auth import create_new_hash, create_token
@@ -108,13 +107,13 @@ class WebTest(unittest.TestCase):
 
         self.api = self.app.test_client()
 
-        #Delete all files after testing
+        # Delete all files after testing
         self.addCleanup(self.file_cleanup)
 
     def file_cleanup(self):
         for f in os.listdir(self.app.config['STORAGE_DIR']):
             try:
-                os.remove(os.path.join(self.app.config['STORAGE_DIR'],f))
+                os.remove(os.path.join(self.app.config['STORAGE_DIR'], f))
             except:
                 """The tests seem to be to fast sometimes, cleanup in the end
                 works fine, in between tests deletion sometimes doesn't work.
