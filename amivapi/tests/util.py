@@ -3,11 +3,13 @@ import random
 import unittest
 from base64 import b64encode
 from datetime import datetime
+import os
 
 from eve.io.sql import sql
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
+from werkzeug import FileStorage
 
 from amivapi import bootstrap, models, tests
 from amivapi.auth import create_new_hash, create_token
@@ -105,6 +107,24 @@ class WebTest(unittest.TestCase):
         self.db.remove = self.db.flush
 
         self.api = self.app.test_client()
+
+        #Delete all files after testing
+        self.addCleanup(self.file_cleanup)
+
+    def file_cleanup(self):
+        for f in os.listdir(self.app.config['STORAGE_DIR']):
+            try:
+                os.remove(os.path.join(self.app.config['STORAGE_DIR'],f))
+            except:
+                """The tests seem to be to fast sometimes, cleanup in the end
+                works fine, in between tests deletion sometimes doesn't work.
+                Hack-like solution: Just ignore that and be happy that all
+                files are deleted in the end.
+                TODO: Find out whats wrong
+                (To reproduce remove the try-except block and run the
+                file access test)
+                """
+                pass
 
     _count = 0
 
@@ -226,6 +246,21 @@ class WebTest(unittest.TestCase):
         count = self.next_count()
         if 'name' not in kwargs:
             kwargs['name'] = u"Your default studydoc-%i" % count
+        return kwargs
+
+    @create_object(models.File)
+    def new_file(self, **kwargs):
+        """ Create a new file """
+        count = self.next_count()
+        if 'data' not in kwargs:
+            filename = 'default_file_%i.txt' % count
+            f = open(os.path.join(self.app.config['STORAGE_DIR'], filename),
+                     'w')
+            f.write('Your default content.')
+            f.close()
+            kwargs['data'] = filename
+        if 'study_doc_id' not in kwargs:
+            kwargs['study_doc_id'] = 1  # Just add a number
         return kwargs
 
     @create_object(models.Confirm)
