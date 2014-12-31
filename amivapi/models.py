@@ -229,9 +229,9 @@ class Event(Base):
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
     # Images
-    img_thumbnail = Column(CHAR(100))
-    img_web = Column(CHAR(100))
-    img_1920_1080 = Column(CHAR(100))
+    img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_web = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
 
 class EventSignup(Base):
@@ -263,9 +263,10 @@ class File(Base):
 
     __owner__ = ['_author']  # This permitts everybody to post here!
     __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
-    data = Column(CHAR(100))
+    data = Column(CHAR(100))  # This will be modified in schemas.py!
     study_doc_id = Column(Integer, ForeignKey("studydocuments.id"),
                           nullable=False)
     study_doc = relationship("StudyDocument", backref="files")
@@ -297,8 +298,8 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo = Column(CHAR(100))  # The Schema here is changed to type: media
-    pdf = Column(CHAR(100))
+    logo = Column(CHAR(100))  # This will be modified in schemas.py!
+    pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
 
