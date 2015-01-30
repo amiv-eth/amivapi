@@ -64,7 +64,7 @@ def confirm_actions(ressource, method, doc, items, email_field):
 def return_status(payload):
     # payload.data might get deprecated
     data = json.loads(payload.get_data())
-    if payload.status_code is 201 and not 'id' in data:
+    if payload.status_code is 201 and 'id' not in data:
         """No items actually inserted but saved in Confirm,
         Send 202 Accepted"""
         payload.status_code = 202
