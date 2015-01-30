@@ -1,5 +1,5 @@
 from flask import current_app as app
-from flask import abort
+from flask import abort, g
 from eve.utils import debug_error_message
 from eve.validation import ValidationError
 # from amivapi.validation import ValidatorAMIV
@@ -238,3 +238,27 @@ def pre_forwardaddresses_patch_callback(request, lookup):
         abort(403, description=(
             'You are not allowed to change the forward_id'
         ))
+
+
+""" /users """
+
+def pre_users_patch_callback(request, lookup):
+    """
+    Don't allow a user to change fields
+    """
+    if g.resource_admin_access:
+        return
+
+    disallowed_fields = ['username', 'firstname', 'lastname', 'birthday',
+                         'legi', 'nethz', 'department', 'phone',
+                         'ldapAddress', 'gender', 'membership']
+
+    data = utils.parse_data(request)
+
+    for f in disallowed_fields:
+        if f in data:
+            app.logger.debug("Rejecting patch due to insufficent priviledges"
+                             + "to change " + f)
+            abort(403, description=(
+                'You are not allowed to change your ' + f
+            ))
