@@ -247,6 +247,13 @@ def pre_forwardaddresses_patch_callback(request, lookup):
 """ /users """
 
 
+def pre_users_get_callback(request, lookup):
+    """ Prevent users from reading their password """
+    projection = request.args.get('projection')
+    if projection and 'password' in projection:
+        abort(403, description='Bad projection field: password')
+
+
 def pre_users_patch_callback(request, lookup):
     """
     Don't allow a user to change fields

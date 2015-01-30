@@ -78,6 +78,7 @@ def create_app(environment, disable_auth=False):
     app.on_pre_PATCH_forwardaddresses += event_hooks.\
         pre_forwardaddresses_patch_callback
 
+    app.on_pre_GET_users += event_hooks.pre_users_get_callback
     app.on_pre_PATCH_users += event_hooks.pre_users_patch_callback
 
     app.on_insert_users += auth.hash_password_before_insert

@@ -32,6 +32,10 @@ def load_domain(config):
         }
     })
 
+    """ Hide passwords """
+
+    domain['users']['datasource']['projection']['password'] = 0
+
     """ Only accept email addresses for email fields """
 # FIXME(Conrad): There could be a generic way to add regexes to fields in the
 #                model
