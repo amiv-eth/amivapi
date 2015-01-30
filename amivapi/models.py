@@ -14,7 +14,6 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Boolean,
-    DECIMAL,
 )
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -223,7 +222,7 @@ class Event(Base):
     location = Column(Unicode(50))
     description = Column(UnicodeText)
     is_public = Column(Boolean, default=False, nullable=False)
-    price = Column(String(10))
+    price = Column(Integer)  # Price in Rappen
     spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)

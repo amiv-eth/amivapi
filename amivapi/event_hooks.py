@@ -182,6 +182,10 @@ def check_events(data):
         abort(422, description=(
             'time_end needs to be after time_start'
         ))
+    if data.get('price', 0) < 0:
+        abort(422, description=(
+            'price needs to be positive or zero'
+        ))
     validator = app.validator('', '')
     try:
         schema = json.loads(data.get('additional_fields'))
@@ -241,6 +245,7 @@ def pre_forwardaddresses_patch_callback(request, lookup):
 
 
 """ /users """
+
 
 def pre_users_patch_callback(request, lookup):
     """
