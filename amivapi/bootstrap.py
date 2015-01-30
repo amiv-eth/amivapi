@@ -1,6 +1,4 @@
 from os.path import abspath, dirname, join
-import codecs
-import rsa
 
 from eve import Eve
 from eve.io.sql import SQL  # , ValidatorSQL
@@ -33,16 +31,6 @@ def get_config(environment):
                              + "`python manage.py create_config`.")
 
     schemas.load_domain(config)
-
-    # Load private key to sign login tokens
-    key_file = join(config_dir, "%s-login-private.pem" % environment)
-    try:
-        config['LOGIN_PRIVATE_KEY'] = rsa.PrivateKey.load_pkcs1(
-            codecs.open(key_file, "r", "utf-8").read(),
-            format='PEM')
-    except IOError as e:
-        raise IOError(str(e) + "\nYour private key is missing. Run "
-                      + "`python manage.py create_config` to create it!")
 
     return config
 

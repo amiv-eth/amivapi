@@ -2,7 +2,6 @@ import codecs
 import datetime as dt
 from os import mkdir
 from os.path import abspath, dirname, join, exists, expanduser
-import rsa
 
 from sqlalchemy.exc import OperationalError
 
@@ -46,23 +45,6 @@ def make_config(name, **config):
 
         for key, value in sorted(config.items()):
             f.write("%s = %r\n" % (key.upper(), value))
-
-
-# Create public/private keys to sign login tokens
-def create_key_files(environment):
-    print("Creating public/private key pair. This may take a while...")
-
-    public_key_file = join(settings.ROOT_DIR, "config",
-                           "%s-login-private.pem" % environment)
-    private_key_file = join(settings.ROOT_DIR, "config",
-                            "%s-login-public.pem" % environment)
-    (private_key, public_key) = rsa.newkeys(2048)
-
-    with codecs.open(public_key_file, "w", encoding="utf-8") as f:
-        f.write(public_key.save_pkcs1(format='PEM'))
-
-    with codecs.open(private_key_file, "w", encoding="utf-8") as f:
-        f.write(private_key.save_pkcs1(format='PEM'))
 
 
 @manager.command
@@ -121,8 +103,6 @@ def create_config():
     # Note: The file is opened in non-binary mode, because we want python to
     # auto-convert newline characters to the underlying platform.
     make_config(target_file, **config)
-
-    create_key_files(environment)
 
     print("Run manage.py create_database to create a database!")
 

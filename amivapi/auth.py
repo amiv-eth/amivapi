@@ -1,8 +1,5 @@
 import hashlib
-import json
-import rsa
 from os import urandom
-from datetime import datetime
 from base64 import b64encode, b64decode
 
 from flask import current_app as app
@@ -22,27 +19,8 @@ import utils
 
 """
 This file provides token based authentification. A user can POST the /sessions
-resource to obtain a token, which is a json dict of the following form:
-
-{
-    'user_id': integer,
-    'login_time': time,
-    'signature': string(64 bytes hex = 256 Bit SHA2)
-}
-
-This token shows that he is the user identified by user_id and obtained the
-token at the time in login_time.
-The signature is the SHA2 hash of user_id padded with zeros to 10 digits
-followed by the time of login in the DATE_FORMAT specified in the config
-followed by the servers login secret(see TokenAuth._create_signature)
+resource to obtain a token.
 """
-
-
-def _create_signature(user_id, login_time):
-    msg = "{:0=10d}".format(user_id) \
-          + login_time.strftime(app.config['DATE_FORMAT'])
-
-    return b64encode(rsa.sign(msg, app.config['LOGIN_PRIVATE_KEY'], 'SHA-256'))
 
 
 """ Creates a new hash for a password. This generates a random salt, so it can
@@ -58,21 +36,6 @@ def create_new_hash(password):
         '$' +
         b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
     )
-
-""" Creates a new token for the specified user. The new token is based on the
-current time, so the return value will change every second.
-"""
-
-
-def create_token(user_id):
-    time = datetime.now()
-    signature = _create_signature(user_id, time)
-
-    return b64encode(json.dumps({
-        'user_id': user_id,
-        'login_time': time.strftime(app.config['DATE_FORMAT']),
-        'signature': signature,
-    }))
 
 
 """ This function (HACK ALERT) tries to figure out where relationship would
@@ -115,7 +78,7 @@ class TokenAuth(TokenAuth):
                 models.Session.token == token).one()
         except NoResultFound:
             error = ("Access denied for %s %s: unknown token %s"
-                             % (method, resource, token))
+                     % (method, resource, token))
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
 
@@ -201,7 +164,7 @@ def process_login():
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
 
-        token = create_token(user[0].id)
+        token = b64encode(urandom(256))
         response = post_internal(
             'sessions',
             {

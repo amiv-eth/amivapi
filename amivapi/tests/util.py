@@ -11,7 +11,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
-from amivapi.auth import create_new_hash, create_token
+from amivapi.auth import create_new_hash
 from amivapi.confirm import id_generator
 
 
@@ -210,7 +210,7 @@ class WebTest(unittest.TestCase):
         if 'user_id' not in kwargs:
             kwargs['user_id'] = 0
         with self.app.app_context():
-            kwargs['token'] = create_token(kwargs['user_id'])
+            kwargs['token'] = b64encode(os.urandom(256))
         return kwargs
 
     @create_object(models.Event)
