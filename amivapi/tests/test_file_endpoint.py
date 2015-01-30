@@ -10,10 +10,11 @@ class FileEndpointTest(util.WebTest):
     """
     def test_registered(self):
         """Test as registered user, should be ok (200)"""
+        u = self.new_user()
         f = self.new_file()
         url = self.app.media.get(f.data).content_url
 
-        session = self.new_session()  # fake login
+        session = self.new_session(user_id=u.id)  # fake login
 
         self.api.get(url, token=session.token, status_code=200)
 

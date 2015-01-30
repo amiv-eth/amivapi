@@ -309,3 +309,9 @@ class Confirm(Base):
     ressource = Column(String(50))
     data = Column(String(1000))
     expiry_date = Column(DateTime)
+
+
+# Permissions for file storage
+class Storage:
+    __expose__ = False  # Don't create a schema
+    __registered_methods__ = ['GET']
