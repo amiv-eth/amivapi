@@ -11,6 +11,7 @@ from flask import Blueprint, abort, request, g
 from eve.render import send_response
 from eve.methods.post import post_internal
 from eve.auth import TokenAuth
+from eve.utils import debug_error_message
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.inspection import inspect
@@ -113,9 +114,10 @@ class TokenAuth(TokenAuth):
             sess = dbsession.query(models.Session).filter(
                 models.Session.token == token).one()
         except NoResultFound:
-            app.logger.debug("Access denied for %s %s: unknown token %s"
+            error = ("Access denied for %s %s: unknown token %s"
                              % (method, resource, token))
-            abort(401)
+            app.logger.debug(error)
+            abort(401, description=debug_error_message(error))
 
         g.logged_in_user = sess.user_id
         g.apply_owner_filters = False
@@ -155,9 +157,10 @@ class TokenAuth(TokenAuth):
             g.apply_owner_filters = True
             return True
 
-        app.logger.debug("Access denied to %s %s for unpriviledged user %i"
-                         % (method, resource, g.logged_in_user))
-        abort(403)
+        error = ("Access denied to %s %s for unpriviledged user %i"
+                 % (method, resource, g.logged_in_user))
+        app.logger.debug(error)
+        abort(403, description=debug_error_message(error))
 
 
 """ Authentification related endpoints """
@@ -194,8 +197,9 @@ def process_login():
                 salt,
                 100000
         ):
-            app.logger.debug("Wrong login: Password hashes do not match!")
-            abort(401)
+            error = "Wrong login: Password does not match!"
+            app.logger.debug(error)
+            abort(401, description=debug_error_message(error))
 
         token = create_token(user[0].id)
         response = post_internal(
@@ -207,8 +211,9 @@ def process_login():
         )
         return send_response('sessions', response)
 
-    app.logger.debug("Wrong login: User not found!")
-    abort(401)
+    error = "Wrong login: User not found!"
+    app.logger.debug(error)
+    abort(401, description=debug_error_message(error))
 
 
 """ Auth related hooks """
@@ -270,9 +275,10 @@ def check_future_object_ownage_filter(resource, request, obj):
         app.logger.error("Unknown owner field for %s: %s" % (resource, field))
         raise
 
-    app.logger.debug("403 Access forbidden: The sent object would not belong "
-                     + "to the logged in user after this POST.")
-    abort(403)
+    error = ("403 Access forbidden: The sent object would not belong "
+             + "to the logged in user after this POST.")
+    app.logger.debug(error)
+    abort(403, description=debug_error_message(error))
 
 
 # TODO(Conrad): Does this work with bulk insert?
