@@ -315,3 +315,8 @@ class Confirm(Base):
 class Storage:
     __expose__ = False  # Don't create a schema
     __registered_methods__ = ['GET']
+
+
+class Roles:
+    __expose__ = False  # Don't create a schema
+    __registered_methods__ = ['GET']

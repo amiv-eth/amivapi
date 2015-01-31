@@ -7,8 +7,9 @@ from flask import Blueprint, abort, request, g
 
 from eve.render import send_response
 from eve.methods.post import post_internal
+from eve.methods.common import resource_link
 from eve.auth import TokenAuth
-from eve.utils import debug_error_message
+from eve.utils import home_link, config, debug_error_message
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.inspection import inspect
@@ -131,7 +132,10 @@ class TokenAuth(TokenAuth):
 auth = Blueprint('auth', __name__)
 
 
-""" Handle POST to /sessions
+""" Endpoints """
+
+
+""" Login
 
 A POST to /sessions exspects a username and password. If they are correct a
 token is created and used to register a session in the database, which is sent
@@ -177,6 +181,39 @@ def process_login():
     error = "Wrong login: User not found!"
     app.logger.debug(error)
     abort(401, description=debug_error_message(error))
+
+
+""" GET to /roles """
+
+
+@auth.route('/roles', methods=['GET'])
+def get_roles():
+    if app.auth and not app.auth.authorized([], 'roles', 'GET'):
+        return app.auth.authenticate()
+
+    response = {}
+
+    items = []
+    for role, perms in permission_matrix.roles.items():
+        for p in perms.values():
+            for k in ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']:
+                if k not in p.keys():
+                    p[k] = 0
+        items.append({
+            'name': role,
+            'permissions': perms
+        })
+    response[config.ITEMS] = items
+
+    response[config.LINKS] = {
+        'parent': home_link(),
+        'self': {
+            'title': 'roles',
+            'href': resource_link()
+        }
+    }
+
+    return send_response(None, [response])
 
 
 """ Auth related hooks """
