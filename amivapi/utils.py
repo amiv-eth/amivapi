@@ -18,7 +18,7 @@ def init_database(connection, config):
     except OperationalError:
         print("You are trying to create a new database, but the database " +
               "already exists!")
-        exit(0)
+        raise
 
     session = Session(bind=connection)
 

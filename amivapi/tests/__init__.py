@@ -1,6 +1,7 @@
 import warnings
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 
 from amivapi import bootstrap, models, utils
 
@@ -17,7 +18,12 @@ def setup():
     engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
     connection = engine.connect()
 
-    utils.init_database(connection, config)
+    try:
+        utils.init_database(connection, config)
+    except OperationalError:
+        print("There is already a testing database, please delete it before"
+              + "running tests.")
+        exit(0)
 
 
 def teardown():

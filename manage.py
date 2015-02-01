@@ -15,7 +15,7 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings, bootstrap
+from amivapi import settings, bootstrap, models
 from amivapi.models import User
 from amivapi.auth import create_new_hash
 from amivapi.utils import init_database
@@ -104,7 +104,8 @@ def create_config():
     # auto-convert newline characters to the underlying platform.
     make_config(target_file, **config)
 
-    print("Run manage.py create_database to create a database!")
+    print("Run `manage.py -c " + environment +
+          " create_database` to create a database!")
 
 
 @manager.command
@@ -115,8 +116,16 @@ def create_database():
         print("Please specify an environment with -c")
         exit(0)
 
-    # FIXME(Conrad): This should actually provide a connection, not an engine
-    init_database(manager.app.data.driver.engine, manager.app.config)
+    try:
+        # FIXME(Conrad): This should actually provide a connection, not an
+        # engine
+        init_database(manager.app.data.driver.engine, manager.app.config)
+    except OperationalError:
+        if not prompt_bool(
+                "A database seems to exist already. Overwrite it?(y/N)"):
+            return
+        models.Base.metadata.drop_all(manager.app.data.driver.engine)
+        init_database(manager.app.data.driver.engine, manager.app.config)
 
 
 @manager.command
