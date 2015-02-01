@@ -9,7 +9,7 @@ import json
 
 from amivapi import models, utils, confirm
 
-resources_hooked = ['events', 'eventsignups', 'permissions']
+resources_hooked = ['forwardusers', 'events', 'eventsignups', 'permissions']
 
 
 def pre_insert_callback(resource, items):
@@ -28,6 +28,22 @@ def pre_update_callback(resource, updates, original):
         data.update(updates)
         eval("check_%s" % resource)(data)
 
+
+""" /forwardusers """
+
+
+def check_forwardusers(data):
+    db = app.data.driver.session
+
+    forwardid = data.get('forward_id')
+    forward = db.query(models.Forward).get(forwardid)
+
+    """ Users may only self enroll for public forwards """
+    if not forward.is_public and not g.resource_admin_access \
+            and not g.logged_in_user == forward.owner_id:
+        abort(403, description=debug_error_message(
+            'You are not allowed to self enroll for this forward'
+        ))
 
 """ /signups """
 

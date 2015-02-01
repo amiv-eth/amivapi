@@ -6,7 +6,7 @@ class ForwardTest(util.WebTestNoAuth):
 
     def test_a_assign_registered(self):
         user = self.new_user()
-        forward = self.new_forward()
+        forward = self.new_forward(is_public=True)
 
         # forward non-existing user
         self.api.post("/forwardusers", data={
@@ -34,7 +34,7 @@ class ForwardTest(util.WebTestNoAuth):
 
     def test_b_assign_unregistered(self):
         email = "test-mail@amiv.ethz.ch"
-        forward = self.new_forward()
+        forward = self.new_forward(is_public=True)
 
         # forward to non-email-address
         self.api.post("/forwardaddresses", data={

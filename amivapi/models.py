@@ -163,6 +163,7 @@ class Forward(Base):
 
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_public = Column(Boolean, default=False, nullable=False)
 
     owner = relationship(User, foreign_keys=owner_id)
 

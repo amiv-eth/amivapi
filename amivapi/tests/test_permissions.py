@@ -115,7 +115,7 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        forward = self.new_forward(owner_id=list_owner.id)
+        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         self.new_forward_user(forward_id=forward.id,
                               user_id=entry_user.id)
 
@@ -160,7 +160,7 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        forward = self.new_forward(owner_id=list_owner.id)
+        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
 
         data = {
             "user_id": entry_user.id,
@@ -206,8 +206,8 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        forward = self.new_forward(owner_id=list_owner.id)
-        forward2 = self.new_forward(owner_id=list_owner.id)
+        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
+        forward2 = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_user = self.new_forward_user(forward_id=forward.id,
                                              user_id=entry_user.id)
 
@@ -230,7 +230,7 @@ class PermissionsTest(util.WebTest):
                        headers={'If-Match': forward_user._etag},
                        status_code=200)
 
-        forward3 = self.new_forward(owner_id=0)
+        forward3 = self.new_forward(owner_id=0, is_public=True)
 
         data = {
             "forward_id": forward3.id
@@ -302,8 +302,8 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        forward = self.new_forward(owner_id=list_owner.id)
-        forward2 = self.new_forward(owner_id=list_owner.id)
+        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
+        forward2 = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_user = self.new_forward_user(forward_id=forward.id,
                                              user_id=entry_user.id)
 
@@ -327,7 +327,7 @@ class PermissionsTest(util.WebTest):
                        headers={'If-Match': forward_user._etag},
                        status_code=200)
 
-        forward3 = self.new_forward(owner_id=0)
+        forward3 = self.new_forward(owner_id=0, is_public=True)
 
         data = {
             "user_id": entry_user.id,
@@ -400,7 +400,7 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        forward = self.new_forward(owner_id=list_owner.id)
+        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_user = self.new_forward_user(forward_id=forward.id,
                                              user_id=entry_user.id)
 

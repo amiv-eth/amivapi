@@ -187,6 +187,8 @@ class WebTest(unittest.TestCase):
             kwargs['address'] = u"test-address-%i@example.com" % count
         if 'owner_id' not in kwargs:
             kwargs['owner_id'] = 0
+        if 'is_public' not in kwargs:
+            kwargs['is_public'] = random.choice([True, False])
         return kwargs
 
     @create_object(models.ForwardUser)
