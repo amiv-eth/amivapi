@@ -15,7 +15,8 @@ from amivapi import \
     auth, \
     file_endpoint, \
     delete_hooks, \
-    media
+    media, \
+    forwards
 
 from amivapi.validation import ValidatorAMIV
 
@@ -94,6 +95,16 @@ def create_app(environment, disable_auth=False):
     app.on_replace_users += delete_hooks.replace_user_cleanup
     app.on_replace_forwards += delete_hooks.replace_forward_cleanup
     app.on_replace_event += delete_hooks.replace_event_cleanup
+
+    app.on_deleted_forwards += forwards.on_forward_deleted
+    app.on_inserted_forwardusers += forwards.on_forwarduser_inserted
+    app.on_replaced_forwardusers += forwards.on_forwarduser_replaced
+    app.on_updated_forwardusers += forwards.on_forwarduser_updated
+    app.on_deleted_forwardusers += forwards.on_forwarduser_deleted
+    app.on_inserted_forwardaddresses += forwards.on_forwardaddress_inserted
+    app.on_replaced_forwardaddresses += forwards.on_forwardaddress_replaced
+    app.on_updated_forwardaddresses += forwards.on_forwardaddress_updated
+    app.on_deleted_forwardaddresses += forwards.on_forwardaddress_deleted
 
     if not disable_auth:
         app.on_pre_GET += auth.pre_get_permission_filter

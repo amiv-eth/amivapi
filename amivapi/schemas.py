@@ -41,8 +41,6 @@ def load_domain(config):
 #                model
     domain['users']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
-    domain['forwards']['schema']['address'].update(
-        {'regex': config['EMAIL_REGEX']})
     domain['forwardaddresses']['schema']['address'].update(
         {'regex': config['EMAIL_REGEX']})
     domain['eventsignups']['schema']['email'].update(
