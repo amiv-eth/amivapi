@@ -70,30 +70,22 @@ def on_forward_deleted(item):
 
 def on_forwarduser_inserted(items):
     for i in items:
-        app.logger.debug("No1")
         add_user(i['forward_id'], i['user_id'])
-        app.logger.debug("No1")
 
 
 def on_forwarduser_replaced(item, original):
-    app.logger.debug("No2")
     remove_user(original['forward_id'], original['user_id'])
     add_user(item['forward_id'], item['user_id'])
-    app.logger.debug("No2")
 
 
 def on_forwarduser_updated(updates, original):
-    app.logger.debug("No3")
     new_item = original.copy()
     new_item.update(updates)
     on_forwarduser_replaced(new_item, original)
-    app.logger.debug("No3")
 
 
 def on_forwarduser_deleted(item):
-    app.logger.debug("No4")
     remove_user(item['forward_id'], item['user_id'])
-    app.logger.debug("No4")
 
 
 """ Hooks for changes to forwardaddresses """
