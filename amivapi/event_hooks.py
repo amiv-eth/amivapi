@@ -151,13 +151,13 @@ def signups_confirm_anonymous(items):
     hook to confirm external signups"""
     for doc in items:
         if doc['user_id'] == -1:
-            confirm.confirm_actions(
+            if not confirm.confirm_actions(
                 ressource='eventsignups',
                 method='POST',
                 doc=doc,
-                items=items,
                 email_field='email',
-            )
+            ):
+                items.remove(doc)
 
 
 def post_signups_post_callback(request, payload):
@@ -235,13 +235,13 @@ def pre_forwardaddresses_insert_callback(items):
     """
     hook to confirm actions by external email-addresses"""
     for doc in items:
-        confirm.confirm_actions(
+        if not confirm.confirm_actions(
             ressource='forwardaddresses',
             method='POST',
             doc=doc,
-            items=items,
             email_field='address',
-        )
+        ):
+            items.remove(doc)
 
 
 def post_forwardaddresses_post_callback(request, payload):
