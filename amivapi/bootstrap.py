@@ -72,12 +72,8 @@ def create_app(environment, disable_auth=False):
     app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
     app.on_insert_eventsignups += event_hooks.signups_confirm_anonymous
 
-    app.on_insert_forwardaddresses += event_hooks.\
-        pre_forwardaddresses_insert_callback
-    app.on_post_POST_forwardaddresses += event_hooks.\
-        post_forwardaddresses_post_callback
-    app.on_pre_PATCH_forwardaddresses += event_hooks.\
-        pre_forwardaddresses_patch_callback
+    app.on_delete_item_forwardaddresses += event_hooks.\
+        pre_forwardaddresses_delete_callback
 
     app.on_pre_GET_users += event_hooks.pre_users_get_callback
     app.on_pre_PATCH_users += event_hooks.pre_users_patch_callback
