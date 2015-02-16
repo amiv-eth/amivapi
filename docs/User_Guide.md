@@ -43,11 +43,11 @@ The status code returned by the API are the standard [HTTP status codes](https:/
  * 201 - Created (successful POST)
  * 204 - Deleted (successful DELETE)
 
- * 400 - Bad request(This means your request has created an exception in the server and the previous state was restored, if you are sure it is not your fault file a bug report)
+ * 400 - Bad request (This means your request has created an exception in the server and the previous state was restored, if you are sure it is not your fault file a bug report)
  * 401 - Please log in
- * 403 - Logged in but not allowed(This is not for you)
- * 404 - No content(This can also mean you could retrive something here, but no object is visible to you because your account is that of a peasant)
- * 422 - Semantic error(Your data does not make sense, e.g. dates in the past which should not be)
+ * 403 - Logged in but not allowed (This is not for you)
+ * 404 - No content (This can also mean you could retrive something here, but no object is visible to you because your account is that of a peasant)
+ * 422 - Semantic error (Your data does not make sense, e.g. dates in the past which should not be)
 
  * 500 - Generic server error
  * 501 - Not implemented (Should work after alpha)
@@ -304,3 +304,21 @@ The response will be the changed user object.
 # Working with files
 
 TODO(Alex)
+
+#Unregistered users
+
+AMIV api currently allows unregistered users in axactly two cases: Signing up for a public event (when 'is_public' is set to True) or managing email-subscribtions for public email lists.  
+
+##Public Events
+To subscribe to a public event with an email-address you simply post to "/eventsignups":
+
+    {
+        'event_id': 1,
+        'user_id': -1,
+        'email': "mymail@myprovider.ch",
+    }
+
+You will receive a 202 Acepted. This means that the signup is not valid yet, but the user has received an email and can confirm the signup by clicking on a link.
+
+##Email Forwards
+They work like eventsignups, but just post address and forward-id to "/forwardaddresses".a
