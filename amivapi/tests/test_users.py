@@ -19,6 +19,8 @@ class UserResourceTest(util.WebTestNoAuth):
                     == user.username).next()
         print api_user
         for col in models.User.__table__.c:
+            if col.key == 'password':
+                continue
             self.assertIn(col.key, api_user)
 
             model_value = getattr(user, col.key)

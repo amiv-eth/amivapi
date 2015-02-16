@@ -1,6 +1,4 @@
 from os.path import abspath, dirname, join
-import codecs
-import rsa
 
 from eve import Eve
 from eve.io.sql import SQL  # , ValidatorSQL
@@ -15,7 +13,7 @@ from amivapi import \
     schemas, \
     event_hooks, \
     auth, \
-    download, \
+    file_endpoint, \
     delete_hooks, \
     media
 
@@ -33,16 +31,6 @@ def get_config(environment):
                              + "`python manage.py create_config`.")
 
     schemas.load_domain(config)
-
-    # Load private key to sign login tokens
-    key_file = join(config_dir, "%s-login-private.pem" % environment)
-    try:
-        config['LOGIN_PRIVATE_KEY'] = rsa.PrivateKey.load_pkcs1(
-            codecs.open(key_file, "r", "utf-8").read(),
-            format='PEM')
-    except IOError as e:
-        raise IOError(str(e) + "\nYour private key is missing. Run "
-                      + "`python manage.py create_config` to create it!")
 
     return config
 
@@ -69,7 +57,7 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
-    app.register_blueprint(download.download, url_prefix="/storage")
+    app.register_blueprint(file_endpoint.download, url_prefix="/storage")
 
     # Add event hooks
     # security note: hooks which are run before auth hooks should never change
@@ -89,6 +77,9 @@ def create_app(environment, disable_auth=False):
         post_forwardaddresses_post_callback
     app.on_pre_PATCH_forwardaddresses += event_hooks.\
         pre_forwardaddresses_patch_callback
+
+    app.on_pre_GET_users += event_hooks.pre_users_get_callback
+    app.on_pre_PATCH_users += event_hooks.pre_users_patch_callback
 
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace

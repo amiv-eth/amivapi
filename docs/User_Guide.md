@@ -321,4 +321,15 @@ To subscribe to a public event with an email-address you simply post to "/events
 You will receive a 202 Acepted. This means that the signup is not valid yet, but the user has received an email and can confirm the signup by clicking on a link.
 
 ##Email Forwards
-They work like eventsignups, but just post address and forward-id to "/forwardaddresses".a
+They work like eventsignups, but just post address and forward-id to "/forwardaddresses".
+
+# Common Problems
+
+## PATCH, PUT or DELETE returns 403
+
+Make sure you provided the required If-Match header. If that does not help
+make sure you can use GET on the item. If you are unable to request a GET
+then your account can not access the object.
+If you are able to GET the object, then your provided data is invalid. If
+you do not have admin priviledges for the endpoint(method on that resource)
+make sure your request will conserve your ownership of the object.

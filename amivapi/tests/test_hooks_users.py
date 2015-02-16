@@ -12,6 +12,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"username": "new_name"},
                        status_code=403)
 
@@ -26,6 +27,7 @@ class UserHooksTest(util.WebTest):
         new_pw = u"my_new_pw_9123580:öpäß'+ `&%$§\"!)(\\\xff\x10\xa0"
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"password": new_pw},
                        status_code=200)
 
@@ -42,6 +44,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"firstname": "new_name"},
                        status_code=403)
 
@@ -52,6 +55,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"lastname": "new_name"},
                        status_code=403)
 
@@ -62,6 +66,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"birthday": "1990-01-01Z"},
                        status_code=403)
 
@@ -72,6 +77,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"legi": "10000000"},
                        status_code=403)
 
@@ -82,6 +88,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"rfid": "100000"},
                        status_code=200)
 
@@ -92,6 +99,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"nethz": "coolkid"},
                        status_code=403)
 
@@ -102,6 +110,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"department": "infk"},
                        status_code=403)
 
@@ -112,6 +121,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"phone": "177"},
                        status_code=403)
 
@@ -122,6 +132,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"ldapAddress": "Weg 1"},
                        status_code=403)
 
@@ -132,6 +143,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"gender": "male"},
                        status_code=403)
 
@@ -142,6 +154,7 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"email": "no@emaxpsd.com"},
                        status_code=200)
 
@@ -152,5 +165,6 @@ class UserHooksTest(util.WebTest):
         session = self.new_session(user_id=user.id)
 
         self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
                        data={"membership": "none"},
                        status_code=403)

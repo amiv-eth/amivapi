@@ -1,5 +1,5 @@
 from flask import current_app as app
-from flask import abort
+from flask import abort, g
 from eve.utils import debug_error_message
 from eve.validation import ValidationError
 # from amivapi.validation import ValidatorAMIV
@@ -9,7 +9,7 @@ import json
 
 from amivapi import models, utils, confirm
 
-resources_hooked = ['events', 'eventsignups', 'permissions']
+resources_hooked = ['forwardusers', 'events', 'eventsignups', 'permissions']
 
 
 def pre_insert_callback(resource, items):
@@ -28,6 +28,22 @@ def pre_update_callback(resource, updates, original):
         data.update(updates)
         eval("check_%s" % resource)(data)
 
+
+""" /forwardusers """
+
+
+def check_forwardusers(data):
+    db = app.data.driver.session
+
+    forwardid = data.get('forward_id')
+    forward = db.query(models.Forward).get(forwardid)
+
+    """ Users may only self enroll for public forwards """
+    if not forward.is_public and not g.resource_admin_access \
+            and not g.logged_in_user == forward.owner_id:
+        abort(403, description=debug_error_message(
+            'You are not allowed to self enroll for this forward'
+        ))
 
 """ /signups """
 
@@ -182,6 +198,10 @@ def check_events(data):
         abort(422, description=(
             'time_end needs to be after time_start'
         ))
+    if data.get('price', 0) < 0:
+        abort(422, description=(
+            'price needs to be positive or zero'
+        ))
     validator = app.validator('', '')
     try:
         schema = json.loads(data.get('additional_fields'))
@@ -238,3 +258,35 @@ def pre_forwardaddresses_patch_callback(request, lookup):
         abort(403, description=(
             'You are not allowed to change the forward_id'
         ))
+
+
+""" /users """
+
+
+def pre_users_get_callback(request, lookup):
+    """ Prevent users from reading their password """
+    projection = request.args.get('projection')
+    if projection and 'password' in projection:
+        abort(403, description='Bad projection field: password')
+
+
+def pre_users_patch_callback(request, lookup):
+    """
+    Don't allow a user to change fields
+    """
+    if g.resource_admin_access:
+        return
+
+    disallowed_fields = ['username', 'firstname', 'lastname', 'birthday',
+                         'legi', 'nethz', 'department', 'phone',
+                         'ldapAddress', 'gender', 'membership']
+
+    data = utils.parse_data(request)
+
+    for f in disallowed_fields:
+        if f in data:
+            app.logger.debug("Rejecting patch due to insufficent priviledges"
+                             + "to change " + f)
+            abort(403, description=(
+                'You are not allowed to change your ' + f
+            ))

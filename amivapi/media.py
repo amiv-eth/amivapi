@@ -53,6 +53,9 @@ class FileSystemStorage(object):
             with additional parameters. (See above)
             Returns None if no file was found.
         """
+        if not filename:
+            return None  # Without filename, there will be no file
+
         try:
             f = ExtFile(self.fullpath(filename), self.app)
             return f
@@ -66,12 +69,19 @@ class FileSystemStorage(object):
         specified. If there already exists a file with this name name, the
         storage system may modify the filename as necessary to get a unique
         name. The actual name of the stored file will be returned.
+        The content argument has to be of type FileStorage (see Werkzeug),
+        the validator will ensure this.
         The content type argument is used to appropriately identify the file
         when it is retrieved.
         .. versionchanged:: 0.5
            Allow filename to be optional (#414).
         """
-        filename = secure_filename(content.filename)
+        if filename:
+            filename = secure_filename(filename)  # Safety first!
+        elif content.filename:
+            filename = secure_filename(content.filename)
+        else:
+            filename = 'file'
 
         # If needed, add number
         base, ext = path.splitext(filename)
@@ -82,7 +92,6 @@ class FileSystemStorage(object):
 
         # Save file
         content.save(self.fullpath(filename))
-
         return filename
 
     def delete(self, filename):

@@ -1,8 +1,5 @@
 import hashlib
-import json
-import rsa
 from os import urandom
-from datetime import datetime
 from base64 import b64encode, b64decode
 
 from flask import current_app as app
@@ -10,7 +7,9 @@ from flask import Blueprint, abort, request, g
 
 from eve.render import send_response
 from eve.methods.post import post_internal
+from eve.methods.common import resource_link
 from eve.auth import TokenAuth
+from eve.utils import home_link, config, debug_error_message
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.inspection import inspect
@@ -21,27 +20,8 @@ import utils
 
 """
 This file provides token based authentification. A user can POST the /sessions
-resource to obtain a token, which is a json dict of the following form:
-
-{
-    'user_id': integer,
-    'login_time': time,
-    'signature': string(64 bytes hex = 256 Bit SHA2)
-}
-
-This token shows that he is the user identified by user_id and obtained the
-token at the time in login_time.
-The signature is the SHA2 hash of user_id padded with zeros to 10 digits
-followed by the time of login in the DATE_FORMAT specified in the config
-followed by the servers login secret(see TokenAuth._create_signature)
+resource to obtain a token.
 """
-
-
-def _create_signature(user_id, login_time):
-    msg = "{:0=10d}".format(user_id) \
-          + login_time.strftime(app.config['DATE_FORMAT'])
-
-    return b64encode(rsa.sign(msg, app.config['LOGIN_PRIVATE_KEY'], 'SHA-256'))
 
 
 """ Creates a new hash for a password. This generates a random salt, so it can
@@ -57,21 +37,6 @@ def create_new_hash(password):
         '$' +
         b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
     )
-
-""" Creates a new token for the specified user. The new token is based on the
-current time, so the return value will change every second.
-"""
-
-
-def create_token(user_id):
-    time = datetime.now()
-    signature = _create_signature(user_id, time)
-
-    return b64encode(json.dumps({
-        'user_id': user_id,
-        'login_time': time.strftime(app.config['DATE_FORMAT']),
-        'signature': signature,
-    }))
 
 
 """ This function (HACK ALERT) tries to figure out where relationship would
@@ -113,9 +78,10 @@ class TokenAuth(TokenAuth):
             sess = dbsession.query(models.Session).filter(
                 models.Session.token == token).one()
         except NoResultFound:
-            app.logger.debug("Access denied for %s %s: unknown token %s"
-                             % (method, resource, token))
-            abort(401)
+            error = ("Access denied for %s %s: unknown token %s"
+                     % (method, resource, token))
+            app.logger.debug(error)
+            abort(401, description=debug_error_message(error))
 
         g.logged_in_user = sess.user_id
         g.apply_owner_filters = False
@@ -155,9 +121,10 @@ class TokenAuth(TokenAuth):
             g.apply_owner_filters = True
             return True
 
-        app.logger.debug("Access denied to %s %s for unpriviledged user %i"
-                         % (method, resource, g.logged_in_user))
-        abort(403)
+        error = ("Access denied to %s %s for unpriviledged user %i"
+                 % (method, resource, g.logged_in_user))
+        app.logger.debug(error)
+        abort(403, description=debug_error_message(error))
 
 
 """ Authentification related endpoints """
@@ -165,7 +132,10 @@ class TokenAuth(TokenAuth):
 auth = Blueprint('auth', __name__)
 
 
-""" Handle POST to /sessions
+""" Endpoints """
+
+
+""" Login
 
 A POST to /sessions exspects a username and password. If they are correct a
 token is created and used to register a session in the database, which is sent
@@ -194,10 +164,11 @@ def process_login():
                 salt,
                 100000
         ):
-            app.logger.debug("Wrong login: Password hashes do not match!")
-            abort(401)
+            error = "Wrong login: Password does not match!"
+            app.logger.debug(error)
+            abort(401, description=debug_error_message(error))
 
-        token = create_token(user[0].id)
+        token = b64encode(urandom(256))
         response = post_internal(
             'sessions',
             {
@@ -207,8 +178,42 @@ def process_login():
         )
         return send_response('sessions', response)
 
-    app.logger.debug("Wrong login: User not found!")
-    abort(401)
+    error = "Wrong login: User not found!"
+    app.logger.debug(error)
+    abort(401, description=debug_error_message(error))
+
+
+""" GET to /roles """
+
+
+@auth.route('/roles', methods=['GET'])
+def get_roles():
+    if app.auth and not app.auth.authorized([], 'roles', 'GET'):
+        return app.auth.authenticate()
+
+    response = {}
+
+    items = []
+    for role, perms in permission_matrix.roles.items():
+        for p in perms.values():
+            for k in ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']:
+                if k not in p.keys():
+                    p[k] = 0
+        items.append({
+            'name': role,
+            'permissions': perms
+        })
+    response[config.ITEMS] = items
+
+    response[config.LINKS] = {
+        'parent': home_link(),
+        'self': {
+            'title': 'roles',
+            'href': resource_link()
+        }
+    }
+
+    return send_response(None, [response])
 
 
 """ Auth related hooks """
@@ -270,9 +275,10 @@ def check_future_object_ownage_filter(resource, request, obj):
         app.logger.error("Unknown owner field for %s: %s" % (resource, field))
         raise
 
-    app.logger.debug("403 Access forbidden: The sent object would not belong "
-                     + "to the logged in user after this POST.")
-    abort(403)
+    error = ("403 Access forbidden: The sent object would not belong "
+             + "to the logged in user after this POST.")
+    app.logger.debug(error)
+    abort(403, description=debug_error_message(error))
 
 
 # TODO(Conrad): Does this work with bulk insert?

@@ -18,7 +18,7 @@ def init_database(connection, config):
     except OperationalError:
         print("You are trying to create a new database, but the database " +
               "already exists!")
-        exit(0)
+        raise
 
     session = Session(bind=connection)
 
@@ -111,5 +111,11 @@ class DateTimeEncoder(json.JSONEncoder):
 def get_class_for_resource(resource):
     """ Utility function to get SQL Alchemy model associated with a resource
     """
-    resource_def = app.config['DOMAIN'][resource]
-    return getattr(models, resource_def['datasource']['source'])
+    if resource in app.config['DOMAIN']:
+        resource_def = app.config['DOMAIN'][resource]
+        return getattr(models, resource_def['datasource']['source'])
+
+    if hasattr(models, resource.capitalize()):
+        return getattr(models, resource.capitalize())
+
+    return None

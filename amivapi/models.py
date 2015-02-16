@@ -14,7 +14,6 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Boolean,
-    DECIMAL,
 )
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -164,6 +163,7 @@ class Forward(Base):
 
     address = Column(Unicode(100), unique=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    is_public = Column(Boolean, default=False, nullable=False)
 
     owner = relationship(User, foreign_keys=owner_id)
 
@@ -223,15 +223,15 @@ class Event(Base):
     location = Column(Unicode(50))
     description = Column(UnicodeText)
     is_public = Column(Boolean, default=False, nullable=False)
-    price = Column(String(10))
+    price = Column(Integer)  # Price in Rappen
     spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
     # Images
-    img_thumbnail = CHAR(100)
-    img_web = CHAR(100)
-    img_1920_1080 = CHAR(100)
+    img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_web = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
 
 class EventSignup(Base):
@@ -263,9 +263,10 @@ class File(Base):
 
     __owner__ = ['_author']  # This permitts everybody to post here!
     __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
-    data = Column(CHAR(100))
+    data = Column(CHAR(100))  # This will be modified in schemas.py!
     study_doc_id = Column(Integer, ForeignKey("studydocuments.id"),
                           nullable=False)
     study_doc = relationship("StudyDocument", backref="files")
@@ -297,8 +298,8 @@ class JobOffer(Base):
     company = Column(Unicode(30))
     title = Column(Unicode(100))
     description = Column(UnicodeText)
-    logo = CHAR(100)  # The Schema here is changed to type: media
-    pdf = CHAR(100)
+    logo = Column(CHAR(100))  # This will be modified in schemas.py!
+    pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
 
@@ -309,3 +310,14 @@ class Confirm(Base):
     ressource = Column(String(50))
     data = Column(String(1000))
     expiry_date = Column(DateTime)
+
+
+# Permissions for file storage
+class Storage:
+    __expose__ = False  # Don't create a schema
+    __registered_methods__ = ['GET']
+
+
+class Roles:
+    __expose__ = False  # Don't create a schema
+    __registered_methods__ = ['GET']
