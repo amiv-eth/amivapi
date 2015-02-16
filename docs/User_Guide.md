@@ -307,21 +307,31 @@ TODO(Alex)
 
 #Unregistered users
 
-AMIV api currently allows unregistered users in axactly two cases: Signing up for a public event (when 'is_public' is set to True) or managing email-subscribtions for public email lists.  
+Next to GET operations on public data, AMIV API currently allows unregistered users in exactly two cases: Signing up for a public event (when 'is_public' is set to True) or managing email-subscribtions for public email lists.
+
+Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request is without login, you need to confirm for every action that you are the owner of the given email-address. Therefore, a confirmation token will be send to the specified address.
 
 ##Public Events
 To subscribe to a public event with an email-address you simply post to "/eventsignups":
 
+Data:
+
     {
-        'event_id': 1,
+        'event_id': 17,
         'user_id': -1,
         'email': "mymail@myprovider.ch",
     }
 
-You will receive a 202 Acepted. This means that the signup is not valid yet, but the user has received an email and can confirm the signup by clicking on a link.
+You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.  
+The User-ID '-1' stands for the anonymous user.
+
+In stead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
+
+    POST /confirms?token=dasdagrfvcihk34t8xa2
 
 ##Email Forwards
-They work like eventsignups, but just post address and forward-id to "/forwardaddresses".
+For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'.  
+To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The user '-1' needs not be be specified because this resource is specific for the purpose of anonymous addresses. The procedure of confirmation is exactly the same as for events.
 
 # Common Problems
 
