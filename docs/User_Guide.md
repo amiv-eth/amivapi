@@ -43,11 +43,11 @@ The status code returned by the API are the standard [HTTP status codes](https:/
  * 201 - Created (successful POST)
  * 204 - Deleted (successful DELETE)
 
- * 400 - Bad request(This means your request has created an exception in the server and the previous state was restored, if you are sure it is not your fault file a bug report)
+ * 400 - Bad request (This means your request has created an exception in the server and the previous state was restored, if you are sure it is not your fault file a bug report)
  * 401 - Please log in
- * 403 - Logged in but not allowed(This is not for you)
- * 404 - No content(This can also mean you could retrive something here, but no object is visible to you because your account is that of a peasant)
- * 422 - Semantic error(Your data does not make sense, e.g. dates in the past which should not be)
+ * 403 - Logged in but not allowed (This is not for you)
+ * 404 - No content (This can also mean you could retrive something here, but no object is visible to you because your account is that of a peasant)
+ * 422 - Semantic error (Your data does not make sense, e.g. dates in the past which should not be)
 
  * 500 - Generic server error
  * 501 - Not implemented (Should work after alpha)
@@ -305,6 +305,33 @@ The response will be the changed user object.
 
 TODO(Alex)
 
+#Unregistered users
+
+Next to GET operations on public data, AMIV API currently allows unregistered users in exactly two cases: Signing up for a public event (when 'is_public' is set to True) or managing email-subscribtions for public email lists.
+
+Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request is without login, you need to confirm for every action that you are the owner of the given email-address. Therefore, a confirmation token will be send to the specified address.
+
+##Public Events
+To subscribe to a public event with an email-address you simply post to "/eventsignups":
+
+Data:
+
+    {
+        'event_id': 17,
+        'user_id': -1,
+        'email': "mymail@myprovider.ch",
+    }
+
+You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.  
+The User-ID '-1' stands for the anonymous user.
+
+In stead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
+
+    POST /confirms?token=dasdagrfvcihk34t8xa2
+
+##Email Forwards
+For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'.  
+To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The user '-1' needs not be be specified because this resource is specific for the purpose of anonymous addresses. The procedure of confirmation is exactly the same as for events.
 
 # Common Problems
 

@@ -14,7 +14,6 @@ from amivapi import \
     event_hooks, \
     auth, \
     file_endpoint, \
-    delete_hooks, \
     media, \
     forwards
 
@@ -84,13 +83,6 @@ def create_app(environment, disable_auth=False):
 
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
-
-    app.on_delete_item_users += delete_hooks.delete_user_cleanup
-    app.on_delete_item_forwards += delete_hooks.delete_forward_cleanup
-    app.on_delete_item_event += delete_hooks.delete_event_cleanup
-    app.on_replace_users += delete_hooks.replace_user_cleanup
-    app.on_replace_forwards += delete_hooks.replace_forward_cleanup
-    app.on_replace_event += delete_hooks.replace_event_cleanup
 
     app.on_deleted_forwards += forwards.on_forward_deleted
     app.on_inserted_forwardusers += forwards.on_forwarduser_inserted

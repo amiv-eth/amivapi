@@ -130,6 +130,10 @@ class WebTest(unittest.TestCase):
             except Exception, e:
                 print(e)
 
+    def assert_count(self, model, count):
+        model_count = self.db.query(model).count()
+        self.assertEquals(count, model_count)
+
     _count = 0
 
     def next_count(self):
