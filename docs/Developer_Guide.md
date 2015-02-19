@@ -78,4 +78,21 @@ TODO(Conrad): Write details why stuff is like that and how it works
 
 # Files
 
-TODO(Alex): Describe stuff here
+For files we wrote our own MediaStorage class as used by Eve by extending the
+template (https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py).
+The files need a folder which is created in the process of "create_config".
+
+Maybe in future releases of Eve there will be an official implementation of
+file system storage. Maybe it would be useful to use this instead of our
+implementation instead in this case.
+
+How Eve uses the MediaStorage Class can be found here:
+http://python-eve.org/features.html#file-storage
+
+To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"
+contains the class "ExtFile" which contains the file as well as the additional
+information Eve needs.
+
+As EXTENDED_MEDIA_INFO we use file name, size and a URL to the file.
+The URL can be accessed over a custom endpoint specified in "file_endpoint.py",
+using flask methods.
