@@ -135,6 +135,17 @@ class User(Base):
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
 
+    """relationships"""
+    permissions = relationship("Permission", foreign_keys="Permission.user_id",
+                               backref="user", cascade="all, delete")
+    forwards = relationship("ForwardUser", foreign_keys="ForwardUser.user_id",
+                            backref="user", cascade="all, delete")
+    sessions = relationship("Session", foreign_keys="Session.user_id",
+                            backref="user")
+    eventsignups = relationship("EventSignup",
+                                foreign_keys="EventSignup.user_id",
+                                backref="user", cascade="all, delete")
+
 
 class Permission(Base):
     """Intermediate table for 'many-to-many' mapping
@@ -151,7 +162,7 @@ class Permission(Base):
     role = Column(CHAR(20), nullable=False)
     expiry_date = Column(DateTime)
 
-    user = relationship("User", foreign_keys=user_id, backref="permissions")
+    # user = relationship("User", foreign_keys=user_id, backref="permissions")
 
 
 class Forward(Base):
@@ -167,6 +178,12 @@ class Forward(Base):
 
     owner = relationship(User, foreign_keys=owner_id)
 
+    """relationships"""
+    user_subscribers = relationship("ForwardUser", backref="forward",
+                                    cascade="all, delete")
+    address_subscribers = relationship("ForwardAddress", backref="forward",
+                                       cascade="all, delete")
+
 
 class ForwardUser(Base):
     __expose__ = True
@@ -175,12 +192,13 @@ class ForwardUser(Base):
     __owner__ = ['user_id', 'forward.owner_id']
     __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
+                     nullable=False)
     forward_id = Column(
-        Integer, ForeignKey("forwards.id"), nullable=False)
+        Integer, ForeignKey("forwards.id", ondelete="CASCADE"), nullable=False)
 
-    forward = relationship("Forward", backref="user_subscribers")
-    user = relationship("User", foreign_keys=user_id)
+    # forward = relationship("Forward", backref="user_subscribers")
+    # user = relationship("User", foreign_keys=user_id)
 
 
 class ForwardAddress(Base):
@@ -194,7 +212,7 @@ class ForwardAddress(Base):
     forward_id = Column(
         Integer, ForeignKey("forwards.id"), nullable=False)
 
-    forward = relationship("Forward", backref="address_subscribers")
+    # forward = relationship("Forward", backref="address_subscribers")
 
 
 class Session(Base):
@@ -208,7 +226,7 @@ class Session(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token = Column(CHAR(10424), unique=True)
 
-    user = relationship("User", foreign_keys=user_id, backref="sessions")
+    # user = relationship("User", foreign_keys=user_id, backref="sessions")
 
 
 class Event(Base):
@@ -233,6 +251,10 @@ class Event(Base):
     img_web = Column(CHAR(100))  # This will be modified in schemas.py!
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
+    """relationships"""
+    signups = relationship("EventSignup", backref="event",
+                           cascade="all, delete")
+
 
 class EventSignup(Base):
     __expose__ = True
@@ -247,10 +269,10 @@ class EventSignup(Base):
     extra_data = Column(Text)
 
     """Data-Mapping: many-to-one"""
-    user = relationship("User", foreign_keys=user_id)
+    # user = relationship("User", foreign_keys=user_id)
 
     """Data-Mapping: many-to-one"""
-    event = relationship("Event", backref="signups")
+    # event = relationship("Event", backref="signups")
 
 
 class File(Base):
@@ -269,7 +291,7 @@ class File(Base):
     data = Column(CHAR(100))  # This will be modified in schemas.py!
     study_doc_id = Column(Integer, ForeignKey("studydocuments.id"),
                           nullable=False)
-    study_doc = relationship("StudyDocument", backref="files")
+    # study_doc = relationship("StudyDocument", backref="files")
 
 
 class StudyDocument(Base):
@@ -288,6 +310,10 @@ class StudyDocument(Base):
     professor = Column(Unicode(100))
     semester = Column(Integer)
     author_name = Column(Unicode(100))
+
+    """relationships"""
+    files = relationship("File", backref="study_doc",
+                         cascade="all, delete")
 
 
 class JobOffer(Base):
