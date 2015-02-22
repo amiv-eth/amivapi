@@ -63,20 +63,30 @@ def create_app(environment, disable_auth=False):
     # security note: hooks which are run before auth hooks should never change
     # the database
 
-    app.on_insert += event_hooks.pre_insert_callback
-    app.on_update += event_hooks.pre_update_callback
+    app.on_insert += event_hooks.pre_insert_check
+    app.on_update += event_hooks.pre_update_check
+    app.on_replace += event_hooks.pre_replace_check
 
-    app.on_pre_POST_eventsignups += event_hooks.pre_signups_post_callback
-    app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch_callback
-    app.on_post_POST_eventsignups += event_hooks.post_signups_post_callback
+    """eventsignups"""
+    """for signups we need extra hooks to confirm the field extra_data"""
+    app.on_pre_POST_eventsignups += event_hooks.pre_signups_post
+    app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch
+    app.on_pre_UPDATE_eventsignups += event_hooks.pre_signups_update
+    app.on_pre_PUT_eventsignups += event_hooks.pre_signups_put
+
+    """for anonymous users"""
+    app.on_post_POST_eventsignups += event_hooks.signups_send_confirmation_mail
     app.on_insert_eventsignups += event_hooks.signups_confirm_anonymous
 
+    """forwardaddresses"""
     app.on_delete_item_forwardaddresses += event_hooks.\
-        pre_forwardaddresses_delete_callback
+        forwardaddresses_delete_anonymous
 
-    app.on_pre_GET_users += event_hooks.pre_users_get_callback
-    app.on_pre_PATCH_users += event_hooks.pre_users_patch_callback
+    """users"""
+    app.on_pre_GET_users += event_hooks.pre_users_get
+    app.on_pre_PATCH_users += event_hooks.pre_users_patch
 
+    """authorization"""
     app.on_insert_users += auth.hash_password_before_insert
     app.on_replace_users += auth.hash_password_before_replace
     app.on_update_users += auth.hash_password_before_update
@@ -84,6 +94,7 @@ def create_app(environment, disable_auth=False):
     app.on_insert += auth.set_author_on_insert
     app.on_replace += auth.set_author_on_replace
 
+    """email-management"""
     app.on_deleted_forwards += forwards.on_forward_deleted
     app.on_inserted_forwardusers += forwards.on_forwarduser_inserted
     app.on_replaced_forwardusers += forwards.on_forwarduser_replaced

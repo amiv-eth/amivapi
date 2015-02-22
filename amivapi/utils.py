@@ -66,6 +66,7 @@ def parse_data(request):
 
 
 class DateTimeDecoder(json.JSONDecoder):
+    """see DateTimeEncoder below"""
 
     def __init__(self, *args, **kargs):
         json.JSONDecoder.__init__(
@@ -90,6 +91,7 @@ class DateTimeEncoder(json.JSONEncoder):
     """ Instead of letting the default encoder convert datetime to string,
         convert datetime objects into a dict, which can be decoded by the
         DateTimeDecoder
+        We need this Converter to store the request in the Confirmation table
     """
 
     def default(self, obj):
