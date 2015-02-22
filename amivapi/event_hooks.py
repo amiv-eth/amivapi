@@ -8,7 +8,7 @@ from eve.methods.common import payload
 import datetime as dt
 import json
 
-from amivapi import models, utils, confirm
+from amivapi import models, confirm
 
 resources_hooked = ['forwardusers', 'events', 'eventsignups', 'permissions']
 
@@ -176,6 +176,10 @@ def update_signups_schema(data):
             })
 
 
+def pre_signups_post_callback(request):
+    update_signups_schema(payload())
+
+
 def signups_confirm_anonymous(items):
     """
     hook to confirm external signups
@@ -191,13 +195,16 @@ def signups_confirm_anonymous(items):
                 items.remove(doc)
 
 
-def signups_send_confirmation_mail(request, payload):
+def signups_send_confirmation_mail(request, payload_arg):
     """
     informs the user that an email with confirmation token was sent
+
+    payload_arg only needs the '_arg' because python gets confused with the
+    function 'payload()' otherwise
     """
-    data = utils.parse_data(request)
+    data = payload()
     if data.get('user_id') == -1:
-        confirm.return_status(payload)
+        confirm.return_status(payload_arg)
 
 
 def pre_signups_post(request):
@@ -207,7 +214,7 @@ def pre_signups_post(request):
     validator uses to check the signup-data.
     same for PUT, UPDATE and PATCH
     """
-    update_signups_schema(utils.parse_data(request))
+    update_signups_schema(payload())
 
 
 def pre_signups_put(request, lookup):
@@ -221,18 +228,17 @@ def pre_signups_update(request, lookup):
 def pre_signups_patch(request, lookup):
     """
     don't allow PATCH on user_id, event_id or email"""
-    data = utils.parse_data(request)
+    data = payload()
     if ('user_id' in data) or ('event_id' in data) or ('email' in data):
         abort(403, description=(
             'You only can change extra_data'
         ))
-
     """
     the event may require to fill in additional fields, as specified in
     event.additional_fields. Therefore we need to update the schema the
     validator uses to check the signup-data.
     """
-    update_signups_schema(utils.parse_data(request))
+    update_signups_schema(payload())
 
 
 """ /events """
@@ -332,7 +338,7 @@ def pre_users_patch(request, lookup):
                          'legi', 'nethz', 'department', 'phone',
                          'ldapAddress', 'gender', 'membership']
 
-    data = utils.parse_data(request)
+    data = payload()
 
     for f in disallowed_fields:
         if f in data:
