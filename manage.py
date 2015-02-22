@@ -89,15 +89,23 @@ def create_config():
 
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
-    file_dir = prompt("Path to file storage folder",
-                      default=join(settings.ROOT_DIR, "filestorage"))
+    file_dir = abspath(expanduser(prompt("Path to file storage folder",
+                                         default=join(settings.ROOT_DIR,
+                                                      "filestorage"))))
 
     config['STORAGE_DIR'] = file_dir
+
+    config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
+
+    forward_dir = prompt("Directory where forwards are stored",
+                         default=join(settings.ROOT_DIR, "forwards"))
+    config['FORWARD_DIR'] = abspath(expanduser(forward_dir))
 
     if not exists(file_dir):
         mkdir(file_dir, 0700)
 
-    config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
+    if not exists(config['FORWARD_DIR']):
+        mkdir(config['FORWARD_DIR'], 0700)
 
     # Write everything to file
     # Note: The file is opened in non-binary mode, because we want python to

@@ -207,6 +207,7 @@ class ForwardAddress(Base):
 
     __owner__ = ['forward.owner_id']
     __owner_methods__ = ['GET', 'POST', 'DELETE']
+    __public_methods__ = ['DELETE']
 
     address = Column(Unicode(100))
     forward_id = Column(

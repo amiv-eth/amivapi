@@ -151,13 +151,13 @@ def signups_confirm_anonymous(items):
     hook to confirm external signups"""
     for doc in items:
         if doc['user_id'] == -1:
-            confirm.confirm_actions(
+            if not confirm.confirm_actions(
                 ressource='eventsignups',
                 method='POST',
                 doc=doc,
-                items=items,
                 email_field='email',
-            )
+            ):
+                items.remove(doc)
 
 
 def post_signups_post_callback(request, payload):
@@ -231,33 +231,19 @@ def check_permissions(data):
 """ /forwardaddresses """
 
 
-def pre_forwardaddresses_insert_callback(items):
+def pre_forwardaddresses_delete_callback(item):
     """
-    hook to confirm actions by external email-addresses"""
-    for doc in items:
-        confirm.confirm_actions(
-            ressource='forwardaddresses',
-            method='POST',
-            doc=doc,
-            items=items,
-            email_field='address',
-        )
-
-
-def post_forwardaddresses_post_callback(request, payload):
+    hook to send a confirmation email or apply the confirmed delete of an
+    external email-address
     """
-    informs the user that an email with confirmation token was sent"""
-    confirm.return_status(payload)
-
-
-def pre_forwardaddresses_patch_callback(request, lookup):
-    """
-    don't allow to change forward_id"""
-    data = utils.parse_data(request)
-    if 'forward_id' in data:
-        abort(403, description=(
-            'You are not allowed to change the forward_id'
-        ))
+    if not confirm.confirm_actions(
+        ressource='forwardaddresses',
+        method='DELETE',
+        doc=item,
+        email_field='address',
+    ):
+        abort(202, description=('Please check your email and POST the token '
+                                + 'to /confirms to process your request'))
 
 
 """ /users """

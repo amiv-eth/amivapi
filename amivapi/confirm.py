@@ -22,7 +22,7 @@ def send_confirmmail(ressource, token, email):
     print('email send with token %s to %s' % (token, email))
 
 
-def confirm_actions(ressource, method, doc, items, email_field):
+def confirm_actions(ressource, method, doc, email_field):
     """
     This method will save a given action for confirmation in the database
     and send a token to the email-address given.
@@ -56,9 +56,10 @@ def confirm_actions(ressource, method, doc, items, email_field):
         db.add(thisconfirm)
         db.commit()
         send_confirmmail(ressource, token, doc.get(email_field))
-        items.remove(doc)
+        return False
     else:
         doc.pop('_confirmed')
+        return True
 
 
 def return_status(payload):

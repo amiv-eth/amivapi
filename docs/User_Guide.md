@@ -15,7 +15,7 @@ The API is only accessible via SSL and will never be made public via an unencryp
 Date and time is always UTC in ISO format with time and without microseconds. Any different time format will result in 400 Bad Request.
 
     %Y-%m-%DT%H:%M:%SZ
-    
+
 All strings are UTF-8.
 
 ## About REST
@@ -298,12 +298,62 @@ Code:
     etag = me.json()['_etag']
     result = requests.patch("/users/myuser", data={"password":"newpw"}, headers={"If-Match":etag})
 
-The response will be the changed user object. 
+The response will be the changed user object.
 
 
 # Working with files
 
-TODO(Alex)
+Working with files is not much different from other resources. Most resources
+contain the file, only study documents, which will be explained below.
+
+##Files in Events, Joboffers, etc.
+
+Files can be uploaded using the "multipart/form-data" type. This is supported
+by most REST clients. Example using python library "requests" and a job offer:
+(More info on requests here: http://docs.python-requests.org/en/latest/)
+
+Code:
+
+    """Usual login"""
+    auth = {'username': user, 'password': pw}
+    r = requests.post('http://localhost:5000/sessions', data=auth)
+    token = r.json().get('token')
+    session = requests.Session()
+    session.auth = (token, '')
+
+    """Now uploading the file"""
+    with open('somefile.pdf', 'rb') as file:
+        data = {'title': 'Some Offer'}
+        files = {'pdf': file}
+        session.post('http://localhost:5000/joboffers',
+                     data=data, files=files)
+
+Response:
+
+    {'_author': 0,
+     '_created': '2015-02-19T14:46:14Z',
+     '_etag': '9cd7fdf37507d2001f5902330ff38db1236bdb84',
+     '_id': 1,
+     '_links': {'self': {'href': '/joboffers/1', 'title': 'Joboffer'}},
+     '_status': 'OK',
+     '_updated': '2015-02-19T14:46:14Z',
+     'id': 1,
+     'pdf': {'content_url': '/storage/somefile.jpg',
+             'file': None,
+             'filename': 'somefile.jpg',
+             'size': 55069},
+     'title': 'Some Offer'}
+
+Note that 'file' in the response is None since returning as Base64 string is
+deactivated.
+
+##Working with study documents
+
+Study documents are a collection of files. Using them is simple:
+
+1. Create a study document (POST to /studydocuments)
+2. Save ID of the newly created document
+3. Upload files to the '/files' resource as described above, using the ID
 
 #Unregistered users
 
@@ -322,7 +372,7 @@ Data:
         'email': "mymail@myprovider.ch",
     }
 
-You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.  
+You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.
 The User-ID '-1' stands for the anonymous user.
 
 In stead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
@@ -330,7 +380,7 @@ In stead of using the link-workaround, one can also just POST the token send to 
     POST /confirms?token=dasdagrfvcihk34t8xa2
 
 ##Email Forwards
-For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'.  
+For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'.
 To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The user '-1' needs not be be specified because this resource is specific for the purpose of anonymous addresses. The procedure of confirmation is exactly the same as for events.
 
 # Common Problems

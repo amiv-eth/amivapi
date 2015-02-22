@@ -56,16 +56,6 @@ class ForwardTest(util.WebTestNoAuth):
         self.api.post("/forwardaddresses", data={
             'address': email,
             'forward_id': forward.id,
-        }, status_code=202)
-        forwards = self.db.query(models.ForwardAddress)
-        self.assertEquals(forwards.count(), 0)
-        confirms = self.db.query(models.Confirm)
-        self.assertEquals(confirms.count(), 1)
-
-        # get token and confirm the address
-        # TODO: test email system
-        self.api.post("/confirms", data={
-            'token': confirms.first().token
         }, status_code=201)
+        forwards = self.db.query(models.ForwardAddress)
         self.assertEquals(forwards.count(), 1)
-        self.assertEquals(confirms.count(), 0)

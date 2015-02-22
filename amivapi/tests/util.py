@@ -124,6 +124,11 @@ class WebTest(unittest.TestCase):
                 file access test)
                 """
                 pass
+        for f in os.listdir(self.app.config['FORWARD_DIR']):
+            try:
+                os.unlink(os.path.join(self.app.config['FORWARD_DIR'], f))
+            except Exception, e:
+                print(e)
 
     def assert_count(self, model, count):
         model_count = self.db.query(model).count()
