@@ -7,7 +7,7 @@ from flask import Blueprint, abort, request, g
 
 from eve.render import send_response
 from eve.methods.post import post_internal
-from eve.methods.common import resource_link
+from eve.methods.common import resource_link, payload
 from eve.auth import TokenAuth
 from eve.utils import home_link, config, debug_error_message
 
@@ -149,13 +149,13 @@ update his data
 @auth.route('/sessions', methods=['POST'])
 def process_login():
     user = app.data.driver.session.query(models.User).filter_by(
-        username=utils.parse_data(request)['username']).all()
+        username=payload()['username']).all()
 
     if(len(user) == 1):
         (salt, hashed_password) = user[0].password.split('$')
         salt = b64decode(salt)
         hashed_password = b64decode(hashed_password)
-        sent_password = bytearray(utils.parse_data(request)['password'],
+        sent_password = bytearray(payload()['password'],
                                   'utf-8')
 
         if hashed_password != hashlib.pbkdf2_hmac(
@@ -283,8 +283,7 @@ def check_future_object_ownage_filter(resource, request, obj):
 
 # TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
-    check_future_object_ownage_filter(resource, request,
-                                      utils.parse_data(request))
+    check_future_object_ownage_filter(resource, request, payload())
 
 
 def pre_put_permission_filter(resource, request, lookup):

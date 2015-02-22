@@ -1,8 +1,6 @@
 import datetime as dt
 import json
 
-from eve.methods.common import payload
-
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -55,14 +53,6 @@ def init_database(connection, config):
     session.add(anonymous)
 
     session.commit()
-
-
-# if the data is in json format it will not be parsed into request.form
-# therefore we make one object for both cases which we can just use
-def parse_data(request):
-    with request:
-        data = payload()
-    return data
 
 
 class DateTimeDecoder(json.JSONDecoder):
