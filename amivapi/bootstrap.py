@@ -57,7 +57,8 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
-    app.register_blueprint(file_endpoint.download, url_prefix="/storage")
+    app.register_blueprint(file_endpoint.download,
+                           url_prefix=app.config['STORAGE_URL'])
 
     # Add event hooks
     # security note: hooks which are run before auth hooks should never change
