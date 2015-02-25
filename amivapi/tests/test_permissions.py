@@ -416,7 +416,7 @@ class PermissionsTest(util.WebTest):
         self.api.delete("/forwardusers/%i" % forward_user.id,
                         token=list_owner_session.token,
                         headers={'If-Match': forward_user._etag},
-                        status_code=200)
+                        status_code=204)
 
         forward_user = self.new_forward_user(user_id=entry_user.id,
                                              forward_id=forward.id)
@@ -424,7 +424,7 @@ class PermissionsTest(util.WebTest):
         self.api.delete("/forwardusers/%i" % forward_user.id,
                         token=entry_user_session.token,
                         headers={'If-Match': forward_user._etag},
-                        status_code=200)
+                        status_code=204)
 
         forward_user = self.new_forward_user(user_id=entry_user.id,
                                              forward_id=forward.id)
@@ -432,4 +432,4 @@ class PermissionsTest(util.WebTest):
         self.api.delete("/forwardusers/%i" % forward_user.id,
                         token=admin_session.token,
                         headers={'If-Match': forward_user._etag},
-                        status_code=200)
+                        status_code=204)

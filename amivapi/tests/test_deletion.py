@@ -10,7 +10,7 @@ class DeletionTests(util.WebTestNoAuth):
         self.new_forward_user(user_id=user.id, forward_id=forward.id)
 
         self.api.delete("/users/%i" % user.id,
-                        headers={'If-Match': user._etag}, status_code=200)
+                        headers={'If-Match': user._etag}, status_code=204)
         forwarduser_count = self.db.query(models.ForwardUser).count()
         self.assertEquals(forwarduser_count, 0)
         # We want the forwarduser-entry to be deleted but not the forward
@@ -25,7 +25,7 @@ class DeletionTests(util.WebTestNoAuth):
         self.new_forward_address(forward_id=forward.id)
 
         self.api.delete("/forwards/%i" % forward.id,
-                        headers={'If-Match': forward._etag}, status_code=200)
+                        headers={'If-Match': forward._etag}, status_code=204)
         forward_count = self.db.query(models.Forward).count()
         self.assertEquals(forward_count, 0)
         # forwarduser and forwardaddress entries should now be deleted
@@ -40,7 +40,7 @@ class DeletionTests(util.WebTestNoAuth):
 
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': permission._etag},
-                        status_code=200)
+                        status_code=204)
         """We have with ids -1 and 0 2 users left after our user got deleted"""
         self.assert_count(models.User, 2)
         self.assert_count(models.Permission, 0)
@@ -51,7 +51,7 @@ class DeletionTests(util.WebTestNoAuth):
 
         self.api.delete("/events/%i" % event.id,
                         headers={'If-Match': event._etag},
-                        status_code=200)
+                        status_code=204)
         self.assert_count(models.Event, 0)
         self.assert_count(models.EventSignup, 0)
 
@@ -62,7 +62,7 @@ class DeletionTests(util.WebTestNoAuth):
 
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': user._etag},
-                        status_code=200)
+                        status_code=204)
         """We have with ids -1 and 0 2 users left after our user got deleted"""
         self.assert_count(models.User, 2)
         self.assert_count(models.EventSignup, 0)

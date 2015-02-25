@@ -24,7 +24,7 @@ class SessionResourceTest(util.WebTest):
         self.api.get("/sessions", token=session.token, status_code=200)
 
         self.api.delete("/sessions/%i" % session.id, token=session.token,
-                        headers={'If-Match': session._etag}, status_code=200)
+                        headers={'If-Match': session._etag}, status_code=204)
 
         """ Check if still logged in """
         self.api.get("/sessions", session.token, status_code=401)
