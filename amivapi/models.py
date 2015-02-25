@@ -114,7 +114,7 @@ Base = declarative_base(cls=BaseModel)
 
 class User(Base):
     __expose__ = True
-    __projected_fields__ = ['groups']
+    __projected_fields__ = ['permissions']
 
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
