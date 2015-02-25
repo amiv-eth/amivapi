@@ -244,7 +244,7 @@ def pre_get_permission_filter(resource, request, lookup):
     # Every condition is, that the field is equal to the user id
     conditions = map(lambda x: x + "==" + str(g.logged_in_user), fields)
     # Concatenate all conditions with or
-    condition_string = reduce(lambda x,y: x + " or " + y, conditions)
+    condition_string = reduce(lambda x, y: x + " or " + y, conditions)
 
     lookup[condition_string] = ""
 
