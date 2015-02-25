@@ -2,12 +2,13 @@ from flask import current_app as app
 from flask import abort, g
 from eve.utils import debug_error_message
 from eve.validation import ValidationError
+from eve.methods.common import payload
 # from amivapi.validation import ValidatorAMIV
 
 import datetime as dt
 import json
 
-from amivapi import models, utils, confirm
+from amivapi import models, confirm
 
 resources_hooked = ['forwardusers', 'events', 'eventsignups', 'permissions']
 
@@ -143,7 +144,7 @@ def update_signups_schema(data):
 
 
 def pre_signups_post_callback(request):
-    update_signups_schema(utils.parse_data(request))
+    update_signups_schema(payload())
 
 
 def signups_confirm_anonymous(items):
@@ -160,23 +161,27 @@ def signups_confirm_anonymous(items):
                 items.remove(doc)
 
 
-def post_signups_post_callback(request, payload):
+def post_signups_post_callback(request, payload_arg):
     """
-    informs the user that an email with confirmation token was sent"""
-    data = utils.parse_data(request)
+    informs the user that an email with confirmation token was sent
+
+    payload_arg only needs the '_arg' because python gets confused with the
+    function 'payload()' otherwise
+    """
+    data = payload()
     if data.get('user_id') == -1:
-        confirm.return_status(payload)
+        confirm.return_status(payload_arg)
 
 
 def pre_signups_patch_callback(request, lookup):
     """
     don't allow PATCH on user_id, event_id or email"""
-    data = utils.parse_data(request)
+    data = payload()
     if ('user_id' in data) or ('event_id' in data) or ('email' in data):
         abort(403, description=(
             'You only can change extra_data'
         ))
-    update_signups_schema(utils.parse_data(request))
+    update_signups_schema(payload())
 
 
 """ /events """
@@ -267,7 +272,7 @@ def pre_users_patch_callback(request, lookup):
                          'legi', 'nethz', 'department', 'phone',
                          'ldapAddress', 'gender', 'membership']
 
-    data = utils.parse_data(request)
+    data = payload()
 
     for f in disallowed_fields:
         if f in data:
