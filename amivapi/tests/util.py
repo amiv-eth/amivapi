@@ -5,7 +5,7 @@ from base64 import b64encode
 from datetime import datetime
 import os
 
-from eve.io.sql import sql
+import eve_sqlalchemy
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
@@ -89,8 +89,9 @@ class WebTest(unittest.TestCase):
         self.addCleanup(transaction.rollback)
 
         # Monkey-patch the session used by Eve to join the global transaction
-        sql.db = SQLAlchemy(session_options={'bind': tests.connection})
-        sql.SQL.driver = sql.db
+        eve_sqlalchemy.db = SQLAlchemy(
+            session_options={'bind': tests.connection})
+        eve_sqlalchemy.SQL.driver = eve_sqlalchemy.db
 
         self.app = bootstrap.create_app("testing",
                                         disable_auth=self.disable_auth)

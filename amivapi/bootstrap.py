@@ -1,7 +1,7 @@
 from os.path import abspath, dirname, join
 
 from eve import Eve
-from eve.io.sql import SQL  # , ValidatorSQL
+from eve_sqlalchemy import SQL  # , ValidatorSQL
 from eve_docs import eve_docs
 from flask.config import Config
 from flask.ext.bootstrap import Bootstrap

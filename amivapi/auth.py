@@ -239,11 +239,14 @@ def pre_get_permission_filter(resource, request, lookup):
               + " bug in the AMIV API. Please report how you arrived here to "
               + "it@amiv.ethz.ch.")
 
-    if '$or' not in lookup:
-        lookup.update({'$or': []})
+    fields = resource_class.__owner__[:]
 
-    for field in resource_class.__owner__:
-        lookup['$or'].append({field: g.logged_in_user})
+    # Every condition is, that the field is equal to the user id
+    conditions = map(lambda x: x + "==" + str(g.logged_in_user), fields)
+    # Concatenate all conditions with or
+    condition_string = reduce(lambda x,y: x + " or " + y, conditions)
+
+    lookup[condition_string] = ""
 
 
 def check_future_object_ownage_filter(resource, request, obj):

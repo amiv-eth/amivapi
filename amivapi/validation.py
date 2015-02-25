@@ -4,7 +4,7 @@
     This extends the currently used validator to accept 'media' type
 """
 
-from eve.io.sql import ValidatorSQL
+from eve_sqlalchemy.validation import ValidatorSQL
 from werkzeug.datastructures import FileStorage
 
 

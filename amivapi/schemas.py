@@ -1,5 +1,5 @@
 from amivapi import models, permission_matrix
-from eve.io.sql.decorators import registerSchema
+from eve_sqlalchemy.decorators import registerSchema
 from inspect import getmembers, isclass
 
 
