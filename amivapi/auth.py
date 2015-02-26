@@ -148,14 +148,22 @@ update his data
 
 @auth.route('/sessions', methods=['POST'])
 def process_login():
+    p_data = payload()
+    if 'username' not in p_data:
+        abort(422, description=debug_error_message(
+            "Please provide a username."))
+    if 'password' not in p_data:
+        abort(422, description=debug_error_message(
+            "Please provide the password."))
+
     user = app.data.driver.session.query(models.User).filter_by(
-        username=payload()['username']).all()
+        username=p_data()['username']).all()
 
     if(len(user) == 1):
         (salt, hashed_password) = user[0].password.split('$')
         salt = b64decode(salt)
         hashed_password = b64decode(hashed_password)
-        sent_password = bytearray(payload()['password'],
+        sent_password = bytearray(p_data()['password'],
                                   'utf-8')
 
         if hashed_password != hashlib.pbkdf2_hmac(
