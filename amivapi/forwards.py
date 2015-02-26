@@ -36,13 +36,14 @@ def remove_address_from_list(forward_id, address):
         pass
 
 
-def remove_list(forward_id):
-    address = get_file_for_forward(forward_id)
+def remove_list(forward):
+    path = app.config['FORWARD_DIR'] + '/.forward+' + forward['address']
     try:
-        os.remove(address)
-    except IOError, e:
-        app.logger.error(str(e) + "Can not remove forward " + address + "! It"
-                         + " seems the forward database is inconsistent!")
+        os.remove(path)
+    except OSError, e:
+        app.logger.error(str(e) + "Can not remove forward "
+                         + forward['address'] + "! It seems the forward "
+                         "database is inconsistent!")
         pass
 
 
@@ -62,7 +63,7 @@ def remove_user(forward_id, user_id):
 
 
 def on_forward_deleted(item):
-    remove_list(item['id'])
+    remove_list(item)
 
 
 """ Hooks for changes to forwardusers """
