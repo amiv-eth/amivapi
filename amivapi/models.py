@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Boolean,
+    Table
 )
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -265,11 +266,14 @@ class Event(Base):
 
     __public_methods__ = ['GET']
 
-    title = Column(Unicode(50))
+    title_ID = Column(Integer)
+    title_content = Column(UnicodeText)
+    description_ID = Column(Integer)
+    description_content = Column(UnicodeText)
+
     time_start = Column(DateTime)
     time_end = Column(DateTime)
     location = Column(Unicode(50))
-    description = Column(UnicodeText)
     is_public = Column(Boolean, default=False, nullable=False)
     price = Column(Integer)  # Price in Rappen
     spots = Column(Integer, nullable=False)
@@ -360,7 +364,10 @@ class JobOffer(Base):
     __public_methods__ = ['GET']
 
     company = Column(Unicode(30))
-    title = Column(Unicode(100))
+    title_id = Column(Integer, ForeignKey('translations.id'))
+    title = relationship("Translation",
+                         cascade="all, delete")
+
     description = Column(UnicodeText)
     logo = Column(CHAR(100))  # This will be modified in schemas.py!
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
@@ -385,3 +392,26 @@ class Storage:
 class Roles:
     __expose__ = False  # Don't create a schema
     __registered_methods__ = ['GET']
+
+# Language fields
+""" lang_map is an intermediate table to store the key for language content
+fields
+"""
+
+
+class LanguageMapping(Base):
+    __expose__ = False
+
+    # id = Column(Integer, primary_key=True),
+    relationship("Translation", cascade="all, delete")
+
+
+class Translation(Base):
+    __expose__ = True
+
+    __public_methods__ = ['GET']
+
+    # language_id = Column(Integer, ForeignKey("languagemappings.id"),
+    #                     nullable=False)
+    language = Column(Unicode(30))
+    content = Column(UnicodeText)
