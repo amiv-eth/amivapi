@@ -13,12 +13,13 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
-    Boolean,
-    Table
+    Boolean
 )
 from sqlalchemy.ext import hybrid
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.orm import relationship, synonym, backref
+from sqlalchemy.orm.collections import attribute_mapped_collection
 
 """ Eve exspects the resource names to be equal to the table names. Therefore
 we generate all names from the Class names. Please choose classnames carefully,
@@ -50,6 +51,10 @@ For more details see the following files:
 auth.py
 permission_matrix.py
 """
+
+
+def create_translatable(translations):
+    return Translatable(translations=translations)
 
 
 class BaseModel(object):
@@ -96,7 +101,7 @@ class BaseModel(object):
     function makes binding at a later point possible """
     @declared_attr
     def _author(cls):
-        return Column(Integer, ForeignKey("users.id"), nullable=False)
+        return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
 
     def jsonify(self):
         """
@@ -364,14 +369,18 @@ class JobOffer(Base):
     __public_methods__ = ['GET']
 
     company = Column(Unicode(30))
-    title_id = Column(Integer, ForeignKey('translations.id'))
-    title = relationship("Translation",
-                         cascade="all, delete")
 
     description = Column(UnicodeText)
     logo = Column(CHAR(100))  # This will be modified in schemas.py!
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
+
+    _title_id = Column(ForeignKey("translatables.id"))
+    _title_relation = relationship("Translatable",
+                                   uselist=False,
+                                   backref=backref("parent", uselist=False))
+    title = association_proxy("_title_relation", "translations",
+                              creator=create_translatable)
 
 
 # Confirm Actions for unregistered email-adresses
@@ -393,25 +402,27 @@ class Roles:
     __expose__ = False  # Don't create a schema
     __registered_methods__ = ['GET']
 
+
 # Language fields
-""" lang_map is an intermediate table to store the key for language content
-fields
-"""
+class Translatable(Base):
+    time_added = Column(DateTime, default=dt.datetime.utcnow)
 
-
-class LanguageMapping(Base):
-    __expose__ = False
-
-    # id = Column(Integer, primary_key=True),
-    relationship("Translation", cascade="all, delete")
+    _translations_relation = relationship(
+        "Translation",
+        primaryjoin="Translatable.id == Translation.parent_id",
+        collection_class=attribute_mapped_collection("language"))
+    translations = association_proxy(
+        "_translations_relation", "content",
+        creator=lambda k, v: Translation(language=k, content=unicode(v)))
 
 
 class Translation(Base):
     __expose__ = True
 
-    __public_methods__ = ['GET']
+    parent_id = Column(ForeignKey("translatables.id"))
+    parent = relationship(
+        "Translatable", uselist=False,
+        primaryjoin="Translatable.id == Translation.parent_id")
 
-    # language_id = Column(Integer, ForeignKey("languagemappings.id"),
-    #                     nullable=False)
-    language = Column(Unicode(30))
+    language = Column(Enum("de", "en"), nullable=False)
     content = Column(UnicodeText)

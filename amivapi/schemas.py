@@ -100,5 +100,6 @@ def load_domain(config):
 
     domain['joboffers']['schema'].update({
         'logo': {'type': 'media'},
-        'pdf': {'type': 'media'}
+        'pdf': {'type': 'media'},
+        'title': {'type': 'dict'}
     })
