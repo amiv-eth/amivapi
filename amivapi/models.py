@@ -141,7 +141,7 @@ class User(Base):
     forwards = relationship("ForwardUser", foreign_keys="ForwardUser.user_id",
                             backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
-                            backref="user")
+                            backref="user", cascade="all, delete")
     eventsignups = relationship("EventSignup",
                                 foreign_keys="EventSignup.user_id",
                                 backref="user", cascade="all, delete")
