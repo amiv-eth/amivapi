@@ -61,6 +61,9 @@ class BaseModel(object):
     resource """
     __expose__ = False
 
+    """For documentation"""
+    __description__ = {}
+
     """ This is a list of fields, which are added to the projection created by
     eve. Add any additional field to be delivered on GET requests by default
     in the subclasses. """
@@ -113,6 +116,14 @@ Base = declarative_base(cls=BaseModel)
 
 
 class User(Base):
+    __description__ = {
+        'general': "In general, the user data will be generated from "
+        "LDAP-Data. However, one might change the RFID-Number or the "
+        "membership-status. Extraordinary members may not have a LDAP-Account "
+        "and can therefore access all given fields.",
+        'methods': {
+            'GET': "Authorization is required for most of the fields"
+        }}
     __expose__ = True
     __projected_fields__ = ['groups']
 
@@ -166,6 +177,14 @@ class Permission(Base):
 
 
 class Forward(Base):
+    __description__ = {
+        'general': "This resource describes the different email-lists. To see "
+        "the subscriptions, have a look at '/forwardusers' and "
+        "'forwardaddresses'.",
+        'fields': {
+            'is_public': "A public Forward can get subscriptions from external"
+            " users. If False, only AMIV-Members can subscribe to this list."
+        }}
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
@@ -231,6 +250,16 @@ class Session(Base):
 
 
 class Event(Base):
+    __description__ = {
+        'fields': {
+            'price': 'Price of the event as Integer in Rappen.',
+            'additional_fields': "must be provided in form of a JSON-Schema.",
+            'is_public': "If False, only AMIV-Members can sign up for this "
+            "event",
+            'spots': "For no limit, set to '0'. If no signup required, set to "
+            "'-1'.",
+        }
+    }
     __expose__ = True
     __projected_fields__ = ['signups']
 
@@ -258,6 +287,14 @@ class Event(Base):
 
 
 class EventSignup(Base):
+    __description__ = {
+        'fields': {
+            'extra_data': "Data-schema depends on 'additional_fields' from the"
+            " mapped event.",
+            'user_id': "To sign up as external user, set 'user_id' to '-1'",
+            'email': "If empty, the api fills this with the standard-email of "
+            "the user. This field is required for external users.",
+        }}
     __expose__ = True
     __projected_fields__ = ['event', 'user']
 
