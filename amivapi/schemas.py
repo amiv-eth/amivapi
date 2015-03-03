@@ -21,6 +21,10 @@ def load_domain(config):
             domain[cls.__tablename__]['public_methods'] \
                 = cls.__public_methods__
 
+            # For documentation
+            domain[cls.__tablename__]['description'] \
+                = cls.__description__
+
             """ Users should not provide _author fields """
             del domain[cls.__tablename__]['schema']['_author']
 
@@ -73,6 +77,14 @@ def load_domain(config):
     """time_end for /events requires time_start"""
     domain['events']['schema']['time_end'].update({
         'dependencies': ['time_start']
+    })
+
+    """enums of sqlalchemy should directly be catched by the validator"""
+    domain['users']['schema']['gender'].update({
+        'allowed': ['male', 'female']
+    })
+    domain['users']['schema']['department'].update({
+        'allowed': ['itet', 'mavt']
     })
 
     """Maybe this can be automated through the model somehow"""
