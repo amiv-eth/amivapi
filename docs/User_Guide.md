@@ -4,7 +4,11 @@
 
 ## About this document
 
-This document should help somebody who wants to develop a client for the AMIV API. It focuses on manipulating data via the public interface. For in depth information see Developer Guide, for reference visit the [API Reference](https://api.amiv.ethz.ch/docs).
+This document should help somebody who wants to develop a client for the AMIV API. It focuses on manipulating data via the public interface. For in depth information see Developer Guide, for reference visit the [API Reference](https://<base_url>/docs).
+
+## Portability
+
+The API is designed and all clients should be designed to be useable outside of AMIV. Although we will use api.amiv.ethz.ch as the base URL in this document this is not necessary and a client should provide a config entry for that.
 
 ## Encryption
 
@@ -226,26 +230,23 @@ GET queries can be customized in many ways. There is the possibility for where, 
 
 ## where clauses
 
-Using a where clause one can specify details about the object looked for. Queries can be stated in either the python syntax or as a Mongo DB Query document(Both are some kind of experimential at the moment, feel free to experiment and improve. If you want to help, have a look at the sqlalchemy branch of the python-eve project).
+Using a where clause one can specify details about the object looked for. Queries can be stated in the python syntax(as if you would write an if clause). This is some kind of experimental, if any issues occur please contact api@amiv.ethz.ch or write a report in the issue tracker on github.
 
 TODO: Test these, if they work remove this notice, maybe add more examples or links to external documentation
 
-An example for the python syntax(url-encoded) is:
+An example (url-encoded) is:
 
     GET /events?where=title=="Testevent"+and+spots>5
 
-An example for Mongo DB Query Documents is:
-
-    GET /events?where={"title":"Testevent","spots":{"$gt":5}}
-
 A more complex query would be
 
-    GET /studydocuments?where={"$or":[{"name":"Zsfg","lecture":"Regelsysteme"},{"title":"Regelsysteme_Zsfg"}]}
+    GET /events?where=(title=="Testevent"+and+spots>5)+or+title=="Testevent2"
 
-Available Mongo DB Query Document operators are: $or, $and, $gt, $gte, $lt, $lte
-Embedding works only for equal and no recursion at the moment(to improve, again commit to the python-eve project), for example:
+Embedding works only for equality comparison and no recursion at the moment(to improve, commit to the eve-sqlalchemy project), for example:
 
-    GET /studydocuments?where={"files.name": "Regelsysteme_Zsfg.pdf"}
+    GET /events?where=signups.user_id==5
+
+This would return all events which the user with the id 5 is signed up for.
 
 ## Projections
 
@@ -375,17 +376,25 @@ Data:
 You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.
 The User-ID '-1' stands for the anonymous user.
 
-In stead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
+Instead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
 
     POST /confirms?token=dasdagrfvcihk34t8xa2
 
 ##Email Forwards
-For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'.
-To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The user '-1' needs not be be specified because this resource is specific for the purpose of anonymous addresses. The procedure of confirmation is exactly the same as for events.
+For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'. '/forwards' is used to manage lists. '/forwardusers' is used to manage entries which forward to a registered user. '/forwardaddresses' is used for anonymous entries. To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The procedure of confirmation is exactly the same as for events.
 
 # Common Problems
 
 ## PATCH, PUT or DELETE returns 403
+
+It is only possible to issue these methods on objects, not on resources.
+This will not work:
+
+    DELETE /users?where=id==3
+
+Use this instead:
+
+    DELETE /users/3
 
 Make sure you provided the required If-Match header. If that does not help
 make sure you can use GET on the item. If you are unable to request a GET
