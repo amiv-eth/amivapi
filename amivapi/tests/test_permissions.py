@@ -99,7 +99,7 @@ class PermissionsTest(util.WebTest):
         self.api.delete("/users/%i" % owner.id, token=owner_session.token,
                         headers={'If-Match': owner._etag}, status_code=403)
         self.api.delete("/users/%i" % owner.id, token=admin_session.token,
-                        headers={'If-Match': owner._etag}, status_code=200)
+                        headers={'If-Match': owner._etag}, status_code=204)
 
     def test_forward_users_permissions_GET(self):
         """ Test GET permissions for ForwardUser objects """
