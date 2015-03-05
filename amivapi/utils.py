@@ -1,5 +1,8 @@
 import datetime as dt
 import json
+from base64 import b64encode, b64decode
+import hashlib
+from os import urandom
 
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
@@ -7,7 +10,6 @@ from sqlalchemy.orm import Session
 from flask import current_app as app
 
 from amivapi import models
-from amivapi.auth import create_new_hash
 
 
 def init_database(connection, config):
@@ -111,3 +113,33 @@ def get_class_for_resource(resource):
         return getattr(models, resource.capitalize())
 
     return None
+
+
+""" Creates a new hash for a password. This generates a random salt, so it can
+not be used to check hashes!
+"""
+
+
+def create_new_hash(password):
+    salt = urandom(16)
+    password = bytearray(password, 'utf-8')
+    return (
+        b64encode(salt) +
+        '$' +
+        b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
+    )
+
+
+def check_hash(password, hash):
+    parts = hash.split('$')
+    salt = b64decode(parts[0])
+    hashed_password = b64decode(parts[1])
+
+    if hashed_password == hashlib.pbkdf2_hmac(
+            'SHA256',
+            bytearray(password, 'utf-8'),
+            salt,
+            100000
+    ):
+        return True
+    return False

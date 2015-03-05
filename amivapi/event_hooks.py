@@ -58,7 +58,7 @@ def check_forwardusers(data):
     forward = db.query(models.Forward).get(forwardid)
 
     """ Users may only self enroll for public forwards """
-    if not forward.is_public and not g.resource_admin_access \
+    if not forward.is_public and not g.resource_admin \
             and not g.logged_in_user == forward.owner_id:
         abort(403, description=debug_error_message(
             'You are not allowed to self enroll for this forward'
@@ -331,7 +331,7 @@ def pre_users_patch(request, lookup):
     """
     Don't allow a user to change fields
     """
-    if g.resource_admin_access:
+    if g.resource_admin:
         return
 
     disallowed_fields = ['username', 'firstname', 'lastname', 'birthday',
@@ -347,3 +347,16 @@ def pre_users_patch(request, lookup):
             abort(403, description=(
                 'You are not allowed to change your ' + f
             ))
+
+
+""" Hooks to add _author field to all database inserts """
+
+
+def set_author_on_insert(resource, items):
+    _author = getattr(g, 'logged_in_user', -1)
+    for i in items:
+        i['_author'] = _author
+
+
+def set_author_on_replace(resource, item, original):
+    set_author_on_insert(resource, [item])

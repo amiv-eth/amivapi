@@ -12,7 +12,8 @@ from amivapi import \
     confirm, \
     schemas, \
     event_hooks, \
-    auth, \
+    authentification, \
+    authorization, \
     file_endpoint, \
     media, \
     forwards
@@ -39,24 +40,31 @@ def create_app(environment, disable_auth=False):
     config = get_config(environment)
 
     if disable_auth:
-        app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
+        app = Eve(settings=config,
+                  data=SQL,
+                  validator=ValidatorAMIV,
                   media=media.FileSystemStorage)
     else:
-        app = Eve(settings=config, data=SQL, validator=ValidatorAMIV,
-                  auth=auth.TokenAuth, media=media.FileSystemStorage)
+        app = Eve(settings=config,
+                  data=SQL,
+                  validator=ValidatorAMIV,
+                  auth=authentification.TokenAuth,
+                  media=media.FileSystemStorage)
 
     # Bind SQLAlchemy
     db = app.data.driver
     models.Base.metadata.bind = db.engine
     db.Model = models.Base
 
-    # Generate and expose docs via eve-docs extension
     Bootstrap(app)
     with app.app_context():
         g.db = db.session
+
+    # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
-    app.register_blueprint(auth.auth)
+    app.register_blueprint(authentification.authentification)
+    app.register_blueprint(authorization.permission_info)
     app.register_blueprint(file_endpoint.download, url_prefix="/storage")
 
     # Add event hooks
@@ -86,13 +94,21 @@ def create_app(environment, disable_auth=False):
     app.on_pre_GET_users += event_hooks.pre_users_get
     app.on_pre_PATCH_users += event_hooks.pre_users_patch
 
-    """authorization"""
-    app.on_insert_users += auth.hash_password_before_insert
-    app.on_replace_users += auth.hash_password_before_replace
-    app.on_update_users += auth.hash_password_before_update
+    """authentification"""
+    app.on_insert_users += authentification.hash_password_before_insert
+    app.on_replace_users += authentification.hash_password_before_replace
+    app.on_update_users += authentification.hash_password_before_update
 
-    app.on_insert += auth.set_author_on_insert
-    app.on_replace += auth.set_author_on_replace
+    app.on_insert += event_hooks.set_author_on_insert
+    app.on_replace += event_hooks.set_author_on_replace
+
+    if not disable_auth:
+        app.on_pre_GET += authorization.pre_get_permission_filter
+        app.on_pre_POST += authorization.pre_post_permission_filter
+        app.on_pre_PUT += authorization.pre_put_permission_filter
+        app.on_pre_DELETE += authorization.pre_delete_permission_filter
+        app.on_pre_PATCH += authorization.pre_patch_permission_filter
+        app.on_update += authorization.update_permission_filter
 
     """email-management"""
     app.on_deleted_item_forwards += forwards.on_forward_deleted
@@ -104,14 +120,6 @@ def create_app(environment, disable_auth=False):
     app.on_replaced_forwardaddresses += forwards.on_forwardaddress_replaced
     app.on_updated_forwardaddresses += forwards.on_forwardaddress_updated
     app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
-
-    if not disable_auth:
-        app.on_pre_GET += auth.pre_get_permission_filter
-        app.on_pre_POST += auth.pre_post_permission_filter
-        app.on_pre_PUT += auth.pre_put_permission_filter
-        app.on_pre_DELETE += auth.pre_delete_permission_filter
-        app.on_pre_PATCH += auth.pre_patch_permission_filter
-        app.on_update += auth.update_permission_filter
 
     # Delete files when studydocument is deleted
     app.on_delete_item_studydocuments += media.delete_study_files
