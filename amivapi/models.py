@@ -153,8 +153,8 @@ class User(Base):
                             backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
                             backref="user", cascade="all, delete")
-    eventsignups = relationship("EventSignup",
-                                foreign_keys="EventSignup.user_id",
+    eventsignups = relationship("_EventSignup",
+                                foreign_keys="_EventSignup.user_id",
                                 backref="user", cascade="all, delete")
 
 
@@ -200,7 +200,7 @@ class Forward(Base):
     """relationships"""
     user_subscribers = relationship("ForwardUser", backref="forward",
                                     cascade="all, delete")
-    address_subscribers = relationship("ForwardAddress", backref="forward",
+    address_subscribers = relationship("_ForwardAddress", backref="forward",
                                        cascade="all, delete")
 
 
@@ -220,13 +220,14 @@ class ForwardUser(Base):
     # user = relationship("User", foreign_keys=user_id)
 
 
-class ForwardAddress(Base):
+class _ForwardAddress(Base):
     __expose__ = True
     __projected_fields__ = ['forward']
 
     __owner__ = ['forward.owner_id']
     __owner_methods__ = ['GET', 'POST', 'DELETE']
-    __public_methods__ = ['DELETE']
+    __public_methods__ = ['POST', 'DELETE']
+    __registered_methods__ = ['DELETE']
 
     address = Column(Unicode(100))
     forward_id = Column(
@@ -282,11 +283,11 @@ class Event(Base):
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
     """relationships"""
-    signups = relationship("EventSignup", backref="event",
+    signups = relationship("_EventSignup", backref="event",
                            cascade="all, delete")
 
 
-class EventSignup(Base):
+class _EventSignup(Base):
     __description__ = {
         'fields': {
             'extra_data': "Data-schema depends on 'additional_fields' from the"
@@ -300,6 +301,7 @@ class EventSignup(Base):
 
     __owner__ = ['user_id']
     __owner_methods__ = ['GET', 'PATCH', 'DELETE']
+    __registered_methods__ = ['POST']
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -371,7 +373,7 @@ class JobOffer(Base):
 class Confirm(Base):
     token = Column(CHAR(20), unique=True, nullable=False)
     method = Column(String(10))
-    ressource = Column(String(50))
+    resource = Column(String(50))
     data = Column(String(1000))
     expiry_date = Column(DateTime)
 

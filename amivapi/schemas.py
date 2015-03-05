@@ -45,9 +45,9 @@ def load_domain(config):
 #                model
     domain['users']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
-    domain['forwardaddresses']['schema']['address'].update(
+    domain['_forwardaddresses']['schema']['address'].update(
         {'regex': config['EMAIL_REGEX']})
-    domain['eventsignups']['schema']['email'].update(
+    domain['_eventsignups']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
 
     """ Only allow existing roles for new permissions """
@@ -55,18 +55,22 @@ def load_domain(config):
         {'allowed': permission_matrix.roles.keys()})
 
     """Workaround to signal onInsert that this request is internal"""
-    domain['eventsignups']['schema'].update({
+    domain['_eventsignups']['schema'].update({
         '_confirmed': {
             'type': 'boolean',
             'required': False,
         },
     })
-    domain['forwardaddresses']['schema'].update({
+    domain['_forwardaddresses']['schema'].update({
         '_confirmed': {
             'type': 'boolean',
             'required': False,
         }
     })
+
+    """internal resources should not be accessed from outside"""
+    domain['_eventsignups']['internal_resource'] = True
+    domain['_forwardaddresses']['internal_resource'] = True
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
