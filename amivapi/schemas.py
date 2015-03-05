@@ -70,9 +70,9 @@ def load_domain(config):
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    """
-    HERE BEGIN SMALL DEFINITIONS FOR SOME RESSOURCES
-    """
+    """No Patching for files, only replacing"""
+    domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
+                                                         'DELETE']
 
     """time_end for /events requires time_start"""
     domain['events']['schema']['time_end'].update({
@@ -87,7 +87,9 @@ def load_domain(config):
         'allowed': ['itet', 'mavt']
     })
 
-    """Maybe this can be automated through the model somehow"""
+    """
+    Filetype needs to be specified as media, maybe this can be automated
+    """
     domain['events']['schema'].update({
         'img_thumbnail': {'type': 'media'},
         'img_web': {'type': 'media'},
@@ -103,3 +105,14 @@ def load_domain(config):
         'pdf': {'type': 'media'},
         'title': {'type': 'dict'}
     })
+
+    """
+    Locatization-revelant: Hide the mapping table
+    Remove title and description id from events and joboffers schema so they
+    can not be set manually
+    """
+    domain['translationmappings']['internal_resource'] = True
+    del domain['joboffers']['schema']['title_id']
+    del domain['joboffers']['schema']['description_id']
+    del domain['events']['schema']['title_id']
+    del domain['events']['schema']['description_id']

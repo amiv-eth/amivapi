@@ -13,13 +13,12 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum,
-    Boolean
+    Boolean,
+    UniqueConstraint
 )
 from sqlalchemy.ext import hybrid
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import relationship, synonym, backref
-from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.orm import relationship, synonym
 
 """ Eve exspects the resource names to be equal to the table names. Therefore
 we generate all names from the Class names. Please choose classnames carefully,
@@ -51,10 +50,6 @@ For more details see the following files:
 auth.py
 permission_matrix.py
 """
-
-
-def create_translatable(translations):
-    return Translatable(translations=translations)
 
 
 class BaseModel(object):
@@ -271,11 +266,6 @@ class Event(Base):
 
     __public_methods__ = ['GET']
 
-    title_ID = Column(Integer)
-    title_content = Column(UnicodeText)
-    description_ID = Column(Integer)
-    description_content = Column(UnicodeText)
-
     time_start = Column(DateTime)
     time_end = Column(DateTime)
     location = Column(Unicode(50))
@@ -289,6 +279,17 @@ class Event(Base):
     img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
     img_web = Column(CHAR(100))  # This will be modified in schemas.py!
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
+
+    """Translatable fields
+    The relationship exists to ensure cascading delete and will be hidden from
+    the user
+    """
+    title_id = Column(Integer, ForeignKey('translationmappings.id'))
+    title_rel = relationship("TranslationMapping", cascade="all, delete",
+                             foreign_keys=title_id)
+    description_id = Column(Integer, ForeignKey('translationmappings.id'))
+    description_rel = relationship("TranslationMapping", cascade="all, delete",
+                                   foreign_keys=description_id)
 
     """relationships"""
     signups = relationship("EventSignup", backref="event",
@@ -327,11 +328,14 @@ class File(Base):
 
     An additional name for the file is possible
     A studydocument needs to be referenced
+
+    Files can only be created and deleted (or both, put), patching them is not
+    intended
     """
     __expose__ = True
 
     __owner__ = ['_author']  # This permitts everybody to post here!
-    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    __owner_methods__ = ['GET', 'POST', 'PUT', 'DELETE']
     __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
@@ -370,17 +374,20 @@ class JobOffer(Base):
 
     company = Column(Unicode(30))
 
-    description = Column(UnicodeText)
     logo = Column(CHAR(100))  # This will be modified in schemas.py!
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    _title_id = Column(ForeignKey("translatables.id"))
-    _title_relation = relationship("Translatable",
-                                   uselist=False,
-                                   backref=backref("parent", uselist=False))
-    title = association_proxy("_title_relation", "translations",
-                              creator=create_translatable)
+    """Translatable fields
+    The relationship exists to ensure cascading delete and will be hidden from
+    the user
+    """
+    title_id = Column(Integer, ForeignKey('translationmappings.id'))
+    title_rel = relationship("TranslationMapping", cascade="all, delete",
+                             foreign_keys=title_id)
+    description_id = Column(Integer, ForeignKey('translationmappings.id'))
+    description_rel = relationship("TranslationMapping", cascade="all, delete",
+                                   foreign_keys=description_id)
 
 
 # Confirm Actions for unregistered email-adresses
@@ -403,19 +410,15 @@ class Roles:
     __registered_methods__ = ['GET']
 
 
-# Language fields
-class Translatable(Base):
-    time_added = Column(DateTime, default=dt.datetime.utcnow)
+# Language ids are in here
+class TranslationMapping(Base):
+    __expose__ = True
 
-    _translations_relation = relationship(
-        "Translation",
-        primaryjoin="Translatable.id == Translation.parent_id",
-        collection_class=attribute_mapped_collection("language"))
-    translations = association_proxy(
-        "_translations_relation", "content",
-        creator=lambda k, v: Translation(language=k, content=unicode(v)))
+    content = relationship("Translation",
+                           cascade="all, delete", uselist=True)
 
 
+# This is the translated content
 class Translation(Base):
     __expose__ = True
 
@@ -424,5 +427,9 @@ class Translation(Base):
         "Translatable", uselist=False,
         primaryjoin="Translatable.id == Translation.parent_id")
 
-    language = Column(Enum("de", "en"), nullable=False)
-    content = Column(UnicodeText)
+    localization_id = Column(Integer, ForeignKey('translationmappings.id'),
+                             nullable=False)
+    language = Column(Unicode(10), nullable=False)
+    content = Column(UnicodeText, nullable=False)
+
+    __table_args__ = (UniqueConstraint('localization_id', 'language'),)

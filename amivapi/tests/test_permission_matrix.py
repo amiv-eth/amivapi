@@ -11,7 +11,7 @@ class PermissionMatrixTest(util.WebTest):
         self.api.get("/joboffers", token=token, status_code=200)
 
         data = {
-            "title": "no"
+            "company": "Conrad AG"
         }
         of = self.api.post("/joboffers", token=token, data=data,
                            status_code=201).json
