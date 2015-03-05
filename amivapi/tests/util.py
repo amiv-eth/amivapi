@@ -207,7 +207,7 @@ class WebTest(unittest.TestCase):
             kwargs['user_id'] = 0
         return kwargs
 
-    @create_object(models.ForwardAddress)
+    @create_object(models._ForwardAddress)
     def new_forward_address(self, **kwargs):
         """ Add an address to a forward. At least supply the forward_id """
         count = self.next_count()
@@ -231,9 +231,15 @@ class WebTest(unittest.TestCase):
             kwargs['is_public'] = random.choice([True, False])
         if 'spots' not in kwargs:
             kwargs['spots'] = random.randint(0, 100)
+        if 'time_register_start' not in kwargs and kwargs['spots'] >= 0:
+            kwargs['time_register_start'] = datetime.now()
+        if 'time_register_end' not in kwargs and kwargs['spots'] >= 0:
+            kwargs['time_register_end'] = datetime.max
+        if 'time_start' not in kwargs:
+            kwargs['time_start'] = datetime.now()
         return kwargs
 
-    @create_object(models.EventSignup)
+    @create_object(models._EventSignup)
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
         count = self.next_count()
