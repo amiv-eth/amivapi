@@ -2,8 +2,7 @@ from flask import current_app as app
 from flask import abort, g
 from eve.utils import debug_error_message
 from eve.validation import ValidationError
-from eve.methods.common import payload, get_document
-# from amivapi.validation import ValidatorAMIV
+from eve.methods.common import payload
 
 import datetime as dt
 import json
@@ -64,7 +63,9 @@ def check_forwardusers(data):
             'You are not allowed to self enroll for this forward'
         ))
 
+
 """ /eventsignups """
+
 
 def check__eventsignups(data):
     db = app.data.driver.session
@@ -286,6 +287,7 @@ def check_permissions(data):
 
 
 """ /forwardaddresses """
+
 
 def forwardaddresses_insert_anonymous(items):
     for doc in items:

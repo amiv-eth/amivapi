@@ -69,7 +69,6 @@ def create_app(environment, disable_auth=False):
     app.on_update += event_hooks.pre_update_check
     app.on_replace += event_hooks.pre_replace_check
 
-
     """eventsignups"""
     """for signups we need extra hooks to confirm the field extra_data"""
     app.on_pre_POST__eventsignups += event_hooks.pre_signups_post
