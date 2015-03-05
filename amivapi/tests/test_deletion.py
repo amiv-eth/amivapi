@@ -31,7 +31,7 @@ class DeletionTests(util.WebTestNoAuth):
         # forwarduser and forwardaddress entries should now be deleted
         forwarduser_count = self.db.query(models.ForwardUser).count()
         self.assertEquals(forwarduser_count, 0)
-        forwardaddress_count = self.db.query(models.ForwardAddress).count()
+        forwardaddress_count = self.db.query(models._ForwardAddress).count()
         self.assertEquals(forwardaddress_count, 0)
 
     def test_delete_user_to_permission(self):
@@ -53,7 +53,7 @@ class DeletionTests(util.WebTestNoAuth):
                         headers={'If-Match': event._etag},
                         status_code=200)
         self.assert_count(models.Event, 0)
-        self.assert_count(models.EventSignup, 0)
+        self.assert_count(models._EventSignup, 0)
 
     def test_delete_user_to_signup(self):
         event = self.new_event()
@@ -65,6 +65,6 @@ class DeletionTests(util.WebTestNoAuth):
                         status_code=200)
         """We have with ids -1 and 0 2 users left after our user got deleted"""
         self.assert_count(models.User, 2)
-        self.assert_count(models.EventSignup, 0)
+        self.assert_count(models._EventSignup, 0)
         # the Event shold still exist
         self.assert_count(models.Event, 1)
