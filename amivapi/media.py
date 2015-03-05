@@ -7,16 +7,8 @@
 """
 from werkzeug import secure_filename
 
-from eve.methods.delete import deleteitem_internal
-
 from os import path, remove
 import errno
-
-
-def delete_study_files(item):
-    for file in (dict(item)['files']):
-        lookup = {'id': (file.id)}
-        deleteitem_internal('files', **lookup)
 
 
 class ExtFile(file):
@@ -29,6 +21,9 @@ class ExtFile(file):
         self.filename = path.basename(self.name)
         self.size = path.getsize(filename)
         self.content_url = '%s/%s' % (app.config['STORAGE_URL'], self.filename)
+
+    def close(self):
+        file.close(self)
 
 
 class FileSystemStorage(object):

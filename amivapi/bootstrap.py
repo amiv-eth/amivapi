@@ -115,9 +115,6 @@ def create_app(environment, disable_auth=False):
         app.on_pre_PATCH += auth.pre_patch_permission_filter
         app.on_update += auth.update_permission_filter
 
-    # Delete files when studydocument is deleted
-    app.on_delete_item_studydocuments += media.delete_study_files
-
     # Hooks for translatable fields, done by resource because there are only 2
     app.on_fetched_item_joboffers += localization.insert_localized_fields
     app.on_fetched_item_events += localization.insert_localized_fields
