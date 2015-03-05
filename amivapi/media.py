@@ -97,6 +97,9 @@ class FileSystemStorage(object):
     def delete(self, filename):
         """ Deletes the file referenced by name.
         """
+        if not(filename):
+            return  # Nothing to do here
+
         try:
             remove(self.fullpath(filename))
         except OSError as e:

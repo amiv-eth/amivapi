@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     Boolean,
+    UniqueConstraint
 )
 from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
@@ -95,7 +96,7 @@ class BaseModel(object):
     function makes binding at a later point possible """
     @declared_attr
     def _author(cls):
-        return Column(Integer, ForeignKey("users.id"), nullable=False)
+        return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
 
     def jsonify(self):
         """
@@ -266,11 +267,9 @@ class Event(Base):
 
     __public_methods__ = ['GET']
 
-    title = Column(Unicode(50))
     time_start = Column(DateTime)
     time_end = Column(DateTime)
     location = Column(Unicode(50))
-    description = Column(UnicodeText)
     is_public = Column(Boolean, default=False, nullable=False)
     price = Column(Integer)  # Price in Rappen
     spots = Column(Integer, nullable=False)
@@ -281,6 +280,17 @@ class Event(Base):
     img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
     img_web = Column(CHAR(100))  # This will be modified in schemas.py!
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
+
+    """Translatable fields
+    The relationship exists to ensure cascading delete and will be hidden from
+    the user
+    """
+    title_id = Column(Integer, ForeignKey('translationmappings.id'))
+    title_rel = relationship("TranslationMapping", cascade="all, delete",
+                             foreign_keys=title_id)
+    description_id = Column(Integer, ForeignKey('translationmappings.id'))
+    description_rel = relationship("TranslationMapping", cascade="all, delete",
+                                   foreign_keys=description_id)
 
     """relationships"""
     signups = relationship("_EventSignup", backref="event",
@@ -320,11 +330,14 @@ class File(Base):
 
     An additional name for the file is possible
     A studydocument needs to be referenced
+
+    Files can only be created and deleted (or both, put), patching them is not
+    intended
     """
     __expose__ = True
 
     __owner__ = ['_author']  # This permitts everybody to post here!
-    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    __owner_methods__ = ['GET', 'POST', 'PUT', 'DELETE']
     __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
@@ -362,11 +375,21 @@ class JobOffer(Base):
     __public_methods__ = ['GET']
 
     company = Column(Unicode(30))
-    title = Column(Unicode(100))
-    description = Column(UnicodeText)
+
     logo = Column(CHAR(100))  # This will be modified in schemas.py!
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
+
+    """Translatable fields
+    The relationship exists to ensure cascading delete and will be hidden from
+    the user
+    """
+    title_id = Column(Integer, ForeignKey('translationmappings.id'))
+    title_rel = relationship("TranslationMapping", cascade="all, delete",
+                             foreign_keys=title_id)
+    description_id = Column(Integer, ForeignKey('translationmappings.id'))
+    description_rel = relationship("TranslationMapping", cascade="all, delete",
+                                   foreign_keys=description_id)
 
 
 # Confirm Actions for unregistered email-adresses
@@ -387,3 +410,23 @@ class Storage:
 class Roles:
     __expose__ = False  # Don't create a schema
     __registered_methods__ = ['GET']
+
+
+# Language ids are in here
+class TranslationMapping(Base):
+    __expose__ = True
+
+    content = relationship("Translation",
+                           cascade="all, delete", uselist=True)
+
+
+# This is the translated content
+class Translation(Base):
+    __expose__ = True
+
+    localization_id = Column(Integer, ForeignKey('translationmappings.id'),
+                             nullable=False)
+    language = Column(Unicode(10), nullable=False)
+    content = Column(UnicodeText, nullable=False)
+
+    __table_args__ = (UniqueConstraint('localization_id', 'language'),)

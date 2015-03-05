@@ -15,7 +15,8 @@ from amivapi import \
     auth, \
     file_endpoint, \
     media, \
-    forwards
+    forwards, \
+    localization
 
 from amivapi.validation import ValidatorAMIV
 
@@ -57,7 +58,8 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(auth.auth)
-    app.register_blueprint(file_endpoint.download, url_prefix="/storage")
+    app.register_blueprint(file_endpoint.download,
+                           url_prefix=app.config['STORAGE_URL'])
 
     # Add event hooks
     # security note: hooks which are run before auth hooks should never change
@@ -115,5 +117,12 @@ def create_app(environment, disable_auth=False):
 
     # Delete files when studydocument is deleted
     app.on_delete_item_studydocuments += media.delete_study_files
+
+    # Hooks for translatable fields, done by resource because there are only 2
+    app.on_fetched_item_joboffers += localization.insert_localized_fields
+    app.on_fetched_item_events += localization.insert_localized_fields
+    app.on_insert_joboffers += localization.create_localization_ids
+    app.on_insert_events += localization.create_localization_ids
+    app.on_insert_translations += localization.unique_language_per_locale_id
 
     return app

@@ -55,7 +55,9 @@ class TestClient(FlaskClient):
 
             kwargs.pop('token', None)
 
-        if "data" in kwargs:
+        if (not(("headers" in kwargs)
+                and ("content-type" in kwargs['headers']))
+                and ("data" in kwargs)):
             kwargs['data'] = json.dumps(kwargs['data'])
             kwargs['content_type'] = "application/json"
 
@@ -127,7 +129,7 @@ class WebTest(unittest.TestCase):
         for f in os.listdir(self.app.config['FORWARD_DIR']):
             try:
                 os.unlink(os.path.join(self.app.config['FORWARD_DIR'], f))
-            except Exception, e:
+            except Exception as e:
                 print(e)
 
     def assert_count(self, model, count):
@@ -252,8 +254,8 @@ class WebTest(unittest.TestCase):
     def new_joboffer(self, **kwargs):
         """ Create a new job offer """
         count = self.next_count()
-        if 'title' not in kwargs:
-            kwargs['title'] = u"Your job at default company-%i" % count
+        if 'company' not in kwargs:
+            kwargs['company'] = u"Default company-%i" % count
         return kwargs
 
     @create_object(models.StudyDocument)

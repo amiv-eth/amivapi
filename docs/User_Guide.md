@@ -300,6 +300,127 @@ Code:
 
 The response will be the changed user object.
 
+# Localization: Content in different languages
+
+The api supports descriptions and titles for events and job offers in different
+languages.
+
+If you post to one of those ressources, the response will contain a title_id
+and description_id. Those are the unique identifiers.
+
+To add content in various languages you can now use this id to post to the
+/translations resource
+
+Example: Create an event with the requests library
+
+Code:
+
+    import json  # To properly encode event data
+
+    """Usual login"""
+    auth = {'username': user, 'password': pw}
+    r = requests.post('http://localhost:5000/sessions', data=auth)
+    token = r.json().get('token')
+    session = requests.Session()
+    session.auth = (token, '')
+
+    """Some data without language relevant content"""
+    data = {'time_start': '2045-01-12T12:00:00Z',
+            'time_end': '2045-01-12T13:00:00Z',
+            'time_register_start': '2045-01-11T12:00:00Z',
+            'time_register_end': '2045-01-11T13:00:00Z',
+            'location': 'AMIV Aufenthaltsraum',
+            'spots': 20,
+            'is_public': True}
+
+    payload = json.dumps(data)
+
+    self.session.headers['Content-Type'] = 'application/json'
+    response = self.session.post('http://localhost:5000/events',
+                                 data=payload).json()
+    del(self.session.headers['Content-Type']) # Header not needed anymore
+
+Response:
+
+    {u'_author': 0,
+     u'_created': u'2015-03-05T14:12:19Z',
+     u'_etag': u'8a20c7c3e035eb5a03906ce8f0f7717a4300e9de',
+     u'_id': 1,
+     u'_links': {u'self': {u'href': u'/events/1', u'title': u'Event'}},
+     u'_status': u'OK',
+     u'_updated': u'2015-03-05T14:12:19Z',
+     u'description_id': 2,
+     u'id': 1,
+     u'is_public': True,
+     u'location': u'AMIV Aufenthaltsraum',
+     u'spots': 20,
+     u'time_end': u'2045-01-12T13:00:00Z',
+     u'time_register_end': u'2045-01-11T13:00:00Z',
+     u'time_register_start': u'2045-01-11T12:00:00Z',
+     u'time_start': u'2045-01-12T12:00:00Z',
+     u'title_id': 1}
+
+Now extract ids to post translations
+
+Code:
+
+    """Now add some titles"""
+    self.session.post('http://localhost:5000/translations',
+                      data={'localization_id': r['title_id'],
+                            'language': 'de',
+                            'content': 'Irgendein Event'})
+    self.session.post('http://localhost:5000/translations',
+                      data={'localization_id': r['title_id'],
+                            'language': 'en',
+                            'content': 'A random Event'})
+
+    """And description"""
+    self.session.post('http://localhost:5000/translations',
+                      data={'localization_id': r['description_id'],
+                            'language': 'de',
+                            'content': 'Hier passiert was. Komm vorbei!'})
+    self.session.post('http://localhost:5000/translations',
+                      data={'localization_id': r['description_id'],
+                            'language': 'en',
+                            'content': 'Something is happening. Join us!'})
+
+If we now specify the 'Accept-Language' Header, we get the correct content!
+
+Code:
+
+    self.session.headers['Accept-Language'] = 'en'
+
+    self.session.get('http://localhost:5000/events/%i' % response['id']).json()
+
+Response:
+
+    {u'_author': 0,
+     u'_created': u'2015-03-05T14:12:19Z',
+     u'_etag': u'8a20c7c3e035eb5a03906ce8f0f7717a4300e9de',
+     u'_links': {u'collection': {u'href': u'/events', u'title': u'events'},
+                 u'parent': {u'href': u'/', u'title': u'home'},
+                 u'self': {u'href': u'/events/1', u'title': u'Event'}},
+     u'_updated': u'2015-03-05T14:12:19Z',
+     u'additional_fields': None,
+     u'description': u'Something is happening. Join us!',
+     u'description_id': 2,
+     u'id': 1,
+     u'img_1920_1080': None,
+     u'img_thumbnail': None,
+     u'img_web': None,
+     u'is_public': True,
+     u'location': u'AMIV Aufenthaltsraum',
+     u'price': None,
+     u'signups': [],
+     u'spots': 20,
+     u'time_end': u'2045-01-12T13:00:00Z',
+     u'time_register_end': u'2045-01-11T13:00:00Z',
+     u'time_register_start': u'2045-01-11T12:00:00Z',
+     u'time_start': u'2045-01-12T12:00:00Z',
+     u'title': u'A random Event',
+     u'title_id': 1}
+
+Yay! The title and description are added in english as requested.
 
 # Working with files
 
@@ -393,3 +514,19 @@ then your account can not access the object.
 If you are able to GET the object, then your provided data is invalid. If
 you do not have admin priviledges for the endpoint(method on that resource)
 make sure your request will conserve your ownership of the object.
+
+## How can I send boolean etc to the server using python requests?
+
+To properly encode Integer, Boolean and such you need to properly format the
+data to json before sending, like this:
+
+Code:
+
+    import json
+
+    data_raw = {'spots': 42,
+                'is_public:' True}
+
+    payload = json.dumps(data_raw)
+
+The payload is now ready for sending! (Be sure to set the 'Content-Type' header to 'application/json')
