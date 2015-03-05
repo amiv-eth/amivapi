@@ -422,11 +422,6 @@ class TranslationMapping(Base):
 class Translation(Base):
     __expose__ = True
 
-    parent_id = Column(ForeignKey("translatables.id"))
-    parent = relationship(
-        "Translatable", uselist=False,
-        primaryjoin="Translatable.id == Translation.parent_id")
-
     localization_id = Column(Integer, ForeignKey('translationmappings.id'),
                              nullable=False)
     language = Column(Unicode(10), nullable=False)
