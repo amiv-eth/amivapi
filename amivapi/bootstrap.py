@@ -67,20 +67,20 @@ def create_app(environment, disable_auth=False):
     app.on_update += event_hooks.pre_update_check
     app.on_replace += event_hooks.pre_replace_check
 
+
     """eventsignups"""
     """for signups we need extra hooks to confirm the field extra_data"""
-    app.on_pre_POST_eventsignups += event_hooks.pre_signups_post
-    app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch
-    app.on_pre_UPDATE_eventsignups += event_hooks.pre_signups_update
-    app.on_pre_PUT_eventsignups += event_hooks.pre_signups_put
+    app.on_pre_POST__eventsignups += event_hooks.pre_signups_post
+    app.on_pre_PATCH__eventsignups += event_hooks.pre_signups_patch
+    app.on_pre_UPDATE__eventsignups += event_hooks.pre_signups_update
+    app.on_pre_PUT__eventsignups += event_hooks.pre_signups_put
 
-    """for anonymous users"""
-    app.on_post_POST_eventsignups += event_hooks.signups_send_confirmation_mail
-    app.on_insert_eventsignups += event_hooks.signups_confirm_anonymous
+    # for anonymous users
+    app.on_insert__eventsignups += event_hooks.signups_confirm_anonymous
 
     """forwardaddresses"""
-    app.on_delete_item_forwardaddresses += event_hooks.\
-        forwardaddresses_delete_anonymous
+    app.on_insert__forwardaddresses += event_hooks.\
+        forwardaddresses_insert_anonymous
 
     """users"""
     app.on_pre_GET_users += event_hooks.pre_users_get
@@ -100,10 +100,10 @@ def create_app(environment, disable_auth=False):
     app.on_replaced_forwardusers += forwards.on_forwarduser_replaced
     app.on_updated_forwardusers += forwards.on_forwarduser_updated
     app.on_deleted_forwardusers += forwards.on_forwarduser_deleted
-    app.on_inserted_forwardaddresses += forwards.on_forwardaddress_inserted
-    app.on_replaced_forwardaddresses += forwards.on_forwardaddress_replaced
-    app.on_updated_forwardaddresses += forwards.on_forwardaddress_updated
-    app.on_deleted_forwardaddresses += forwards.on_forwardaddress_deleted
+    app.on_inserted__forwardaddresses += forwards.on_forwardaddress_inserted
+    app.on_replaced__forwardaddresses += forwards.on_forwardaddress_replaced
+    app.on_updated__forwardaddresses += forwards.on_forwardaddress_updated
+    app.on_deleted__forwardaddresses += forwards.on_forwardaddress_deleted
 
     if not disable_auth:
         app.on_pre_GET += auth.pre_get_permission_filter
