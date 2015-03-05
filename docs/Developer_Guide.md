@@ -15,7 +15,10 @@ The main links for research about the used technologies are:
 
 ## Development status
 
-Eve is still in early development and changing a lot. That means it might be possible that we can improve our codebase as more features move into Eve's core. We are currently using a patched version of Eve, which is forked on github here: [Eve fork by Leonidaz0r](https://github.com/Leonidaz0r/eve)
+Eve is still in early development and changing a lot. That means it might be possible that we can improve our codebase as more features move into Eve's core. We are currently using a patched version of eve-sqlalchemy and eve-docs, which are forked on github here:
+
+* [eve-sqlalchemy fork by Leonidaz0r](https://github.com/Leonidaz0r/eve-sqlalchemy)
+* [eve-docs fork by hermannsblum](https://github.com/hermannsblum/eve-docs)
 
 ## Installation
 
@@ -53,10 +56,12 @@ Create a configuration:
     python2 manage.py -c <environment> create_database
 
 In the first step you are prompted which environment you want to setup. Normally you will want to separate a development database and a testing database.
+The tests will each create their own database, therefore you should not use create_database for the testing environment. If you did already just delete the
+database file.
 
 ## Running the tests
 
-After setting up a testing database you can run the tests using:
+After creating a testing config you can run the tests using:
 
     nosetests
 
@@ -72,9 +77,113 @@ When the debug server is running it will be available at http://localhost:5000 a
 
 TODO(Alle): Describe what files we have and where to start
 
-# Authentification
+# Security
 
-TODO(Conrad): Write details why stuff is like that and how it works
+Checking whether a request should be allowed consists of two steps,
+authentification and authorization. Authentification is the process of
+determining the user which is performing the action. Authorization is the
+process of determining which actions should be allowed for the authentificated
+user.
+
+Authentification will provide the ID of the authentificated user in
+g.logged_in_user
+
+Authorization will provide whether the user has an admin role in
+g.resource_admin
+
+Requests which are handled by eve will automatically perform authentification
+and authorization. If you implement a custom endpoint you have to call them
+yourself. However authorization really depends on what is about to happen,
+so you might have to do it yourself. To get an idea of what to do look at
+common_authorization() in authorization.py.
+
+Perform authentification(will abort the request for anonymous users):
+
+    if app.auth and not app.auth.authorized([], <resource>, request.method):
+        return app.auth.authenticate()
+
+Replace <resource> with the respective resource name.
+
+
+## Authentification
+
+File: authentification.py
+
+The process of authentification is straight forward. A user is identified by 
+his username and his password. He can sent those to the /sessions resource and
+obtain a token which can prove authenticity of subsequent requests.
+This login process is done by the process_login function. Sessions do not time
+out, but can be deleted.
+
+When a user sends a request with a token eve will create a TokenAuth object
+and call its check_auth function. That function will check the token against
+the database and set the global variable g.logged_in_user(g is the Flask g
+object) to the ID of the owner of the token.
+
+## Authorization
+
+File: authorization.py
+
+A request might be authorized based on different things. These are defined by
+the following properties of the model:
+
+    __public_methods__ = [<methods>]
+    __registered_methods__ = [<methods>]
+    __owner_methods__ = [<methods>]
+    __owner__ = [<fields>]
+
+The __xx_methods__ properties define methods which can be accessed. Also a list
+of fields can be set, which make somebody an owner of that object if he has the
+user ID corresponding to the fields content. For example a ForwardUser object
+has the list
+
+    __owner__ = ['user_id', 'forward.owner_id']
+
+This defines the user referenced by the field user_id as well as the user
+referenced by owner_id of the corresponding Forward as the owner of this
+ForwardUser object.
+
+I recommend to look over the common_authorization() function. The rules created
+by it are the following, in that order:
+
+1. If the user has ID 0 allow the request.
+2. If the user has a role which allows admin access to the endpoint allow the
+    request
+3. If the endpoint is public allow the request.
+4. If the endpoint is open to registered users allow the request.
+5. If the endpoint is open to object owners, perform owner checks(see below)
+6. Abort(403)
+
+The function will also set the variable g.resource_admin depending on whether
+the user has an admin role(or is root).
+
+One thing to note is that users which are not logged in are already aborted by
+eve when authentification fails for resources which are not public, therefore
+this is not checked anymore in step 4.
+
+### Owner checks
+
+If the authorization check arrives at step 5 and the requested resource has
+owner fields, then those will be used to determine the results. This is the
+case for example when a registered user without an admin role performs a GET
+request on the ForwardUser resource. He can perform that query, however he is
+supposed to only see entries which forward to him or where he is the
+listowner.
+This is solved by two functions. When extracting data we need to create
+additional lookup filters. Those are inserted by the
+pre_get_permission_filter() and other hooks calling it.
+When inserting new data or changing data it gets more complicated. First we
+need to make sure that the object which is manipulated belongs to the user,
+that is achieved using the previously described function. In addition we need
+to make sure that the object afterwards still belongs to him. We do not want
+people moving EventSignups or ForwardUsers to other users. All this is done in
+the authorize_object_change() function.
+However to achieve this the function needs to figure out what would happen if
+the request was executed. This is currently done by the resolve_future_field()
+function, which tries to resolve relationships using SQLAlchemy meta
+attributes for the data which is not yet inserted.
+If this checks out ok, the hooks return, if not the request is aborted.
+
 
 # Files
 
