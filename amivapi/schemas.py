@@ -26,7 +26,8 @@ def load_domain(config):
                 = cls.__description__
 
             """ Users should not provide _author fields """
-            del domain[cls.__tablename__]['schema']['_author']
+            domain[cls.__tablename__]['schema']['_author']. \
+                update({'readonly': True})
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
@@ -112,11 +113,11 @@ def load_domain(config):
 
     """
     Locatization-revelant: Hide the mapping table
-    Remove title and description id from events and joboffers schema so they
-    can not be set manually
+    Set title and description id from events and joboffers schema to read only
+    so they can not be set manually
     """
     domain['translationmappings']['internal_resource'] = True
-    del domain['joboffers']['schema']['title_id']
-    del domain['joboffers']['schema']['description_id']
-    del domain['events']['schema']['title_id']
-    del domain['events']['schema']['description_id']
+    domain['joboffers']['schema']['title_id'].update({'readonly': True})
+    domain['joboffers']['schema']['description_id'].update({'readonly': True})
+    domain['events']['schema']['title_id'].update({'readonly': True})
+    domain['events']['schema']['description_id'].update({'readonly': True})
