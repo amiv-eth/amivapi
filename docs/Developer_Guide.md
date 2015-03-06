@@ -161,6 +161,13 @@ One thing to note is that users which are not logged in are already aborted by
 eve when authentification fails for resources which are not public, therefore
 this is not checked anymore in step 4.
 
+### Roles
+
+Roles can be defined in permission_matrix.py. A role can give a user the right
+to perform any action on an endpoint. If permission is granted based on a role
+no further filters are applied, hence it is refered to as admin access and
+g.resource_admin is set.
+
 ### Owner checks
 
 If the authorization check arrives at step 5 and the requested resource has

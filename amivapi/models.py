@@ -25,33 +25,6 @@ we generate all names from the Class names. Please choose classnames carefully,
 as changing them might break a lot of code """
 
 
-""" About Authentification
-
-To turn off authentification completely set the property
-__public_methods__ to contain the method. If authentification is turned off,
-then the logintoken off the user is not even considered and any action will be
-done by user -1(anonymous).
-
-Everything from now on requires the method to not be public.
-
-If the user has a role, which is listed to be an admin for the endpoint in
-permission_matrix.py, then g.resource_admin_access will be set during the
-request. Furthermore no filters will be applied based on permissions to any
-requests to that endpoint.
-
-A class can have an __owner__ property. That property describes is a list of
-fields, which contains the user id of somebody who can GET the object and use
-the methods described by __owner_methods__. This works even through a relation.
-
-When a POST is allowed by the owner, then it will be permitted if the item to
-be created will be owned by the logged in user after the request is done.
-
-For more details see the following files:
-auth.py
-permission_matrix.py
-"""
-
-
 class BaseModel(object):
     """Mixin for common columns."""
 
