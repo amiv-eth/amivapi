@@ -117,10 +117,10 @@ def create_app(environment, disable_auth=False):
     app.on_replaced_forwardusers += forwards.on_forwarduser_replaced
     app.on_updated_forwardusers += forwards.on_forwarduser_updated
     app.on_deleted_item_forwardusers += forwards.on_forwarduser_deleted
-    app.on_inserted_forwardaddresses += forwards.on_forwardaddress_inserted
-    app.on_replaced_forwardaddresses += forwards.on_forwardaddress_replaced
-    app.on_updated_forwardaddresses += forwards.on_forwardaddress_updated
-    app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
+    app.on_inserted__forwardaddresses += forwards.on_forwardaddress_inserted
+    app.on_replaced__forwardaddresses += forwards.on_forwardaddress_replaced
+    app.on_updated__forwardaddresses += forwards.on_forwardaddress_updated
+    app.on_deleted_item__forwardaddresses += forwards.on_forwardaddress_deleted
 
     # Hooks for translatable fields, done by resource because there are only 2
     app.on_fetched_item_joboffers += localization.insert_localized_fields
