@@ -26,7 +26,8 @@ def load_domain(config):
                 = cls.__description__
 
             """ Users should not provide _author fields """
-            del domain[cls.__tablename__]['schema']['_author']
+            domain[cls.__tablename__]['schema']['_author']. \
+                update({'readonly': True})
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
@@ -45,9 +46,9 @@ def load_domain(config):
 #                model
     domain['users']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
-    domain['forwardaddresses']['schema']['address'].update(
+    domain['_forwardaddresses']['schema']['address'].update(
         {'regex': config['EMAIL_REGEX']})
-    domain['eventsignups']['schema']['email'].update(
+    domain['_eventsignups']['schema']['email'].update(
         {'regex': config['EMAIL_REGEX']})
 
     """ Only allow existing roles for new permissions """
@@ -55,24 +56,28 @@ def load_domain(config):
         {'allowed': permission_matrix.roles.keys()})
 
     """Workaround to signal onInsert that this request is internal"""
-    domain['eventsignups']['schema'].update({
+    domain['_eventsignups']['schema'].update({
         '_confirmed': {
             'type': 'boolean',
             'required': False,
         },
     })
-    domain['forwardaddresses']['schema'].update({
+    domain['_forwardaddresses']['schema'].update({
         '_confirmed': {
             'type': 'boolean',
             'required': False,
         }
     })
 
+    """internal resources should not be accessed from outside"""
+    domain['_eventsignups']['internal_resource'] = True
+    domain['_forwardaddresses']['internal_resource'] = True
+
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    """
-    HERE BEGIN SMALL DEFINITIONS FOR SOME RESSOURCES
-    """
+    """No Patching for files, only replacing"""
+    domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
+                                                         'DELETE']
 
     """time_end for /events requires time_start"""
     domain['events']['schema']['time_end'].update({
@@ -87,7 +92,9 @@ def load_domain(config):
         'allowed': ['itet', 'mavt']
     })
 
-    """Maybe this can be automated through the model somehow"""
+    """
+    Filetype needs to be specified as media, maybe this can be automated
+    """
     domain['events']['schema'].update({
         'img_thumbnail': {'type': 'media'},
         'img_web': {'type': 'media'},
@@ -100,5 +107,17 @@ def load_domain(config):
 
     domain['joboffers']['schema'].update({
         'logo': {'type': 'media'},
-        'pdf': {'type': 'media'}
+        'pdf': {'type': 'media'},
+        'title': {'type': 'dict'}
     })
+
+    """
+    Locatization-revelant: Hide the mapping table
+    Set title and description id from events and joboffers schema to read only
+    so they can not be set manually
+    """
+    domain['translationmappings']['internal_resource'] = True
+    domain['joboffers']['schema']['title_id'].update({'readonly': True})
+    domain['joboffers']['schema']['description_id'].update({'readonly': True})
+    domain['events']['schema']['title_id'].update({'readonly': True})
+    domain['events']['schema']['description_id'].update({'readonly': True})

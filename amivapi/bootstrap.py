@@ -16,7 +16,8 @@ from amivapi import \
     authorization, \
     file_endpoint, \
     media, \
-    forwards
+    forwards, \
+    localization
 
 from amivapi.validation import ValidatorAMIV
 
@@ -65,7 +66,8 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentification.authentification)
     app.register_blueprint(authorization.permission_info)
-    app.register_blueprint(file_endpoint.download, url_prefix="/storage")
+    app.register_blueprint(file_endpoint.download,
+                           url_prefix=app.config['STORAGE_URL'])
 
     # Add event hooks
     # security note: hooks which are run before auth hooks should never change
@@ -77,18 +79,17 @@ def create_app(environment, disable_auth=False):
 
     """eventsignups"""
     """for signups we need extra hooks to confirm the field extra_data"""
-    app.on_pre_POST_eventsignups += event_hooks.pre_signups_post
-    app.on_pre_PATCH_eventsignups += event_hooks.pre_signups_patch
-    app.on_pre_UPDATE_eventsignups += event_hooks.pre_signups_update
-    app.on_pre_PUT_eventsignups += event_hooks.pre_signups_put
+    app.on_pre_POST__eventsignups += event_hooks.pre_signups_post
+    app.on_pre_PATCH__eventsignups += event_hooks.pre_signups_patch
+    app.on_pre_UPDATE__eventsignups += event_hooks.pre_signups_update
+    app.on_pre_PUT__eventsignups += event_hooks.pre_signups_put
 
-    """for anonymous users"""
-    app.on_post_POST_eventsignups += event_hooks.signups_send_confirmation_mail
-    app.on_insert_eventsignups += event_hooks.signups_confirm_anonymous
+    # for anonymous users
+    app.on_insert__eventsignups += event_hooks.signups_confirm_anonymous
 
     """forwardaddresses"""
-    app.on_delete_item_forwardaddresses += event_hooks.\
-        forwardaddresses_delete_anonymous
+    app.on_insert__forwardaddresses += event_hooks.\
+        forwardaddresses_insert_anonymous
 
     """users"""
     app.on_pre_GET_users += event_hooks.pre_users_get
@@ -121,7 +122,11 @@ def create_app(environment, disable_auth=False):
     app.on_updated_forwardaddresses += forwards.on_forwardaddress_updated
     app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
 
-    # Delete files when studydocument is deleted
-    app.on_delete_item_studydocuments += media.delete_study_files
+    # Hooks for translatable fields, done by resource because there are only 2
+    app.on_fetched_item_joboffers += localization.insert_localized_fields
+    app.on_fetched_item_events += localization.insert_localized_fields
+    app.on_insert_joboffers += localization.create_localization_ids
+    app.on_insert_events += localization.create_localization_ids
+    app.on_insert_translations += localization.unique_language_per_locale_id
 
     return app

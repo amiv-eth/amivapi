@@ -3,14 +3,13 @@ from flask import abort, g
 from eve.utils import debug_error_message
 from eve.validation import ValidationError
 from eve.methods.common import payload
-# from amivapi.validation import ValidatorAMIV
 
 import datetime as dt
 import json
 
 from amivapi import models, confirm
 
-resources_hooked = ['forwardusers', 'events', 'eventsignups', 'permissions']
+resources_hooked = ['forwardusers', 'events', '_eventsignups', 'permissions']
 
 
 def pre_insert_check(resource, items):
@@ -64,10 +63,11 @@ def check_forwardusers(data):
             'You are not allowed to self enroll for this forward'
         ))
 
-""" /signups """
+
+""" /eventsignups """
 
 
-def check_eventsignups(data):
+def check__eventsignups(data):
     db = app.data.driver.session
 
     eventid = data.get('event_id')
@@ -75,8 +75,8 @@ def check_eventsignups(data):
 
     """check for available places"""
     if event.spots > 0:
-        gone_spots = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid
+        gone_spots = db.query(models._EventSignup).filter(
+            models._EventSignup.event_id == eventid
         ).count()
         if gone_spots >= event.spots:
             abort(422, description=debug_error_message(
@@ -111,18 +111,18 @@ def check_eventsignups(data):
             abort(422, description=debug_error_message(
                 'You need to provide an email-address or a valid user_id'
             ))
-        alreadysignedup = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid,
-            models.EventSignup.user_id == -1,
-            models.EventSignup.email == email
+        alreadysignedup = db.query(models._EventSignup).filter(
+            models._EventSignup.event_id == eventid,
+            models._EventSignup.user_id == -1,
+            models._EventSignup.email == email
         ).first() is not None
     else:
         """in this case the validator already checked that we have a valid
         user-id"""
         userid = data.get('user_id')
-        alreadysignedup = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid,
-            models.EventSignup.user_id == userid
+        alreadysignedup = db.query(models._EventSignup).filter(
+            models._EventSignup.event_id == eventid,
+            models._EventSignup.user_id == userid
         ).first() is not None
 
         """if the user did not provide an email, we just copy the address from
@@ -154,7 +154,7 @@ def update_signups_schema(data):
 
         extra_schema = event.additional_fields
         if extra_schema is not None:
-            resource_def = app.config['DOMAIN']['eventsignups']
+            resource_def = app.config['DOMAIN']['_eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'type': 'dict',
@@ -168,7 +168,7 @@ def update_signups_schema(data):
                                                           extra_schema)
                 ))
         else:
-            resource_def = app.config['DOMAIN']['eventsignups']
+            resource_def = app.config['DOMAIN']['_eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'required': False,
@@ -187,24 +187,11 @@ def signups_confirm_anonymous(items):
     for doc in items:
         if doc['user_id'] == -1:
             if not confirm.confirm_actions(
-                ressource='eventsignups',
+                resource='_eventsignups',
                 method='POST',
                 doc=doc,
-                email_field='email',
             ):
                 items.remove(doc)
-
-
-def signups_send_confirmation_mail(request, payload_arg):
-    """
-    informs the user that an email with confirmation token was sent
-
-    payload_arg only needs the '_arg' because python gets confused with the
-    function 'payload()' otherwise
-    """
-    data = payload()
-    if data.get('user_id') == -1:
-        confirm.return_status(payload_arg)
 
 
 def pre_signups_post(request):
@@ -302,19 +289,14 @@ def check_permissions(data):
 """ /forwardaddresses """
 
 
-def forwardaddresses_delete_anonymous(item):
-    """
-    hook to send a confirmation email or apply the confirmed delete of an
-    external email-address
-    """
-    if not confirm.confirm_actions(
-        ressource='forwardaddresses',
-        method='DELETE',
-        doc=item,
-        email_field='address',
-    ):
-        abort(202, description=('Please check your email and POST the token '
-                                + 'to /confirms to process your request'))
+def forwardaddresses_insert_anonymous(items):
+    for doc in items:
+        if not confirm.confirm_actions(
+            resource='_forwardaddresses',
+            method='POST',
+            doc=doc,
+        ):
+            items.remove(doc)
 
 
 """ /users """

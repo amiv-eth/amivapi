@@ -55,7 +55,9 @@ class TestClient(FlaskClient):
 
             kwargs.pop('token', None)
 
-        if "data" in kwargs:
+        if (not(("headers" in kwargs)
+                and ("content-type" in kwargs['headers']))
+                and ("data" in kwargs)):
             kwargs['data'] = json.dumps(kwargs['data'])
             kwargs['content_type'] = "application/json"
 
@@ -128,7 +130,7 @@ class WebTest(unittest.TestCase):
         for f in os.listdir(self.app.config['FORWARD_DIR']):
             try:
                 os.unlink(os.path.join(self.app.config['FORWARD_DIR'], f))
-            except Exception, e:
+            except Exception as e:
                 print(e)
 
     def assert_count(self, model, count):
@@ -208,7 +210,7 @@ class WebTest(unittest.TestCase):
             kwargs['user_id'] = 0
         return kwargs
 
-    @create_object(models.ForwardAddress)
+    @create_object(models._ForwardAddress)
     def new_forward_address(self, **kwargs):
         """ Add an address to a forward. At least supply the forward_id """
         count = self.next_count()
@@ -232,9 +234,15 @@ class WebTest(unittest.TestCase):
             kwargs['is_public'] = random.choice([True, False])
         if 'spots' not in kwargs:
             kwargs['spots'] = random.randint(0, 100)
+        if 'time_register_start' not in kwargs and kwargs['spots'] >= 0:
+            kwargs['time_register_start'] = datetime.now()
+        if 'time_register_end' not in kwargs and kwargs['spots'] >= 0:
+            kwargs['time_register_end'] = datetime.max
+        if 'time_start' not in kwargs:
+            kwargs['time_start'] = datetime.now()
         return kwargs
 
-    @create_object(models.EventSignup)
+    @create_object(models._EventSignup)
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
         count = self.next_count()
@@ -247,8 +255,8 @@ class WebTest(unittest.TestCase):
     def new_joboffer(self, **kwargs):
         """ Create a new job offer """
         count = self.next_count()
-        if 'title' not in kwargs:
-            kwargs['title'] = u"Your job at default company-%i" % count
+        if 'company' not in kwargs:
+            kwargs['company'] = u"Default company-%i" % count
         return kwargs
 
     @create_object(models.StudyDocument)
