@@ -69,7 +69,7 @@ class FileStorageTest(util.WebTestNoAuth):
         """DELETE"""
         h["If-Match"] = file_put['_etag']
         self.api.delete('/files/%i' % id, headers=h,
-                        status_code=200)
+                        status_code=204)
         self.assert_media_deleted(filename_put)
 
     def test_upload_existing(self):

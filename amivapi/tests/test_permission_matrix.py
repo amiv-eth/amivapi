@@ -31,7 +31,7 @@ class PermissionMatrixTest(util.WebTest):
         self.api.delete("/joboffers/%i" % of['id'],
                         headers={"If-Match": of['_etag']},
                         token=token,
-                        status_code=200)
+                        status_code=204)
 
     def test_event_admin_role(self):
         user = self.new_user()
