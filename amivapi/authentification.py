@@ -17,8 +17,8 @@ import models
 
 
 """
-This file provides token based authentification. A user can POST the /sessions
-resource to obtain a token.
+This file provides token based authentification(identification of users). A
+user can POST the /sessions resource to obtain a token.
 
 When a user sends his token with a request the g.logged_in_user global variable
 will be set.
@@ -108,3 +108,16 @@ def hash_password_before_update(user, original_user):
 
 def hash_password_before_replace(user, original_user):
     hash_password_before_insert([user])
+
+
+""" Hooks to add _author field to all database inserts """
+
+
+def set_author_on_insert(resource, items):
+    _author = getattr(g, 'logged_in_user', -1)
+    for i in items:
+        i['_author'] = _author
+
+
+def set_author_on_replace(resource, item, original):
+    set_author_on_insert(resource, [item])

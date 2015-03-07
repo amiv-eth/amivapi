@@ -4,11 +4,15 @@
     File System based mediastorage class.
 
     Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
+
+    Adds an endpoint to serve media files
 """
-from werkzeug import secure_filename
 
 from os import path, remove
 import errno
+
+from werkzeug import secure_filename
+from flask import Blueprint, send_from_directory, current_app as app
 
 
 class ExtFile(file):
@@ -107,3 +111,16 @@ class FileSystemStorage(object):
         for a new file.
         """
         return path.isfile(self.fullpath(filename))
+
+
+""" Endpoint to download files """
+
+
+download = Blueprint('download', __name__)
+
+
+@download.route('/<filename>', methods=['GET'])
+def download_file(filename):
+    if app.auth and not app.auth.authorized([], 'storage', 'GET'):
+        return app.auth.authenticate()
+    return send_from_directory(app.config['STORAGE_DIR'], filename)

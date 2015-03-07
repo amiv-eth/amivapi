@@ -11,15 +11,12 @@ from amivapi import \
     models, \
     confirm, \
     schemas, \
-    event_hooks, \
     authentification, \
     authorization, \
-    file_endpoint, \
     media, \
     forwards, \
-    localization
-
-from amivapi.validation import ValidatorAMIV
+    localization, \
+    validation
 
 
 def get_config(environment):
@@ -32,23 +29,22 @@ def get_config(environment):
         raise IOError(str(e) + "\nYou can create it by running "
                              + "`python manage.py create_config`.")
 
-    schemas.load_domain(config)
-
     return config
 
 
 def create_app(environment, disable_auth=False):
     config = get_config(environment)
+    config['DOMAIN'] = schemas.get_domain()
 
     if disable_auth:
         app = Eve(settings=config,
                   data=SQL,
-                  validator=ValidatorAMIV,
+                  validator=validation.ValidatorAMIV,
                   media=media.FileSystemStorage)
     else:
         app = Eve(settings=config,
                   data=SQL,
-                  validator=ValidatorAMIV,
+                  validator=validation.ValidatorAMIV,
                   auth=authentification.TokenAuth,
                   media=media.FileSystemStorage)
 
@@ -66,42 +62,42 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentification.authentification)
     app.register_blueprint(authorization.permission_info)
-    app.register_blueprint(file_endpoint.download,
+    app.register_blueprint(media.download,
                            url_prefix=app.config['STORAGE_URL'])
 
     # Add event hooks
     # security note: hooks which are run before auth hooks should never change
     # the database
 
-    app.on_insert += event_hooks.pre_insert_check
-    app.on_update += event_hooks.pre_update_check
-    app.on_replace += event_hooks.pre_replace_check
+    app.on_insert += validation.pre_insert_check
+    app.on_update += validation.pre_update_check
+    app.on_replace += validation.pre_replace_check
 
     """eventsignups"""
     """for signups we need extra hooks to confirm the field extra_data"""
-    app.on_pre_POST__eventsignups += event_hooks.pre_signups_post
-    app.on_pre_PATCH__eventsignups += event_hooks.pre_signups_patch
-    app.on_pre_UPDATE__eventsignups += event_hooks.pre_signups_update
-    app.on_pre_PUT__eventsignups += event_hooks.pre_signups_put
+    app.on_pre_POST__eventsignups += validation.pre_signups_post
+    app.on_pre_PATCH__eventsignups += validation.pre_signups_patch
+    app.on_pre_UPDATE__eventsignups += validation.pre_signups_update
+    app.on_pre_PUT__eventsignups += validation.pre_signups_put
 
     # for anonymous users
-    app.on_insert__eventsignups += event_hooks.signups_confirm_anonymous
+    app.on_insert__eventsignups += confirm.signups_confirm_anonymous
 
     """forwardaddresses"""
-    app.on_insert__forwardaddresses += event_hooks.\
+    app.on_insert__forwardaddresses += confirm.\
         forwardaddresses_insert_anonymous
 
     """users"""
-    app.on_pre_GET_users += event_hooks.pre_users_get
-    app.on_pre_PATCH_users += event_hooks.pre_users_patch
+    app.on_pre_GET_users += authorization.pre_users_get
+    app.on_pre_PATCH_users += authorization.pre_users_patch
 
     """authentification"""
     app.on_insert_users += authentification.hash_password_before_insert
     app.on_replace_users += authentification.hash_password_before_replace
     app.on_update_users += authentification.hash_password_before_update
 
-    app.on_insert += event_hooks.set_author_on_insert
-    app.on_replace += event_hooks.set_author_on_replace
+    app.on_insert += authentification.set_author_on_insert
+    app.on_replace += authentification.set_author_on_replace
 
     if not disable_auth:
         app.on_pre_GET += authorization.pre_get_permission_filter

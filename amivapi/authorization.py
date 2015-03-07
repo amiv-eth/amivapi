@@ -7,7 +7,6 @@ from eve.render import send_response
 
 from sqlalchemy.inspection import inspect
 
-import permission_matrix
 import models
 import utils
 
@@ -62,8 +61,8 @@ def common_authorization(resource, method):
         .filter(models.Permission.user_id == g.logged_in_user).all()
     for permission in permissions:
         try:
-            if permission_matrix. \
-                    roles[permission.role][resource][method] == 1:
+            if config. \
+                    ROLES[permission.role][resource][method] == 1:
                 app.logger.debug("Access granted to %s %s "
                                  % (method, resource)
                                  + "for user %i with role %s"
@@ -233,7 +232,7 @@ def get_roles():
     response = {}
 
     items = []
-    for role, perms in permission_matrix.roles.items():
+    for role, perms in config.ROLES.items():
         for p in perms.values():
             for k in ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']:
                 if k not in p.keys():
@@ -253,3 +252,34 @@ def get_roles():
     }
 
     return send_response(None, [response])
+
+
+""" Hooks to customize users resource """
+
+
+def pre_users_get(request, lookup):
+    """ Prevent extraction of password hashes """
+    projection = request.args.get('projection')
+    if projection and 'password' in projection:
+        abort(403, description='Bad projection field: password')
+
+
+def pre_users_patch(request, lookup):
+    """ Hook for the /users resource to prevent people from changing fields
+    which are imported via LDAP """
+    if g.resource_admin:
+        return
+
+    disallowed_fields = ['username', 'firstname', 'lastname', 'birthday',
+                         'legi', 'nethz', 'department', 'phone',
+                         'ldapAddress', 'gender', 'membership']
+
+    data = payload()
+
+    for f in disallowed_fields:
+        if f in data:
+            app.logger.debug("Rejecting patch due to insufficent priviledges"
+                             + "to change " + f)
+            abort(403, description=(
+                'You are not allowed to change your ' + f
+            ))

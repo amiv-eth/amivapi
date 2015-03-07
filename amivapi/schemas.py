@@ -1,10 +1,12 @@
-from amivapi import models, permission_matrix
 from eve_sqlalchemy.decorators import registerSchema
 from inspect import getmembers, isclass
 
+from amivapi import models
+from settings import ROLES
 
-def load_domain(config):
-    domain = config['DOMAIN'] = {}
+
+def get_domain():
+    domain = {}
 
     for cls_name, cls in getmembers(models):
         if(isclass(cls)
@@ -42,18 +44,17 @@ def load_domain(config):
     domain['users']['datasource']['projection']['password'] = 0
 
     """ Only accept email addresses for email fields """
-# FIXME(Conrad): There could be a generic way to add regexes to fields in the
-#                model
+    EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
     domain['_forwardaddresses']['schema']['address'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
     domain['_eventsignups']['schema']['email'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
 
     """ Only allow existing roles for new permissions """
     domain['permissions']['schema']['role'].update(
-        {'allowed': permission_matrix.roles.keys()})
+        {'allowed': ROLES.keys()})
 
     """Workaround to signal onInsert that this request is internal"""
     domain['_eventsignups']['schema'].update({
@@ -121,3 +122,5 @@ def load_domain(config):
     domain['joboffers']['schema']['description_id'].update({'readonly': True})
     domain['events']['schema']['title_id'].update({'readonly': True})
     domain['events']['schema']['description_id'].update({'readonly': True})
+
+    return domain
