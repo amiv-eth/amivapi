@@ -2,7 +2,6 @@ import datetime as dt
 
 from sqlalchemy import (
     Column,
-    inspect,
     Unicode,
     UnicodeText,
     CHAR,
@@ -16,7 +15,6 @@ from sqlalchemy import (
     Boolean,
     UniqueConstraint
 )
-from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 
@@ -70,20 +68,6 @@ class BaseModel(object):
     @declared_attr
     def _author(cls):
         return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
-
-    def jsonify(self):
-        """
-        Used to dump related objects to json
-        """
-        relationships = inspect(self.__class__).relationships.keys()
-        mapper = inspect(self)
-        attrs = [a.key for a in mapper.attrs if
-                 a.key not in relationships
-                 and a.key not in mapper.expired_attributes]
-        attrs += [a.__name__ for a in
-                  inspect(self.__class__).all_orm_descriptors
-                  if a.extension_type is hybrid.HYBRID_PROPERTY]
-        return dict([(c, getattr(self, c, None)) for c in attrs])
 
 
 Base = declarative_base(cls=BaseModel)
