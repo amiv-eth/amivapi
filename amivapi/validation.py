@@ -12,6 +12,7 @@ import json
 from flask import current_app as app
 from flask import abort, g
 from werkzeug.datastructures import FileStorage
+from imghdr import what
 
 from eve_sqlalchemy.validation import ValidatorSQL
 from eve.methods.common import payload
@@ -22,9 +23,7 @@ from amivapi import models
 
 
 class ValidatorAMIV(ValidatorSQL):
-    """ A cerberus.Validator subclass adding the `unique` constraint to
-    Cerberus standard validation. For documentation please refer to the
-    Validator class of the eve.io.mongo package.
+    """ A Validator subclass adding more validation for special fields
     """
 
     def _validate_type_media(self, field, value):
@@ -36,6 +35,18 @@ class ValidatorAMIV(ValidatorSQL):
         if not isinstance(value, FileStorage):
             self._error(field, "file was expected, got '%s' instead." % value)
 
+    def _validate_filetype(self, filetype, field, value):
+        """Validates filetype. Can validate images and pdfs
+        filetyp should be a list like ['pdf', 'jpeg', 'png']
+        Pdf: Check if first 4 characters are '%PDF' because that marks
+        a PDF
+        Image: Use imghdr library function what()
+        Cannot validate others formats.
+        """
+        if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
+               (what(value) in filetype)):
+            self._error(field, "filetype not supported, has to be one of: "
+                        + " %s" % str(filetype))
 
 """
     Hooks to validate data before requests are performed

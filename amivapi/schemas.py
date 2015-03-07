@@ -97,9 +97,9 @@ def get_domain():
     Filetype needs to be specified as media, maybe this can be automated
     """
     domain['events']['schema'].update({
-        'img_thumbnail': {'type': 'media'},
-        'img_web': {'type': 'media'},
-        'img_1920_1080': {'type': 'media'}
+        'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_web': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_1920_1080': {'type': 'media', 'filetype': ['png', 'jpeg']}
     })
 
     domain['files']['schema'].update({
@@ -107,9 +107,8 @@ def get_domain():
     })
 
     domain['joboffers']['schema'].update({
-        'logo': {'type': 'media'},
-        'pdf': {'type': 'media'},
-        'title': {'type': 'dict'}
+        'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
     """
