@@ -260,7 +260,7 @@ This will turn of the location field, but return a list of signups. The behaviou
 
 Turning embedding on and off will determine how relations are returned by the API. With embedding turned on the whole object will be returned, with embedding turned off only the ID will be returned.
 
-    GET /users?projection={"permissions":1}&embedding={"permissions":1}
+    GET /users?projection={"permissions":1}&embedded={"permissions":1}
 
 This will return all the permission objects embedded in the response
 
