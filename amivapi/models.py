@@ -219,7 +219,7 @@ class Session(Base):
     __owner_methods__ = ['GET', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(CHAR(10424), unique=True)
+    token = Column(CHAR(512), unique=True)
 
     # user = relationship("User", foreign_keys=user_id, backref="sessions")
 
