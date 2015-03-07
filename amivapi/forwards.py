@@ -3,13 +3,15 @@ import os
 from flask import current_app as app
 from flask import abort
 
+from eve.utils import config
+
 from amivapi.models import User, Forward
 
 
 def get_file_for_forward(forward_id):
     db = app.data.driver.session
     forward = db.query(Forward).get(forward_id)
-    return app.config['FORWARD_DIR'] + '/.forward+' + forward.address
+    return config.FORWARD_DIR + '/.forward+' + forward.address
 
 
 def add_address_to_list(forward_id, address):
@@ -37,7 +39,7 @@ def remove_address_from_list(forward_id, address):
 
 
 def remove_list(forward):
-    path = app.config['FORWARD_DIR'] + '/.forward+' + forward['address']
+    path = config.FORWARD_DIR + '/.forward+' + forward['address']
     try:
         os.remove(path)
     except OSError, e:

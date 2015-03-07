@@ -16,7 +16,7 @@ from werkzeug.datastructures import FileStorage
 from eve_sqlalchemy.validation import ValidatorSQL
 from eve.methods.common import payload
 from eve.validation import ValidationError
-from eve.utils import debug_error_message
+from eve.utils import debug_error_message, config
 
 from amivapi import models
 
@@ -296,7 +296,7 @@ def update_signups_schema(data):
 
         extra_schema = event.additional_fields
         if extra_schema is not None:
-            resource_def = app.config['DOMAIN']['_eventsignups']
+            resource_def = config.DOMAIN['_eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'type': 'dict',
@@ -310,7 +310,7 @@ def update_signups_schema(data):
                                                           extra_schema)
                 ))
         else:
-            resource_def = app.config['DOMAIN']['_eventsignups']
+            resource_def = config.DOMAIN['_eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'required': False,

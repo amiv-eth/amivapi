@@ -7,7 +7,7 @@ from os import urandom
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from flask import current_app as app
+from eve.utils import config
 
 from amivapi import models
 
@@ -105,8 +105,8 @@ class DateTimeEncoder(json.JSONEncoder):
 def get_class_for_resource(resource):
     """ Utility function to get SQL Alchemy model associated with a resource
     """
-    if resource in app.config['DOMAIN']:
-        resource_def = app.config['DOMAIN'][resource]
+    if resource in config.DOMAIN:
+        resource_def = config.DOMAIN[resource]
         return getattr(models, resource_def['datasource']['source'])
 
     if hasattr(models, resource.capitalize()):
