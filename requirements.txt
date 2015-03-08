@@ -1,6 +1,6 @@
 Cerberus==0.7.2
 -e git+git@github.com:nicolaiarocci/eve.git@3e938cfe6a2e67d3b3511a20931528553ef33ab6#egg=Eve-v0.5.1
--e git+git@github.com:Leonidaz0r/eve-sqlalchemy.git@377259bf4db8e2e2f9a5135885f2547898e3dc70#egg=Eve_SQLAlchemy-master
+-e git+git@github.com:Leonidaz0r/eve-sqlalchemy.git@ff7911a1d8162ce42d84a7c104911a325272261b#egg=Eve_SQLAlchemy-master
 -e git+https://github.com/hermannsblum/eve-docs.git@b37558841223169d32d36a76a19e0a920133bc3e#egg=Eve_docs-master
 Events==0.2.1
 Flask==0.10.1
