@@ -2,7 +2,6 @@ import datetime as dt
 
 from sqlalchemy import (
     Column,
-    inspect,
     Unicode,
     UnicodeText,
     CHAR,
@@ -16,40 +15,12 @@ from sqlalchemy import (
     Boolean,
     UniqueConstraint
 )
-from sqlalchemy.ext import hybrid
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 
 """ Eve exspects the resource names to be equal to the table names. Therefore
 we generate all names from the Class names. Please choose classnames carefully,
 as changing them might break a lot of code """
-
-
-""" About Authentification
-
-To turn off authentification completely set the property
-__public_methods__ to contain the method. If authentification is turned off,
-then the logintoken off the user is not even considered and any action will be
-done by user -1(anonymous).
-
-Everything from now on requires the method to not be public.
-
-If the user has a role, which is listed to be an admin for the endpoint in
-permission_matrix.py, then g.resource_admin_access will be set during the
-request. Furthermore no filters will be applied based on permissions to any
-requests to that endpoint.
-
-A class can have an __owner__ property. That property describes is a list of
-fields, which contains the user id of somebody who can GET the object and use
-the methods described by __owner_methods__. This works even through a relation.
-
-When a POST is allowed by the owner, then it will be permitted if the item to
-be created will be owned by the logged in user after the request is done.
-
-For more details see the following files:
-auth.py
-permission_matrix.py
-"""
 
 
 class BaseModel(object):
@@ -98,20 +69,6 @@ class BaseModel(object):
     def _author(cls):
         return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
 
-    def jsonify(self):
-        """
-        Used to dump related objects to json
-        """
-        relationships = inspect(self.__class__).relationships.keys()
-        mapper = inspect(self)
-        attrs = [a.key for a in mapper.attrs if
-                 a.key not in relationships
-                 and a.key not in mapper.expired_attributes]
-        attrs += [a.__name__ for a in
-                  inspect(self.__class__).all_orm_descriptors
-                  if a.extension_type is hybrid.HYBRID_PROPERTY]
-        return dict([(c, getattr(self, c, None)) for c in attrs])
-
 
 Base = declarative_base(cls=BaseModel)
 
@@ -126,7 +83,7 @@ class User(Base):
             'GET': "Authorization is required for most of the fields"
         }}
     __expose__ = True
-    __projected_fields__ = ['groups']
+    __projected_fields__ = ['permissions']
 
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
@@ -246,7 +203,7 @@ class Session(Base):
     __owner_methods__ = ['GET', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(CHAR(10424), unique=True)
+    token = Column(CHAR(512), unique=True)
 
     # user = relationship("User", foreign_keys=user_id, backref="sessions")
 

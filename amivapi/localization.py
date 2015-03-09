@@ -1,5 +1,6 @@
 from flask import request, abort, current_app as app
 from eve.methods.post import post_internal
+from eve.utils import config
 from amivapi.models import Translation
 
 
@@ -27,7 +28,7 @@ def insert_localized_fields(response):
         if match:
             response[field] = locales[match]
         else:
-            default = app.config['DEFAULT_LANGUAGE']
+            default = config.DEFAULT_LANGUAGE
             if default in locales.keys():  # Try to fall back to default
                 response[field] = locales[default]
             else:

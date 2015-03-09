@@ -1,9 +1,4 @@
-from datetime import datetime
-
-from amivapi import models
 from amivapi.tests import util
-
-from amivapi.settings import DATE_FORMAT
 
 import json
 
@@ -16,24 +11,26 @@ class SignupTest(util.WebTest):
         user_token = self.new_session(user_id=user.id).token
         peon = self.new_user()
         peon_token = self.new_session(user_id=peon.id).token
+
+        payload = json.dumps({'department': {
+                              'type': 'string',
+                              'required': True,
+                              'allowed': ['itet', 'mavt'],
+                              }})
+
         event = self.new_event(is_public=True, spots=10,
-            additional_fields=json.dumps({
-                'department': {
-                    'type': 'string',
-                    'required': True,
-                    'allowed': ['itet', 'mavt'],
-        }}))
-        
+                               additional_fields=payload)
+
         other_signup = self.new_signup(user_id=peon.id, event_id=event.id)
 
         # user cannot see other eventsignups
-        signups = self.api.get("/eventsignups", token=user_token, status_code=200
-        ).json['_items']
+        signups = self.api.get("/eventsignups", token=user_token,
+                               status_code=200).json['_items']
         self.assertEquals(len(signups), 0)
 
         # peon can see his signup
-        signups = self.api.get("/eventsignups", token=peon_token, status_code=200
-        ).json['_items']
+        signups = self.api.get("/eventsignups", token=peon_token,
+                               status_code=200).json['_items']
         self.assertEquals(len(signups), 1)
 
         # let's signup our user
@@ -46,13 +43,15 @@ class SignupTest(util.WebTest):
         # does not work without session
         self.api.post("/eventsignups", data=data, status_code=401)
 
-        ticket = self.api.post("/eventsignups", token=user_token, data=data, 
+        ticket = self.api.post("/eventsignups", token=user_token, data=data,
                                status_code=201).json
 
         # Try to PATCH the eventsignup-extradata
-        ticket = self.api.patch("/eventsignups/%d" % ticket['_id'], data={
-            'extra_data': {'department': 'mavt'}
-        }, headers={'If-Match': ticket['_etag']}, token=user_token, status_code=201).json
+        ticket = self.api.patch("/eventsignups/%d" % ticket['_id'],
+                                data={'extra_data': {'department': 'mavt'}},
+                                headers={'If-Match': ticket['_etag']},
+                                token=user_token,
+                                status_code=201).json
 
         # DELETE the signup
         self.api.delete("/eventsignups/%i" % ticket['_id'],

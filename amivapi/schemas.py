@@ -1,11 +1,12 @@
-from amivapi import models, permission_matrix
-from eve.io.sql.decorators import registerSchema
+from eve_sqlalchemy.decorators import registerSchema
 from inspect import getmembers, isclass
-from amivapi.confirm import documentation as confirm_documentation
+
+from amivapi import models
+from settings import ROLES
 
 
-def load_domain(config):
-    domain = config['DOMAIN'] = {}
+def get_domain():
+    domain = {}
 
     for cls_name, cls in getmembers(models):
         if(isclass(cls)
@@ -27,7 +28,8 @@ def load_domain(config):
                 = cls.__description__
 
             """ Users should not provide _author fields """
-            del domain[cls.__tablename__]['schema']['_author']
+            domain[cls.__tablename__]['schema']['_author']. \
+                update({'readonly': True})
 
     """ Make it possible to retrive a user with his username (/users/name) """
     domain['users'].update({
@@ -42,18 +44,17 @@ def load_domain(config):
     domain['users']['datasource']['projection']['password'] = 0
 
     """ Only accept email addresses for email fields """
-# FIXME(Conrad): There could be a generic way to add regexes to fields in the
-#                model
+    EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
     domain['_forwardaddresses']['schema']['address'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
     domain['_eventsignups']['schema']['email'].update(
-        {'regex': config['EMAIL_REGEX']})
+        {'regex': EMAIL_REGEX})
 
     """ Only allow existing roles for new permissions """
     domain['permissions']['schema']['role'].update(
-        {'allowed': permission_matrix.roles.keys()})
+        {'allowed': ROLES.keys()})
 
     """Workaround to signal onInsert that this request is internal"""
     domain['_eventsignups']['schema'].update({
@@ -113,15 +114,13 @@ def load_domain(config):
 
     """
     Locatization-revelant: Hide the mapping table
-    Remove title and description id from events and joboffers schema so they
-    can not be set manually
+    Set title and description id from events and joboffers schema to read only
+    so they can not be set manually
     """
     domain['translationmappings']['internal_resource'] = True
-    del domain['joboffers']['schema']['title_id']
-    del domain['joboffers']['schema']['description_id']
-    del domain['events']['schema']['title_id']
-    del domain['events']['schema']['description_id']
+    domain['joboffers']['schema']['title_id'].update({'readonly': True})
+    domain['joboffers']['schema']['description_id'].update({'readonly': True})
+    domain['events']['schema']['title_id'].update({'readonly': True})
+    domain['events']['schema']['description_id'].update({'readonly': True})
 
-    """add the documentation of the blueprints to a custom config-Field"""
-    print_docu = config['BLUEPRINT_DOCUMENTATION'] = {}
-    print_docu.update(confirm_documentation)
+    return domain

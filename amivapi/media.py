@@ -4,19 +4,15 @@
     File System based mediastorage class.
 
     Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
-"""
-from werkzeug import secure_filename
 
-from eve.methods.delete import deleteitem_internal
+    Adds an endpoint to serve media files
+"""
 
 from os import path, remove
 import errno
 
-
-def delete_study_files(item):
-    for file in (dict(item)['files']):
-        lookup = {'id': (file.id)}
-        deleteitem_internal('files', **lookup)
+from werkzeug import secure_filename
+from flask import Blueprint, send_from_directory, current_app as app
 
 
 class ExtFile(file):
@@ -29,6 +25,9 @@ class ExtFile(file):
         self.filename = path.basename(self.name)
         self.size = path.getsize(filename)
         self.content_url = '%s/%s' % (app.config['STORAGE_URL'], self.filename)
+
+    def close(self):
+        file.close(self)
 
 
 class FileSystemStorage(object):
@@ -112,3 +111,16 @@ class FileSystemStorage(object):
         for a new file.
         """
         return path.isfile(self.fullpath(filename))
+
+
+""" Endpoint to download files """
+
+
+download = Blueprint('download', __name__)
+
+
+@download.route('/<filename>', methods=['GET'])
+def download_file(filename):
+    if app.auth and not app.auth.authorized([], 'storage', 'GET'):
+        return app.auth.authenticate()
+    return send_from_directory(app.config['STORAGE_DIR'], filename)

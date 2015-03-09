@@ -256,3 +256,30 @@ def execute_confirmed_action(token):
     db.delete(action)
     db.commit()
     return response
+
+
+""" Hooks to catch actions which should be confirmed """
+
+
+def signups_confirm_anonymous(items):
+    """
+    hook to confirm external signups
+    """
+    for doc in items:
+        if doc['user_id'] == -1:
+            if not confirm_actions(
+                resource='_eventsignups',
+                method='POST',
+                doc=doc,
+            ):
+                items.remove(doc)
+
+
+def forwardaddresses_insert_anonymous(items):
+    for doc in items:
+        if not confirm_actions(
+            resource='_forwardaddresses',
+            method='POST',
+            doc=doc,
+        ):
+            items.remove(doc)

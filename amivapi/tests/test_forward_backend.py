@@ -28,9 +28,6 @@ class ForwardBackendTest(util.WebTestNoAuth):
             'user_id': user2.id,
         }, token=session.token, status_code=201).json
 
-        print("fuser2:")
-        print(fuser2)
-
         with open(path, "r") as f:
             content = f.read()
             self.assertTrue(content == "test@no.no\nlooser92@gmx.com\n")
@@ -43,7 +40,6 @@ class ForwardBackendTest(util.WebTestNoAuth):
 
         with open(path, "r") as f:
             content = f.read()
-            print content
             self.assertTrue(content == "test@no.no\nlooser93@gmx.com\n")
 
         self.api.delete("/forwardusers/%i" % fuser['id'],
@@ -55,7 +51,9 @@ class ForwardBackendTest(util.WebTestNoAuth):
             content = f.read()
             self.assertTrue(content == "looser93@gmx.com\n")
 
-        self.api.delete("/forwards/%i" % forward.id, token=session.token,
+        self.api.delete("/forwards/%i" % forward.id,
+                        token=session.token,
+                        headers={"If-Match": forward._etag},
                         status_code=204)
 
         self.assertTrue(exists(path) is False)
