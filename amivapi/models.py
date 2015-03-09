@@ -129,7 +129,7 @@ class Permission(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     role = Column(CHAR(20), nullable=False)
-    expiry_date = Column(DateTime)
+    expiry_date = Column(DateTime, nullable=False)
 
     # user = relationship("User", foreign_keys=user_id, backref="permissions")
 

@@ -21,6 +21,8 @@ from eve.utils import debug_error_message, config
 
 from amivapi import models
 
+from datetime import datetime
+
 
 class ValidatorAMIV(ValidatorSQL):
     """ A Validator subclass adding more validation for special fields
@@ -36,7 +38,7 @@ class ValidatorAMIV(ValidatorSQL):
             self._error(field, "file was expected, got '%s' instead." % value)
 
     def _validate_filetype(self, filetype, field, value):
-        """Validates filetype. Can validate images and pdfs
+        """ Validates filetype. Can validate images and pdfs
         filetyp should be a list like ['pdf', 'jpeg', 'png']
         Pdf: Check if first 4 characters are '%PDF' because that marks
         a PDF
@@ -45,8 +47,18 @@ class ValidatorAMIV(ValidatorSQL):
         """
         if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
                (what(value) in filetype)):
-            self._error(field, "filetype not supported, has to be one of: "
-                        + " %s" % str(filetype))
+            self._error(field, "filetype not supported, has to be one of: " +
+                        " %s" % str(filetype))
+
+    def _validate_future_date(self, future_date, field, value):
+        """ Enables validator for dates that need do be in the future"""
+        if future_date:
+            if value <= datetime.now():
+                self._error(field, "date must be in the future.")
+        else:
+            if value > datetime.now():
+                self._error(field, "date must not be in the future.")
+
 
 """
     Hooks to validate data before requests are performed
@@ -58,8 +70,7 @@ class ValidatorAMIV(ValidatorSQL):
 
 resources_with_extra_checks = ['forwardusers',
                                'events',
-                               '_eventsignups',
-                               'permissions']
+                               '_eventsignups']
 
 
 def pre_insert_check(resource, items):
@@ -238,17 +249,6 @@ def check_events(data):
         abort(422, description=(
             'exception for additional_fields: %s' % str(e)
         ))
-
-
-""" /permissions """
-
-
-def check_permissions(data):
-    if data.get('expiry_date') < dt.datetime.now():
-        abort(422, description=debug_error_message(
-            'expiry_date needs to be in the future'
-        ))
-
 
 """
     Hooks to modify the schema for additional_fields of events
