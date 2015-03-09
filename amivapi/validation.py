@@ -282,18 +282,20 @@ def pre_signups_patch(request, lookup):
     update_signups_schema(payload())
 
 
-# TODO(Conrad to Hermann): What is the purpose of this function?
-# Function name says update, comment says validate... what?
 def update_signups_schema(data):
     """
-    validate the schema of extra_data
+    If the event the client signs up for requires extra fields, they are
+    specified in event.additional_fields.
+    We need to update the schema for the field extra_data of the eventsignup
+    with the schema required by the Event, and Cerberus will do the rest of the
+    Validation-Work.
     """
     db = app.data.driver.session
     eventid = data.get('event_id')
     event = db.query(models.Event).get(eventid)
     if event is not None:
-        """we need to check this because the validator did not run yet"""
-
+        """we need to check this because the validator did not run yet, may not
+        be a valid id"""
         extra_schema = event.additional_fields
         if extra_schema is not None:
             resource_def = config.DOMAIN['_eventsignups']
