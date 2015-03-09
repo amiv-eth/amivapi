@@ -18,6 +18,7 @@ import json
 
 
 confirmprint = Blueprint('confirm', __name__)
+documentation = {}
 
 
 def id_generator(size=6, chars=string.ascii_letters + string.digits):
@@ -25,6 +26,9 @@ def id_generator(size=6, chars=string.ascii_letters + string.digits):
 
 
 def send_confirmmail(ressource, token, email):
+    """For the development-Version, we do not actually send emails but print
+    the token. For testing, you will find the token in the database or copy it
+    from the command-line"""
     print('email send with token %s to %s' % (token, email))
 
 
@@ -33,7 +37,7 @@ def confirm_actions(resource, method, doc):
     This method will save a given action for confirmation in the database
     and send a token to the email-address given.
     The action will be executed as soon as the token is POSTed to the resource
-    /confirms
+    /confirmations
     :param ressource: the ressource as a string
     :param method: the method (POST, GET, DELETE) as a string
     :param doc: the dictionary of the data for the action
@@ -42,15 +46,17 @@ def confirm_actions(resource, method, doc):
     :param email_field: the key for the email-address in doc
     """
 
+    # for the different resources there are different tablenames for the email
     email_field = {'_forwardaddresses': 'address',
                    '_eventsignups': 'email'}
     if doc.get('_confirmed', False) is not True:
+        # these fields will get inserted automatcally and must not be part of
+        # the payload
         doc.pop('_updated', None)
         doc.pop('_created', None)
         doc.pop('_author', None)
         data = json.dumps(doc, cls=utils.DateTimeEncoder)
         expiry = dt.datetime.now() + dt.timedelta(days=14)
-        # TODO: check uniqueness of token?
         token = id_generator(size=20)
         thisconfirm = Confirm(
             method=method,
@@ -72,8 +78,9 @@ def confirm_actions(resource, method, doc):
 
 def change_status(response):
     """This function changes the catched response of a post. Eve returns 201
-    because the data got just deleted out of the payload, but we need to return
-    202 and a hint to confirm the data"""
+    because the data got just deleted out of the payload and the empty payload
+    got handled correct, but we need to return 202 and a hint to confirm the
+    email-address"""
     if response[3] in [201, 200] and 'id' not in response:
         """No items actually inserted but saved in Confirm,
         Send 202 Accepted"""
@@ -148,20 +155,51 @@ def route_itemmethod(resource, lookup, anonymous=True):
     return send_response(resource, response)
 
 
+documentation['forwardaddresses'] = {
+    'general': "This resource organizes email-addresses subscribing a forward"
+    " which are not relating to a user.",
+    'methods': "To add an address to a forward, one must either be admin or "
+    "owner of the forward. In other cases, you can POST subscriptions to "
+    "public forwards. Every POST needs confirmation of the email-address.",
+    'schema': '_forwardaddresses'
+}
+
+
 @confirmprint.route('/forwardaddresses',
                     methods=['GET', 'POST', 'HEAD', 'OPTIONS'])
 def handle_forwardaddresses():
+    """These are custom api-endpoints from the confirmprint Blueprint.
+    We need one for the generel resource and one for the item endpoint."""
     data = request.view_args
     if request.method == 'POST':
         data = payload()
     return route_method('_forwardaddresses', data)
 
 
-@confirmprint.route('/forwardaddresses/<_id>',
+@confirmprint.route('/forwardaddresses/<regex("[0-9]+"):_id>',
                     methods=['GET', 'HEAD', 'DELETE', 'OPTIONS'])
 def handle_forwardaddressesitem(_id):
     payload = {'_id': _id}
     return route_itemmethod('_forwardaddresses', payload)
+
+
+documentation['eventsignups'] = {
+    'general': "Signing up to an event is possible in two cases: Either you "
+    "are a registered user ot you are not registered, but the event is "
+    "public and you have an email-address.",
+    'methods': {
+        'GET': "You can onyl see your own signups unless you are an "
+        "administrator",
+        'POST': "If you are not registered, the signup becomes valid as you "
+        "confirm your email-address"
+    },
+    'fields': {
+        'extra_data': "Needs to provide all necessary data defined in "
+        "event.additional_fields",
+        'user_id': "If you are not registered, set this to -1"
+    },
+    'schema': '_eventsignups'
+}
 
 
 @confirmprint.route('/eventsignups',
@@ -174,7 +212,7 @@ def handle_eventsignups():
     return route_method('_eventsignups', data, anonymous)
 
 
-@confirmprint.route('/eventsignups/<_id>',
+@confirmprint.route('/eventsignups/<regex("[0-9]+"):_id>',
                     methods=['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE',
                              'OPTIONS'])
 def handle_eventsignupsitem(_id):
@@ -187,7 +225,7 @@ def handle_eventsignupsitem(_id):
 @confirmprint.route('/confirmations', methods=['POST'])
 def on_post_token():
     """This is the endpoint, where confirmation-tokens need to get posted to"""
-    data = payload()  # we only allow POST
+    data = payload()  # we only allow POST -> no error with payload()
     return execute_confirmed_action(data.get('token'))
 
 

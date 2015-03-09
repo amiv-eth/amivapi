@@ -1,6 +1,7 @@
 from amivapi import models, permission_matrix
 from eve.io.sql.decorators import registerSchema
 from inspect import getmembers, isclass
+from amivapi.confirm import documentation as confirm_documentation
 
 
 def load_domain(config):
@@ -120,3 +121,7 @@ def load_domain(config):
     del domain['joboffers']['schema']['description_id']
     del domain['events']['schema']['title_id']
     del domain['events']['schema']['description_id']
+
+    """add the documentation of the blueprints to a custom config-Field"""
+    print_docu = config['BLUEPRINT_DOCUMENTATION'] = {}
+    print_docu.update(confirm_documentation)
