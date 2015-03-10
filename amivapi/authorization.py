@@ -23,28 +23,35 @@ def common_authorization(resource, method):
     checks common to all methods. Also this will perform authentification if
     it has not been done already(public methods skip it).
 
-    Returns whether additional owner checks have to be performed
+    Returns whether the user has been authorized. If he has not been
+    authorized this may still happen later due to ownership of an object.
+    See authorize_object_change() or pre_get_permission_change() for owner
+    based authorization.
+
+    This will abort if there is no owner attribute for the requested resource
+    and no other means of authorization were met.
 
     This will:
         1. Check if the user is root
-            => return False, g.resource_admin = True
+            => return True, g.resource_admin = True
         2. Check if the user has a role, which allowes everything for this
             endpoint
-            => return False, g.resource_admin = True
+            => return True, g.resource_admin = True
         3. Check if the endpoint is public
-            => return False, g.resource_admin = False
-        4. Check if the endpoint is open to registered users
-            => return False, g.resource_admin = False
-        5. Check if the endpoint is open to owners
             => return True, g.resource_admin = False
+        4. Check if the endpoint is open to registered users
+            => return True, g.resource_admin = False
+        5. Check if the endpoint is open to owners
+            => return False, g.resource_admin = False
         6. abort(403)
     """
     resource_class = utils.get_class_for_resource(resource)
 
-    # If the method is public, authentification has not been performed by eve
-    # automatically. If the user has set a token check that now to generate
-    # g.logged_in_user. If he has no token, set user ID to -1
-    if method in resource_class.__public_methods__:
+    # If the method is public or this is called by a custom endpoint,
+    # authentification has not been performed yet automatically. If the user
+    # has set a token check that now to generate g.logged_in_user. If he has
+    # no token, set user ID to -1
+    if not hasattr(g, 'logged_in_user'):
         if not app.auth or not app.auth.authorized([], resource, method):
             g.logged_in_user = -1
 
@@ -54,7 +61,7 @@ def common_authorization(resource, method):
     if g.logged_in_user == 0:
         app.logger.debug("Access granted for root user %s %s"
                          % (method, resource))
-        return False
+        return True
 
     # User has admin role for this endpoint -> allow
     permissions = app.data.driver.session.query(models.Permission) \
@@ -67,7 +74,7 @@ def common_authorization(resource, method):
                                  % (method, resource)
                                  + "for user %i with role %s"
                                  % (g.logged_in_user, permission.role))
-                return False
+                return True
         except KeyError:
             pass
 
@@ -75,7 +82,7 @@ def common_authorization(resource, method):
 
     # Method is public -> allow
     if method in resource_class.__public_methods__:
-        return False
+        return True
 
     # Endpoint is open to registered users -> allow
     # Anonymous users won't arrive here as they are already aborted during
@@ -83,14 +90,12 @@ def common_authorization(resource, method):
     if method in resource_class.__registered_methods__:
         app.logger.debug("Access granted to %s %s for registered user %i"
                          % (method, resource, g.logged_in_user))
-        return False
+        return True
 
     # Endpoint is open to object owners -> allow, but inform caller to
     # perform more checks
     if request.method in resource_class.__owner_methods__:
-        app.logger.debug("Access granted to %s %s for owner user %i"
-                         % (method, resource, g.logged_in_user))
-        return True
+        return False
 
     # No permission, abort
     error = ("Access denied to %s %s for unpriviledged user %i"
@@ -123,62 +128,34 @@ def resolve_future_field(model, payload, field):
     return value
 
 
-def authorize_object_change(resource, request, obj):
+def will_be_owner(resource, method, obj):
     """ Check if an object would have the currently logged in user as an owner
     if the passed obj was created in the database or an existing object
     patched to contain the data
     """
-    resource_class = utils.get_class_for_resource(resource)
-
-    # Perform common authorization tasks and return if we do not need to do
-    # more
-    if not common_authorization(resource, request.method):
-        return
-
-    if not hasattr(resource_class, '__owner__'):
-        app.logger.error("Warning: Resource %s has no __owner__" % resource +
-                         "but defines __owner_methods__!")
-        abort(500, description="There seems to be a major"
-              + " bug in the AMIV API. Please report how you arrived here to "
-              + "it@amiv.ethz.ch.")
-
-    try:
-        for field in resource_class.__owner__:
-
-            v = resolve_future_field(resource_class, obj, field)
-            if v == g.logged_in_user:
-                app.logger.debug("Permission granted base on new owner"
-                                 + "field %s " % field + "with value %s" % v)
-                return True
-    except AttributeError:
-        app.logger.error("Unknown owner field for %s: %s" % (resource, field))
-        raise
-
-    error = ("403 Access forbidden: The sent object would not belong "
-             + "to the logged in user after this POST.")
-    app.logger.debug(error)
-    abort(403, description=debug_error_message(error))
-
-
-""" Permission filters for all requests """
-
-
-def pre_get_permission_filter(resource, request, lookup):
-    """ This function adds filters to the lookup parameter to only return
-    items, which are owned by the user for resources, which are neither
-    public nor open to registered users
-    """
-    if not common_authorization(resource, request.method):
-        return
 
     resource_class = utils.get_class_for_resource(resource)
 
+    if hasattr(resource_class, '__owner__'):
+        try:
+            for field in resource_class.__owner__:
+
+                v = resolve_future_field(resource_class, obj, field)
+                if v == g.logged_in_user:
+                    return True
+        except AttributeError:
+            app.logger.error("Unknown owner field for %s: %s"
+                             % (resource, field))
+            raise
+
+    return False
+
+
+def apply_lookup_owner_filters(lookup, resource):
+    resource_class = utils.get_class_for_resource(resource)
+
     if not hasattr(resource_class, '__owner__'):
-        app.logger.error("Warning: Resource %s has no __owner__" % resource +
-                         "but defines __owner_methods__!")
-        abort(500, description="There seems to be a major"
-              + " bug in the AMIV API. Please report how you arrived here to "
-              + "it@amiv.ethz.ch.")
+        abort(403)
 
     fields = resource_class.__owner__[:]
 
@@ -190,29 +167,64 @@ def pre_get_permission_filter(resource, request, lookup):
     lookup[condition_string] = ""
 
 
+""" Permission filters for all requests """
+
+
+def pre_get_permission_filter(resource, request, lookup):
+    """ This function adds filters to the lookup parameter to only return
+    items, which are owned by the user for resources, which are neither
+    public nor open to registered users
+    """
+    if not common_authorization(resource, request.method):
+        apply_lookup_owner_filters(lookup, resource)
+
+
 # TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
-    authorize_object_change(resource, request, payload())
+    authorized = common_authorization(resource, request.method)
+    if not authorized \
+            and not will_be_owner(resource, request.method, payload()):
+        app.logger.debug("Access forbidden for %s to %s for unauthorized user"
+                         % (request.method, resource))
+        abort(403)
 
 
 def pre_put_permission_filter(resource, request, lookup):
-    pre_delete_permission_filter(resource, request, lookup)
-    pre_post_permission_filter(resource, request)
-    return
+    if not common_authorization(resource, request.method):
+        if not will_be_owner(resource, request.method, payload()):
+            abort(403)
+        apply_lookup_owner_filters(lookup, resource)
+
+
+""" The hook for patch is split into two parts. The first part is needed to
+apply filters to lookup before the object to be patched is extracted, the
+second one will examine the changes to be made to that object. Because of
+that split we have to store the result of the common_authorization function
+which tells us whether the user was already authorized in a different way than
+ownership, so we do not have to check ownership again(other means include
+admin priviledges, the method being public or open to registered user, see
+common_authorization() above) """
 
 
 def pre_patch_permission_filter(resource, request, lookup):
     """ This filter let's owners only patch objects they own """
-    pre_get_permission_filter(resource, request, lookup)
+    # We use this to pass the result to the hook below
+    g.authorized_without_ownership = common_authorization(resource,
+                                                          request.method)
+    if not g.authorized_without_ownership:
+        apply_lookup_owner_filters(lookup, resource)
 
 
 def update_permission_filter(resource, updates, original):
     """ This filter ensures, that an owner can not change the owner
     of his objects """
+    if g.authorized_without_ownership:
+        return
 
     data = original.copy()
     data.update(updates)
-    authorize_object_change(resource, request, data)
+    if not will_be_owner(resource, request.method, data):
+        abort(403)
 
 
 def pre_delete_permission_filter(resource, request, lookup):

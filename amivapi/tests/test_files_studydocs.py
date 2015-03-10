@@ -2,12 +2,11 @@ from StringIO import StringIO  # Used to create file on the go
 from amivapi.tests import util
 from os.path import exists, join
 from amivapi import models
+from PIL import Image
 
 
-class FileStorageTest(util.WebTestNoAuth):
-    """This tests will check if the file storage system works correctly.
-    It will NOT test the methods itself since the eve methods are not
-    modified. Only the self implemented FileStorage is the target.
+class FileTest(util.WebTestNoAuth):
+    """This tests will check if the file system works correctly.
     """
     def test_upload(self):
         """Tries uploading a file and checks if its safed in the storage dir.
@@ -138,6 +137,40 @@ class FileStorageTest(util.WebTestNoAuth):
 
         len = self.db.query(models.File).count()
         self.assertTrue(len == 0)
+
+    def test_filetype(self):
+        """This test will check filetype whitelisting"""
+
+        header = {'content-type': 'multipart/form-data'}
+
+        data = {'pdf': (StringIO('Not a pdf'), 'file.pdf')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=422)
+
+        data = {'logo': (StringIO('Not a jpeg'), 'file.jpg')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=422)
+
+        data = {'logo': (StringIO('Not a png'), 'file.png')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=422)
+
+        """Upload something that at least wants to be a PDF"""
+        data = {'pdf': (StringIO(r'%PDF 1.5% maybe a pdf..'), 'file.pdf')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=201)
+
+        """Create Images as jpeg and png which are allowed"""
+        image = Image.new('RGBA', size=(50, 50), color=(256, 0, 0))
+        image_file = StringIO()
+        image.save(image_file, 'jpeg')
+        image_file.seek(0)
+
+        data = {'logo': (image_file, 'file.jpeg')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=201)
+
+        image_file = StringIO()
+        image.save(image_file, 'png')
+        image_file.seek(0)
+
+        data = {'logo': (image_file, 'file.png')}
+        self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
     def assert_media_stored(self, filename, content):
         """Is the file there?"""

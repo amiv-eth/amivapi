@@ -9,9 +9,9 @@ def get_domain():
     domain = {}
 
     for cls_name, cls in getmembers(models):
-        if(isclass(cls)
-                and cls.__module__ == "amivapi.models"
-                and cls.__expose__ is True):
+        if(isclass(cls) and
+                cls.__module__ == "amivapi.models" and
+                cls.__expose__ is True):
             registerSchema(cls.__tablename__)(cls)
             domain.update(cls._eve_schema)
 
@@ -52,9 +52,12 @@ def get_domain():
     domain['_eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
-    """ Only allow existing roles for new permissions """
+    """ Permissions: Only allow existing roles and expiry date must be in the
+    future """
     domain['permissions']['schema']['role'].update(
         {'allowed': ROLES.keys()})
+    domain['permissions']['schema']['expiry_date'].update(
+        {'future_date': True})
 
     """Workaround to signal onInsert that this request is internal"""
     domain['_eventsignups']['schema'].update({
@@ -97,9 +100,9 @@ def get_domain():
     Filetype needs to be specified as media, maybe this can be automated
     """
     domain['events']['schema'].update({
-        'img_thumbnail': {'type': 'media'},
-        'img_web': {'type': 'media'},
-        'img_1920_1080': {'type': 'media'}
+        'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_web': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_1920_1080': {'type': 'media', 'filetype': ['png', 'jpeg']}
     })
 
     domain['files']['schema'].update({
@@ -107,9 +110,8 @@ def get_domain():
     })
 
     domain['joboffers']['schema'].update({
-        'logo': {'type': 'media'},
-        'pdf': {'type': 'media'},
-        'title': {'type': 'dict'}
+        'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
     """

@@ -95,7 +95,8 @@ Requests which are handled by eve will automatically perform authentification
 and authorization. If you implement a custom endpoint you have to call them
 yourself. However authorization really depends on what is about to happen,
 so you might have to do it yourself. To get an idea of what to do look at
-common_authorization() in authorization.py.
+the authorization hooks(pre_xxx_permission_filter()). You can quite certainly
+reuse that code somehow.
 
 Perform authentification(will abort the request for anonymous users):
 
@@ -178,13 +179,13 @@ supposed to only see entries which forward to him or where he is the
 listowner.
 This is solved by two functions. When extracting data we need to create
 additional lookup filters. Those are inserted by the
-pre_get_permission_filter() and other hooks calling it.
+apply_lookup_filters() function which is called by the hooks below it.
 When inserting new data or changing data it gets more complicated. First we
 need to make sure that the object which is manipulated belongs to the user,
 that is achieved using the previously described function. In addition we need
 to make sure that the object afterwards still belongs to him. We do not want
 people moving EventSignups or ForwardUsers to other users. All this is done in
-the authorize_object_change() function.
+the will_be_owner() function which is used by the hooks as needed.
 However to achieve this the function needs to figure out what would happen if
 the request was executed. This is currently done by the resolve_future_field()
 function, which tries to resolve relationships using SQLAlchemy meta
