@@ -47,10 +47,11 @@ def common_authorization(resource, method):
     """
     resource_class = utils.get_class_for_resource(resource)
 
-    # If the method is public, authentification has not been performed by eve
-    # automatically. If the user has set a token check that now to generate
-    # g.logged_in_user. If he has no token, set user ID to -1
-    if method in resource_class.__public_methods__:
+    # If the method is public or this is called by a custom endpoint,
+    # authentification has not been performed yet automatically. If the user
+    # has set a token check that now to generate g.logged_in_user. If he has
+    # no token, set user ID to -1
+    if not hasattr(g, 'logged_in_user'):
         if not app.auth or not app.auth.authorized([], resource, method):
             g.logged_in_user = -1
 
@@ -204,10 +205,12 @@ ownership, so we do not have to check ownership again(other means include
 admin priviledges, the method being public or open to registered user, see
 common_authorization() above) """
 
+
 def pre_patch_permission_filter(resource, request, lookup):
     """ This filter let's owners only patch objects they own """
     # We use this to pass the result to the hook below
-    g.authorized_without_ownership = common_authorization(resource, request.method)
+    g.authorized_without_ownership = common_authorization(resource,
+                                                          request.method)
     if not g.authorized_without_ownership:
         apply_lookup_owner_filters(lookup, resource)
 
