@@ -18,12 +18,7 @@ def setup():
     engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
     connection = engine.connect()
 
-    try:
-        utils.init_database(connection, config)
-    except OperationalError:
-        print("There is already a testing database, please delete it before"
-              + "running tests.")
-        exit(0)
+    utils.init_database(connection, config)
 
 
 def teardown():
