@@ -1,61 +1,11 @@
-import datetime as dt
-
 from amivapi import models
 from amivapi.tests import util
 
-from amivapi.settings import DATE_FORMAT
-
+import datetime as dt
 import json
 
 
 class HookTest(util.WebTestNoAuth):
-
-    def test_a_Permission_hooks(self):
-        # make new user
-        user = self.new_user()
-        userid = user.id
-
-        # make new permission assignment with wrong expiry
-        expiry = dt.datetime(2000, 11, 11)
-        self.api.post("/permissions", data={
-            'user_id': userid,
-            'role': 'vorstand',
-            'expiry_date': expiry.strftime(DATE_FORMAT),
-        }, status_code=422)
-        assignmentCount = self.db.query(models.Permission).count()
-        self.assertEquals(assignmentCount, 0)
-
-        # make new permission assignment with right data
-        expiry = dt.datetime(2123, 11, 11)
-        self.api.post("/permissions", data={
-            'user_id': userid,
-            'role': 'vorstand',
-            'expiry_date': expiry.strftime(DATE_FORMAT),
-        }, status_code=201)
-
-        # has assignment got into the db?
-        assignmentCount = self.db.query(models.Permission).count()
-        self.assertEquals(assignmentCount, 1)
-
-        # can we see the assignment from outside?
-        permissions = self.api.get("/permissions", status_code=200)
-        self.assertEquals(len(permissions.json['_items']), 1)
-        self.assertEquals(permissions.json['_items'][0]['user_id'], userid)
-        self.assertEquals(permissions.json['_items'][0]['role'], 'vorstand')
-
-    def test_a_Permission_invalid_role(self):
-        user = self.new_user()
-        userid = user.id
-
-        data = {
-            'user_id': userid,
-            'role': 'notafukinrole',
-            'expiry_date': dt.datetime(3000, 1, 1).strftime(DATE_FORMAT)
-        }
-        self.api.post("/permissions", data=data, status_code=422)
-
-        data['role'] = 'vorstand'
-        self.api.post("/permissions", data=data, status_code=201)
 
     def test_b_EventSignup_hooks(self):
         # make new event

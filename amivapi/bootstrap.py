@@ -16,7 +16,8 @@ from amivapi import \
     media, \
     forwards, \
     localization, \
-    validation
+    validation, \
+    documentation
 
 
 def get_config(environment):
@@ -35,6 +36,7 @@ def get_config(environment):
 def create_app(environment, disable_auth=False):
     config = get_config(environment)
     config['DOMAIN'] = schemas.get_domain()
+    config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
 
     if disable_auth:
         app = Eve(settings=config,
