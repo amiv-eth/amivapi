@@ -167,15 +167,16 @@ class ForwardAuthTest(util.WebTest):
 
         new_forward = self.api.post("/forwardaddresses", data=data,
                                     token=admin_session.token,
-                                    status_code=201).json
+                                    status_code=202).json
 
         new_forward = self.api.post("/forwardaddresses", data=data,
                                     token=list_owner_session.token,
-                                    status_code=201).json
+                                    status_code=202).json
 
-        db.query(models._ForwardAddress).filter_by(id=new_forward['id']). \
+        """db.query(models._ForwardAddress).filter_by(id=new_forward['id']). \
             delete()
         db.commit()
+        """
 
     def test_forward_addresses_permissions_PATCH(self):
         """ Test PATCH permissions for _ForwardAddress objects """
@@ -404,3 +405,41 @@ class ForwardAuthTest(util.WebTest):
                         token=admin_session.token,
                         headers={'If-Match': forward_address._etag},
                         status_code=200)
+
+    def test_role_validation(self):
+        """Test /forwardusers for registered user in different roles"""
+        user = self.new_user()
+        user_token = self.new_session(user_id=user.id).token
+        admin = self.new_user()
+        self.new_permission(user_id=admin.id, role='vorstand')
+        admin_token = self.new_session(user_id=admin.id).token
+        peon = self.new_user()
+        peon_token = self.new_session(user_id=peon.id).token
+        owner = self.new_user()
+        owner_token = self.new_session(user_id=owner.id).token
+
+        forward = self.new_forward(is_public=True, owner_id=owner.id)
+
+        # i can post to forwardusers for me
+        data = {
+            'user_id': user.id,
+            'forward_id': forward.id
+        }
+        self.api.post("/forwardusers", data=data, token=user_token,
+                      status_code=201)
+
+        # another user can not signup me
+        self.api.post("/forwardusers", data=data, token=peon_token,
+                      status_code=403)
+
+        # owner can signup me
+        forward = self.new_forward(is_public=True, owner_id=owner.id)
+        data.update(forward_id=forward.id)
+        self.api.post("/forwardusers", data=data, token=owner_token,
+                      status_code=201)
+
+        # admin can signup me
+        forward = self.new_forward(is_public=True, owner_id=owner.id)
+        data.update(forward_id=forward.id)
+        self.api.post("/forwardusers", data=data, token=admin_token,
+                      status_code=201)

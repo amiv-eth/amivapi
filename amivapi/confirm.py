@@ -1,7 +1,5 @@
 from flask import current_app as app
-from flask import Blueprint, request, abort
-from amivapi.models import Confirm
-from amivapi import utils
+from flask import Blueprint, request, abort, g
 from eve.methods.post import post_internal, post
 from eve.methods.delete import deleteitem
 from eve.methods.get import get, getitem
@@ -9,12 +7,16 @@ from eve.methods.patch import patch
 from eve.methods.put import put
 from eve.render import send_response
 from eve.methods.common import payload, get_document
-from eve.utils import request_method, config
+from eve.utils import config, request_method
+from amivapi.authorization import common_authorization
 
 import datetime as dt
 import string
 import random
 import json
+
+import models
+import utils
 
 
 confirmprint = Blueprint('confirm', __name__)
@@ -49,7 +51,9 @@ def confirm_actions(resource, method, doc):
     # for the different resources there are different tablenames for the email
     email_field = {'_forwardaddresses': 'address',
                    '_eventsignups': 'email'}
-    if doc.get('_confirmed', False) is not True:
+
+    # if registered user has admin-rights, we need no confirmation
+    if (doc.get('_confirmed', False) is not True):
         # these fields will get inserted automatcally and must not be part of
         # the payload
         doc.pop('_updated', None)
@@ -58,7 +62,7 @@ def confirm_actions(resource, method, doc):
         data = json.dumps(doc, cls=utils.DateTimeEncoder)
         expiry = dt.datetime.now() + dt.timedelta(days=14)
         token = id_generator(size=20)
-        thisconfirm = Confirm(
+        thisconfirm = models.Confirm(
             method=method,
             resource=resource,
             data=data,
@@ -72,7 +76,7 @@ def confirm_actions(resource, method, doc):
         send_confirmmail(resource, token, doc.get(email_field.get(resource)))
         return False
     else:
-        doc.pop('_confirmed')
+        doc.pop('_confirmed', None)
         return True
 
 
@@ -101,6 +105,7 @@ def route_method(resource, lookup, anonymous=True):
     """
     response = None
     method = request_method()
+    common_authorization(resource, method)
     if method in ('GET', 'HEAD'):
         response = get(resource, lookup)
     elif method == 'POST':
@@ -120,34 +125,43 @@ def route_itemmethod(resource, lookup, anonymous=True):
     Similar to eve.endpoint
     :param resource: the resource where the request comes from
     :param lookup: the lookup-dictionary like in the hooks
-    :param anonymous: True if the request needs confirmation via email
+    :param anonymous: True if the request concerns an anonymous user (the
+        logged in user may be different)
     """
     response = None
     method = request_method()
+    common_authorization(resource, method)
+    admin = g.resource_admin
     if method in ('GET', 'HEAD'):
         response = getitem(resource, lookup)
     elif method == 'PATCH':
         response = patch(resource, lookup)
-        if anonymous:
+        if anonymous and not admin:
             response = change_status(response)
     elif method == 'PUT':
         response = put(resource, lookup)
-        if anonymous:
+        if anonymous and not admin:
             response = change_status(response)
     elif method == 'DELETE':
-        if anonymous:
+        print g.logged_in_user
+        db = app.data.driver.session
+        resource_class = utils.get_class_for_resource(resource)
+        doc = db.query(resource_class).get(lookup['_id'])
+        if not doc:
+            abort(404)
+        print doc.__owner__
+        owner = doc.__owner__ == g.logged_in_user
+        print "is owner: %s" % str(owner)
+        if anonymous and not admin and not owner:
             """own funcionality for confirmation, we don't use eve in this
             case"""
-            doc = get_document(resource, lookup)
-            if not doc:
-                abort(404)
             # we need the email to send the token
-            lookup.update(address=doc.get('address'))
+            lookup.update(address=doc.address)
             confirm_actions(resource, method, lookup)
             response = [{}, None, None, 202]
             response[0][config.STATUS] = 202
         else:
-            deleteitem(resource, lookup)
+            response = deleteitem(resource, lookup)
     elif method == 'OPTIONS':
         response = None
     else:
@@ -170,6 +184,7 @@ documentation['forwardaddresses'] = {
 def handle_forwardaddresses():
     """These are custom api-endpoints from the confirmprint Blueprint.
     We need one for the generel resource and one for the item endpoint."""
+
     data = request.view_args
     if request.method == 'POST':
         data = payload()
@@ -217,9 +232,10 @@ def handle_eventsignups():
                              'OPTIONS'])
 def handle_eventsignupsitem(_id):
     # lookup = {config.ID_FIELD: _id}
-    lookup = request.view_args
     doc = get_document('_eventsignups', {config.ID_FIELD: _id})
-    return route_itemmethod('_eventsignups', lookup, doc.user_id == -1)
+    anonymous = doc.user_id == -1
+    lookup = request.view_args
+    return route_itemmethod('_eventsignups', lookup, anonymous)
 
 
 @confirmprint.route('/confirmations', methods=['POST'])
@@ -235,7 +251,7 @@ def execute_confirmed_action(token):
     PATCH and PUT are not implemented yet
     """
     db = app.data.driver.session
-    action = db.query(Confirm).filter_by(
+    action = db.query(models.Confirm).filter_by(
         token=token
     ).first()
     if action is None:
@@ -249,7 +265,8 @@ def execute_confirmed_action(token):
         answer = post_internal(action.resource, payload)
         response = send_response(action.resource, answer)
     elif action.method == 'DELETE':
-        app.data.remove(action.resource, {config.ID_FIELD: payload['_id']})
+        app.data.remove(action.resource,
+                        {config.ID_FIELD: payload['_id']})
         response = send_response(action.resource, ({}, None, None, 200))
     else:
         abort(405)
