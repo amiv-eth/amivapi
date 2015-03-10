@@ -24,7 +24,8 @@ class LanguageTest(util.WebTestNoAuth):
 
         self.assertTrue('title_id' in response_offer.keys())
         self.assertTrue('description_id' in response_offer.keys())
-        self.assertTrue('title_id' != 'description_id')
+        self.assertTrue(response_offer['title_id'] !=
+                        response_offer['description_id'])
 
         offerid = response_offer['id']
 
