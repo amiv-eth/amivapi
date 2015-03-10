@@ -185,7 +185,6 @@ class _ForwardAddress(Base):
     __owner__ = ['forward.owner_id']
     __owner_methods__ = ['GET', 'POST', 'DELETE']
     __public_methods__ = ['POST', 'DELETE']
-    __registered_methods__ = ['DELETE']
 
     address = Column(Unicode(100))
     forward_id = Column(
@@ -267,8 +266,8 @@ class _EventSignup(Base):
     __projected_fields__ = ['event', 'user']
 
     __owner__ = ['user_id']
-    __owner_methods__ = ['GET', 'PATCH', 'DELETE']
-    __registered_methods__ = ['POST']
+    __owner_methods__ = ['POST', 'GET', 'PATCH', 'DELETE']
+    # __public_methods__ = ['POST']
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
