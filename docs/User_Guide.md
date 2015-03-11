@@ -479,9 +479,20 @@ Study documents are a collection of files. Using them is simple:
 
 #Unregistered users
 
-Next to GET operations on public data, AMIV API currently allows unregistered users in exactly two cases: Signing up for a public event (when 'is_public' is set to True) or managing email-subscribtions for public email lists.
+Next to GET operations on public data, AMIV API currently allows unregistered users in exactly two cases: Signing up for a public event or managing email-subscribtions for public email lists. In Both cases, 'is_public' of the event or forward must be True.
 
-Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request is without login, you need to confirm for every action that you are the owner of the given email-address. Therefore, a confirmation token will be send to the specified address.
+Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request comes without login, you need to confirm yourself and your email-address with a special token.  
+After the creation of a new item with POST, the User will get an email with the Token. Your Admin might provide links in this mail to a user-friendly tool. However, here is the Workflow that always works:  
+Just POST the token send to you to '/confirmations' in the following way:
+
+    POST /confirmations?token=dagrfvcihk34t8xa2dasfd
+
+After this, the server knows that the given email-address is valid.  
+Every further Action kann be performed as usually, but with a special Header:
+
+    {
+        'Token': dagrfvcihk34t8xa2dasfd
+    }
 
 ##Public Events
 To subscribe to a public event with an email-address you simply post to "/eventsignups":
@@ -496,10 +507,6 @@ Data:
 
 You will receive a 202 Acepted. This means that the signup is not valid yet, but the server has received valid data and the user can confirm the signup by clicking on a link in an email.
 The User-ID '-1' stands for the anonymous user.
-
-Instead of using the link-workaround, one can also just POST the token send to the email-Adress to '/confirms' in the following way:
-
-    POST /confirms?token=dasdagrfvcihk34t8xa2
 
 ##Email Forwards
 For email-lists, we know 3 resources: '/forwards', '/forwardusers', '/forwardaddresses'. '/forwards' is used to manage lists. '/forwardusers' is used to manage entries which forward to a registered user. '/forwardaddresses' is used for anonymous entries. To create a new subscription or change an existing one for an unregistered user, you need to use '/forwardaddresses'. The procedure of confirmation is exactly the same as for events.
