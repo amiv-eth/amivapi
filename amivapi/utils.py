@@ -1,4 +1,5 @@
 import datetime as dt
+from os.path import abspath, join
 import json
 from base64 import b64encode, b64decode
 import hashlib
@@ -8,16 +9,31 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from eve.utils import config
+from flask import Config
 
 from amivapi import models
+from amivapi.settings import ROOT_DIR
+
+
+def get_config(environment):
+    config_dir = abspath(join(ROOT_DIR, "config"))
+    config = Config(config_dir)
+    config.from_object("amivapi.settings")
+    try:
+        config.from_pyfile("%s.cfg" % environment)
+    except IOError as e:
+        raise IOError(str(e) + "\nYou can create it by running "
+                             + "`python manage.py create_config`.")
+
+    return config
 
 
 def init_database(connection, config):
     try:
         models.Base.metadata.create_all(connection, checkfirst=False)
     except OperationalError:
-        print("You are trying to create a new database, but the database " +
-              "already exists!")
+        print("Creating tables failed. Make sure the database does not exist" +
+              " already!")
         raise
 
     session = Session(bind=connection)

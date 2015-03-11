@@ -44,6 +44,11 @@ def common_authorization(resource, method):
         5. Check if the endpoint is open to owners
             => return False, g.resource_admin = False
         6. abort(403)
+
+    API keys:
+        This function also checks authorization for apikeys if one has been
+        sent instead of a token. If the endpoint is allowed for that endpoint
+        True will be returned, else aborted immediately
     """
     resource_class = utils.get_class_for_resource(resource)
 
@@ -56,6 +61,18 @@ def common_authorization(resource, method):
             g.logged_in_user = -1
 
     g.resource_admin = True
+
+    # Access via API key
+    if hasattr(g, 'apikey'):
+        try:
+            if config.APIKEYS[g.apikey][resource][method] == 1:
+                app.logger.debug("Access via API key %s granted for %s to %s"
+                                 % (config.APIKEYS[g.apikey]['name'],
+                                    resource, method))
+                return True
+        except:
+            pass
+        abort(403)
 
     # User is root -> allow
     if g.logged_in_user == 0:

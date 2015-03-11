@@ -13,6 +13,15 @@ class SessionResourceTest(util.WebTest):
             'password': password,
         }, status_code=201)
 
+    def test_wrong_password(self):
+        """ Test to login with a wrong password """
+        user = self.new_user(password=u"something")
+
+        self.api.post("/sessions", data={
+            'username': user.username,
+            'password': u"something-else",
+        }, status_code=401)
+
     def test_delete_session(self):
         """ Test to logout """
         password = u"awesome-password"

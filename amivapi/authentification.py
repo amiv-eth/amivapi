@@ -1,5 +1,6 @@
 from os import urandom
 from base64 import b64encode
+from datetime import datetime
 
 from flask import current_app as app
 from flask import Blueprint, abort, g
@@ -8,7 +9,7 @@ from eve.methods.common import payload
 from eve.auth import TokenAuth
 from eve.methods.post import post_internal
 from eve.render import send_response
-from eve.utils import debug_error_message
+from eve.utils import debug_error_message, config
 
 from sqlalchemy.orm.exc import NoResultFound
 
@@ -22,6 +23,9 @@ user can POST the /sessions resource to obtain a token.
 
 When a user sends his token with a request the g.logged_in_user global variable
 will be set.
+
+If an apikey is sent instead of a token, then g.apikey will be set to that key
+and g.logged_in_user is set to -1
 """
 
 
@@ -29,6 +33,13 @@ class TokenAuth(TokenAuth):
     """ We could have used eve's allowed_roles parameter, but that does not
     support roles on endpoint level, but only on resource level """
     def check_auth(self, token, allowed_roles, resource, method):
+
+        # Handle apikeys
+        if token in config.APIKEYS:
+            g.logged_in_user = -1
+            g.apikey = token
+            return True
+
         dbsession = app.data.driver.session
 
         try:
@@ -39,6 +50,10 @@ class TokenAuth(TokenAuth):
                      % (method, resource, token))
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
+
+        # Update last access time
+        sess._updated = datetime.utcnow()
+        dbsession.commit()
 
         g.logged_in_user = sess.user_id
         return True

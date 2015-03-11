@@ -1,9 +1,6 @@
-from os.path import abspath, dirname, join
-
 from eve import Eve
 from eve_sqlalchemy import SQL  # , ValidatorSQL
 from eve_docs import eve_docs
-from flask.config import Config
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
@@ -19,18 +16,7 @@ from amivapi import \
     validation, \
     documentation
 
-
-def get_config(environment):
-    config_dir = abspath(join(dirname(__file__), "../config"))
-    config = Config(config_dir)
-    config.from_object("amivapi.settings")
-    try:
-        config.from_pyfile("%s.cfg" % environment)
-    except IOError as e:
-        raise IOError(str(e) + "\nYou can create it by running "
-                             + "`python manage.py create_config`.")
-
-    return config
+from amivapi.utils import get_config
 
 
 def create_app(environment, disable_auth=False):
