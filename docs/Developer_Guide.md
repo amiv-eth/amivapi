@@ -75,6 +75,25 @@ When the debug server is running it will be available at http://localhost:5000 a
 
 # Architecture
 
+The main-directory lists following files:
+
+* authentification.py: 
+* authentification.py:
+* bootstrap.py: The Eve-App gets created here. All blueprints and event-hooks are registered in the bootstrap.
+* confirm.py: Blueprint and event-hooks regarding the confirmation of unregistered users.
+* cron.py:
+* documentation.py: Loads additional documentation for the blueptrints.
+* forwards.py: Hooks to implement the email-functionality of forwards and assignments to forwards.
+* localization.py: Localization of content-fields.
+* media.py:
+* models.py: The Data-Model. As a basis of the API, in the Data-Model the different Data-Classes and their relations get defined.
+* schemas.py: Creates the basic validation-schema out of the data-model and applies custom changes.
+* settings.py:
+* utils.py: General helping functions.
+* validation.py: Every validation that extends the basic Cerberus-schema-definition and Hooks for special semantic checks, e.g. whether an end-time comes after a start-time. 
+
+For understanding the structure of the api, the data-model in models.py is the Point to start.
+
 TODO(Alle): Describe what files we have and where to start
 
 # Security
