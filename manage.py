@@ -214,7 +214,7 @@ def create_config():
 
     elif db_type == "mysql":
         user = prompt("MySQL username", default="amivapi")
-        pw = prompt_pass("MySQL password")
+        pw = prompt_pass("MySQL password", default="")
         host = prompt("MySQL host", default="localhost")
         db = prompt("MySQL database", default="amivapi")
 
