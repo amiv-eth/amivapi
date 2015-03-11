@@ -40,7 +40,7 @@ def init_database(connection, config):
 
     root = models.User(
         id=0,
-        _author=0,
+        _author=None,
         _etag='d34db33f',  # We need some etag, not important what it is
         _created=dt.datetime.now(),
         _updated=dt.datetime.now(),
@@ -53,6 +53,13 @@ def init_database(connection, config):
         membership="none"
     )
     session.add(root)
+    session.commit()
+
+    # Because mysql is retarded it has ignored id=0 and we have to set it again
+    # Also it will not ignore -1 for anonymous
+    root = session.query(models.User).filter_by(username=u'root').one()
+    root.id = 0
+    session.commit()
 
     anonymous = models.User(
         id=-1,
@@ -69,7 +76,6 @@ def init_database(connection, config):
         membership="none"
     )
     session.add(anonymous)
-
     session.commit()
 
 

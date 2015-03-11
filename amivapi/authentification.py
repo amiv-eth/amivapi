@@ -93,6 +93,11 @@ def process_login():
             abort(401, description=debug_error_message(error))
 
         token = b64encode(urandom(256))
+        # Make sure token is unique
+        while app.data.driver.session.query(models.Session).filter_by(
+                token=token).count() != 0:
+            token = b64encode(urandom(256))
+
         response = post_internal(
             'sessions',
             {
