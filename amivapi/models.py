@@ -349,15 +349,6 @@ class JobOffer(Base):
                                    foreign_keys=description_id)
 
 
-# Confirm Actions for unregistered email-adresses
-class Confirm(Base):
-    token = Column(CHAR(20), unique=True, nullable=False)
-    method = Column(String(10))
-    resource = Column(String(50))
-    data = Column(String(1000))
-    expiry_date = Column(DateTime)
-
-
 # Permissions for file storage
 class Storage:
     __expose__ = False  # Don't create a schema

@@ -282,16 +282,6 @@ class WebTest(unittest.TestCase):
             kwargs['study_doc_id'] = 1  # Just add a number
         return kwargs
 
-    @create_object(models.Confirm)
-    def new_confirm(self, **kwargs):
-        """ Creates a new confirm action. You must provide resource, data
-        and method """
-        if 'token' not in kwargs:
-            kwargs['token'] = "%i" % id_generator()
-        if 'expiry_date' not in kwargs:
-            kwargs['expiry_date'] = datetime(3000, 1, 1)
-        return kwargs
-
 
 class WebTestNoAuth(WebTest):
     def setUp(self):
