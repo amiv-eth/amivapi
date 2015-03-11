@@ -1,5 +1,6 @@
 from os import urandom
 from base64 import b64encode
+from datetime import datetime
 
 from flask import current_app as app
 from flask import Blueprint, abort, g
@@ -49,6 +50,10 @@ class TokenAuth(TokenAuth):
                      % (method, resource, token))
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
+
+        # Update last access time
+        sess._updated = datetime.utcnow()
+        dbsession.commit()
 
         g.logged_in_user = sess.user_id
         return True

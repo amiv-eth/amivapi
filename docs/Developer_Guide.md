@@ -296,3 +296,12 @@ For every language field the following is necessary:
 - Retrieving the content when fetching the resource (locatization.py, hook)
 - Adding a  id (foreignkey) and relationship to translationmappings (models.py)
 - Removing id from the schema to prohibit manually setting it (schemas.py)
+
+
+# Cron
+
+There are some tasks which are done on a regular basis. This includes removing
+expired permissions and unused sessions. Users who's permissions expire should
+be warned prior to this. This is all done by a cronjob. The cronjob runs
+manage.py with the run_cron method, which will run the actions defined in
+cron.py.

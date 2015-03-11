@@ -5,6 +5,7 @@ Run `python manage.py create_config` to create such a config file.
 """
 
 from os.path import abspath, dirname, join
+from datetime import timedelta
 
 # Custom
 ROOT_DIR = abspath(join(dirname(__file__), ".."))
@@ -32,6 +33,7 @@ STORAGE_URL = r'/storage'  # Not eve yet, atm our own implementation
 
 # Custom Default language
 DEFAULT_LANGUAGE = 'de'
+SESSION_TIMEOUT = timedelta(days=365)
 
 """ This is a list of which groups exist to grant permissions. It should be
 possible to change anything without breaking stuff. """
