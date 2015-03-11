@@ -230,6 +230,9 @@ def create_config():
 
     config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
 
+    config['SMTP_SERVER'] = prompt("SMTP Server to send mails",
+                                   default='localhost')
+
     forward_dir = prompt("Directory where forwards are stored",
                          default=join(settings.ROOT_DIR, "forwards"))
     config['FORWARD_DIR'] = abspath(expanduser(forward_dir))

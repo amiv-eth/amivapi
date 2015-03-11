@@ -20,7 +20,7 @@ class CronTest(util.WebTestNoAuth):
         self.new_permission(user_id=0, role='vorstand',
                             expiry_date=datetime.utcnow() + timedelta(1, 0, 0))
 
-        cron.delete_expired_permissions(self.db)
+        cron.delete_expired_permissions(self.db, self.app.config)
 
         permissions = self.db.query(models.Permission).all()
         self.assertEquals(len(permissions), 1)

@@ -35,6 +35,17 @@ STORAGE_URL = r'/storage'  # Not eve yet, atm our own implementation
 DEFAULT_LANGUAGE = 'de'
 SESSION_TIMEOUT = timedelta(days=365)
 
+# Text for automatically sent mails
+
+# First argument is role name
+PERMISSION_EXPIRED_WARNMAIL_SUBJECT = \
+    "Your permissions as %s at AMIV are about to expire"
+# First argument is name, second role, third admin email
+PERMISSION_EXPIRED_WARNMAIL_TEXT = \
+    "Hello %s,\nYour permissions as %s at AMIV will expire in 14 days. If you"\
+    " want to get them renewed please sent an E-Mail to %s.\n\n"\
+    "Regards\n\nAutomatically sent by AMIV API"
+
 """ This is a list of which groups exist to grant permissions. It should be
 possible to change anything without breaking stuff. """
 
