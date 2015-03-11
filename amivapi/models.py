@@ -122,6 +122,14 @@ class Permission(Base):
     We need to use a class here in stead of a table because of additional data
         expiry_date
     """
+    __description__ = {
+        'general': "Mapping between users and their roles. Assigning a user to"
+        " a role will add permissions for certain resources.",
+        'fields': {
+            'role': "Possible roles are: 'vorstand', 'read-everything', "
+            "'event-admin', 'job-admin', 'mail-admin', 'studydocs-admin'"
+        }
+    }
     __expose__ = True
 
     __owner__ = ['user_id']
@@ -141,7 +149,8 @@ class Forward(Base):
         "'forwardaddresses'.",
         'fields': {
             'is_public': "A public Forward can get subscriptions from external"
-            " users. If False, only AMIV-Members can subscribe to this list."
+            " users. If False, only AMIV-Members can subscribe to this list.",
+            'address': "The address of the new forward: <address>@amiv.ethz.ch"
         }}
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
@@ -163,6 +172,9 @@ class Forward(Base):
 
 
 class ForwardUser(Base):
+    __description__ = {
+        'general': "Assignemnt of registerd users to forwards."
+    }
     __expose__ = True
     __projected_fields__ = ['forward', 'user']
 
@@ -179,6 +191,10 @@ class ForwardUser(Base):
 
 
 class _ForwardAddress(Base):
+    __description__ = {
+        'general': "Assignment of unregisterd users to forwards. Does only "
+        "work if the forward is poblic"
+    }
     __expose__ = True
     __projected_fields__ = ['forward']
 
@@ -209,13 +225,20 @@ class Session(Base):
 
 class Event(Base):
     __description__ = {
+        'general': "An Event is basically everythign happening in the AMIV.",
+        'methods': {
+            'GET': "You are always allowed, even without session, to view "
+            "AMIV-Events"
+        },
         'fields': {
             'price': 'Price of the event as Integer in Rappen.',
-            'additional_fields': "must be provided in form of a JSON-Schema.",
+            'additional_fields': "must be provided in form of a JSON-Schema. "
+            "You can add here fields you want to know from people signing up "
+            "going further than their email-address",
             'is_public': "If False, only AMIV-Members can sign up for this "
             "event",
             'spots': "For no limit, set to '0'. If no signup required, set to "
-            "'-1'.",
+            "'-1'. Otherwise just provide an integer.",
         }
     }
     __expose__ = True
@@ -255,12 +278,16 @@ class Event(Base):
 
 class _EventSignup(Base):
     __description__ = {
+        'general': "You can signup here for an existing event inside of the "
+        "registration-window. External Users can only sign up to public "
+        "events.",
         'fields': {
             'extra_data': "Data-schema depends on 'additional_fields' from the"
-            " mapped event.",
+            " mapped event. Please provide in json-format.",
             'user_id': "To sign up as external user, set 'user_id' to '-1'",
-            'email': "If empty, the api fills this with the standard-email of "
-            "the user. This field is required for external users.",
+            'email': "For registered users, this is just a projection of your "
+            "general email-address. External users need to provide their email "
+            "here.",
         }}
     __expose__ = True
     __projected_fields__ = ['event', 'user']
@@ -300,10 +327,18 @@ class File(Base):
     data = Column(CHAR(100))  # This will be modified in schemas.py!
     study_doc_id = Column(Integer, ForeignKey("studydocuments.id"),
                           nullable=False)
-    # study_doc = relationship("StudyDocument", backref="files")
 
 
 class StudyDocument(Base):
+    __description__ = {
+        'general': "Study-documents are basically all documents that are "
+        "connected to a course. This resource provides meta-data for the "
+        "assigned files.",
+        'fields': {
+            'semester': "Study-Semester as an Integer starting with first "
+            "semester Bachelor."
+        }
+    }
     __expose__ = True
     __projected_fields__ = ['files']
 
