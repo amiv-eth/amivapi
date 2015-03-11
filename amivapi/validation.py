@@ -70,7 +70,7 @@ class ValidatorAMIV(ValidatorSQL):
 
 resources_with_extra_checks = ['forwardusers',
                                'events',
-                               '_eventsignups']
+                               'eventsignups']
 
 
 def pre_insert_check(resource, items):
@@ -128,7 +128,7 @@ def check_forwardusers(data):
 """ /eventsignups """
 
 
-def check__eventsignups(data):
+def check_eventsignups(data):
     db = app.data.driver.session
 
     eventid = data.get('event_id')
@@ -136,8 +136,8 @@ def check__eventsignups(data):
 
     """check for available places"""
     if event.spots > 0:
-        gone_spots = db.query(models._EventSignup).filter(
-            models._EventSignup.event_id == eventid
+        gone_spots = db.query(models.EventSignup).filter(
+            models.EventSignup.event_id == eventid
         ).count()
         if gone_spots >= event.spots:
             abort(422, description=debug_error_message(
@@ -172,18 +172,18 @@ def check__eventsignups(data):
             abort(422, description=debug_error_message(
                 'You need to provide an email-address or a valid user_id'
             ))
-        alreadysignedup = db.query(models._EventSignup).filter(
-            models._EventSignup.event_id == eventid,
-            models._EventSignup.user_id == -1,
-            models._EventSignup.email == email
+        alreadysignedup = db.query(models.EventSignup).filter(
+            models.EventSignup.event_id == eventid,
+            models.EventSignup.user_id == -1,
+            models.EventSignup.email == email
         ).first() is not None
     else:
         """in this case the validator already checked that we have a valid
         user-id"""
         userid = data.get('user_id')
-        alreadysignedup = db.query(models._EventSignup).filter(
-            models._EventSignup.event_id == eventid,
-            models._EventSignup.user_id == userid
+        alreadysignedup = db.query(models.EventSignup).filter(
+            models.EventSignup.event_id == eventid,
+            models.EventSignup.user_id == userid
         ).first() is not None
 
         """if the user did not provide an email, we just copy the address from
@@ -309,7 +309,7 @@ def update_signups_schema(data):
         be a valid id"""
         extra_schema = event.additional_fields
         if extra_schema is not None:
-            resource_def = config.DOMAIN['_eventsignups']
+            resource_def = config.DOMAIN['eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'type': 'dict',
@@ -323,7 +323,7 @@ def update_signups_schema(data):
                                                           extra_schema)
                 ))
         else:
-            resource_def = config.DOMAIN['_eventsignups']
+            resource_def = config.DOMAIN['eventsignups']
             resource_def['schema'].update({
                 'extra_data': {
                     'required': False,

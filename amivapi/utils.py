@@ -3,9 +3,12 @@ import json
 from base64 import b64encode, b64decode
 import hashlib
 from os import urandom
+import re
 
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
+from flask import current_app as app
+from flask import abort
 
 from eve.utils import config
 
@@ -143,3 +146,23 @@ def check_hash(password, hash):
     ):
         return True
     return False
+
+
+def get_owner(resource, _id):
+    db = app.data.driver.session
+    resource_class = get_class_for_resource(resource)
+    doc = db.query(resource_class).get(_id)
+    if not doc or not hasattr(resource_class, '__owner__'):
+        return None
+    ret = []
+    for path in doc.__owner__:
+        attrs = re.split(r'\.', path)
+        for attr in attrs:
+            try:
+                doc = getattr(doc, attr)
+            except:
+                abort(400, description=(
+                    "Something is wrong with the data model."
+                    " Please contact it@amiv.ethz.ch"))
+        ret.append(doc)
+    return ret

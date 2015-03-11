@@ -210,12 +210,12 @@ class WebTest(unittest.TestCase):
             kwargs['user_id'] = 0
         return kwargs
 
-    @create_object(models._ForwardAddress)
+    @create_object(models.ForwardAddress)
     def new_forward_address(self, **kwargs):
         """ Add an address to a forward. At least supply the forward_id """
         count = self.next_count()
-        if 'address' not in kwargs:
-            kwargs['address'] = u"subscriber-%i@example.com" % count
+        if 'email' not in kwargs:
+            kwargs['email'] = u"subscriber-%i@example.com" % count
         return kwargs
 
     @create_object(models.Session)
@@ -242,13 +242,13 @@ class WebTest(unittest.TestCase):
             kwargs['time_start'] = datetime.now()
         return kwargs
 
-    @create_object(models._EventSignup)
+    @create_object(models.EventSignup)
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
         count = self.next_count()
         if 'user_id' not in kwargs:
             kwargs['user_id'] = -1
-            kwargs['email'] = u"signupper-%i@example.com" % count
+            kwargs['_email_unreg'] = u"signupper-%i@example.com" % count
         return kwargs
 
     @create_object(models.JobOffer)
