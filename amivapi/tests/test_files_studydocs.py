@@ -133,7 +133,7 @@ class FileTest(util.WebTestNoAuth):
         self.assertTrue(len == 1)
 
         h = {"If-Match": studydoc._etag}
-        self.api.delete("/studydocuments/1", headers=h)
+        self.api.delete("/studydocuments/%i" % studyid, headers=h, status_code=204)
 
         len = self.db.query(models.File).count()
         self.assertTrue(len == 0)

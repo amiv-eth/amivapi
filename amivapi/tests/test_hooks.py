@@ -57,16 +57,15 @@ class HookTest(util.WebTestNoAuth):
                 'department': 'itet',
             }
         }, status_code=201)
-        signup1 = signup.json['id']
 
         signupCount = self.db.query(models._EventSignup).count()
         self.assertEquals(signupCount, 1)
 
         signups = self.api.get("/eventsignups", status_code=200)
-        self.assertEquals(signups.json['_items'][signup1 - 1]['event_id'],
+        self.assertEquals(signups.json['_items'][0]['event_id'],
                           eventid)
         self.assertEquals(
-            signups.json['_items'][signup1 - 1]['email'],
+            signups.json['_items'][0]['email'],
             "testuser-1@example.net"
         )
 

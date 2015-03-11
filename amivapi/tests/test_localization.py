@@ -26,6 +26,8 @@ class LanguageTest(util.WebTestNoAuth):
         self.assertTrue('description_id' in response_offer.keys())
         self.assertTrue('title_id' != 'description_id')
 
+        offerid = response_offer['id']
+
         """Create translations"""
         title_id = response_offer['title_id']
         desc_id = response_offer['description_id']
@@ -54,7 +56,7 @@ class LanguageTest(util.WebTestNoAuth):
         """Retrieve with Accept-Language Header for both languages"""
         header = {'Accept-Language': 'en'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -64,7 +66,7 @@ class LanguageTest(util.WebTestNoAuth):
 
         header = {'Accept-Language': 'de'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -77,7 +79,7 @@ class LanguageTest(util.WebTestNoAuth):
         self.assertTrue(len(get_translations['_items']) == 4)
 
         h = {"If-Match": response_offer['_etag']}
-        self.api.delete("/joboffers/1", headers=h)
+        self.api.delete("/joboffers/%i" % offerid, headers=h)
 
         get_translations = self.api.get("/translations").json
         self.assertTrue(len(get_translations['_items']) == 0)
@@ -95,6 +97,8 @@ class LanguageTest(util.WebTestNoAuth):
         response_offer = self.api.post("/joboffers", data=data_offer,
                                        status_code=201).json
 
+        offerid = response_offer['id']
+
         self.assertTrue('title_id' in response_offer.keys())
 
         """Create translations"""
@@ -109,7 +113,7 @@ class LanguageTest(util.WebTestNoAuth):
         """Retrieve with Accept-Language for unkown languages"""
         header = {'Accept-Language': 'br'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -172,10 +176,13 @@ class LanguageTest(util.WebTestNoAuth):
         """
         data_offer = {'company': "AlexCorp"}
 
-        self.api.post("/joboffers", data=data_offer,
-                      status_code=201).json
+        response_offer = self.api.post("/joboffers", data=data_offer,
+                                       status_code=201).json
 
-        response = self.api.get("/joboffers/1", status_code=200).json
+        offerid = response_offer['id']
+
+        response = \
+            self.api.get("/joboffers/%i" % offerid, status_code=200).json
 
         self.assertTrue('title' in response.keys())
 

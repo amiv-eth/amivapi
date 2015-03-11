@@ -11,7 +11,8 @@ class FileEndpointTest(util.WebTest):
     def test_registered(self):
         """Test as registered user, should be ok (200)"""
         u = self.new_user()
-        f = self.new_file()
+        s = self.new_studydocument()
+        f = self.new_file(study_doc_id=s.id)
         url = self.app.media.get(f.data).content_url
 
         session = self.new_session(user_id=u.id)  # fake login
@@ -20,6 +21,7 @@ class FileEndpointTest(util.WebTest):
 
     def test_not_registered(self):
         """Test as unregistered user, credentials are missing, 401 expected"""
-        f = self.new_file()
+        s = self.new_studydocument()
+        f = self.new_file(study_doc_id=s.id)
         url = self.app.media.get(f.data).content_url
         self.api.get(url, status_code=401)

@@ -269,7 +269,7 @@ class WebTest(unittest.TestCase):
 
     @create_object(models.File)
     def new_file(self, **kwargs):
-        """ Create a new file """
+        """ Create a new file, needs study_doc_id """
         count = self.next_count()
         if 'data' not in kwargs:
             filename = 'default_file_%i.txt' % count
@@ -278,8 +278,6 @@ class WebTest(unittest.TestCase):
             f.write('Your default content.')
             f.close()
             kwargs['data'] = filename
-        if 'study_doc_id' not in kwargs:
-            kwargs['study_doc_id'] = 1  # Just add a number
         return kwargs
 
     @create_object(models.Confirm)
