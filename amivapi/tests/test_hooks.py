@@ -80,8 +80,7 @@ class HookTest(util.WebTestNoAuth):
         signupCount = self.db.query(models._EventSignup).count()
         self.assertEquals(signupCount, 1)
 
-    """def test_Studydocuments(self):
-        #make new files
-        file1 = self.api.post("/files", data={
-        })
-    """
+    # def test_Studydocuments(self):
+    #     #make new files
+    #     file1 = self.api.post("/files", data={
+    #     })

@@ -40,6 +40,7 @@ def confirm_actions(resource, method, doc):
     and send a token to the email-address given.
     The action will be executed as soon as the token is POSTed to the resource
     /confirmations
+
     :param ressource: the ressource as a string
     :param method: the method (POST, GET, DELETE) as a string
     :param doc: the dictionary of the data for the action
@@ -99,6 +100,7 @@ def route_method(resource, lookup, anonymous=True):
     """This method mappes the request to the corresponding eve-functions or
     implements own functions.
     Similar to eve.endpoint
+
     :param resource: the resource where the request comes from
     :param lookup: the lookup-dictionary like in the hooks
     :param anonymous: True if the request needs confirmation via email
@@ -123,6 +125,7 @@ def route_itemmethod(resource, lookup, anonymous=True):
     """This method mappes the request to the corresponding eve-functions or
     implements own functions.
     Similar to eve.endpoint
+
     :param resource: the resource where the request comes from
     :param lookup: the lookup-dictionary like in the hooks
     :param anonymous: True if the request concerns an anonymous user (the
@@ -153,8 +156,7 @@ def route_itemmethod(resource, lookup, anonymous=True):
         owner = doc.__owner__ == g.logged_in_user
         print "is owner: %s" % str(owner)
         if anonymous and not admin and not owner:
-            """own funcionality for confirmation, we don't use eve in this
-            case"""
+            # own funcionality for confirmation, we don't use eve in this case
             # we need the email to send the token
             lookup.update(address=doc.address)
             confirm_actions(resource, method, lookup)

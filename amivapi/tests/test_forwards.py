@@ -173,15 +173,14 @@ class ForwardAuthTest(util.WebTest):
                                     token=list_owner_session.token,
                                     status_code=202).json
 
-        """db.query(models._ForwardAddress).filter_by(id=new_forward['id']). \
-            delete()
-        db.commit()
-        """
+        # db.query(models._ForwardAddress).filter_by(
+        #    id=new_forward['id']).delete()
+        # db.commit()
 
     def test_forward_addresses_permissions_PATCH(self):
         """ Test PATCH permissions for _ForwardAddress objects """
 
-        """ PATCH is not allowed for /forwardaddresses nor items """
+        # PATCH is not allowed for /forwardaddresses nor items
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')
@@ -275,7 +274,7 @@ class ForwardAuthTest(util.WebTest):
     def test_forward_addresses_permissions_PUT(self):
         """ Test PUT permissions for _ForwardAddress objects """
 
-        """ PUT is not supported for forwardaddresses"""
+        # PUT is not supported for forwardaddresses
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')

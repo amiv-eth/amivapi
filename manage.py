@@ -26,11 +26,11 @@ from amivapi.utils import init_database, create_new_hash, get_config
 manager = Manager(Flask("amivapi"))
 
 
-"""
-
-Utility functions
-
-"""
+#
+#
+# Utility functions
+#
+#
 
 
 def config_path(environment):
@@ -51,18 +51,17 @@ def save_config(name, **config):
         mkdir(config_dir, 0700)
 
     with codecs.open(name, "w", encoding="utf-8") as f:
-        f.write('"""Automatically generated on %s"""\n\n'
+        f.write('# Automatically generated on %s\n\n'
                 % dt.datetime.utcnow())
 
         for key, value in sorted(config.items()):
             if key not in dir(settings) or value != getattr(settings, key):
                 f.write("%s = %r\n" % (key.upper(), value))
-
-"""
-
-API Key management
-
-"""
+#
+#
+# API Key management
+#
+#
 
 
 def change_apikey(environment, permissions):
@@ -88,9 +87,9 @@ def change_apikey(environment, permissions):
         method = prompt_choices("Choose method to toggle",
                                 ['get', 'post', 'patch', 'put', 'delete'])
 
-        if resource not in permissions \
-                or method not in permissions[resource] \
-                or not permissions[resource][method]:
+        if (resource not in permissions
+                or method not in permissions[resource]
+                or not permissions[resource][method]):
             if resource not in permissions:
                 permissions[resource] = {}
             permissions[resource][method] = 1
@@ -173,11 +172,12 @@ def apikeys_delete(environment):
         del cfg['APIKEYS'][key]
         save_config(target_file, **cfg)
 
-"""
 
-Create new config
-
-"""
+#
+#
+# Create new config
+#
+#
 
 
 @manager.option("-c", "--config", dest="environment")
@@ -302,10 +302,11 @@ def create_config(environment=None,
             models.Base.metadata.drop_all(engine)
             init_database(engine, config)
 
-
-"""
-    Run cron tasks
-"""
+#
+#
+# Run cron tasks
+#
+#
 
 
 @manager.option("-c", "--config", dest="environment", required=True)
@@ -321,11 +322,11 @@ def run_cron(environment):
     cron.run(session, cfg)
 
 
-"""
-
-Change root password
-
-"""
+#
+#
+# Change root password
+#
+#
 
 
 @manager.option("-c", "--config", dest="environment", required=True)
@@ -351,11 +352,11 @@ def set_root_password(environment=None):
     session.close()
 
 
-"""
-
-Run the FlaskScript manager
-
-"""
+#
+#
+# Run the FlaskScript manager
+#
+#
 
 
 if __name__ == "__main__":

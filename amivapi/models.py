@@ -18,36 +18,39 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 
-""" Eve exspects the resource names to be equal to the table names. Therefore
-we generate all names from the Class names. Please choose classnames carefully,
-as changing them might break a lot of code """
+#
+# Eve exspects the resource names to be equal to the table names. Therefore
+# we generate all names from the Class names. Please choose classnames
+# carefully, as changing them might break a lot of code
+#
 
 
 class BaseModel(object):
     """Mixin for common columns."""
 
-    """__abstract__ makes SQL Alchemy not create a table for this class """
+    # __abstract__ makes SQL Alchemy not create a table for this class
     __abstract__ = True
 
-    """ All classes which overwrite this with True will get exposed as a
-    resource """
+    # All classes which overwrite this with True will get exposed as a resource
     __expose__ = False
 
-    """For documentation"""
+    # For documentation
     __description__ = {}
 
-    """ This is a list of fields, which are added to the projection created by
-    eve. Add any additional field to be delivered on GET requests by default
-    in the subclasses. """
+    # This is a list of fields, which are added to the projection created by
+    # eve. Add any additional field to be delivered on GET requests by default
+    # in the subclasses.
     __projected_fields__ = []
 
+    # These can contain a list of methods which need some kind of
+    # authorization. If nothing is set only admins can access the method
     __public_methods__ = []
     __owner_methods__ = []
     __registered_methods__ = []
 
     @declared_attr
     def __tablename__(cls):
-        """ Correct English attaches 'es' to plural forms which end in 's' """
+        # Correct English attaches 'es' to plural forms which end in 's'
         if cls.__name__.lower()[-1:] == 's':
             return "%ses" % cls.__name__.lower()
         return "%ss" % cls.__name__.lower()
@@ -63,8 +66,8 @@ class BaseModel(object):
         DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)
     _etag = Column(String(50))
 
-    """ This needs to be a function, as it has a ForeignKey in a mixin. The
-    function makes binding at a later point possible """
+    # This needs to be a function, as it has a ForeignKey in a mixin. The
+    # function makes binding at a later point possible
     @declared_attr
     def _author(cls):
         return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
@@ -104,7 +107,7 @@ class User(Base):
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
 
-    """relationships"""
+    # relationships
     permissions = relationship("Permission", foreign_keys="Permission.user_id",
                                backref="user", cascade="all, delete")
     forwards = relationship("ForwardUser", foreign_keys="ForwardUser.user_id",
@@ -163,7 +166,7 @@ class Forward(Base):
 
     owner = relationship(User, foreign_keys=owner_id)
 
-    """relationships"""
+    # relationships
     user_subscribers = relationship("ForwardUser", backref="forward",
                                     cascade="all, delete")
     address_subscribers = relationship("_ForwardAddress", backref="forward",
@@ -259,10 +262,9 @@ class Event(Base):
     img_web = Column(CHAR(100))  # This will be modified in schemas.py!
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
-    """Translatable fields
-    The relationship exists to ensure cascading delete and will be hidden from
-    the user
-    """
+    # Translatable fields
+    # The relationship exists to ensure cascading delete and will be hidden
+    # from the user
     title_id = Column(Integer, ForeignKey('translationmappings.id'))
     title_rel = relationship("TranslationMapping", cascade="all, delete",
                              foreign_keys=title_id)
@@ -270,7 +272,7 @@ class Event(Base):
     description_rel = relationship("TranslationMapping", cascade="all, delete",
                                    foreign_keys=description_id)
 
-    """relationships"""
+    # relationships
     signups = relationship("_EventSignup", backref="event",
                            cascade="all, delete")
 
@@ -300,10 +302,7 @@ class _EventSignup(Base):
     email = Column(Unicode(100))
     extra_data = Column(Text)
 
-    """Data-Mapping: many-to-one"""
     # user = relationship("User", foreign_keys=user_id)
-
-    """Data-Mapping: many-to-one"""
     # event = relationship("Event", backref="signups")
 
 
@@ -354,7 +353,7 @@ class StudyDocument(Base):
     semester = Column(Integer)
     author_name = Column(Unicode(100))
 
-    """relationships"""
+    # relationships
     files = relationship("File", backref="study_doc",
                          cascade="all, delete")
 
@@ -370,10 +369,9 @@ class JobOffer(Base):
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    """Translatable fields
-    The relationship exists to ensure cascading delete and will be hidden from
-    the user
-    """
+    # Translatable fields
+    # The relationship exists to ensure cascading delete and will be hidden
+    # from the user
     title_id = Column(Integer, ForeignKey('translationmappings.id'))
     title_rel = relationship("TranslationMapping", cascade="all, delete",
                              foreign_keys=title_id)

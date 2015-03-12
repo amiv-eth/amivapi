@@ -137,9 +137,10 @@ def get_class_for_resource(resource):
     return None
 
 
-""" Creates a new hash for a password. This generates a random salt, so it can
-not be used to check hashes!
-"""
+#
+# Creates a new hash for a password. This generates a random salt, so it can
+# not be used to check hashes!
+#
 
 
 def create_new_hash(password):

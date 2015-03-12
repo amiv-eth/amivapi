@@ -60,12 +60,14 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "date must not be in the future.")
 
 
-"""
-    Hooks to validate data before requests are performed
-
-    First we have generic hooks to intercept requests and call validation
-    functions, then we define those validation functions.
-"""
+#
+#
+# Hooks to validate data before requests are performed
+#
+# First we have generic hooks to intercept requests and call validation
+# functions, then we define those validation functions.
+#
+#
 
 
 resources_with_extra_checks = ['forwardusers',
@@ -83,9 +85,8 @@ def pre_insert_check(resource, items):
     """
     if resource in resources_with_extra_checks:
         for doc in items:
-            """the check-functions are the actual hooks testing the requests
-            of logical mistakes and everything else zerberus does not do
-            """
+            # the check-functions are the actual hooks testing the requests
+            # of logical mistakes and everything else zerberus does not do
             eval("check_%s" % resource)(doc)
 
 
@@ -105,7 +106,9 @@ def pre_replace_check(resource, document, original):
         eval("check_%s" % resource)(document)
 
 
-""" /forwardusers """
+#
+# /forwardusers
+#
 
 
 def check_forwardusers(data):
@@ -117,15 +120,18 @@ def check_forwardusers(data):
     forwardid = data.get('forward_id')
     forward = db.query(models.Forward).get(forwardid)
 
-    """ Users may only self enroll for public forwards """
-    if not forward.is_public and not g.resource_admin \
-            and not g.logged_in_user == forward.owner_id:
+    # Users may only self enroll for public forwards
+    if (not forward.is_public
+            and not g.resource_admin
+            and not g.logged_in_user == forward.owner_id):
         abort(403, description=debug_error_message(
             'You are not allowed to self enroll for this forward'
         ))
 
 
-""" /eventsignups """
+#
+# /eventsignups
+#
 
 
 def check__eventsignups(data):
@@ -134,7 +140,7 @@ def check__eventsignups(data):
     eventid = data.get('event_id')
     event = db.query(models.Event).get(eventid)
 
-    """check for available places"""
+    # check for available places
     if event.spots > 0:
         gone_spots = db.query(models._EventSignup).filter(
             models._EventSignup.event_id == eventid
@@ -148,7 +154,7 @@ def check__eventsignups(data):
             'Event %d does not offer a signup.' % eventid
         ))
 
-    """check for correct signup time"""
+    # check for correct signup time
     now = dt.datetime.now()
     if event.spots >= 0:
         if now < event.time_register_start:
@@ -160,9 +166,9 @@ def check__eventsignups(data):
                 'The signup for event %d is closed.' % eventid
             ))
 
-    """check if user is allowed to sign up for this event"""
+    # check if user is allowed to sign up for this event
     if data.get('user_id') == -1:
-        """in this case we have an anonymous user who only provides an email"""
+        # in this case we have an anonymous user who only provides an email
         if event.is_public is False:
             abort(422, description=debug_error_message(
                 'The event is only open for registered users.'
@@ -178,16 +184,16 @@ def check__eventsignups(data):
             models._EventSignup.email == email
         ).first() is not None
     else:
-        """in this case the validator already checked that we have a valid
-        user-id"""
+        # in this case the validator already checked that we have a valid
+        # user-id
         userid = data.get('user_id')
         alreadysignedup = db.query(models._EventSignup).filter(
             models._EventSignup.event_id == eventid,
             models._EventSignup.user_id == userid
         ).first() is not None
 
-        """if the user did not provide an email, we just copy the address from
-        the user-profile"""
+        # if the user did not provide an email, we just copy the address from
+        # the user-profile
         email = data.get('email')
         if email is None:
             data['email'] = db.query(models.User).get(userid).email
@@ -197,13 +203,15 @@ def check__eventsignups(data):
             'You are already signed up for this event, try to use PATCH'
         ))
 
-    """the extra-data got already checked by the validator and our
-    pre_<request>-hooks below"""
+    # the extra-data got already checked by the validator and our
+    # pre_<request>-hooks below
     if 'extra_data' in data:
         data['extra_data'] = json.dumps(data.get('extra_data'))
 
 
-""" /events """
+#
+# /events
+#
 
 
 def check_events(data):
@@ -220,21 +228,21 @@ def check_events(data):
                 'time_register_start needs to be before time_register_end'
             ))
 
-    """check for correct times"""
+    # check for correct times
     if data.get('time_start', dt.datetime.now()) > data.get('time_end',
                                                             dt.datetime.max):
         abort(422, description=(
             'time_end needs to be after time_start'
         ))
 
-    """check if price is correct formatted"""
+    # check if price is correct formatted
     if data.get('price', 0) < 0:
         abort(422, description=(
             'price needs to be positive or zero'
         ))
 
-    """now we validate the zerberus-schema given in 'additional_fields' with
-    zerberus"""
+    # now we validate the cerberus-schema given in 'additional_fields' with
+    # cerberus
     validator = app.validator('', '')
     try:
         schema = json.loads(data.get('additional_fields'))
@@ -250,9 +258,10 @@ def check_events(data):
             'exception for additional_fields: %s' % str(e)
         ))
 
-"""
-    Hooks to modify the schema for additional_fields of events
-"""
+
+#
+# Hooks to modify the schema for additional_fields of events
+#
 
 
 def pre_signups_post_callback(request):
@@ -285,11 +294,10 @@ def pre_signups_patch(request, lookup):
         abort(403, description=(
             'You only can change extra_data'
         ))
-    """
-    the event may require to fill in additional fields, as specified in
-    event.additional_fields. Therefore we need to update the schema the
-    validator uses to check the signup-data.
-    """
+
+    # the event may require to fill in additional fields, as specified in
+    # event.additional_fields. Therefore we need to update the schema the
+    # validator uses to check the signup-data.
     update_signups_schema(payload())
 
 
@@ -305,8 +313,8 @@ def update_signups_schema(data):
     eventid = data.get('event_id')
     event = db.query(models.Event).get(eventid)
     if event is not None:
-        """we need to check this because the validator did not run yet, may not
-        be a valid id"""
+        # we need to check this because the validator did not run yet, may not
+        # be a valid id
         extra_schema = event.additional_fields
         if extra_schema is not None:
             resource_def = config.DOMAIN['_eventsignups']

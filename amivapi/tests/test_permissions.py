@@ -19,7 +19,7 @@ class PermissionsTest(util.WebTest):
         registered = self.new_user()
         registered_session = self.new_session(user_id=registered.id)
 
-        """ Test GET """
+        # Test GET
 
         users = self.api.get("/users", token=admin_session.token,
                              status_code=200).json['_items']
@@ -35,7 +35,7 @@ class PermissionsTest(util.WebTest):
 
         users = self.api.get("/users", status_code=401)
 
-        """ Test POST """
+        # Test POST
 
         data = {
             "username": "guy",
@@ -55,7 +55,7 @@ class PermissionsTest(util.WebTest):
 
         self.api.post("/users", data=data, status_code=401)
 
-        """ Test PATCH """
+        # Test PATCH
 
         patchdata = {
             "rfid": "777777"
@@ -75,7 +75,7 @@ class PermissionsTest(util.WebTest):
                        token=admin_session.token,
                        headers={'If-Match': owner._etag}, status_code=200)
 
-        """ Test PUT """
+        # Test PUT
 
         self.api.put("/users/%i" % owner.id, data=data,
                      headers={'If-Match': owner._etag}, status_code=401)
@@ -93,7 +93,7 @@ class PermissionsTest(util.WebTest):
         owner = self.new_user()
         owner_session = self.new_session(user_id=owner.id)
 
-        """ Test DELETE """
+        # Test DELETE
 
         self.api.delete("/users/%i" % owner.id,
                         headers={'If-Match': owner._etag}, status_code=401)

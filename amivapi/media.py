@@ -113,7 +113,11 @@ class FileSystemStorage(object):
         return path.isfile(self.fullpath(filename))
 
 
-""" Endpoint to download files """
+#
+#
+# Endpoint to download files
+#
+#
 
 
 download = Blueprint('download', __name__)
