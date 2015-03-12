@@ -126,8 +126,7 @@ class Permission(Base):
         'general': "Mapping between users and their roles. Assigning a user to"
         " a role will add permissions for certain resources.",
         'fields': {
-            'role': "Possible roles are: 'vorstand', 'read-everything', "
-            "'event-admin', 'job-admin', 'mail-admin', 'studydocs-admin'"
+            'role': "Possible roles can be extracted with the /roles endpoint"
         }
     }
     __expose__ = True
@@ -173,7 +172,7 @@ class Forward(Base):
 
 class ForwardUser(Base):
     __description__ = {
-        'general': "Assignemnt of registerd users to forwards."
+        'general': "Assignment of registered users to forwards."
     }
     __expose__ = True
     __projected_fields__ = ['forward', 'user']
@@ -225,7 +224,7 @@ class Session(Base):
 
 class Event(Base):
     __description__ = {
-        'general': "An Event is basically everythign happening in the AMIV.",
+        'general': "An Event is basically everything happening in the AMIV.",
         'methods': {
             'GET': "You are always allowed, even without session, to view "
             "AMIV-Events"
@@ -286,8 +285,8 @@ class _EventSignup(Base):
             " mapped event. Please provide in json-format.",
             'user_id': "To sign up as external user, set 'user_id' to '-1'",
             'email': "For registered users, this is just a projection of your "
-            "general email-address. External users need to provide their email "
-            "here.",
+            "general email-address. External users need to provide their email"
+            " here.",
         }}
     __expose__ = True
     __projected_fields__ = ['event', 'user']
@@ -401,6 +400,9 @@ class Storage:
 class Roles:
     __expose__ = False  # Don't create a schema
     __registered_methods__ = ['GET']
+    __description__ = {
+        'general': 'Resource to get available roles. Only GET is supported'
+    }
 
 
 # Language ids are in here
