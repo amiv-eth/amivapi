@@ -10,6 +10,7 @@ script:
   - tox -e $TOX_ENV
 before_script:
   - mysql -e 'create database amivapi;'
+  - pip install -r requirements.txt # We need this to run manage.py, tox will install libraries again
   - python manage.py create_config -c testing -f --db-type mysql --db-user travis --db-host localhost --db-name amivapi --file-dir files --root-mail root@example.com --smtp localhost --forward-dir forwards
 branches:
   only:
