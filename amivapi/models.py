@@ -389,20 +389,6 @@ class Confirm(Base):
     expiry_date = Column(DateTime)
 
 
-# Permissions for file storage
-class Storage:
-    __expose__ = False  # Don't create a schema
-    __registered_methods__ = ['GET']
-
-
-class Roles:
-    __expose__ = False  # Don't create a schema
-    __registered_methods__ = ['GET']
-    __description__ = {
-        'general': 'Resource to get available roles. Only GET is supported'
-    }
-
-
 # Language ids are in here
 class TranslationMapping(Base):
     __expose__ = True
@@ -421,3 +407,27 @@ class Translation(Base):
     content = Column(UnicodeText, nullable=False)
 
     __table_args__ = (UniqueConstraint('localization_id', 'language'),)
+
+
+#
+# Permissions for custom endpoints
+# These are not created in the database due to __abstract__ = True
+# utils.get_class_for_resource will find these
+#
+
+class Storage(Base):
+    __expose__ = False  # Don't create a schema
+    __abstract__ = True
+    __registered_methods__ = ['GET']
+    __description__ = {
+        'general': 'Endpoint to download files, get the URLs via /files'
+    }
+
+
+class Roles(Base):
+    __expose__ = False  # Don't create a schema
+    __abstract__ = True
+    __registered_methods__ = ['GET']
+    __description__ = {
+        'general': 'Resource to get available roles. Only GET is supported'
+    }

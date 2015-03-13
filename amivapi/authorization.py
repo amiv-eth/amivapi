@@ -38,18 +38,22 @@ def common_authorization(resource, method):
     desired authorization attributes.
 
     This will:
-        1. Check if the user is root
+        1. Allow or abort apikey access based on config
+            => return True if endpoint in config, g.resource_admin = True
+            => else abort(403)
+        2. Check if the user is root
             => return True, g.resource_admin = True
-        2. Check if the user has a role, which allowes everything for this
+        3. Check if the user has a role, which allowes everything for this
             endpoint
             => return True, g.resource_admin = True
-        3. Check if the endpoint is public
+        4. Check if the endpoint is public
             => return True, g.resource_admin = False
-        4. Check if the endpoint is open to registered users
+        5. Abort(401) anonymous users without token
+        6. Check if the endpoint is open to registered users
             => return True, g.resource_admin = False
-        5. Check if the endpoint is open to owners
+        7. Check if the endpoint is open to owners
             => return False, g.resource_admin = False
-        6. abort(403)
+        8. abort(403)
 
     API keys:
         This function also checks authorization for apikeys if one has been
@@ -66,13 +70,19 @@ def common_authorization(resource, method):
     """
     resource_class = utils.get_class_for_resource(resource)
 
+    # Allow if authentification is disabled
+    if not app.auth:
+        g.logged_in_user = 0
+        g.resource_admin = 1
+        return True
+
     # If the method is public or this is called by a custom endpoint,
     # authentification has not been performed yet automatically. If the user
-    # has set a token check that now to generate g.logged_in_user. If he has
+    # has set a token, check that now to generate g.logged_in_user. If he has
     # no token, set user ID to -1
-    if not hasattr(g, 'logged_in_user'):
-        if not app.auth or not app.auth.authorized([], resource, method):
-            g.logged_in_user = -1
+    if (not hasattr(g, 'logged_in_user')
+            and not app.auth.authorized([], resource, method)):
+        g.logged_in_user = -1
 
     g.resource_admin = True
 
@@ -115,9 +125,13 @@ def common_authorization(resource, method):
     if method in resource_class.__public_methods__:
         return True
 
+    if g.logged_in_user == -1:
+        app.logger.debug("Aborted(401) user without token on non public "
+                         "method")
+        abort(401)
+
     # Endpoint is open to registered users -> allow
-    # Anonymous users won't arrive here as they are already aborted during
-    # authentification if it is required
+    # Anonymous users won't arrive here as they have already been
     if method in resource_class.__registered_methods__:
         app.logger.debug("Access granted to %s %s for registered user %i"
                          % (method, resource, g.logged_in_user))
@@ -338,8 +352,8 @@ def get_roles():
     :returns: Flask.Response object
     """
 
-    if app.auth and not app.auth.authorized([], 'roles', 'GET'):
-        return app.auth.authenticate()
+    if not common_authorization('roles', 'GET'):
+        abort(401)
 
     response = {}
 

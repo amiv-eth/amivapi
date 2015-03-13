@@ -65,8 +65,7 @@ def create_app(environment, disable_auth=False):
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentification.authentification)
     app.register_blueprint(authorization.permission_info)
-    app.register_blueprint(media.download,
-                           url_prefix=config['STORAGE_URL'])
+    app.register_blueprint(media.download)
 
     #
     #
