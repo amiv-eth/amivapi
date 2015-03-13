@@ -16,6 +16,13 @@ from amivapi.settings import ROOT_DIR
 
 
 def get_config(environment):
+    """Load the config associated with <environment>. The config is loaded
+    from config/<environment>.cfg
+
+    :param environment: Name of the environment, should be 'development',
+                        'testing' or 'production'
+    :returns: Config dictionary
+    """
     config_dir = abspath(join(ROOT_DIR, "config"))
     config = Config(config_dir)
     config.from_object("amivapi.settings")
@@ -29,6 +36,13 @@ def get_config(environment):
 
 
 def init_database(connection, config):
+    """Create tables and fill with initial anonymous and root user
+
+    Throws sqlalchemy.exc.OperationalError if tables already exist
+
+    :param connection: A database connection
+    :param config: The configuration dictionary
+    """
     try:
         models.Base.metadata.create_all(connection, checkfirst=False)
     except OperationalError:
@@ -126,6 +140,9 @@ class DateTimeEncoder(json.JSONEncoder):
 
 def get_class_for_resource(resource):
     """ Utility function to get SQL Alchemy model associated with a resource
+
+    :param resource: Name of a resource
+    :returns: SQLAlchemy model associated with the resource from models.py
     """
     if resource in config.DOMAIN:
         resource_def = config.DOMAIN[resource]
@@ -137,13 +154,13 @@ def get_class_for_resource(resource):
     return None
 
 
-#
-# Creates a new hash for a password. This generates a random salt, so it can
-# not be used to check hashes!
-#
-
-
 def create_new_hash(password):
+    """Creates a new salted hash for a password. This generates a random salt,
+    so it can not be used to check hashes!
+
+    :param password: The password to hash
+    :returns: String containing the salt and the hashed password
+    """
     salt = urandom(16)
     password = bytearray(password, 'utf-8')
     return (
@@ -154,6 +171,13 @@ def create_new_hash(password):
 
 
 def check_hash(password, hash):
+    """ Check a password against a string containing salt and hash generated
+    by create_new_hash()
+
+    :param password: The password to check
+    :param hash: The string containing hash and salt to check against
+    :returns: True if hash was generated with the same password, else False
+    """
     parts = hash.split('$')
     salt = b64decode(parts[0])
     hashed_password = b64decode(parts[1])
