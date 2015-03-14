@@ -1,9 +1,8 @@
 from flask import current_app as app
 from flask import Blueprint, request, abort, g
 from eve.methods.post import post
-from eve.methods.patch import patch_internal
 from eve.render import send_response
-from eve.methods.common import payload, get_document
+from eve.methods.common import payload
 from eve.utils import config, debug_error_message
 from amivapi.authorization import common_authorization
 
@@ -16,28 +15,38 @@ confirmprint = Blueprint('confirm', __name__)
 documentation = {}
 
 
-def id_generator(size=6, chars=string.ascii_letters + string.digits):
+def token_generator(size=6, chars=string.ascii_letters + string.digits):
+    """generates a random string of elements of chars
+    :param size: length of the token
+    :param chars: list of possible chars
+    :returns: a random token
+    """
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def send_confirmmail(ressource, token, email):
+def send_confirmmail(resource, token, email):
     """For the development-Version, we do not actually send emails but print
     the token. For testing, you will find the token in the database or copy it
-    from the command-line"""
+    from the command-line
+    :param resource: The resource of the current request as a string
+    :param token: The token connected to the data-entry which needs
+    confirmation
+    :param email: address the email will be send to
+    """
     print('email send with token %s to %s' % (token, email))
 
 
 def confirm_actions(resource, email, items):
     """
-    This method will save a given action for confirmation in the database
-    and send a token to the email-address given.
-    The action will be executed as soon as the token is POSTed to the resource
-    /confirmations
-    :param ressource: the ressource as a string
-    :param items: the dictionary of the data for the action
+    This method will generate a random token and append it to items.
+    For 'eventsignups', the email will be swapped to the key '_email_unreg'.
+    An email will be send to the user for confirmation.
+    :param resource: the ressource current as a string
+    :param items: the dictionary of the data which will be inserted into the
+    database
     :param email: The email the confirmation mail will be send to
     """
-    token = id_generator(size=20)
+    token = token_generator(size=20)
     send_confirmmail(resource, token, email)
     if resource == 'eventsignups':
         # email is no relation, move it to _email_unreg
@@ -50,7 +59,10 @@ def change_status(response):
     """This function changes the catched response of a post. Eve returns 201
     because the data got just deleted out of the payload and the empty payload
     got handled correct, but we need to return 202 and a hint to confirm the
-    email-address"""
+    email-address
+    :param response: the response from eve, a list of 4 items
+    :returns: new response with changed status-code
+    """
     if response[3] in [201, 200] and 'id' not in response:
         """No items actually inserted but saved in Confirm,
         Send 202 Accepted"""
@@ -67,6 +79,7 @@ def route_post(resource, lookup, anonymous=True):
     Similar to eve.endpoint
     :param lookup: the lookup-dictionary like in the hooks
     :param anonymous: True if the request needs confirmation via email
+    :returns: the response from eve, with correct status code
     """
     response = None
     common_authorization(resource, 'POST')
@@ -89,7 +102,10 @@ documentation['forwardaddresses'] = {
 @confirmprint.route('/forwardaddresses', methods=['POST'])
 def handle_forwardaddresses():
     """These are custom api-endpoints from the confirmprint Blueprint.
-    We need one for the generel resource and one for the item endpoint."""
+    We don't want eve to handle POST to /forwardaddresses because we need to
+    change the status of the response
+    :returns: eve-response with (if POST was correct) changed status-code
+    """
     data = payload()  # we only allow POST -> no error with payload()
     return route_post('forwardaddresses', data)
 
@@ -115,6 +131,11 @@ documentation['eventsignups'] = {
 
 @confirmprint.route('/eventsignups', methods=['POST'])
 def handle_eventsignups():
+    """These are custom api-endpoints from the confirmprint Blueprint.
+    We don't want eve to handle POST to /eventsignups because we need to
+    change the status of the response
+    :returns: eve-response with (if POST was correct) changed status-code
+    """
     data = payload()  # we only allow POST -> no error with payload()
     anonymous = (data.get('user_id') == -1)
     return route_post('eventsignups', data, anonymous)
@@ -122,7 +143,9 @@ def handle_eventsignups():
 
 @confirmprint.route('/confirmations', methods=['POST'])
 def on_post_token():
-    """This is the endpoint, where confirmation-tokens need to get posted to"""
+    """This is the endpoint, where confirmation-tokens need to get posted to.
+    :returns: 201 if token correct
+    """
     data = payload()
     return execute_confirmed_action(data.get('token'))
 
@@ -131,6 +154,8 @@ def execute_confirmed_action(token):
     """from a given token, this function will search for a stored action in
     Confirms and send it to eve's post_internal
     PATCH and PUT are not implemented yet
+    :param token: the Token which was send to an email-address for confirmation
+    :returns: 201 in eve-response-format, without confirmed data
     """
     db = app.data.driver.session
     signup = db.query(models.EventSignup).filter_by(_token=token).first()
@@ -216,6 +241,13 @@ def post_replaced_confirmation(resource, item, original):
 
 
 def token_authorization(resource, original):
+    """
+    checks if a request to an item-endpoint is authorized by the correct Token
+    in the header
+    Will abort if Token is incorrect.
+    :param resourse: the resource of the item as a string
+    :param original: The original data of the item which is requested
+    """
     token = request.headers.get('Token')
     is_owner = g.logged_in_user in utils.get_owner(resource, original['id'])
     if is_owner:
@@ -228,9 +260,7 @@ def token_authorization(resource, original):
             "Please provide a valid token."
         ))
     if token != original['_token']:
-        abort(401, description=debug_error_message(
-            "Token for external user not valid."
-        ))
+        abort(401, description="Token for external user not valid.")
 
 
 def return_correct_email(response):
