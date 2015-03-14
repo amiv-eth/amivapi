@@ -7,7 +7,7 @@ import json
 
 class HookTest(util.WebTestNoAuth):
 
-    def test_b_EventSignup_hooks(self):
+    def test_b_eventsignup_hooks(self):
         # make new event
         event = self.new_event(additional_fields=json.dumps({
             'department': {
@@ -25,32 +25,32 @@ class HookTest(util.WebTestNoAuth):
         userid = user.id
 
         # Sign up user 1 without departement
-        signup = self.api.post("/eventsignups", data={
+        self.api.post("/eventsignups", data={
             'event_id': eventid,
             'user_id': userid,
         }, status_code=422)
-        signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 0)
+        signup_count = self.db.query(models.EventSignup).count()
+        self.assertEquals(signup_count, 0)
 
         # sign up user 1 to wrong event
-        signup = self.api.post("/eventsignups", data={
+        self.api.post("/eventsignups", data={
             'event_id': eventid + 10,
             'user_id': userid,
         }, status_code=422)
-        signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 0)
+        signup_count = self.db.query(models.EventSignup).count()
+        self.assertEquals(signup_count, 0)
 
         # sign up user 1 with wrong departement
-        signup = self.api.post("/eventsignups", data={
+        self.api.post("/eventsignups", data={
             'event_id': eventid,
             'user_id': userid,
             'extra_data': {'department': 'infk'},
         }, status_code=422)
-        signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 0)
+        signup_count = self.db.query(models.EventSignup).count()
+        self.assertEquals(signup_count, 0)
 
         # sign up user 1 and do everything right
-        signup = self.api.post("/eventsignups", data={
+        self.api.post("/eventsignups", data={
             'event_id': eventid,
             'user_id': userid,
             'extra_data': {
@@ -58,8 +58,8 @@ class HookTest(util.WebTestNoAuth):
             }
         }, status_code=201)
 
-        signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 1)
+        signup_count = self.db.query(models.EventSignup).count()
+        self.assertEquals(signup_count, 1)
 
         signups = self.api.get("/eventsignups", status_code=200)
         self.assertEquals(signups.json['_items'][0]['event_id'],
@@ -70,15 +70,15 @@ class HookTest(util.WebTestNoAuth):
         )
 
         # sign up hermanthegerman@amiv.ethz.ch
-        signup = self.api.post("/eventsignups", data={
+        self.api.post("/eventsignups", data={
             'event_id': eventid,
             'user_id': -1,
             'email': "hermanthegerman@amiv.ethz.ch",
             'extra_data': {'department': 'itet'},
         }, status_code=202)
 
-        signupCount = self.db.query(models.EventSignup).count()
-        self.assertEquals(signupCount, 1)
+        signup_count = self.db.query(models.EventSignup).count()
+        self.assertEquals(signup_count, 1)
 
     # def test_Studydocuments(self):
     #     #make new files

@@ -112,8 +112,6 @@ class ForwardAuthTest(util.WebTest):
 
     def test_forward_addresses_permissions_POST(self):
         """ Test POST permissions for ForwardAddress objects """
-        db = self.app.data.driver.session
-
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')
@@ -144,13 +142,13 @@ class ForwardAuthTest(util.WebTest):
                       token=entry_user_session.token,
                       status_code=202)
 
-        new_forward = self.api.post("/forwardaddresses", data=data,
-                                    token=admin_session.token,
-                                    status_code=202).json
+        self.api.post("/forwardaddresses", data=data,
+                      token=admin_session.token,
+                      status_code=202).json
 
-        new_forward = self.api.post("/forwardaddresses", data=data,
-                                    token=list_owner_session.token,
-                                    status_code=202).json
+        self.api.post("/forwardaddresses", data=data,
+                      token=list_owner_session.token,
+                      status_code=202).json
 
     def test_forward_addresses_permissions_PATCH(self):
         """ Test PATCH permissions for ForwardAddress objects """
