@@ -12,7 +12,7 @@ from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
 from amivapi.utils import create_new_hash
-from amivapi.confirm import id_generator
+from amivapi.confirm import token_generator
 
 
 def find_by_pair(dicts, key, value):
