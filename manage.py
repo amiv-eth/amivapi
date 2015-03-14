@@ -236,9 +236,12 @@ def create_config(environment=None,
         print("Only sqlite and mysql supported as db type!")
         exit(0)
 
+    config['DB_TYPE'] = db_type
+
     if db_type == "sqlite":
         db_filepath = prompt("Path to db file (including filename)",
                              default=join(settings.ROOT_DIR, "data.db"))
+        config['DB_FILEPATH'] = db_filepath
         db_uri = "sqlite:///%s" % abspath(expanduser(db_filepath))
 
     elif db_type == "mysql":
@@ -251,6 +254,11 @@ def create_config(environment=None,
             db_host = prompt("MySQL host", default="localhost")
         if not db_name:
             db_name = prompt("MySQL database", default="amivapi")
+
+        config['DB_HOST'] = db_host
+        config['DB_USER'] = db_user
+        config['DB_PASS'] = db_pass
+        config['DB_NAME'] = db_name
 
         db_uri = "mysql://%s:%s@%s/%s?charset=utf8" % \
             (db_user, db_pass, db_host, db_name)
