@@ -189,6 +189,7 @@ def apikeys_delete(environment):
 @manager.option("--db-pass", dest="db_pass")
 @manager.option("--db-host", dest="db_host")
 @manager.option("--db-name", dest="db_name")
+@manager.option("--tests-in-db", dest="tests_in_db")
 @manager.option("--file-dir", dest="file_dir")
 @manager.option("--root-mail", dest="root_mail")
 @manager.option("--smtp", dest="smtp_server")
@@ -200,6 +201,7 @@ def create_config(environment=None,
                   db_pass=None,
                   db_host=None,
                   db_name=None,
+                  tests_in_db=None,
                   file_dir=None,
                   root_mail=None,
                   smtp_server=None,
@@ -243,6 +245,7 @@ def create_config(environment=None,
                              default=join(settings.ROOT_DIR, "data.db"))
         config['DB_FILEPATH'] = db_filepath
         db_uri = "sqlite:///%s" % abspath(expanduser(db_filepath))
+        tests_in_db = False
 
     elif db_type == "mysql":
         if not db_user:
@@ -255,6 +258,10 @@ def create_config(environment=None,
         if not db_name:
             db_name = prompt("MySQL database", default="amivapi")
 
+        if not tests_in_db:
+            tests_in_db = prompt_bool(
+                "Should the DB server also be used for tests?")
+
         config['DB_HOST'] = db_host
         config['DB_USER'] = db_user
         config['DB_PASS'] = db_pass
@@ -263,6 +270,7 @@ def create_config(environment=None,
         db_uri = "mysql://%s:%s@%s/%s?charset=utf8" % \
             (db_user, db_pass, db_host, db_name)
 
+    config['TESTS_IN_DB'] = tests_in_db
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
     if not file_dir:
