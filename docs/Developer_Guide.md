@@ -46,7 +46,6 @@ Now get the source:
 Install requirements:
 
     pip install -r requirements.py
-    pip install -r test-requirements.py
 
 ## Configuration
 
@@ -61,9 +60,22 @@ database file.
 
 ## Running the tests
 
-After creating a testing config you can run the tests using:
+To run the tests you need to install tox:
 
-    nosetests
+    pip install tox
+
+Create a config(see above). To run all tests enter
+
+    tox
+
+To test just one environment use -e with py27, py34, pypi or flake8
+
+    tox -e py27
+
+To run only some tests specify them in the following way(substitute your test class):
+
+    tox -- amivapi.tests.forwards
+
 
 ## Debugging server
 
