@@ -79,6 +79,23 @@ def create_app(environment, disable_auth=False):
     # the database
     #
 
+    # authentification
+    app.on_insert_users += authentification.hash_password_before_insert
+    app.on_replace_users += authentification.hash_password_before_replace
+    app.on_update_users += authentification.hash_password_before_update
+
+    app.on_insert += authentification.set_author_on_insert
+    app.on_replace += authentification.set_author_on_replace
+
+    # authorization
+    app.on_pre_GET += authorization.pre_get_permission_filter
+    app.on_pre_POST += authorization.pre_post_permission_filter
+    app.on_pre_PUT += authorization.pre_put_permission_filter
+    app.on_pre_DELETE += authorization.pre_delete_permission_filter
+    app.on_pre_PATCH += authorization.pre_patch_permission_filter
+    app.on_update += authorization.update_permission_filter
+
+    # validation
     app.on_insert += validation.pre_insert_check
     app.on_update += validation.pre_update_check
     app.on_replace += validation.pre_replace_check
@@ -108,22 +125,6 @@ def create_app(environment, disable_auth=False):
     # users
     app.on_pre_GET_users += authorization.pre_users_get
     app.on_pre_PATCH_users += authorization.pre_users_patch
-
-    # authentification
-    app.on_insert_users += authentification.hash_password_before_insert
-    app.on_replace_users += authentification.hash_password_before_replace
-    app.on_update_users += authentification.hash_password_before_update
-
-    app.on_insert += authentification.set_author_on_insert
-    app.on_replace += authentification.set_author_on_replace
-
-    if not disable_auth:
-        app.on_pre_GET += authorization.pre_get_permission_filter
-        app.on_pre_POST += authorization.pre_post_permission_filter
-        app.on_pre_PUT += authorization.pre_put_permission_filter
-        app.on_pre_DELETE += authorization.pre_delete_permission_filter
-        app.on_pre_PATCH += authorization.pre_patch_permission_filter
-        app.on_update += authorization.update_permission_filter
 
     # email-management
     app.on_deleted_item_forwards += forwards.on_forward_deleted

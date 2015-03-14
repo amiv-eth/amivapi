@@ -22,6 +22,8 @@ def get_domain():
 
             domain[cls.__tablename__]['public_methods'] = (
                 cls.__public_methods__)
+            domain[cls.__tablename__]['public_item_methods'] = (
+                cls.__public_methods__)
 
             # For documentation
             domain[cls.__tablename__]['description'] = cls.__description__
