@@ -45,7 +45,7 @@ Now get the source:
 
 Install requirements:
 
-    pip install -r requirements.py
+    pip install --allow-external python-mysql-connector -r requirements.txt
 
 ## Configuration
 
