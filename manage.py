@@ -252,7 +252,7 @@ def create_config(environment=None,
         if not db_name:
             db_name = prompt("MySQL database", default="amivapi")
 
-        db_uri = "mysql://%s:%s@%s/%s?charset=utf8" % \
+        db_uri = "mysql+mysqlconnector://%s:%s@%s/%s?charset=utf8" % \
             (db_user, db_pass, db_host, db_name)
 
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
