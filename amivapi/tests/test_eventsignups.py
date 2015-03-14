@@ -118,7 +118,7 @@ class SignupTest(util.WebTest):
         self.api.post("/eventsignups", data=data, token=admin_token,
                       status_code=201)
 
-        # does also not work with email-address
+        # non-public event does not work with email-address and token
         data = {
             'event_id': event.id,
             'user_id': -1,
