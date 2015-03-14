@@ -68,7 +68,7 @@ def common_authorization(resource, method):
               access is not checked. For examples how to do that see the hooks
               below
     """
-    resource_class = utils.get_class_for_resource(resource)
+    resource_class = utils.get_class_for_resource(models, resource)
 
     # Allow if authentification is disabled
     if not app.auth:
@@ -193,7 +193,7 @@ def will_be_owner(resource, method, obj):
     :returns: True if the user will be the owner of obj when it is created
     """
 
-    resource_class = utils.get_class_for_resource(resource)
+    resource_class = utils.get_class_for_resource(models, resource)
 
     if hasattr(resource_class, '__owner__'):
         try:
@@ -217,7 +217,7 @@ def apply_lookup_owner_filters(lookup, resource):
     :param lookup: The lookup to manipulate
     :param resource: Resource name(used to find the model)
     """
-    resource_class = utils.get_class_for_resource(resource)
+    resource_class = utils.get_class_for_resource(models, resource)
 
     if not hasattr(resource_class, '__owner__'):
         abort(403)

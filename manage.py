@@ -20,7 +20,8 @@ from flask.ext.script import (
 
 from amivapi import settings, models, schemas, cron
 from amivapi.models import User
-from amivapi.utils import init_database, create_new_hash, get_config
+from amivapi.utils import create_new_hash, get_config
+from amivapi.bootstrap import init_database
 
 
 manager = Manager(Flask("amivapi"))

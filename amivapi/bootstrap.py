@@ -2,6 +2,10 @@
 Starting point for the API
 """
 
+from datetime import datetime
+
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 
 from eve import Eve
 from eve_sqlalchemy import SQL  # , ValidatorSQL
@@ -22,7 +26,7 @@ from amivapi import (
     documentation
 )
 
-from amivapi.utils import get_config
+from amivapi.utils import get_config, create_new_hash
 
 
 def create_app(environment, disable_auth=False):
@@ -132,3 +136,61 @@ def create_app(environment, disable_auth=False):
     app.on_insert_translations += localization.unique_language_per_locale_id
 
     return app
+
+
+def init_database(connection, config):
+    """Create tables and fill with initial anonymous and root user
+
+    Throws sqlalchemy.exc.OperationalError if tables already exist
+
+    :param connection: A database connection
+    :param config: The configuration dictionary
+    """
+    try:
+        models.Base.metadata.create_all(connection, checkfirst=False)
+    except OperationalError:
+        print("Creating tables failed. Make sure the database does not exist" +
+              " already!")
+        raise
+
+    session = Session(bind=connection)
+
+    root = models.User(
+        id=0,
+        _author=None,
+        _etag='d34db33f',  # We need some etag, not important what it is
+        _created=datetime.now(),
+        _updated=datetime.now(),
+        username="root",
+        password=create_new_hash(u"root"),
+        firstname=u"Lord",
+        lastname=u"Root",
+        gender="male",
+        email=config['ROOT_MAIL'],
+        membership="none"
+    )
+    session.add(root)
+    session.commit()
+
+    # Because mysql is retarded it has ignored id=0 and we have to set it again
+    # Also it will not ignore -1 for anonymous
+    root = session.query(models.User).filter_by(username=u'root').one()
+    root.id = 0
+    session.commit()
+
+    anonymous = models.User(
+        id=-1,
+        _author=0,
+        _etag='4l3x15F4G',
+        _created=datetime.now(),
+        _updated=datetime.now(),
+        username="anonymous",
+        password=create_new_hash(u""),
+        firstname=u"Anon",
+        lastname=u"X",
+        gender="male",
+        email=u"nobody@example.com",
+        membership="none"
+    )
+    session.add(anonymous)
+    session.commit()

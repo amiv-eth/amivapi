@@ -2,7 +2,7 @@ import warnings
 
 from sqlalchemy import create_engine
 
-from amivapi import bootstrap, models, utils
+from amivapi import bootstrap, models
 
 
 engine = None
@@ -17,7 +17,7 @@ def setup():
     engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
     connection = engine.connect()
 
-    utils.init_database(connection, config)
+    bootstrap.init_database(connection, config)
 
 
 def teardown():

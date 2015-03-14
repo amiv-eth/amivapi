@@ -148,7 +148,7 @@ def route_itemmethod(resource, lookup, anonymous=True):
     elif method == 'DELETE':
         print g.logged_in_user
         db = app.data.driver.session
-        resource_class = utils.get_class_for_resource(resource)
+        resource_class = utils.get_class_for_resource(models, resource)
         doc = db.query(resource_class).get(lookup['_id'])
         if not doc:
             abort(404)
