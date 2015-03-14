@@ -10,7 +10,6 @@ from amivapi import models
 import string
 import random
 import utils
-import models
 
 confirmprint = Blueprint('confirm', __name__)
 documentation = {}
