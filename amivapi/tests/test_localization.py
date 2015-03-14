@@ -15,8 +15,8 @@ class LanguageTest(util.WebTestNoAuth):
         Deleting should delete all translations as well
         """
 
-        """Create Joboffer, should receive ID for translation of title and for
-        description and they should obviously be different IDs"""
+        # Create Joboffer, should receive ID for translation of title and for
+        # description and they should obviously be different IDs
         data_offer = {'company': "AlexCorp"}
 
         response_offer = self.api.post("/joboffers", data=data_offer,
@@ -26,7 +26,9 @@ class LanguageTest(util.WebTestNoAuth):
         self.assertTrue('description_id' in response_offer.keys())
         self.assertTrue('title_id' != 'description_id')
 
-        """Create translations"""
+        offerid = response_offer['id']
+
+        # Create translations
         title_id = response_offer['title_id']
         desc_id = response_offer['description_id']
 
@@ -51,10 +53,10 @@ class LanguageTest(util.WebTestNoAuth):
         self.api.post("/translations", data=desc_de, status_code=201)
         self.api.post("/translations", data=desc_en, status_code=201)
 
-        """Retrieve with Accept-Language Header for both languages"""
+        # Retrieve with Accept-Language Header for both languages
         header = {'Accept-Language': 'en'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -64,7 +66,7 @@ class LanguageTest(util.WebTestNoAuth):
 
         header = {'Accept-Language': 'de'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -72,12 +74,12 @@ class LanguageTest(util.WebTestNoAuth):
         self.assertTrue('description' in response.keys())
         self.assertTrue(response['description'] == desc_de['content'])
 
-        """Remove event, translations should be deleted as well"""
+        # Remove event, translations should be deleted as well
         get_translations = self.api.get("/translations").json
         self.assertTrue(len(get_translations['_items']) == 4)
 
         h = {"If-Match": response_offer['_etag']}
-        self.api.delete("/joboffers/1", headers=h)
+        self.api.delete("/joboffers/%i" % offerid, headers=h)
 
         get_translations = self.api.get("/translations").json
         self.assertTrue(len(get_translations['_items']) == 0)
@@ -89,15 +91,17 @@ class LanguageTest(util.WebTestNoAuth):
 
         self.app.config['DEFAULT_LANGUAGE'] = 'de'
 
-        """Create Offer"""
+        # Create Offer
         data_offer = {'company': "AlexCorp"}
 
         response_offer = self.api.post("/joboffers", data=data_offer,
                                        status_code=201).json
 
+        offerid = response_offer['id']
+
         self.assertTrue('title_id' in response_offer.keys())
 
-        """Create translations"""
+        # Create translations
         id = response_offer['title_id']
 
         data_de = {'localization_id': id,
@@ -106,10 +110,10 @@ class LanguageTest(util.WebTestNoAuth):
 
         self.api.post("/translations", data=data_de, status_code=201)
 
-        """Retrieve with Accept-Language for unkown languages"""
+        # Retrieve with Accept-Language for unkown languages
         header = {'Accept-Language': 'br'}
 
-        response = self.api.get("/joboffers/1", headers=header,
+        response = self.api.get("/joboffers/%i" % offerid, headers=header,
                                 status_code=200).json
 
         self.assertTrue('title' in response.keys())
@@ -128,7 +132,7 @@ class LanguageTest(util.WebTestNoAuth):
         """This test will try to POST two different translations to the same
         field with two"""
 
-        """Create Joboffer, should receive ID for translation of title"""
+        # Create Joboffer, should receive ID for translation of title
         data_offer = {'company': "AlexCorp"}
 
         response_offer = self.api.post("/joboffers", data=data_offer,
@@ -136,7 +140,7 @@ class LanguageTest(util.WebTestNoAuth):
 
         self.assertTrue('title_id' in response_offer.keys())
 
-        """Create translation"""
+        # Create translation
         id = response_offer['title_id']
 
         data_de = {'localization_id': id,
@@ -146,7 +150,7 @@ class LanguageTest(util.WebTestNoAuth):
         response_post = self.api.post("/translations", data=data_de,
                                       status_code=201).json
 
-        """Test if patch and put are working properly"""
+        # Test if patch and put are working properly
         data_de_alt = {'localization_id': id,
                        'language': 'de',
                        'content': 'Ausgezeichneter'}
@@ -161,9 +165,8 @@ class LanguageTest(util.WebTestNoAuth):
         response_put = self.api.put("/translations/%i" % id, data=data_de,
                                     headers=header, status_code=200).json
 
-        """Now try to post same language again, should fail,
-        Post not allowed if language exists
-        """
+        # Now try to post same language again, should fail,
+        # Post not allowed if language exists
         header['If-Match'] = response_put['_etag']
         self.api.post("/translations", data=data_de, status_code=405).json
 
@@ -172,10 +175,13 @@ class LanguageTest(util.WebTestNoAuth):
         """
         data_offer = {'company': "AlexCorp"}
 
-        self.api.post("/joboffers", data=data_offer,
-                      status_code=201).json
+        response_offer = self.api.post("/joboffers", data=data_offer,
+                                       status_code=201).json
 
-        response = self.api.get("/joboffers/1", status_code=200).json
+        offerid = response_offer['id']
+
+        response = self.api.get(
+            "/joboffers/%i" % offerid, status_code=200).json
 
         self.assertTrue('title' in response.keys())
 
@@ -193,7 +199,7 @@ class LanguageTest(util.WebTestNoAuth):
         self.api.post("/joboffers", data=data_offer,
                       status_code=422)
 
-        """The received ids should also not be patchable"""
+        # The received ids should also not be patchable
         data_1 = {'company': 'AlexCorp'}
         data_2 = {'company': 'Hermanos Inc.'}
 

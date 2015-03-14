@@ -18,36 +18,39 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 
-""" Eve exspects the resource names to be equal to the table names. Therefore
-we generate all names from the Class names. Please choose classnames carefully,
-as changing them might break a lot of code """
+#
+# Eve exspects the resource names to be equal to the table names. Therefore
+# we generate all names from the Class names. Please choose classnames
+# carefully, as changing them might break a lot of code
+#
 
 
 class BaseModel(object):
     """Mixin for common columns."""
 
-    """__abstract__ makes SQL Alchemy not create a table for this class """
+    # __abstract__ makes SQL Alchemy not create a table for this class
     __abstract__ = True
 
-    """ All classes which overwrite this with True will get exposed as a
-    resource """
+    # All classes which overwrite this with True will get exposed as a resource
     __expose__ = False
 
-    """For documentation"""
+    # For documentation
     __description__ = {}
 
-    """ This is a list of fields, which are added to the projection created by
-    eve. Add any additional field to be delivered on GET requests by default
-    in the subclasses. """
+    # This is a list of fields, which are added to the projection created by
+    # eve. Add any additional field to be delivered on GET requests by default
+    # in the subclasses.
     __projected_fields__ = []
 
+    # These can contain a list of methods which need some kind of
+    # authorization. If nothing is set only admins can access the method
     __public_methods__ = []
     __owner_methods__ = []
     __registered_methods__ = []
 
     @declared_attr
     def __tablename__(cls):
-        """ Correct English attaches 'es' to plural forms which end in 's' """
+        # Correct English attaches 'es' to plural forms which end in 's'
         if cls.__name__.lower()[-1:] == 's':
             return "%ses" % cls.__name__.lower()
         return "%ss" % cls.__name__.lower()
@@ -63,8 +66,8 @@ class BaseModel(object):
         DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)
     _etag = Column(String(50))
 
-    """ This needs to be a function, as it has a ForeignKey in a mixin. The
-    function makes binding at a later point possible """
+    # This needs to be a function, as it has a ForeignKey in a mixin. The
+    # function makes binding at a later point possible
     @declared_attr
     def _author(cls):
         return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
@@ -104,7 +107,7 @@ class User(Base):
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
 
-    """relationships"""
+    # relationships
     permissions = relationship("Permission", foreign_keys="Permission.user_id",
                                backref="user", cascade="all, delete")
     forwards = relationship("ForwardUser", foreign_keys="ForwardUser.user_id",
@@ -126,8 +129,7 @@ class Permission(Base):
         'general': "Mapping between users and their roles. Assigning a user to"
         " a role will add permissions for certain resources.",
         'fields': {
-            'role': "Possible roles are: 'vorstand', 'read-everything', "
-            "'event-admin', 'job-admin', 'mail-admin', 'studydocs-admin'"
+            'role': "Possible roles can be extracted with the /roles endpoint"
         }
     }
     __expose__ = True
@@ -164,7 +166,7 @@ class Forward(Base):
 
     owner = relationship(User, foreign_keys=owner_id)
 
-    """relationships"""
+    # relationships
     user_subscribers = relationship("ForwardUser", backref="forward",
                                     cascade="all, delete")
     address_subscribers = relationship("ForwardAddress", backref="forward",
@@ -173,7 +175,7 @@ class Forward(Base):
 
 class ForwardUser(Base):
     __description__ = {
-        'general': "Assignemnt of registerd users to forwards."
+        'general': "Assignment of registered users to forwards."
     }
     __expose__ = True
     __projected_fields__ = ['forward', 'user']
@@ -220,14 +222,14 @@ class Session(Base):
     __owner_methods__ = ['GET', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(CHAR(512), unique=True)
+    token = Column(Text)
 
     # user = relationship("User", foreign_keys=user_id, backref="sessions")
 
 
 class Event(Base):
     __description__ = {
-        'general': "An Event is basically everythign happening in the AMIV.",
+        'general': "An Event is basically everything happening in the AMIV.",
         'methods': {
             'GET': "You are always allowed, even without session, to view "
             "AMIV-Events"
@@ -262,10 +264,9 @@ class Event(Base):
     img_web = Column(CHAR(100))  # This will be modified in schemas.py!
     img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
 
-    """Translatable fields
-    The relationship exists to ensure cascading delete and will be hidden from
-    the user
-    """
+    # Translatable fields
+    # The relationship exists to ensure cascading delete and will be hidden
+    # from the user
     title_id = Column(Integer, ForeignKey('translationmappings.id'))
     title_rel = relationship("TranslationMapping", cascade="all, delete",
                              foreign_keys=title_id)
@@ -273,7 +274,7 @@ class Event(Base):
     description_rel = relationship("TranslationMapping", cascade="all, delete",
                                    foreign_keys=description_id)
 
-    """relationships"""
+    # relationships
     signups = relationship("EventSignup", backref="event",
                            cascade="all, delete")
 
@@ -288,8 +289,8 @@ class EventSignup(Base):
             " mapped event. Please provide in json-format.",
             'user_id': "To sign up as external user, set 'user_id' to '-1'",
             'email': "For registered users, this is just a projection of your "
-            "general email-address. External users need to provide their email "
-            "here.",
+            "general email-address. External users need to provide their email"
+            " here.",
         }}
     __expose__ = True
     __projected_fields__ = ['event', 'user']
@@ -356,7 +357,7 @@ class StudyDocument(Base):
     semester = Column(Integer)
     author_name = Column(Unicode(100))
 
-    """relationships"""
+    # relationships
     files = relationship("File", backref="study_doc",
                          cascade="all, delete")
 
@@ -372,27 +373,15 @@ class JobOffer(Base):
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    """Translatable fields
-    The relationship exists to ensure cascading delete and will be hidden from
-    the user
-    """
+    # Translatable fields
+    # The relationship exists to ensure cascading delete and will be hidden
+    # from the user
     title_id = Column(Integer, ForeignKey('translationmappings.id'))
     title_rel = relationship("TranslationMapping", cascade="all, delete",
                              foreign_keys=title_id)
     description_id = Column(Integer, ForeignKey('translationmappings.id'))
     description_rel = relationship("TranslationMapping", cascade="all, delete",
                                    foreign_keys=description_id)
-
-
-# Permissions for file storage
-class Storage:
-    __expose__ = False  # Don't create a schema
-    __registered_methods__ = ['GET']
-
-
-class Roles:
-    __expose__ = False  # Don't create a schema
-    __registered_methods__ = ['GET']
 
 
 # Language ids are in here
@@ -413,3 +402,27 @@ class Translation(Base):
     content = Column(UnicodeText, nullable=False)
 
     __table_args__ = (UniqueConstraint('localization_id', 'language'),)
+
+
+#
+# Permissions for custom endpoints
+# These are not created in the database due to __abstract__ = True
+# utils.get_class_for_resource will find these
+#
+
+class Storage(Base):
+    __expose__ = False  # Don't create a schema
+    __abstract__ = True
+    __registered_methods__ = ['GET']
+    __description__ = {
+        'general': 'Endpoint to download files, get the URLs via /files'
+    }
+
+
+class Roles(Base):
+    __expose__ = False  # Don't create a schema
+    __abstract__ = True
+    __registered_methods__ = ['GET']
+    __description__ = {
+        'general': 'Resource to get available roles. Only GET is supported'
+    }

@@ -118,14 +118,13 @@ class WebTest(unittest.TestCase):
             try:
                 os.remove(os.path.join(self.app.config['STORAGE_DIR'], f))
             except:
-                """The tests seem to be to fast sometimes, cleanup in the end
-                works fine, in between tests deletion sometimes doesn't work.
-                Hack-like solution: Just ignore that and be happy that all
-                files are deleted in the end.
-                TODO: Find out whats wrong
-                (To reproduce remove the try-except block and run the
-                file access test)
-                """
+                # The tests seem to be to fast sometimes, cleanup in the end
+                # works fine, in between tests deletion sometimes doesn't work.
+                # Hack-like solution: Just ignore that and be happy that all
+                # files are deleted in the end.
+                # TODO: Find out whats wrong
+                # (To reproduce remove the try-except block and run the
+                # file access test)
                 pass
         for f in os.listdir(self.app.config['FORWARD_DIR']):
             try:
@@ -269,7 +268,7 @@ class WebTest(unittest.TestCase):
 
     @create_object(models.File)
     def new_file(self, **kwargs):
-        """ Create a new file """
+        """ Create a new file, needs study_doc_id """
         count = self.next_count()
         if 'data' not in kwargs:
             filename = 'default_file_%i.txt' % count
@@ -278,8 +277,6 @@ class WebTest(unittest.TestCase):
             f.write('Your default content.')
             f.close()
             kwargs['data'] = filename
-        if 'study_doc_id' not in kwargs:
-            kwargs['study_doc_id'] = 1  # Just add a number
         return kwargs
 
 

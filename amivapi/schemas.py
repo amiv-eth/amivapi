@@ -20,18 +20,17 @@ def get_domain():
                     {field: 1}
                 )
 
-            domain[cls.__tablename__]['public_methods'] \
-                = cls.__public_methods__
+            domain[cls.__tablename__]['public_methods'] = (
+                cls.__public_methods__)
 
             # For documentation
-            domain[cls.__tablename__]['description'] \
-                = cls.__description__
+            domain[cls.__tablename__]['description'] = cls.__description__
 
-            """ Users should not provide _author fields """
-            domain[cls.__tablename__]['schema']['_author']. \
-                update({'readonly': True})
+            # Users should not provide _author fields
+            domain[cls.__tablename__]['schema']['_author'].update(
+                {'readonly': True})
 
-    """ Make it possible to retrive a user with his username (/users/name) """
+    # Make it possible to retrive a user with his username (/users/name)
     domain['users'].update({
         'additional_lookup': {
             'url': 'regex(".*[\w].*")',
@@ -39,11 +38,11 @@ def get_domain():
         }
     })
 
-    """ Hide passwords """
+    # Hide passwords
 
     domain['users']['datasource']['projection']['password'] = 0
 
-    """ Only accept email addresses for email fields """
+    # Only accept email addresses for email fields
     EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
@@ -52,8 +51,8 @@ def get_domain():
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
-    """ Permissions: Only allow existing roles and expiry date must be in the
-    future """
+    # Permissions: Only allow existing roles and expiry date must be in the
+    # future
     domain['permissions']['schema']['role'].update(
         {'allowed': ROLES.keys()})
     domain['permissions']['schema']['expiry_date'].update(
@@ -70,12 +69,12 @@ def get_domain():
                                                          'DELETE']
     domain['forwardaddresses']['item_methods'] = ['GET', 'PUT', 'DELETE']
 
-    """time_end for /events requires time_start"""
+    # time_end for /events requires time_start
     domain['events']['schema']['time_end'].update({
         'dependencies': ['time_start']
     })
 
-    """enums of sqlalchemy should directly be catched by the validator"""
+    # enums of sqlalchemy should directly be catched by the validator
     domain['users']['schema']['gender'].update({
         'allowed': ['male', 'female']
     })
@@ -83,9 +82,7 @@ def get_domain():
         'allowed': ['itet', 'mavt']
     })
 
-    """
-    Filetype needs to be specified as media, maybe this can be automated
-    """
+    # Filetype needs to be specified as media, maybe this can be automated
     domain['events']['schema'].update({
         'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'img_web': {'type': 'media', 'filetype': ['png', 'jpeg']},
@@ -101,11 +98,9 @@ def get_domain():
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
-    """
-    Locatization-revelant: Hide the mapping table
-    Set title and description id from events and joboffers schema to read only
-    so they can not be set manually
-    """
+    # Locatization-revelant: Hide the mapping table
+    # Set title and description id from events and joboffers schema to read
+    # only so they can not be set manually
     domain['translationmappings']['internal_resource'] = True
     domain['joboffers']['schema']['title_id'].update({'readonly': True})
     domain['joboffers']['schema']['description_id'].update({'readonly': True})

@@ -15,8 +15,9 @@ def insert_localized_fields(response):
 
         session = app.data.driver.session
 
-        query = session.query(Translation.language, Translation.content). \
-            filter_by(localization_id=id)
+        query = session.query(
+            Translation.language, Translation.content
+        ).filter_by(localization_id=id)
 
         locales = {}
 
@@ -51,16 +52,16 @@ def unique_language_per_locale_id(items):
     for item in items:
         id = item['localization_id']
 
-        """Now database query is needed to check if this language exists for
-        the given id
-        """
+        # Now database query is needed to check if this language exists for
+        # the given id
+
         session = app.data.driver.session
 
-        query = session.query(Translation.language). \
-            filter_by(localization_id=id)
+        query = session.query(Translation.language).filter_by(
+            localization_id=id)
 
         if str(item['language']) in str(list(query)):
-            error = "Language '%s' already exists for localization_id '%i', \
-                     post not allowed. Try to patch instead." \
-                     % (item['language'], id)
+            error = ("Language '%s' already exists for localization_id '%i', "
+                     "post not allowed. Try to patch instead."
+                     % (item['language'], id))
             abort(405, description=error)

@@ -10,8 +10,8 @@ class APIKeyTest(util.WebTest):
             'users': {'GET': 1},
         }
 
-        items = self.api.get("/users", token=apikey, status_code=200).\
-            json['_items']
+        items = self.api.get(
+            "/users", token=apikey, status_code=200).json['_items']
 
         # Can we see the root user?
         self.assertTrue(util.find_by_pair(items, "id", 0) is not None)

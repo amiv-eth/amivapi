@@ -108,7 +108,6 @@ class ForwardAuthTest(util.WebTest):
                                 status_code=200).json
         self.assertEquals(len(response['_items']), 0)
 
-
         self.api.get("/forwardaddresses", status_code=401)
 
     def test_forward_addresses_permissions_POST(self):
@@ -153,15 +152,10 @@ class ForwardAuthTest(util.WebTest):
                                     token=list_owner_session.token,
                                     status_code=202).json
 
-        """db.query(models.ForwardAddress).filter_by(id=new_forward['id']). \
-            delete()
-        db.commit()
-        """
-
     def test_forward_addresses_permissions_PATCH(self):
         """ Test PATCH permissions for ForwardAddress objects """
 
-        """ PATCH is not allowed for /forwardaddresses nor items """
+        # PATCH is not allowed for /forwardaddresses nor items
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')
@@ -255,7 +249,7 @@ class ForwardAuthTest(util.WebTest):
     def test_forward_addresses_permissions_PUT(self):
         """ Test PUT permissions for ForwardAddress objects """
 
-        """ PUT is not supported for forwardaddresses"""
+        # PUT is not supported for forwardaddresses
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')

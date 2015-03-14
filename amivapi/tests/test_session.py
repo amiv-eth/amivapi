@@ -29,11 +29,11 @@ class SessionResourceTest(util.WebTest):
 
         session = self.new_session(user_id=user.id)
 
-        """ Check if the user is logged in """
+        # Check if the user is logged in
         self.api.get("/sessions", token=session.token, status_code=200)
 
         self.api.delete("/sessions/%i" % session.id, token=session.token,
                         headers={'If-Match': session._etag}, status_code=204)
 
-        """ Check if still logged in """
+        # Check if still logged in
         self.api.get("/sessions", session.token, status_code=401)

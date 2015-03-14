@@ -41,7 +41,7 @@ class DeletionTests(util.WebTestNoAuth):
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': permission._etag},
                         status_code=204)
-        """We have with ids -1 and 0 2 users left after our user got deleted"""
+        # We have with ids -1 and 0 2 users left after our user got deleted
         self.assert_count(models.User, 2)
         self.assert_count(models.Permission, 0)
 
@@ -63,7 +63,7 @@ class DeletionTests(util.WebTestNoAuth):
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': user._etag},
                         status_code=204)
-        """We have with ids -1 and 0 2 users left after our user got deleted"""
+        # We have with ids -1 and 0 2 users left after our user got deleted
         self.assert_count(models.User, 2)
         self.assert_count(models.EventSignup, 0)
         # the Event shold still exist

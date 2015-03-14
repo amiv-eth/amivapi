@@ -12,7 +12,9 @@ from os import path, remove
 import errno
 
 from werkzeug import secure_filename
-from flask import Blueprint, send_from_directory, current_app as app
+from flask import abort, Blueprint, send_from_directory, current_app as app
+
+from amivapi.authorization import common_authorization
 
 
 class ExtFile(file):
@@ -24,7 +26,7 @@ class ExtFile(file):
         file.__init__(self, filename)
         self.filename = path.basename(self.name)
         self.size = path.getsize(filename)
-        self.content_url = '%s/%s' % (app.config['STORAGE_URL'], self.filename)
+        self.content_url = '%s/%s' % ('/storage', self.filename)
 
     def close(self):
         file.close(self)
@@ -113,14 +115,18 @@ class FileSystemStorage(object):
         return path.isfile(self.fullpath(filename))
 
 
-""" Endpoint to download files """
+#
+#
+# Endpoint to download files
+#
+#
 
 
 download = Blueprint('download', __name__)
 
 
-@download.route('/<filename>', methods=['GET'])
+@download.route('/storage/<filename>', methods=['GET'])
 def download_file(filename):
-    if app.auth and not app.auth.authorized([], 'storage', 'GET'):
-        return app.auth.authenticate()
+    if not common_authorization('storage', 'GET'):
+        abort(401)
     return send_from_directory(app.config['STORAGE_DIR'], filename)

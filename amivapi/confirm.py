@@ -77,6 +77,7 @@ def route_post(resource, lookup, anonymous=True):
     """This method mappes the request to the corresponding eve-functions or
     implements own functions.
     Similar to eve.endpoint
+    :param resource: the resource where the request comes from
     :param lookup: the lookup-dictionary like in the hooks
     :param anonymous: True if the request needs confirmation via email
     :returns: the response from eve, with correct status code

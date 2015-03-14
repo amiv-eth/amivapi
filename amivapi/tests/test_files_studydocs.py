@@ -19,7 +19,7 @@ class FileTest(util.WebTestNoAuth):
         filename_post = "post.txt"
         content_post = "random content"
 
-        """POST"""
+        # POST
         data_post = {'study_doc_id': studyid,
                      'name': 'Randomfile',
                      'data': (StringIO(content_post), filename_post)
@@ -31,9 +31,8 @@ class FileTest(util.WebTestNoAuth):
 
         id = file_post['_id']
 
-        """PATCH
-        Should return a 405 METHOD NOT ALLOWED since patching is not intended
-        """
+        # PATCH
+        # Should return a 405 METHOD NOT ALLOWED since patching is not intended
         filename_patch = "patch.txt"
         content_patch = "more random content"
 
@@ -47,7 +46,7 @@ class FileTest(util.WebTestNoAuth):
                        headers=h,
                        status_code=405).json
 
-        """PUT"""
+        # PUT
         filename_put = "put.txt"
         content_put = "even more random content"
         data_put = {'study_doc_id': studyid,
@@ -65,7 +64,7 @@ class FileTest(util.WebTestNoAuth):
         self.assert_media_deleted(filename_patch)
         self.assert_media_stored(filename_put, content_put)
 
-        """DELETE"""
+        # DELETE
         h["If-Match"] = file_put['_etag']
         self.api.delete('/files/%i' % id, headers=h,
                         status_code=204)
@@ -108,14 +107,14 @@ class FileTest(util.WebTestNoAuth):
         fail"""
         header = {'content-type': 'multipart/form-data'}
 
-        """Without ID"""
+        # Without ID
         data = {'name': 'Randomfile',
                 'data': (StringIO('Content'), 'samename.txt')
                 }
 
         self.api.post('/files', data=data, headers=header, status_code=422)
 
-        """Wrong ID"""
+        # Wrong ID
         data = {'study_doc_id': 42,
                 'name': 'Randomfile',
                 'data': (StringIO('Content'), 'samename.txt')
@@ -133,7 +132,8 @@ class FileTest(util.WebTestNoAuth):
         self.assertTrue(len == 1)
 
         h = {"If-Match": studydoc._etag}
-        self.api.delete("/studydocuments/1", headers=h)
+        self.api.delete("/studydocuments/%i" % studyid, headers=h,
+                        status_code=204)
 
         len = self.db.query(models.File).count()
         self.assertTrue(len == 0)
@@ -152,11 +152,11 @@ class FileTest(util.WebTestNoAuth):
         data = {'logo': (StringIO('Not a png'), 'file.png')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
-        """Upload something that at least wants to be a PDF"""
+        # Upload something that at least wants to be a PDF
         data = {'pdf': (StringIO(r'%PDF 1.5% maybe a pdf..'), 'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
-        """Create Images as jpeg and png which are allowed"""
+        # Create Images as jpeg and png which are allowed
         image = Image.new('RGBA', size=(50, 50), color=(256, 0, 0))
         image_file = StringIO()
         image.save(image_file, 'jpeg')

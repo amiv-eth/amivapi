@@ -26,11 +26,11 @@ from amivapi.utils import init_database, create_new_hash, get_config
 manager = Manager(Flask("amivapi"))
 
 
-"""
-
-Utility functions
-
-"""
+#
+#
+# Utility functions
+#
+#
 
 
 def config_path(environment):
@@ -51,18 +51,17 @@ def save_config(name, **config):
         mkdir(config_dir, 0700)
 
     with codecs.open(name, "w", encoding="utf-8") as f:
-        f.write('"""Automatically generated on %s"""\n\n'
+        f.write('# Automatically generated on %s\n\n'
                 % dt.datetime.utcnow())
 
         for key, value in sorted(config.items()):
             if key not in dir(settings) or value != getattr(settings, key):
                 f.write("%s = %r\n" % (key.upper(), value))
-
-"""
-
-API Key management
-
-"""
+#
+#
+# API Key management
+#
+#
 
 
 def change_apikey(environment, permissions):
@@ -88,9 +87,9 @@ def change_apikey(environment, permissions):
         method = prompt_choices("Choose method to toggle",
                                 ['get', 'post', 'patch', 'put', 'delete'])
 
-        if resource not in permissions \
-                or method not in permissions[resource] \
-                or not permissions[resource][method]:
+        if (resource not in permissions
+                or method not in permissions[resource]
+                or not permissions[resource][method]):
             if resource not in permissions:
                 permissions[resource] = {}
             permissions[resource][method] = 1
@@ -173,25 +172,49 @@ def apikeys_delete(environment):
         del cfg['APIKEYS'][key]
         save_config(target_file, **cfg)
 
-"""
 
-Create new config
+#
+#
+# Create new config
+#
+#
 
-"""
 
-
-@manager.command
-def create_config():
+@manager.option("-c", "--config", dest="environment")
+@manager.option("-f", "--force", dest="force",
+                help="Force to overwrite existing config")
+@manager.option("-d", "--db-type", dest="db_type")
+@manager.option("--db-user", dest="db_user")
+@manager.option("--db-pass", dest="db_pass")
+@manager.option("--db-host", dest="db_host")
+@manager.option("--db-name", dest="db_name")
+@manager.option("--file-dir", dest="file_dir")
+@manager.option("--root-mail", dest="root_mail")
+@manager.option("--smtp", dest="smtp_server")
+@manager.option("--forward-dir", dest="forward_dir")
+def create_config(environment=None,
+                  force=False,
+                  db_type=None,
+                  db_user=None,
+                  db_pass=None,
+                  db_host=None,
+                  db_name=None,
+                  file_dir=None,
+                  root_mail=None,
+                  smtp_server=None,
+                  forward_dir=None):
     """Creates a new configuration for an environment.
 
     The config file is stored in the ROOT/config directory.
     """
-    environment = prompt_choices("Choose the environment the config is for",
-                                 ["development", "testing", "production"],
-                                 default="development")
+    if not environment:
+        environment = prompt_choices("Choose the environment the config is "
+                                     " for",
+                                     ["development", "testing", "production"],
+                                     default="development")
 
     target_file = config_path(environment)
-    if exists(target_file):
+    if exists(target_file) and not force:
         if not prompt_bool("The file config/%s.cfg already exists, "
                            "do you want to overwrite it?" % environment):
             return
@@ -204,37 +227,54 @@ def create_config():
 
     # Ask for database settings
     db_uri = None
-    db_type = prompt_choices("Choose the type of database",
-                             ["sqlite", "mysql"],
-                             default="sqlite")
+    if not db_type:
+        db_type = prompt_choices("Choose the type of database",
+                                 ["sqlite", "mysql"],
+                                 default="sqlite")
+    elif db_type not in ['sqlite', 'mysql']:
+        print("Only sqlite and mysql supported as db type!")
+        exit(0)
+
     if db_type == "sqlite":
         db_filepath = prompt("Path to db file (including filename)",
                              default=join(settings.ROOT_DIR, "data.db"))
         db_uri = "sqlite:///%s" % abspath(expanduser(db_filepath))
 
     elif db_type == "mysql":
-        user = prompt("MySQL username", default="amivapi")
-        pw = prompt_pass("MySQL password")
-        host = prompt("MySQL host", default="localhost")
-        db = prompt("MySQL database", default="amivapi")
+        if not db_user:
+            db_user = prompt("MySQL username", default="amivapi")
+            db_pass = prompt_pass("MySQL password", default="")
+        elif not db_pass:
+            db_pass = ""
+        if not db_host:
+            db_host = prompt("MySQL host", default="localhost")
+        if not db_name:
+            db_name = prompt("MySQL database", default="amivapi")
 
-        db_uri = "mysql://%s:%s@%s/%s?charset=utf8" % (user, pw, host, db)
+        db_uri = "mysql://%s:%s@%s/%s?charset=utf8" % \
+            (db_user, db_pass, db_host, db_name)
 
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
-    file_dir = abspath(expanduser(prompt("Path to file storage folder",
-                                         default=join(settings.ROOT_DIR,
-                                                      "filestorage"))))
+    if not file_dir:
+        file_dir = abspath(expanduser(prompt("Path to file storage folder",
+                                             default=join(settings.ROOT_DIR,
+                                                          "filestorage"))))
 
     config['STORAGE_DIR'] = file_dir
 
-    config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
+    if not root_mail:
+        root_mail = prompt("Maintainer E-Mail")
+    config['ROOT_MAIL'] = root_mail
 
-    config['SMTP_SERVER'] = prompt("SMTP Server to send mails",
-                                   default='localhost')
+    if not smtp_server:
+        smtp_server = prompt("SMTP Server to send mails",
+                             default='localhost')
+    config['SMTP_SERVER'] = smtp_server
 
-    forward_dir = prompt("Directory where forwards are stored",
-                         default=join(settings.ROOT_DIR, "forwards"))
+    if not forward_dir:
+        forward_dir = prompt("Directory where forwards are stored",
+                             default=join(settings.ROOT_DIR, "forwards"))
     config['FORWARD_DIR'] = abspath(expanduser(forward_dir))
 
     if not exists(file_dir):
@@ -262,10 +302,11 @@ def create_config():
             models.Base.metadata.drop_all(engine)
             init_database(engine, config)
 
-
-"""
-    Run cron tasks
-"""
+#
+#
+# Run cron tasks
+#
+#
 
 
 @manager.option("-c", "--config", dest="environment", required=True)
@@ -281,11 +322,11 @@ def run_cron(environment):
     cron.run(session, cfg)
 
 
-"""
-
-Change root password
-
-"""
+#
+#
+# Change root password
+#
+#
 
 
 @manager.option("-c", "--config", dest="environment", required=True)
@@ -311,11 +352,11 @@ def set_root_password(environment=None):
     session.close()
 
 
-"""
-
-Run the FlaskScript manager
-
-"""
+#
+#
+# Run the FlaskScript manager
+#
+#
 
 
 if __name__ == "__main__":
