@@ -223,6 +223,9 @@ Response:
         'username': 'myuser'
     }
 
+# API keys
+
+If access is not done by a user but rather by a service(cron, vending machine, info screen), user based authorization does not work. Instead an API key can be used. The API administrator can generate keys using the manage.py script and configure which endpoints can be accessed. Endpoint access via API key will give admin priviledges. The API key can be sent in the same way as a token. You can think of it as a permanent admin session for specific endpoints.
 
 # Using GET
 

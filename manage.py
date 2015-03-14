@@ -1,12 +1,15 @@
 import codecs
 import datetime as dt
-from os import mkdir
+from os import mkdir, urandom
 from os.path import abspath, dirname, join, exists, expanduser
+from pprint import pprint
+from base64 import b64encode
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 
 from flask import Flask
-from eve import Eve
 from flask.ext.script import (
     Manager,
     prompt,
@@ -15,26 +18,34 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings, bootstrap, models
+from amivapi import settings, models, schemas, cron
 from amivapi.models import User
-from amivapi.auth import create_new_hash
-from amivapi.utils import init_database
+from amivapi.utils import init_database, create_new_hash, get_config
 
 
-def real_or_dummy_app(config=None):
-    if config:
-        return bootstrap.create_app(config)
-
-    # When no config is given, us a fake flask app, so that commands which do
-    # not require a real app instance still work.
-    return Flask("amivapi")
+manager = Manager(Flask("amivapi"))
 
 
-manager = Manager(real_or_dummy_app)
-manager.add_option("-c", "--config", dest="config", required=False)
+"""
+
+Utility functions
+
+"""
 
 
-def make_config(name, **config):
+def config_path(environment):
+    return join(settings.ROOT_DIR, "config", "%s.cfg" % environment)
+
+
+def load_config(environment):
+    if environment is None:
+        print("Please specify an environment using -c.")
+        exit(0)
+
+    return get_config(environment)
+
+
+def save_config(name, **config):
     config_dir = dirname(name)
     if not exists(config_dir):
         mkdir(config_dir, 0700)
@@ -44,7 +55,129 @@ def make_config(name, **config):
                 % dt.datetime.utcnow())
 
         for key, value in sorted(config.items()):
-            f.write("%s = %r\n" % (key.upper(), value))
+            if key not in dir(settings) or value != getattr(settings, key):
+                f.write("%s = %r\n" % (key.upper(), value))
+
+"""
+
+API Key management
+
+"""
+
+
+def change_apikey(environment, permissions):
+    resources = schemas.get_domain().keys()
+
+    while True:
+        print("Change apikey:")
+        pprint(permissions)
+
+        i = 1
+        for res in resources:
+            print(str(i) + ": " + res)
+            i += 1
+        print("s: save")
+        options = map(lambda i: str(i + 1), range(len(resources))) + ['s']
+        choice = prompt_choices("Choose resource to change",
+                                options,
+                                "s")
+        if choice == "s":
+            return
+        resource = resources[int(choice) - 1]
+
+        method = prompt_choices("Choose method to toggle",
+                                ['get', 'post', 'patch', 'put', 'delete'])
+
+        if resource not in permissions \
+                or method not in permissions[resource] \
+                or not permissions[resource][method]:
+            if resource not in permissions:
+                permissions[resource] = {}
+            permissions[resource][method] = 1
+        else:
+            del permissions[resource][method]
+            if len(permissions[resource]) == 0:
+                del permissions[resource]
+
+        print("\n")
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def apikeys_add(environment):
+    """ Adds a new API key """
+
+    cfg = load_config(environment)
+    target_file = config_path(environment)
+
+    name = prompt("What purpose does the key have?")
+    newkey = b64encode(urandom(512))
+
+    if "APIKEYS" not in cfg:
+        cfg['APIKEYS'] = {}
+    permissions = cfg['APIKEYS'][newkey] = {"name": name}
+    change_apikey(environment, permissions)
+
+    save_config(target_file, **cfg)
+    print("\nSaved key %s:\n" % name)
+    print(newkey)
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def apikeys_list(environment):
+
+    cfg = load_config(environment)
+
+    for token, entry in cfg['APIKEYS'].iteritems():
+        name = entry['name']
+        print("=== %s ===\n\n%s\n" % (name, token))
+
+
+def choose_apikey(environment, cfg):
+    keys = cfg['APIKEYS'].keys()
+    names = map(lambda entry: entry['name'], cfg['APIKEYS'].values())
+
+    i = 1
+    for n in names:
+        print("%i: %s" % (i, n))
+        i += 1
+
+    options = map(lambda i: str(i + 1), range(len(names)))
+    choice = prompt_choices("Choose API key to change", options)
+
+    return keys[int(choice) - 1]
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def apikeys_edit(environment):
+    cfg = load_config(environment)
+    target_file = config_path(environment)
+
+    key = choose_apikey(environment, cfg)
+
+    permissions = cfg['APIKEYS'][key]
+    change_apikey(environment, permissions)
+
+    save_config(target_file, **cfg)
+    print("Saved key: %s" % permissions['name'])
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def apikeys_delete(environment):
+    cfg = load_config(environment)
+    target_file = config_path(environment)
+
+    key = choose_apikey(environment, cfg)
+    sure = prompt_choices("Are you sure?", ["y", "n"], "n")
+
+    if sure == "y":
+        del cfg['APIKEYS'][key]
+        save_config(target_file, **cfg)
+
+"""
+
+Create new config
+
+"""
 
 
 @manager.command
@@ -57,7 +190,7 @@ def create_config():
                                  ["development", "testing", "production"],
                                  default="development")
 
-    target_file = join(settings.ROOT_DIR, "config", "%s.cfg" % environment)
+    target_file = config_path(environment)
     if exists(target_file):
         if not prompt_bool("The file config/%s.cfg already exists, "
                            "do you want to overwrite it?" % environment):
@@ -97,6 +230,9 @@ def create_config():
 
     config['ROOT_MAIL'] = prompt("Maintainer E-Mail")
 
+    config['SMTP_SERVER'] = prompt("SMTP Server to send mails",
+                                   default='localhost')
+
     forward_dir = prompt("Directory where forwards are stored",
                          default=join(settings.ROOT_DIR, "forwards"))
     config['FORWARD_DIR'] = abspath(expanduser(forward_dir))
@@ -107,55 +243,79 @@ def create_config():
     if not exists(config['FORWARD_DIR']):
         mkdir(config['FORWARD_DIR'], 0700)
 
+    config['APIKEYS'] = {}
+
     # Write everything to file
     # Note: The file is opened in non-binary mode, because we want python to
     # auto-convert newline characters to the underlying platform.
-    make_config(target_file, **config)
+    save_config(target_file, **config)
 
-    print("Run `manage.py -c " + environment +
-          " create_database` to create a database!")
-
-
-@manager.command
-def create_database():
-    """ Creates the database, a root user and an anonymous user """
-
-    if not isinstance(manager.app, Eve):
-        print("Please specify an environment with -c")
-        exit(0)
-
-    try:
-        # FIXME(Conrad): This should actually provide a connection, not an
-        # engine
-        init_database(manager.app.data.driver.engine, manager.app.config)
-    except OperationalError:
-        if not prompt_bool(
-                "A database seems to exist already. Overwrite it?(y/N)"):
-            return
-        models.Base.metadata.drop_all(manager.app.data.driver.engine)
-        init_database(manager.app.data.driver.engine, manager.app.config)
+    if environment != "testing":
+        engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
+        try:
+            print("Setting up database...")
+            init_database(engine, config)
+        except OperationalError:
+            if not prompt_bool(
+                    "A database seems to exist already. Overwrite it?(y/N)"):
+                return
+            models.Base.metadata.drop_all(engine)
+            init_database(engine, config)
 
 
-@manager.command
-def set_root_password():
+"""
+    Run cron tasks
+"""
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def run_cron(environment):
+    """ Run tasks like sending notifications and cleaning the database """
+
+    cfg = get_config(environment)
+
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    cron.run(session, cfg)
+
+
+"""
+
+Change root password
+
+"""
+
+
+@manager.option("-c", "--config", dest="environment", required=True)
+def set_root_password(environment=None):
     """Sets the root password. """
 
-    if not isinstance(manager.app, Eve):
-        print("Please specify an environment with -c")
-        exit(0)
+    cfg = get_config(environment)
 
-    session = manager.app.data.driver.session
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
 
     try:
         root = session.query(User).filter(User.id == 0).one()
     except OperationalError:
-        print ("No root user found, please create the database using " +
-               "`python manage.py create_database`")
+        print ("No root user found, please recreate the config to set up a"
+               " database.")
         exit(0)
 
     root.password = create_new_hash(prompt("New root password"))
 
     session.commit()
+    session.close()
+
+
+"""
+
+Run the FlaskScript manager
+
+"""
 
 
 if __name__ == "__main__":
