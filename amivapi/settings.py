@@ -78,7 +78,7 @@ ROLES = {
             'PUT': 1,
             'DELETE': 1
         },
-        '_forwardaddresses': {
+        'forwardaddresses': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
@@ -96,7 +96,7 @@ ROLES = {
             'PUT': 1,
             'DELETE': 1
         },
-        '_eventsignups': {
+        'eventsignups': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
@@ -147,7 +147,7 @@ ROLES = {
         'events': {
             'GET': 1,
         },
-        '_eventsignups': {
+        'eventsignups': {
             'GET': 1,
         },
         'files': {
@@ -168,7 +168,7 @@ ROLES = {
             'PUT': 1,
             'DELETE': 1
         },
-        '_eventsignups': {
+        'eventsignups': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,

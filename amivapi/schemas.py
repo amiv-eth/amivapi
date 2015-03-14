@@ -46,9 +46,9 @@ def get_domain():
     EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
-    domain['_forwardaddresses']['schema']['address'].update(
+    domain['forwardaddresses']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
-    domain['_eventsignups']['schema']['email'].update(
+    domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
     # Permissions: Only allow existing roles and expiry date must be in the
@@ -58,29 +58,16 @@ def get_domain():
     domain['permissions']['schema']['expiry_date'].update(
         {'future_date': True})
 
-    # Workaround to signal onInsert that this request is internal
-    domain['_eventsignups']['schema'].update({
-        '_confirmed': {
-            'type': 'boolean',
-            'required': False,
-        },
-    })
-    domain['_forwardaddresses']['schema'].update({
-        '_confirmed': {
-            'type': 'boolean',
-            'required': False,
-        }
-    })
-
-    # internal resources should not be accessed from outside
-    domain['_eventsignups']['internal_resource'] = True
-    domain['_forwardaddresses']['internal_resource'] = True
+    """ For confirmation: eve will not handle POST """
+    domain['forwardaddresses']['resource_methods'] = ['GET']
+    domain['eventsignups']['resource_methods'] = ['GET']
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    # No Patching for files, only replacing
+    """No Patching for files and forwardaddresses, only replacing"""
     domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
                                                          'DELETE']
+    domain['forwardaddresses']['item_methods'] = ['GET', 'PUT', 'DELETE']
 
     # time_end for /events requires time_start
     domain['events']['schema']['time_end'].update({

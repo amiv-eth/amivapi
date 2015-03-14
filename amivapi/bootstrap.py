@@ -85,17 +85,25 @@ def create_app(environment, disable_auth=False):
 
     # eventsignups
     # for signups we need extra hooks to validate the field extra_data
-    app.on_pre_POST__eventsignups += validation.pre_signups_post
-    app.on_pre_PATCH__eventsignups += validation.pre_signups_patch
-    app.on_pre_UPDATE__eventsignups += validation.pre_signups_update
-    app.on_pre_PUT__eventsignups += validation.pre_signups_put
+    app.on_pre_POST_eventsignups += validation.pre_signups_post
+    app.on_pre_PATCH_eventsignups += validation.pre_signups_patch
+    app.on_pre_UPDATE_eventsignups += validation.pre_signups_update
+    app.on_pre_PUT_eventsignups += validation.pre_signups_put
 
-    # for anonymous users
-    app.on_insert__eventsignups += confirm.signups_confirm_anonymous
+    # Hooks for anonymous users
+    app.on_insert_eventsignups += confirm.signups_confirm_anonymous
+    app.on_insert_forwardaddresses += confirm.\
+        forwardaddresses_insert_anonymous
 
-    # forwardaddresses
-    app.on_insert__forwardaddresses += (
-        confirm.forwardaddresses_insert_anonymous)
+    app.on_update += confirm.pre_update_confirmation
+    app.on_delete_item += confirm.pre_delete_confirmation
+    app.on_replace += confirm.pre_replace_confirmation
+
+    app.on_updated += confirm.post_updated_confirmation
+    app.on_inserted += confirm.post_inserted_confirmation
+    app.on_deleted_item += confirm.post_deleted_confirmation
+    app.on_fetched += confirm.post_fetched_confirmation
+    app.on_replaced += confirm.post_replaced_confirmation
 
     # users
     app.on_pre_GET_users += authorization.pre_users_get

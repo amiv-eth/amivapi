@@ -71,7 +71,7 @@ class SignupTest(util.WebTest):
                         token=vorstand_token, status_code=200,
                         headers={'If-Match': other_signup._etag})
 
-    def test_non_public_eventsignup(self):
+    def test_non_public_event_signup(self):
         """Test /eventsignups for registered user and private event"""
         user = self.new_user()
         user_token = self.new_session(user_id=user.id).token

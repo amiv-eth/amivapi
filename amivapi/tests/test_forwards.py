@@ -38,70 +38,48 @@ class ForwardTest(util.WebTestNoAuth):
 
         # forward to non-email-address
         self.api.post("/forwardaddresses", data={
-            'address': 'fakeaddress',
+            'email': 'fakeaddress',
             'forward_id': forward.id,
         }, status_code=422)
-        forwards = self.db.query(models._ForwardAddress)
+        forwards = self.db.query(models.ForwardAddress)
         self.assertEquals(forwards.count(), 0)
 
         # forwards to not existing forward
         self.api.post("/forwardaddresses", data={
-            'address': email,
+            'email': email,
             'forward_id': forward.id + 7,
         }, status_code=422)
-        forwards = self.db.query(models._ForwardAddress)
+        forwards = self.db.query(models.ForwardAddress)
         self.assertEquals(forwards.count(), 0)
 
         # do everything right and look if it get's added to Confirm
         self.api.post("/forwardaddresses", data={
-            'address': email,
+            'email': email,
             'forward_id': forward.id,
         }, status_code=202)
-        confirms = self.db.query(models.Confirm)
-        self.assertEquals(confirms.count(), 1)
+        assignments = self.db.query(models.ForwardAddress)
+        self.assertEquals(assignments.count(), 1)
+        self.assertEquals(assignments.first()._confirmed, False)
 
-        token = confirms.first().token
+        token = assignments.first()._token
         self.api.post("/confirmations", data={
             'token': token
-        }, status_code=201)
-        self.assert_count(models.Confirm, 0)
-        self.assert_count(models._ForwardAddress, 1)
+        }, status_code=201).json
+        self.assertEquals(assignments.first()._confirmed, True)
 
         # try to delete it again
-        assignment = self.db.query(models._ForwardAddress).first()
+        assignment = self.db.query(models.ForwardAddress).first()
         self.api.delete("/forwardaddresses/%i" % assignment.id,
-                        headers={'If-Match': assignment._etag},
-                        status_code=202)
-        self.assert_count(models._ForwardAddress, 1)
-        confirms = self.db.query(models.Confirm)
-        self.assertEquals(confirms.count(), 1)
-
-        token = confirms.first().token
-        self.api.post("/confirmations", data={
-            'token': token
-        }, status_code=200)
-        self.assert_count(models.Confirm, 0)
-        self.assert_count(models._ForwardAddress, 0)
-
-    def test_test_internal_resource(self):
-        forward = self.new_forward(is_public=True)
-
-        # internal resource should not be accessed
-        self.api.get("/_forwardaddresses", status_code=404)
-        self.api.post("/_forwardaddresses", status_code=404)
-
-        assignment = self.new_forward_address(forward_id=forward.id)
-        self.api.get("/_forwardaddresses/%i" % assignment.id, status_code=404)
-        self.api.patch("/_forwardaddresses/%i" % assignment.id,
-                       status_code=404)
-        self.api.delete("_forwardaddresses/%i" % assignment.id,
-                        status_code=404)
+                        headers={'If-Match': assignment._etag,
+                                 'Token': token},
+                        status_code=204)
+        self.assert_count(models.ForwardAddress, 0)
 
 
 class ForwardAuthTest(util.WebTest):
 
     def test_forward_addresses_permissions_GET(self):
-        """ Test GET permissions for _ForwardAddress objects """
+        """ Test GET permissions for ForwardAddress objects """
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')
@@ -115,24 +93,25 @@ class ForwardAuthTest(util.WebTest):
 
         forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         self.new_forward_address(forward_id=forward.id,
-                                 address=email)
+                                 email=email)
 
         self.api.get("/forwardaddresses", token=admin_session.token,
                      status_code=200)
 
         self.api.get("/forwardaddresses",
                      token=list_owner_session.token,
-                     status_code=200)
+                     status_code=200).json
 
         # forwardaddresses should just be visible for admin and owner
-        self.api.get("/forwardaddresses",
-                     token=registered_session.token,
-                     status_code=401)
+        response = self.api.get("/forwardaddresses",
+                                token=registered_session.token,
+                                status_code=200).json
+        self.assertEquals(len(response['_items']), 0)
 
         self.api.get("/forwardaddresses", status_code=401)
 
     def test_forward_addresses_permissions_POST(self):
-        """ Test POST permissions for _ForwardAddress objects """
+        """ Test POST permissions for ForwardAddress objects """
         db = self.app.data.driver.session
 
         admin = self.new_user()
@@ -151,7 +130,7 @@ class ForwardAuthTest(util.WebTest):
         forward = self.new_forward(owner_id=list_owner.id, is_public=True)
 
         data = {
-            "address": email,
+            "email": email,
             "forward_id": forward.id
         }
 
@@ -173,12 +152,8 @@ class ForwardAuthTest(util.WebTest):
                                     token=list_owner_session.token,
                                     status_code=202).json
 
-        # db.query(models._ForwardAddress).filter_by(
-        #    id=new_forward['id']).delete()
-        # db.commit()
-
     def test_forward_addresses_permissions_PATCH(self):
-        """ Test PATCH permissions for _ForwardAddress objects """
+        """ Test PATCH permissions for ForwardAddress objects """
 
         # PATCH is not allowed for /forwardaddresses nor items
         admin = self.new_user()
@@ -197,7 +172,7 @@ class ForwardAuthTest(util.WebTest):
         forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward2 = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_address = self.new_forward_address(forward_id=forward.id,
-                                                   address=email)
+                                                   email=email)
 
         # Try changing the forward
         data = {
@@ -247,7 +222,7 @@ class ForwardAuthTest(util.WebTest):
         forward_address.forward_id = forward.id
 
         data = {
-            "address": "change@amiv.io"
+            "email": "change@amiv.io"
         }
 
         self.api.patch("/forwardaddresses/%i" % forward_address.id, data=data,
@@ -272,7 +247,7 @@ class ForwardAuthTest(util.WebTest):
                        status_code=405)
 
     def test_forward_addresses_permissions_PUT(self):
-        """ Test PUT permissions for _ForwardAddress objects """
+        """ Test PUT permissions for ForwardAddress objects """
 
         # PUT is not supported for forwardaddresses
         admin = self.new_user()
@@ -291,7 +266,7 @@ class ForwardAuthTest(util.WebTest):
         forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward2 = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_address = self.new_forward_address(forward_id=forward.id,
-                                                   address=email)
+                                                   email=email)
 
         # Try changing the forward
         data = {
@@ -334,7 +309,7 @@ class ForwardAuthTest(util.WebTest):
                        status_code=405)
 
         data = {
-            "address": email,
+            "email": email,
             "forward_id": forward2.id
         }
         self.api.patch("/forwardaddresses/%i" % forward_address.id, data=data,
@@ -343,7 +318,7 @@ class ForwardAuthTest(util.WebTest):
                        status_code=405)
 
         data = {
-            "address": email,
+            "email": email,
             "forward_id": forward2.id
         }
 
@@ -367,7 +342,7 @@ class ForwardAuthTest(util.WebTest):
                        status_code=405)
 
     def test_forward_addresses_permissions_DELETE(self):
-        """ Test DELETE permissions for _ForwardAddress objects """
+        """ Test DELETE permissions for ForwardAddress objects """
         admin = self.new_user()
         email = u"test-mail@amiv.ethz.ch"
         self.new_permission(user_id=admin.id, role='vorstand')
@@ -381,21 +356,29 @@ class ForwardAuthTest(util.WebTest):
 
         forward = self.new_forward(owner_id=list_owner.id, is_public=True)
         forward_address = self.new_forward_address(forward_id=forward.id,
-                                                   address=email)
+                                                   email=email)
 
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         headers={'If-Match': forward_address._etag},
-                        status_code=202)
+                        status_code=401)
 
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=registered_session.token,
                         headers={'If-Match': forward_address._etag},
-                        status_code=202)
+                        status_code=412
+                        )
 
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=list_owner_session.token,
                         headers={'If-Match': forward_address._etag},
-                        status_code=200)
+                        status_code=204)
+
+        forward_address = self.new_forward_address(forward_id=forward.id,
+                                                   email=email)
+        self.api.delete("/forwardaddresses/%i" % forward_address.id,
+                        headers={'If-Match': forward_address._etag,
+                                 'Token': forward_address._token},
+                        status_code=204)
 
         forward_address = self.new_forward_address(address=email,
                                                    forward_id=forward.id)
@@ -403,7 +386,7 @@ class ForwardAuthTest(util.WebTest):
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=admin_session.token,
                         headers={'If-Match': forward_address._etag},
-                        status_code=200)
+                        status_code=204)
 
     def test_role_validation(self):
         """Test /forwardusers for registered user in different roles"""

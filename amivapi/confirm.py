@@ -1,91 +1,69 @@
 from flask import current_app as app
 from flask import Blueprint, request, abort, g
-from eve.methods.post import post_internal, post
-from eve.methods.delete import deleteitem
-from eve.methods.get import get, getitem
-from eve.methods.patch import patch
-from eve.methods.put import put
+from eve.methods.post import post
 from eve.render import send_response
-from eve.methods.common import payload, get_document
-from eve.utils import config, request_method
+from eve.methods.common import payload
+from eve.utils import config, debug_error_message
 from amivapi.authorization import common_authorization
+from amivapi import models
 
-import datetime as dt
 import string
 import random
-import json
-
-import models
 import utils
-
+import models
 
 confirmprint = Blueprint('confirm', __name__)
 documentation = {}
 
 
-def id_generator(size=6, chars=string.ascii_letters + string.digits):
+def token_generator(size=6, chars=string.ascii_letters + string.digits):
+    """generates a random string of elements of chars
+    :param size: length of the token
+    :param chars: list of possible chars
+    :returns: a random token
+    """
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def send_confirmmail(ressource, token, email):
+def send_confirmmail(resource, token, email):
     """For the development-Version, we do not actually send emails but print
     the token. For testing, you will find the token in the database or copy it
-    from the command-line"""
+    from the command-line
+    :param resource: The resource of the current request as a string
+    :param token: The token connected to the data-entry which needs
+    confirmation
+    :param email: address the email will be send to
+    """
     print('email send with token %s to %s' % (token, email))
 
 
-def confirm_actions(resource, method, doc):
+def confirm_actions(resource, email, items):
     """
-    This method will save a given action for confirmation in the database
-    and send a token to the email-address given.
-    The action will be executed as soon as the token is POSTed to the resource
-    /confirmations
-
-    :param ressource: the ressource as a string
-    :param method: the method (POST, GET, DELETE) as a string
-    :param doc: the dictionary of the data for the action
-    :param items: a list of all data processed by the hook. This is only needed
-                  to delete the doc out of this list.
-    :param email_field: the key for the email-address in doc
+    This method will generate a random token and append it to items.
+    For 'eventsignups', the email will be swapped to the key '_email_unreg'.
+    An email will be send to the user for confirmation.
+    :param resource: the ressource current as a string
+    :param items: the dictionary of the data which will be inserted into the
+    database
+    :param email: The email the confirmation mail will be send to
     """
-
-    # for the different resources there are different tablenames for the email
-    email_field = {'_forwardaddresses': 'address',
-                   '_eventsignups': 'email'}
-
-    # if registered user has admin-rights, we need no confirmation
-    if (doc.get('_confirmed', False) is not True):
-        # these fields will get inserted automatcally and must not be part of
-        # the payload
-        doc.pop('_updated', None)
-        doc.pop('_created', None)
-        doc.pop('_author', None)
-        data = json.dumps(doc, cls=utils.DateTimeEncoder)
-        expiry = dt.datetime.now() + dt.timedelta(days=14)
-        token = id_generator(size=20)
-        thisconfirm = models.Confirm(
-            method=method,
-            resource=resource,
-            data=data,
-            expiry_date=expiry,
-            token=token,
-            _author=0
-        )
-        db = app.data.driver.session
-        db.add(thisconfirm)
-        db.commit()
-        send_confirmmail(resource, token, doc.get(email_field.get(resource)))
-        return False
-    else:
-        doc.pop('_confirmed', None)
-        return True
+    token = token_generator(size=20)
+    send_confirmmail(resource, token, email)
+    if resource == 'eventsignups':
+        # email is no relation, move it to _email_unreg
+        items.pop('email')
+        items['_email_unreg'] = email
+    items['_token'] = token
 
 
 def change_status(response):
     """This function changes the catched response of a post. Eve returns 201
     because the data got just deleted out of the payload and the empty payload
     got handled correct, but we need to return 202 and a hint to confirm the
-    email-address"""
+    email-address
+    :param response: the response from eve, a list of 4 items
+    :returns: new response with changed status-code
+    """
     if response[3] in [201, 200] and 'id' not in response:
         """No items actually inserted but saved in Confirm,
         Send 202 Accepted"""
@@ -96,78 +74,20 @@ def change_status(response):
     return response
 
 
-def route_method(resource, lookup, anonymous=True):
+def route_post(resource, lookup, anonymous=True):
     """This method mappes the request to the corresponding eve-functions or
     implements own functions.
     Similar to eve.endpoint
-
     :param resource: the resource where the request comes from
     :param lookup: the lookup-dictionary like in the hooks
     :param anonymous: True if the request needs confirmation via email
+    :returns: the response from eve, with correct status code
     """
     response = None
-    method = request_method()
-    common_authorization(resource, method)
-    if method in ('GET', 'HEAD'):
-        response = get(resource, lookup)
-    elif method == 'POST':
-        response = post(resource)
-        if anonymous:
-            response = change_status(response)
-    elif method == 'OPTIONS':
-        response = None
-    else:
-        abort(405)
-    return send_response(resource, response)
-
-
-def route_itemmethod(resource, lookup, anonymous=True):
-    """This method mappes the request to the corresponding eve-functions or
-    implements own functions.
-    Similar to eve.endpoint
-
-    :param resource: the resource where the request comes from
-    :param lookup: the lookup-dictionary like in the hooks
-    :param anonymous: True if the request concerns an anonymous user (the
-        logged in user may be different)
-    """
-    response = None
-    method = request_method()
-    common_authorization(resource, method)
-    admin = g.resource_admin
-    if method in ('GET', 'HEAD'):
-        response = getitem(resource, lookup)
-    elif method == 'PATCH':
-        response = patch(resource, lookup)
-        if anonymous and not admin:
-            response = change_status(response)
-    elif method == 'PUT':
-        response = put(resource, lookup)
-        if anonymous and not admin:
-            response = change_status(response)
-    elif method == 'DELETE':
-        print g.logged_in_user
-        db = app.data.driver.session
-        resource_class = utils.get_class_for_resource(models, resource)
-        doc = db.query(resource_class).get(lookup['_id'])
-        if not doc:
-            abort(404)
-        print doc.__owner__
-        owner = doc.__owner__ == g.logged_in_user
-        print "is owner: %s" % str(owner)
-        if anonymous and not admin and not owner:
-            # own funcionality for confirmation, we don't use eve in this case
-            # we need the email to send the token
-            lookup.update(address=doc.address)
-            confirm_actions(resource, method, lookup)
-            response = [{}, None, None, 202]
-            response[0][config.STATUS] = 202
-        else:
-            response = deleteitem(resource, lookup)
-    elif method == 'OPTIONS':
-        response = None
-    else:
-        abort(405)
+    common_authorization(resource, 'POST')
+    response = post(resource)
+    if anonymous:
+        response = change_status(response)
     return send_response(resource, response)
 
 
@@ -177,27 +97,19 @@ documentation['forwardaddresses'] = {
     'methods': "To add an address to a forward, one must either be admin or "
     "owner of the forward. In other cases, you can POST subscriptions to "
     "public forwards. Every POST needs confirmation of the email-address.",
-    'schema': '_forwardaddresses'
+    'schema': 'forwardaddresses'
 }
 
 
-@confirmprint.route('/forwardaddresses',
-                    methods=['GET', 'POST', 'HEAD', 'OPTIONS'])
+@confirmprint.route('/forwardaddresses', methods=['POST'])
 def handle_forwardaddresses():
     """These are custom api-endpoints from the confirmprint Blueprint.
-    We need one for the generel resource and one for the item endpoint."""
-
-    data = request.view_args
-    if request.method == 'POST':
-        data = payload()
-    return route_method('_forwardaddresses', data)
-
-
-@confirmprint.route('/forwardaddresses/<regex("[0-9]+"):_id>',
-                    methods=['GET', 'HEAD', 'DELETE', 'OPTIONS'])
-def handle_forwardaddressesitem(_id):
-    payload = {'_id': _id}
-    return route_itemmethod('_forwardaddresses', payload)
+    We don't want eve to handle POST to /forwardaddresses because we need to
+    change the status of the response
+    :returns: eve-response with (if POST was correct) changed status-code
+    """
+    data = payload()  # we only allow POST -> no error with payload()
+    return route_post('forwardaddresses', data)
 
 
 documentation['eventsignups'] = {
@@ -215,35 +127,28 @@ documentation['eventsignups'] = {
         "event.additional_fields",
         'user_id': "If you are not registered, set this to -1"
     },
-    'schema': '_eventsignups'
+    'schema': 'eventsignups'
 }
 
 
-@confirmprint.route('/eventsignups',
-                    methods=['GET', 'POST', 'HEAD', 'OPTIONS'])
+@confirmprint.route('/eventsignups', methods=['POST'])
 def handle_eventsignups():
-    data = request.view_args
-    if request.method == 'POST':
-        data = payload()
+    """These are custom api-endpoints from the confirmprint Blueprint.
+    We don't want eve to handle POST to /eventsignups because we need to
+    change the status of the response
+    :returns: eve-response with (if POST was correct) changed status-code
+    """
+    data = payload()  # we only allow POST -> no error with payload()
     anonymous = (data.get('user_id') == -1)
-    return route_method('_eventsignups', data, anonymous)
-
-
-@confirmprint.route('/eventsignups/<regex("[0-9]+"):_id>',
-                    methods=['GET', 'HEAD', 'PUT', 'PATCH', 'DELETE',
-                             'OPTIONS'])
-def handle_eventsignupsitem(_id):
-    # lookup = {config.ID_FIELD: _id}
-    doc = get_document('_eventsignups', {config.ID_FIELD: _id})
-    anonymous = doc.user_id == -1
-    lookup = request.view_args
-    return route_itemmethod('_eventsignups', lookup, anonymous)
+    return route_post('eventsignups', data, anonymous)
 
 
 @confirmprint.route('/confirmations', methods=['POST'])
 def on_post_token():
-    """This is the endpoint, where confirmation-tokens need to get posted to"""
-    data = payload()  # we only allow POST -> no error with payload()
+    """This is the endpoint, where confirmation-tokens need to get posted to.
+    :returns: 201 if token correct
+    """
+    data = payload()
     return execute_confirmed_action(data.get('token'))
 
 
@@ -251,30 +156,27 @@ def execute_confirmed_action(token):
     """from a given token, this function will search for a stored action in
     Confirms and send it to eve's post_internal
     PATCH and PUT are not implemented yet
+    :param token: the Token which was send to an email-address for confirmation
+    :returns: 201 in eve-response-format, without confirmed data
     """
     db = app.data.driver.session
-    action = db.query(models.Confirm).filter_by(
-        token=token
-    ).first()
-    if action is None:
+    signup = db.query(models.EventSignup).filter_by(_token=token).first()
+    forward = db.query(models.ForwardAddress).filter_by(_token=token).first()
+    doc = signup
+    if doc is None:
+        doc = forward
+    if doc is None:
         abort(404, description=(
-            'This token could not be found. It might got expired.'
+            'This token could not be found.'
         ))
-    payload = json.loads(action.data, cls=utils.DateTimeDecoder)
-    payload.update({'_confirmed': True})
-    response = None
-    if action.method == 'POST':
-        answer = post_internal(action.resource, payload)
-        response = send_response(action.resource, answer)
-    elif action.method == 'DELETE':
-        app.data.remove(action.resource,
-                        {config.ID_FIELD: payload['_id']})
-        response = send_response(action.resource, ({}, None, None, 200))
-    else:
-        abort(405)
-    db.delete(action)
-    db.commit()
-    return response
+    resource = doc.__tablename__
+    # response = patch_internal(resource, {'_confirmed': True}, False,
+    #                        False, _id=doc._id)
+    doc._confirmed = True
+    db.flush()
+    response = [{}, None, None, 201]
+    # app.data.update(resource, doc._id, {'_confirmed': True})
+    return send_response(resource, response)
 
 
 """ Hooks to catch actions which should be confirmed """
@@ -286,19 +188,86 @@ def signups_confirm_anonymous(items):
     """
     for doc in items:
         if doc['user_id'] == -1:
-            if not confirm_actions(
-                resource='_eventsignups',
-                method='POST',
-                doc=doc,
-            ):
-                items.remove(doc)
+            doc['_confirmed'] = False
+            confirm_actions('eventsignups', doc['email'], doc)
+        else:
+            doc['_confirmed'] = True
 
 
 def forwardaddresses_insert_anonymous(items):
     for doc in items:
-        if not confirm_actions(
-            resource='_forwardaddresses',
-            method='POST',
-            doc=doc,
-        ):
-            items.remove(doc)
+        doc['_confirmed'] = False
+        confirm_actions('forwardaddresses', doc['email'], doc)
+
+
+def needs_confirmation(resource, doc):
+    return (resource == 'eventsignups'
+            and doc.get('_email_unreg') is not None) \
+        or (resource == 'forwardaddresses')
+
+
+def pre_delete_confirmation(resource, original):
+    if needs_confirmation(resource, original):
+        token_authorization(resource, original)
+
+
+def pre_update_confirmation(resource, updates, original):
+    pre_delete_confirmation(resource, original)
+
+
+def pre_replace_confirmation(resource, document, original):
+    pre_delete_confirmation(resource, original)
+
+
+def post_deleted_confirmation(resource, item):
+    if needs_confirmation(resource, item):
+        return_correct_email(item)
+
+
+def post_updated_confirmation(resource, updates, original):
+    if needs_confirmation(resource, original):
+        return_correct_email(original)
+
+
+def post_fetched_confirmation(resource, response):
+    post_deleted_confirmation(resource, response)
+
+
+def post_inserted_confirmation(resource, items):
+    for item in items:
+        post_deleted_confirmation(resource, item)
+
+
+def post_replaced_confirmation(resource, item, original):
+    post_deleted_confirmation(resource, item)
+
+
+def token_authorization(resource, original):
+    """
+    checks if a request to an item-endpoint is authorized by the correct Token
+    in the header
+    Will abort if Token is incorrect.
+    :param resourse: the resource of the item as a string
+    :param original: The original data of the item which is requested
+    """
+    token = request.headers.get('Token')
+    model = utils.get_class_for_resource(models, resource)
+    is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
+    if is_owner:
+        print "Access to %s/%d granted for owner %d" % (resource,
+                                                        original['id'],
+                                                        g.logged_in_user)
+        return
+    if token is None and not g.resource_admin:
+        abort(412, description=debug_error_message(
+            "Please provide a valid token."
+        ))
+    if token != original['_token']:
+        print("jop")
+        abort(401, description="Token for external user not valid.")
+
+
+def return_correct_email(response):
+    if response.get('_email_unreg') is not None:
+        response['email'] = response['_email_unreg']
+        response.pop('_email_unreg')

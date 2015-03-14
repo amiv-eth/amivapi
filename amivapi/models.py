@@ -114,8 +114,8 @@ class User(Base):
                             backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
                             backref="user", cascade="all, delete")
-    eventsignups = relationship("_EventSignup",
-                                foreign_keys="_EventSignup.user_id",
+    eventsignups = relationship("EventSignup",
+                                foreign_keys="EventSignup.user_id",
                                 backref="user", cascade="all, delete")
 
 
@@ -169,7 +169,7 @@ class Forward(Base):
     # relationships
     user_subscribers = relationship("ForwardUser", backref="forward",
                                     cascade="all, delete")
-    address_subscribers = relationship("_ForwardAddress", backref="forward",
+    address_subscribers = relationship("ForwardAddress", backref="forward",
                                        cascade="all, delete")
 
 
@@ -192,7 +192,7 @@ class ForwardUser(Base):
     # user = relationship("User", foreign_keys=user_id)
 
 
-class _ForwardAddress(Base):
+class ForwardAddress(Base):
     __description__ = {
         'general': "Assignment of unregisterd users to forwards. Does only "
         "work if the forward is poblic"
@@ -201,14 +201,16 @@ class _ForwardAddress(Base):
     __projected_fields__ = ['forward']
 
     __owner__ = ['forward.owner_id']
-    __owner_methods__ = ['GET', 'POST', 'DELETE']
+    __owner_methods__ = ['GET']
     __public_methods__ = ['POST', 'DELETE']
 
-    address = Column(Unicode(100))
+    email = Column(Unicode(100))
     forward_id = Column(
         Integer, ForeignKey("forwards.id"), nullable=False)
 
-    # forward = relationship("Forward", backref="address_subscribers")
+    """for unregistered users"""
+    _token = Column(CHAR(20), unique=True, nullable=True)
+    _confirmed = Column(Boolean, default=False)
 
 
 class Session(Base):
@@ -273,11 +275,11 @@ class Event(Base):
                                    foreign_keys=description_id)
 
     # relationships
-    signups = relationship("_EventSignup", backref="event",
+    signups = relationship("EventSignup", backref="event",
                            cascade="all, delete")
 
 
-class _EventSignup(Base):
+class EventSignup(Base):
     __description__ = {
         'general': "You can signup here for an existing event inside of the "
         "registration-window. External Users can only sign up to public "
@@ -295,15 +297,17 @@ class _EventSignup(Base):
 
     __owner__ = ['user_id']
     __owner_methods__ = ['POST', 'GET', 'PATCH', 'DELETE']
-    # __public_methods__ = ['POST']
+    __public_methods__ = []
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    email = Column(Unicode(100))
+    email = Column(CHAR(100), ForeignKey("users.email"))
     extra_data = Column(Text)
 
-    # user = relationship("User", foreign_keys=user_id)
-    # event = relationship("Event", backref="signups")
+    """for unregistered users"""
+    _email_unreg = Column(Unicode(100))
+    _token = Column(CHAR(20), unique=True, nullable=True)
+    _confirmed = Column(Boolean, default=False)
 
 
 class File(Base):
@@ -378,15 +382,6 @@ class JobOffer(Base):
     description_id = Column(Integer, ForeignKey('translationmappings.id'))
     description_rel = relationship("TranslationMapping", cascade="all, delete",
                                    foreign_keys=description_id)
-
-
-# Confirm Actions for unregistered email-adresses
-class Confirm(Base):
-    token = Column(CHAR(20), unique=True, nullable=False)
-    method = Column(String(10))
-    resource = Column(String(50))
-    data = Column(String(1000))
-    expiry_date = Column(DateTime)
 
 
 # Language ids are in here
