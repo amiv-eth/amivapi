@@ -53,8 +53,8 @@ def delete_expired_permissions(db, config):
             try:
                 s.sendmail(msg['From'], [msg['To']], msg.as_string())
             except smtplib.SMTPRecipientsRefused, e:
-                print("Failed to send mail to %s " % entry.user.email +
-                      "about expiring permissions: %s" % e)
+                print("Failed to send mail to %s about expiring "
+                      "permissions: %s" % (entry.user.email, e))
             s.quit()
         except smtplib.SMTPException, e:
             print("Error trying to send mails: %s" % e)

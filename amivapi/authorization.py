@@ -112,9 +112,9 @@ def common_authorization(resource, method):
         try:
             if config.ROLES[permission.role][resource][method] == 1:
                 app.logger.debug("Access granted to %s %s "
-                                 % (method, resource)
                                  + "for user %i with role %s"
-                                 % (g.logged_in_user, permission.role))
+                                 % (method, resource, g.logged_in_user,
+                                    permission.role))
                 return True
         except KeyError:
             pass

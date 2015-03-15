@@ -66,8 +66,9 @@ class TestClient(FlaskClient):
         if (expected_code is not None and expected_code != status_code):
             raise AssertionError(
                 "Expected a status code of %i, but got %i instead\n"
-                % (expected_code, status_code) + "Response:\n%s\n%s\n%s"
-                % (response, response.data, response.status))
+                "Response:\n%s\n%s\n%s" % (expected_code, status_code,
+                                           response, response.data,
+                                           response.status))
 
         return response
 
