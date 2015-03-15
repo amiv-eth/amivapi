@@ -235,8 +235,6 @@ GET queries can be customized in many ways. There is the possibility for where, 
 
 Using a where clause one can specify details about the object looked for. Queries can be stated in the python syntax(as if you would write an if clause). This is some kind of experimental, if any issues occur please contact api@amiv.ethz.ch or write a report in the issue tracker on github.
 
-TODO: Test these, if they work remove this notice, maybe add more examples or links to external documentation
-
 An example (url-encoded) is:
 
     GET /events?where=title=="Testevent"+and+spots>5
