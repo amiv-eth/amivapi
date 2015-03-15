@@ -29,19 +29,19 @@ from amivapi import (
 from amivapi.utils import get_config, create_new_hash
 
 
-def create_app(environment, disable_auth=False):
+def create_app(disable_auth=False, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
-    :param environment: The environment this app should use, this is basically
-                        the basename of the config file to use
     :param disable_auth: This can be used to allow every request without
                          authentification for testing purposes
+    :param **kwargs: All other parameters overwrite config values
     :returns: eve.Eve object, the app object
     """
-    config = get_config(environment)
+    config = get_config()
     config['DOMAIN'] = schemas.get_domain()
     config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    config.update(kwargs)
 
     if disable_auth:
         app = Eve(settings=config,
