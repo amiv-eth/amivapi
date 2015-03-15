@@ -55,4 +55,4 @@ target/
 
 # AMIV stuff
 *.db
-config/
+config.cfg

@@ -1,4 +1,4 @@
-from flask import request, abort, current_app as app
+from flask import request, current_app as app
 from eve.methods.post import post_internal
 from eve.utils import config
 from amivapi.models import Translation
@@ -43,25 +43,3 @@ def create_localization_ids(items):
         item['title_id'] = mapping[0]['id']
         mapping = post_internal("translationmappings", payl={})
         item['description_id'] = mapping[0]['id']
-
-
-def unique_language_per_locale_id(items):
-    """Ensure that for every locale_id each language only exists once, e.g. not
-    two english translations at the same time
-    """
-    for item in items:
-        id = item['localization_id']
-
-        # Now database query is needed to check if this language exists for
-        # the given id
-
-        session = app.data.driver.session
-
-        query = session.query(Translation.language).filter_by(
-            localization_id=id)
-
-        if str(item['language']) in str(list(query)):
-            error = ("Language '%s' already exists for localization_id '%i', "
-                     "post not allowed. Try to patch instead."
-                     % (item['language'], id))
-            abort(405, description=error)

@@ -2,22 +2,21 @@
     amivapi.validation
     ~~~~~~~~~~~~~~~~~~~~~~~
     This extends the currently used validator to accept 'media' type
-
     Also adds hooks to validate other input
 """
 
 import datetime as dt
 import json
 
-from flask import current_app as app
+from flask import request, current_app as app
 from flask import abort, g
 from werkzeug.datastructures import FileStorage
 from imghdr import what
 
 from eve_sqlalchemy.validation import ValidatorSQL
-from eve.methods.common import payload
-from eve.validation import ValidationError
-from eve.utils import debug_error_message, config
+from eve.methods.common import get_document
+from eve.validation import SchemaError
+from eve.utils import debug_error_message, request_method
 
 from amivapi import models
 
@@ -50,6 +49,60 @@ class ValidatorAMIV(ValidatorSQL):
             self._error(field, "filetype not supported, has to be one of: " +
                         " %s" % str(filetype))
 
+    def _validate_type_json_schema(self, field, value):
+        """ Enables validation for schema fields in json-Format.
+        Will check both if it is json and if it is a correct schema"""
+        try:
+            json_data = json.loads(value)
+        except Exception as e:
+            self._error(field, "Must be json, parsing failed with exception:" +
+                        " %s" % str(e))
+        else:
+            try:
+                self.validate_schema(json_data)
+            except SchemaError as e:
+                self._error(field, "additional_fields does not contain a " +
+                            "valid schema: %s" % str(e))
+
+    def _validate_type_json_event_field(self, field, value):
+        """ Validates data in json format that has to correspond to the schema
+        saved in the event
+        Uses a internal validator and passes all errors to the main validator
+        (After adding the prefix: "Additional_fields: ...")
+        """
+        try:
+            if value:
+                data = json.loads(value)
+            else:
+                data = {}  # Do not crash if ''
+        except Exception as e:
+            self._error(field, "Must be json, parsing failed with exception:" +
+                        " %s" % str(e))
+        else:
+            # At this point we have valid JSON, check for event now.
+            # If PATCH, then event_id will not be provided, we have to find it
+            if request_method() == 'PATCH':
+                lookup = request.view_args
+            else:
+                if not('event_id' in self.document.keys()):
+                    self._error(field, "Cannot evaluate additional field " +
+                                "without event_id")
+                lookup = {'_id': self.document['event_id']}
+
+            # Use Eve method get_document to avoid accessing the db manually
+            event = get_document('events', False, **lookup)
+
+            # Load schema, we can use this without caution because only valid
+            # json schemas can be written to the database
+            if event:
+                schema = json.loads(event['additional_fields'])
+                v = app.validator(schema)  # Create a new validator
+                v.validate(data)
+
+                # Move errors to main validator
+                for key in v.errors.keys():
+                    self._error("%s: %s" % (field, key), v.errors[key])
+
     def _validate_future_date(self, future_date, field, value):
         """ Enables validator for dates that need do be in the future"""
         if future_date:
@@ -59,29 +112,136 @@ class ValidatorAMIV(ValidatorSQL):
             if value > datetime.now():
                 self._error(field, "date must not be in the future.")
 
+    def _validate_not_patchable(self, not_patchable, field, value):
+        """ Custom Validator to inhibit patching of the field
+        e.g. eventsignups, userid: can be posted but not patched
+        """
+        if not_patchable and (request_method() == 'PATCH'):
+            self._error(field, "this field can not be changed with PATCH")
 
-#
-#
-# Hooks to validate data before requests are performed
-#
-# First we have generic hooks to intercept requests and call validation
-# functions, then we define those validation functions.
-#
-#
+    def _validate_unique_combination(self, unique_combination, field, value):
+        """ Custom validation if some fields are only unique in combination,
+        e.g. user with id 1 can have several eventsignups for different events,
+        but only 1 eventsignup for event with id 42
+        unique_combination should be a list: The first item in the list is the
+        resource. This is not pretty but necessary to make the validator work
+        for different resources
+        Alle other arguments are the fields
+        Note: Make sure that other fields actually exists (setting them to
+        required etc)
+        """
+        # Step one: Remove resource from list
+        resource = unique_combination[0]
+        lookup = {field: value}  # First field
+        for key in unique_combination[1:]:
+            lookup[key] = self.document.get(key)  # all fields in combination
 
+        # If we are patching the issue is more complicated, some fields might
+        # have to be checked but are not part of the document because they will
+        # not be patched. We have to load them from the database
+
+        patch = (request_method() == 'PATCH')
+        if patch:
+            original = get_document(resource, False, **request.view_args)
+            for key in unique_combination[1:]:
+                if key not in self.document.keys():
+                    lookup[key] = original[key]
+
+        # Now check database
+        # if the method is not post and the document is not the original,
+        # there exists another instance
+        data = get_document(resource, False, **lookup)
+        if data and ((request_method() == 'POST') or
+                     not (data['id'] == int(request.view_args['_id']))):
+            self._error(field, "the field already exist in the database in " +
+                        "combination with values for: %s" %
+                        unique_combination[1:])
+
+    def _validate_signup_requirements(self, signup_possible, field, value):
+        """ Validate if signup requirements are met
+        Used for an event_id field - checks if the value "spots" is
+        not zero. In this case there is no signup
+        Furthermore checks if time is in the singup window for the event.
+        At last check if the event requires additional fields and display error
+        if they are not present
+        (Does nothing if signup_possible is set to False)
+        """
+        if signup_possible:
+            lookup = {'_id': value}
+            event = get_document('events', False, **lookup)
+
+            if event:
+                if (event['spots'] == 0):
+                    self._error(field, "the event with id %s has no signup" %
+                                value)
+                else:
+                    # The event has signup, check if it is open
+                    now = datetime.now()
+                    if now < event['time_register_start']:
+                        self._error(field, "the signup for event with %s is" +
+                                    "not open yet." % value)
+                    elif now > event['time_register_end']:
+                        self._error(field, "the signup for event with id %s" +
+                                    "closed." % value)
+
+                # If additional fields is missing still call the validator,
+                # except an emtpy string, then the valid
+                if (event['additional_fields'] and
+                        ('additional_fields' not in self.document.keys())):
+                    # Use validator to get accurate errors
+                    self._validate_type_json_event_field('additional_fields',
+                                                         None)
+
+    def _validate_only_anonymous(self, only_anonymous, field, valie):
+        """ Makes sure that the user is anonymous. If you use this validator,
+        ensure that there is a field 'user_id' in the same resource, e.g. by
+        setting a dependancy
+        (Does nothing if set to false
+        """
+        if only_anonymous:
+            if not(self.document['user_id'] == -1):
+                self._error(field, "This field can only be set for anonymous "
+                            "users with user_id -1")
+
+    def _validate_public_check(self, public_check, field, value):
+        """ Validates the following:
+        -1 only allowed if event in event_id
+        random id only allowed for the user itself or resource admins
+        """
+        if not public_check:
+            return
+        if value == -1:
+            lookup = {'id': self.document['event_id']}
+            event = get_document('events', False, **lookup)
+            if not(event):
+                self._error(field, "Can only be -1 for public events. Event "
+                            "with id %s can't be found." % self
+                            .document['event_id'])
+
+            elif not(event['is_public']):
+                self._error(field, "Can only be -1 if event is public events. "
+                            "Event with id %s is not public" % self
+                            .document['event_id'])
+        elif not(g.resource_admin or (g.logged_in_user == value)):
+            self._error(field, "Given your access rights, only your own "
+                        "user_id can be entered here")
+
+
+"""
+    Hooks to validate data before requests are performed
+    First we have generic hooks to intercept requests and call validation
+    functions, then we define those validation functions.
+"""
 
 resources_with_extra_checks = ['forwardusers',
-                               'events',
-                               'eventsignups']
+                               'events']
 
 
 def pre_insert_check(resource, items):
     """
     general function to call the custom logic validation
-
     :param resource: The resource we try to find a hook for, comes from eve
     :param items: the request-content as a list of dicts
-
     """
     if resource in resources_with_extra_checks:
         for doc in items:
@@ -121,93 +281,12 @@ def check_forwardusers(data):
     forward = db.query(models.Forward).get(forwardid)
 
     # Users may only self enroll for public forwards
-    if (not forward.is_public
-            and not g.resource_admin
-            and not g.logged_in_user == forward.owner_id):
+    if (not forward.is_public and not
+            g.resource_admin and not
+            g.logged_in_user == forward.owner_id):
         abort(403, description=debug_error_message(
             'You are not allowed to self enroll for this forward'
         ))
-
-
-#
-# /eventsignups
-#
-
-
-def check_eventsignups(data):
-    db = app.data.driver.session
-
-    eventid = data.get('event_id')
-    event = db.query(models.Event).get(eventid)
-
-    # check for available places
-    if event.spots > 0:
-        gone_spots = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid
-        ).count()
-        if gone_spots >= event.spots:
-            abort(422, description=debug_error_message(
-                'There are no spots left for event %d' % eventid
-            ))
-    if event.spots == -1:
-        abort(422, description=(
-            'Event %d does not offer a signup.' % eventid
-        ))
-
-    # check for correct signup time
-    now = dt.datetime.now()
-    if event.spots >= 0:
-        if now < event.time_register_start:
-            abort(422, description=(
-                'The signup for event %d is not open yet.' % eventid
-            ))
-        if now > event.time_register_end:
-            abort(422, description=(
-                'The signup for event %d is closed.' % eventid
-            ))
-
-    # check if user is allowed to sign up for this event
-    if data.get('user_id') == -1:
-        # in this case we have an anonymous user who only provides an email
-        if event.is_public is False:
-            abort(422, description=debug_error_message(
-                'The event is only open for registered users.'
-            ))
-        email = data.get('email')
-        if email is None:
-            abort(422, description=debug_error_message(
-                'You need to provide an email-address or a valid user_id'
-            ))
-        alreadysignedup = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid,
-            models.EventSignup.user_id == -1,
-            models.EventSignup.email == email
-        ).first() is not None
-    else:
-        # in this case the validator already checked that we have a valid
-        # user-id
-        userid = data.get('user_id')
-        alreadysignedup = db.query(models.EventSignup).filter(
-            models.EventSignup.event_id == eventid,
-            models.EventSignup.user_id == userid
-        ).first() is not None
-
-        # if the user did not provide an email, we just copy the address from
-        # the user-profile
-        email = data.get('email')
-        if email is None:
-            data['email'] = db.query(models.User).get(userid).email
-
-    if alreadysignedup:
-        abort(422, description=debug_error_message(
-            'You are already signed up for this event, try to use PATCH'
-        ))
-
-    # the extra-data got already checked by the validator and our
-    # pre_<request>-hooks below
-    if 'extra_data' in data:
-        data['extra_data'] = json.dumps(data.get('extra_data'))
-
 
 #
 # /events
@@ -234,106 +313,3 @@ def check_events(data):
         abort(422, description=(
             'time_end needs to be after time_start'
         ))
-
-    # check if price is correct formatted
-    if data.get('price', 0) < 0:
-        abort(422, description=(
-            'price needs to be positive or zero'
-        ))
-
-    # now we validate the cerberus-schema given in 'additional_fields' with
-    # cerberus
-    validator = app.validator('', '')
-    try:
-        schema = json.loads(data.get('additional_fields'))
-        validator.validate_schema(schema)
-    except ValidationError as e:
-            abort(422, description=(
-                'validation exception: %s' % str(e)
-            ))
-    except Exception as e:
-        # most likely a problem with the incoming payload, report back to
-        # the client as if it was a validation issue
-        abort(422, description=(
-            'exception for additional_fields: %s' % str(e)
-        ))
-
-
-#
-# Hooks to modify the schema for additional_fields of events
-#
-
-
-def pre_signups_post_callback(request):
-    update_signups_schema(payload())
-
-
-def pre_signups_post(request):
-    """
-    the event may require to fill in additional fields, as specified in
-    event.additional_fields. Therefore we need to update the schema the
-    validator uses to check the signup-data.
-    same for PUT, UPDATE and PATCH
-    """
-    update_signups_schema(payload())
-
-
-def pre_signups_put(request, lookup):
-    update_signups_schema(payload())
-
-
-def pre_signups_update(request, lookup):
-    update_signups_schema(payload())
-
-
-def pre_signups_patch(request, lookup):
-    """
-    don't allow PATCH on user_id, event_id or email"""
-    data = payload()
-    if ('user_id' in data) or ('event_id' in data) or ('email' in data):
-        abort(403, description=(
-            'You only can change extra_data'
-        ))
-
-    # the event may require to fill in additional fields, as specified in
-    # event.additional_fields. Therefore we need to update the schema the
-    # validator uses to check the signup-data.
-    update_signups_schema(payload())
-
-
-def update_signups_schema(data):
-    """
-    If the event the client signs up for requires extra fields, they are
-    specified in event.additional_fields.
-    We need to update the schema for the field extra_data of the eventsignup
-    with the schema required by the Event, and Cerberus will do the rest of the
-    Validation-Work.
-    """
-    db = app.data.driver.session
-    eventid = data.get('event_id')
-    event = db.query(models.Event).get(eventid)
-    if event is not None:
-        # we need to check this because the validator did not run yet, may not
-        # be a valid id
-        extra_schema = event.additional_fields
-        if extra_schema is not None:
-            resource_def = config.DOMAIN['eventsignups']
-            resource_def['schema'].update({
-                'extra_data': {
-                    'type': 'dict',
-                    'schema': json.loads(extra_schema),
-                    'required': True,
-                }
-            })
-            if data.get('extra_data') is None:
-                abort(422, description=debug_error_message(
-                    'event %d requires extra data: %s' % (eventid,
-                                                          extra_schema)
-                ))
-        else:
-            resource_def = config.DOMAIN['eventsignups']
-            resource_def['schema'].update({
-                'extra_data': {
-                    'required': False,
-                }
-            })

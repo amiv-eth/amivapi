@@ -4,7 +4,7 @@ Starting point for the API
 
 from datetime import datetime
 
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from eve import Eve
@@ -29,19 +29,19 @@ from amivapi import (
 from amivapi.utils import get_config, create_new_hash
 
 
-def create_app(environment, disable_auth=False):
+def create_app(disable_auth=False, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
-    :param environment: The environment this app should use, this is basically
-                        the basename of the config file to use
     :param disable_auth: This can be used to allow every request without
                          authentification for testing purposes
+    :param **kwargs: All other parameters overwrite config values
     :returns: eve.Eve object, the app object
     """
-    config = get_config(environment)
+    config = get_config()
     config['DOMAIN'] = schemas.get_domain()
     config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    config.update(kwargs)
 
     if disable_auth:
         app = Eve(settings=config,
@@ -100,13 +100,6 @@ def create_app(environment, disable_auth=False):
     app.on_update += validation.pre_update_check
     app.on_replace += validation.pre_replace_check
 
-    # eventsignups
-    # for signups we need extra hooks to validate the field extra_data
-    app.on_pre_POST_eventsignups += validation.pre_signups_post
-    app.on_pre_PATCH_eventsignups += validation.pre_signups_patch
-    app.on_pre_UPDATE_eventsignups += validation.pre_signups_update
-    app.on_pre_PUT_eventsignups += validation.pre_signups_put
-
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous
     app.on_insert_forwardaddresses += confirm.\
@@ -115,12 +108,6 @@ def create_app(environment, disable_auth=False):
     app.on_update += confirm.pre_update_confirmation
     app.on_delete_item += confirm.pre_delete_confirmation
     app.on_replace += confirm.pre_replace_confirmation
-
-    app.on_updated += confirm.post_updated_confirmation
-    app.on_inserted += confirm.post_inserted_confirmation
-    app.on_deleted_item += confirm.post_deleted_confirmation
-    app.on_fetched += confirm.post_fetched_confirmation
-    app.on_replaced += confirm.post_replaced_confirmation
 
     # users
     app.on_pre_GET_users += authorization.pre_users_get
@@ -142,7 +129,27 @@ def create_app(environment, disable_auth=False):
     app.on_fetched_item_events += localization.insert_localized_fields
     app.on_insert_joboffers += localization.create_localization_ids
     app.on_insert_events += localization.create_localization_ids
-    app.on_insert_translations += localization.unique_language_per_locale_id
+
+    # EVENTSIGNUPS
+    # Hooks to move 'email' to '_unregistered_email' after db access
+    app.on_insert_eventsignups += confirm.replace_email_insert
+    app.on_update_eventsignups += confirm.replace_email_update
+    app.on_replace_eventsignups += confirm.replace_email_replace
+
+    # Hooks to move '_unregistered_email' to 'email' after db access
+    app.on_inserted_eventsignups += confirm.replace_email_inserted
+    app.on_fetched_item_eventsignups += confirm.replace_email_fetched_item
+    app.on_fetched_resource_eventsignups += (confirm
+                                             .replace_email_fetched_resource)
+    app.on_replaced_eventsignups += confirm.replace_email_replaced
+    app.on_updated_eventsignups += confirm.replace_email_updated
+
+    # Hooks to remove tokens from output
+    app.on_inserted_eventsignups += confirm.remove_token_inserted
+    app.on_fetched_item_eventsignups += confirm.remove_token_fetched_item
+    app.on_fetched_resource_eventsignups += (confirm
+                                             .remove_token_fetched_resource)
+    app.on_replaced_eventsignups += confirm.remove_token_replaced
 
     return app
 
@@ -150,14 +157,15 @@ def create_app(environment, disable_auth=False):
 def init_database(connection, config):
     """Create tables and fill with initial anonymous and root user
 
-    Throws sqlalchemy.exc.OperationalError if tables already exist
+    Throws sqlalchemy.exc.OperationalError(sqlite) or
+    sqlalchemy.exc.ProgrammingError(mysql) if tables already exist
 
     :param connection: A database connection
     :param config: The configuration dictionary
     """
     try:
         models.Base.metadata.create_all(connection, checkfirst=False)
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         print("Creating tables failed. Make sure the database does not exist" +
               " already!")
         raise

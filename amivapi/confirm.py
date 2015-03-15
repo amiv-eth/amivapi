@@ -122,7 +122,7 @@ documentation['eventsignups'] = {
         "confirm your email-address"
     },
     'fields': {
-        'extra_data': "Needs to provide all necessary data defined in "
+        'additional fields': "Needs to provide all necessary data defined in "
         "event.additional_fields",
         'user_id': "If you are not registered, set this to -1"
     },
@@ -218,29 +218,6 @@ def pre_replace_confirmation(resource, document, original):
     pre_delete_confirmation(resource, original)
 
 
-def post_deleted_confirmation(resource, item):
-    if needs_confirmation(resource, item):
-        return_correct_email(item)
-
-
-def post_updated_confirmation(resource, updates, original):
-    if needs_confirmation(resource, original):
-        return_correct_email(original)
-
-
-def post_fetched_confirmation(resource, response):
-    post_deleted_confirmation(resource, response)
-
-
-def post_inserted_confirmation(resource, items):
-    for item in items:
-        post_deleted_confirmation(resource, item)
-
-
-def post_replaced_confirmation(resource, item, original):
-    post_deleted_confirmation(resource, item)
-
-
 def token_authorization(resource, original):
     """
     checks if a request to an item-endpoint is authorized by the correct Token
@@ -253,9 +230,9 @@ def token_authorization(resource, original):
     model = utils.get_class_for_resource(models, resource)
     is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
     if is_owner:
-        print "Access to %s/%d granted for owner %d" % (resource,
+        print("Access to %s/%d granted for owner %d" % (resource,
                                                         original['id'],
-                                                        g.logged_in_user)
+                                                        g.logged_in_user))
         return
     if token is None and not g.resource_admin:
         abort(412, description=debug_error_message(
@@ -266,7 +243,85 @@ def token_authorization(resource, original):
         abort(401, description="Token for external user not valid.")
 
 
-def return_correct_email(response):
-    if response.get('_email_unreg') is not None:
-        response['email'] = response['_email_unreg']
-        response.pop('_email_unreg')
+# Remove fields _email_unreg and _token
+def _replace(item, old_key, new_key):
+    if item.get(old_key):
+        item[new_key] = item.pop(old_key)
+
+
+# Hooks for input
+def replace_email_insert(items):
+    """ List of inserted items"""
+    for item in items:
+        _replace(item, 'email', '_email_unreg')
+
+
+def replace_email_replace(item, original):
+    """ one item
+    """
+    _replace(item, 'email', '_email_unreg')
+
+
+def replace_email_update(updates, original):
+    """ one item """
+    _replace(updates, 'email', '_email_unreg')
+
+
+# Hooks for output
+def replace_email_fetched_item(response):
+    """ The response will contain exactly one item
+    """
+    _replace(response, '_email_unreg', 'email')
+
+
+def replace_email_fetched_resource(response):
+    """ The response will be a dict, the list of items is in '_items'
+    """
+    for item in response['_items']:
+        _replace(item, '_email_unreg', 'email')
+
+
+def replace_email_replaced(item, original):
+    """ The response will be a dict, the list of items is in '_items'
+    """
+    _replace(item, '_email_unreg', 'email')
+
+
+def replace_email_inserted(items):
+    """ Contains a list of inserted items
+    """
+    for item in items:
+        _replace(item, '_email_unreg', 'email')
+
+
+def replace_email_updated(updates, original):
+    """ Contains one updated item
+    """
+    _replace(updates, '_email_unreg', 'email')
+
+
+# Hooks to remove '_token' from output after db access
+def remove_token_fetched_item(response):
+    """ The response will contain exactly one item
+    """
+    del(response['_token'])
+
+
+def remove_token_fetched_resource(response):
+    """ The response will be a dict, the list of items is in '_items'
+    """
+    for item in response['_items']:
+        item.pop('_token', None)
+
+
+def remove_token_replaced(item, original):
+    """ The response will be a dict, the list of items is in '_items'
+    """
+    item.pop('_token', None)
+
+
+def remove_token_inserted(items):
+    """ Contains a list of inserted items
+    """
+    for item in items:
+        item.pop('_token', None)

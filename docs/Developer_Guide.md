@@ -45,18 +45,17 @@ Now get the source:
 
 Install requirements:
 
-    pip install -r requirements.py
+    pip install --allow-external python-mysql-connector -r requirements.txt
 
 ## Configuration
 
 Create a configuration:
 
     python2 manage.py create_config
-    python2 manage.py -c <environment> create_database
 
-In the first step you are prompted which environment you want to setup. Normally you will want to separate a development database and a testing database.
-The tests will each create their own database, therefore you should not use create_database for the testing environment. If you did already just delete the
-database file.
+The tests will create their own database. If you configure a MySQL Server you will be asked whether the tests should also be run there. If you don't activate that
+they will create temporary databases on the fly in temporary files. Note that even if they run on a MySQL server they will create their own database, so you need
+to have the permissions for CREATE DATABASE.
 
 ## Running the tests
 
@@ -89,24 +88,22 @@ When the debug server is running it will be available at http://localhost:5000 a
 
 The main-directory lists following files:
 
-* authentification.py: 
-* authentification.py:
+* authentification.py: Everything about who somebody is. Tokens are mapped to sessions and logins are handled. Also author fields are set.
+* authorization.py: Everything about what somebody can do. Permissions are implemented here.
 * bootstrap.py: The Eve-App gets created here. All blueprints and event-hooks are registered in the bootstrap.
 * confirm.py: Blueprint and event-hooks regarding the confirmation of unregistered users.
-* cron.py:
+* cron.py: Jobs run on a regular basis (sending mail about expiring permissions, cleanup)
 * documentation.py: Loads additional documentation for the blueptrints.
 * forwards.py: Hooks to implement the email-functionality of forwards and assignments to forwards.
 * localization.py: Localization of content-fields.
-* media.py:
+* media.py: File Storage. Handles uploaded files and serves them to the user.
 * models.py: The Data-Model. As a basis of the API, in the Data-Model the different Data-Classes and their relations get defined.
 * schemas.py: Creates the basic validation-schema out of the data-model and applies custom changes.
-* settings.py:
+* settings.py: Constants which should not be changed by the admin, but can be changed by some developer
 * utils.py: General helping functions.
 * validation.py: Every validation that extends the basic Cerberus-schema-definition and Hooks for special semantic checks, e.g. whether an end-time comes after a start-time. 
 
 For understanding the structure of the api, the data-model in models.py is the Point to start.
-
-TODO(Alle): Describe what files we have and where to start
 
 # Security
 
@@ -333,6 +330,5 @@ For every language field the following is necessary:
 
 There are some tasks which are done on a regular basis. This includes removing
 expired permissions and unused sessions. Users who's permissions expire should
-be warned prior to this. This is all done by a cronjob. The cronjob runs
-manage.py with the run_cron method, which will run the actions defined in
+be warned prior to this by mail. This is all done by a cronjob. The cronjob runs
 cron.py.

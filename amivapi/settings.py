@@ -38,12 +38,12 @@ SESSION_TIMEOUT = timedelta(days=365)
 
 # First argument is role name
 PERMISSION_EXPIRED_WARNMAIL_SUBJECT = (
-    "Your permissions as %s at AMIV are about to expire")
+    "Your permissions as %(role)s at AMIV are about to expire")
 # First argument is name, second role, third admin email
 PERMISSION_EXPIRED_WARNMAIL_TEXT = (
-    "Hello %s,\nYour permissions as %s at AMIV will expire in 14 days. If you"
-    " want to get them renewed please sent an E-Mail to %s.\n\n"
-    "Regards\n\nAutomatically sent by AMIV API"
+    "Hello %(name)s,\nYour permissions as %(role)s at AMIV will expire in 14 "
+    "days. If you want to get them renewed please sent an E-Mail to "
+    " %(admin_mail)s.\n\nRegards\n\nAutomatically sent by AMIV API"
 )
 
 # This is a list of which groups exist to grant permissions. It should be

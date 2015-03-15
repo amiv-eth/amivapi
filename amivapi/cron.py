@@ -8,7 +8,11 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from amivapi.models import Permission, Session
+from amivapi.utils import get_config
 
 
 def delete_expired_sessions(db, config):
@@ -42,9 +46,11 @@ def delete_expired_permissions(db, config):
 
     for entry in query:
         msg = MIMEText(config['PERMISSION_EXPIRED_WARNMAIL_TEXT'] %
-                       (entry.user.firstname, entry.role, config['ROOT_MAIL']))
+                       dict(name=entry.user.firstname, role=entry.role,
+                            admin_mail=config['ROOT_MAIL']))
         msg['Subject'] = (
-            config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT'] % entry.role)
+            config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT']
+            % dict(role=entry.role))
         msg['From'] = config['ROOT_MAIL']
         msg['To'] = entry.user.email
 
@@ -53,8 +59,8 @@ def delete_expired_permissions(db, config):
             try:
                 s.sendmail(msg['From'], [msg['To']], msg.as_string())
             except smtplib.SMTPRecipientsRefused, e:
-                print("Failed to send mail to %s " % entry.user.email +
-                      "about expiring permissions: %s" % e)
+                print("Failed to send mail to %s about expiring "
+                      "permissions: %s" % (entry.user.email, e))
             s.quit()
         except smtplib.SMTPException, e:
             print("Error trying to send mails: %s" % e)
@@ -71,10 +77,23 @@ def delete_expired_permissions(db, config):
 
 
 def run(db, config):
-    """ Run cron tasks, this is called by manage.py
+    """ Run cron tasks
 
     :param db: The db session
     :param config: The config dict
     """
     delete_expired_permissions(db, config)
     delete_expired_sessions(db, config)
+
+
+# Run
+
+
+if __name__ == '__main__':
+    cfg = get_config()
+
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    run(session, cfg)

@@ -84,7 +84,44 @@ def get_domain():
         'allowed': ['itet', 'mavt']
     })
 
-    # Filetype needs to be specified as media, maybe this can be automated
+    """
+    Eventsignups, schema extensions including custom validation
+    """
+    domain['eventsignups']['schema']['event_id'].update({
+        'not_patchable': True,
+        'signup_requirements': True})
+    domain['eventsignups']['schema']['user_id'].update({
+        'not_patchable': True,
+        'unique_combination': ['eventsignups', 'event_id'],
+        'dependencies': ['event_id'],
+        'public_check': True})
+    domain['eventsignups']['schema']['email'].update({
+        'not_patchable': True,
+        'unique_combination': ['eventsignups', 'event_id'],
+        'dependencies': ['user_id'],
+        'only_anonymous': True})
+    # Since the data relation is not evaluated for posting, we need to remove
+    # it from the schema TODO: EXPLAIN BETTER
+    del(domain['eventsignups']['schema']['email']['data_relation'])
+    # Remove _email_unreg and _token from the schema since they are only
+    # for internal use and should not be visible
+    del(domain['eventsignups']['schema']['_email_unreg'])
+    del(domain['eventsignups']['schema']['_token'])
+
+    domain['eventsignups']['schema']['additional_fields'].update({
+        'type': 'json_event_field'})
+
+    """
+    Events, schema extensions
+    """
+    domain['events']['schema']['additional_fields'].update({
+        'type': 'json_schema'})
+    domain['events']['schema']['price'].update({'min': 0})
+    domain['events']['schema']['spots'].update({'min': 0})
+
+    """
+    Filetype needs to be specified as media, maybe this can be automated
+    """
     domain['events']['schema'].update({
         'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'img_web': {'type': 'media', 'filetype': ['png', 'jpeg']},
@@ -100,13 +137,19 @@ def get_domain():
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
-    # Locatization-revelant: Hide the mapping table
-    # Set title and description id from events and joboffers schema to read
-    # only so they can not be set manually
+    """
+    Locatization-revelant: Hide the mapping table
+    Set title and description id from events and joboffers schema to read only
+    so they can not be set manually
+    Also make the localization_id and language a unique combination to avoid
+    several translations in the same language
+    """
     domain['translationmappings']['internal_resource'] = True
     domain['joboffers']['schema']['title_id'].update({'readonly': True})
     domain['joboffers']['schema']['description_id'].update({'readonly': True})
     domain['events']['schema']['title_id'].update({'readonly': True})
     domain['events']['schema']['description_id'].update({'readonly': True})
+    domain['translations']['schema']['language'].update({
+        'unique_combination': ['translations', 'localization_id']})
 
     return domain
