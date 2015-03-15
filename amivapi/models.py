@@ -4,9 +4,9 @@ from sqlalchemy import (
     Column,
     Unicode,
     UnicodeText,
+    Text,
     CHAR,
     String,
-    Text,
     Integer,
     ForeignKey,
     Date,
@@ -285,8 +285,8 @@ class EventSignup(Base):
         "registration-window. External Users can only sign up to public "
         "events.",
         'fields': {
-            'extra_data': "Data-schema depends on 'additional_fields' from the"
-            " mapped event. Please provide in json-format.",
+            'additional fields': "Data-schema depends on 'additional_fields' "
+            "from the mapped event. Please provide in json-format.",
             'user_id': "To sign up as external user, set 'user_id' to '-1'",
             'email': "For registered users, this is just a projection of your "
             "general email-address. External users need to provide their email"
@@ -302,7 +302,7 @@ class EventSignup(Base):
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     email = Column(CHAR(100), ForeignKey("users.email"))
-    extra_data = Column(Text)
+    additional_fields = Column(Text)
 
     """for unregistered users"""
     _email_unreg = Column(Unicode(100))

@@ -14,7 +14,6 @@ class LanguageTest(util.WebTestNoAuth):
         appropriate language content in a new created field
         Deleting should delete all translations as well
         """
-
         # Create Joboffer, should receive ID for translation of title and for
         # description and they should obviously be different IDs
         data_offer = {'company': "AlexCorp"}
@@ -152,8 +151,7 @@ class LanguageTest(util.WebTestNoAuth):
                                       status_code=201).json
 
         # Test if patch and put are working properly
-        data_de_alt = {'localization_id': id,
-                       'language': 'de',
+        data_de_alt = {'language': 'de',
                        'content': 'Ausgezeichneter'}
 
         id = response_post['id']
@@ -167,9 +165,24 @@ class LanguageTest(util.WebTestNoAuth):
                                     headers=header, status_code=200).json
 
         # Now try to post same language again, should fail,
-        # Post not allowed if language exists
+        # Should not be accepted
         header['If-Match'] = response_put['_etag']
-        self.api.post("/translations", data=data_de, status_code=405).json
+        self.api.post("/translations", data=data_de, status_code=422).json
+
+        # Now post different language and try patching it to existing language
+        data_en = {'localization_id': id,
+                   'language': 'en',
+                   'content': 'Ausgezeichnet!'}
+
+        response_post_en = self.api.post("/translations", data=data_en,
+                                         status_code=201).json
+
+        id = response_post_en['id']
+        header['If-Match'] = response_post_en['_etag']
+        self.api.patch("/translations/%i" % id,
+                       data={'language': 'de'},
+                       headers=header,
+                       status_code=422).json
 
     def test_no_translation(self):
         """No translation posted, title field should still be present and empty

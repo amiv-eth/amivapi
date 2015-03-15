@@ -100,13 +100,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_update += validation.pre_update_check
     app.on_replace += validation.pre_replace_check
 
-    # eventsignups
-    # for signups we need extra hooks to validate the field extra_data
-    app.on_pre_POST_eventsignups += validation.pre_signups_post
-    app.on_pre_PATCH_eventsignups += validation.pre_signups_patch
-    app.on_pre_UPDATE_eventsignups += validation.pre_signups_update
-    app.on_pre_PUT_eventsignups += validation.pre_signups_put
-
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous
     app.on_insert_forwardaddresses += confirm.\
@@ -142,7 +135,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_fetched_item_events += localization.insert_localized_fields
     app.on_insert_joboffers += localization.create_localization_ids
     app.on_insert_events += localization.create_localization_ids
-    app.on_insert_translations += localization.unique_language_per_locale_id
 
     return app
 

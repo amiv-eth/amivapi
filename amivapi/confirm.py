@@ -122,7 +122,7 @@ documentation['eventsignups'] = {
         "confirm your email-address"
     },
     'fields': {
-        'extra_data': "Needs to provide all necessary data defined in "
+        'additional fields': "Needs to provide all necessary data defined in "
         "event.additional_fields",
         'user_id': "If you are not registered, set this to -1"
     },
@@ -253,9 +253,9 @@ def token_authorization(resource, original):
     model = utils.get_class_for_resource(models, resource)
     is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
     if is_owner:
-        print "Access to %s/%d granted for owner %d" % (resource,
+        print("Access to %s/%d granted for owner %d" % (resource,
                                                         original['id'],
-                                                        g.logged_in_user)
+                                                        g.logged_in_user))
         return
     if token is None and not g.resource_admin:
         abort(412, description=debug_error_message(
