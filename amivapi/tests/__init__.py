@@ -69,14 +69,14 @@ def teardown():
     """Drop database created above"""
     connection.close()
 
-    config = bootstrap.get_config("testing")
+    config = bootstrap.get_config()
 
     # Delete the test database
 
     if config['TESTS_IN_DB'] and config['DB_TYPE'] == 'mysql':
-        tmpengine = create_engine("mysql://%s:%s@%s" % (config['DB_USER'],
-                                                        config['DB_PASS'],
-                                                        config['DB_HOST']))
+        tmpengine = create_engine("mysql+mysqlconnector://%s:%s@%s" %
+                                  (config['DB_USER'], config['DB_PASS'],
+                                   config['DB_HOST']))
         tmpengine.connect().execute("DROP DATABASE %s" % dbname)
     else:
         unlink(dbname)

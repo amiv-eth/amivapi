@@ -46,9 +46,11 @@ def delete_expired_permissions(db, config):
 
     for entry in query:
         msg = MIMEText(config['PERMISSION_EXPIRED_WARNMAIL_TEXT'] %
-                       (entry.user.firstname, entry.role, config['ROOT_MAIL']))
+                       dict(name=entry.user.firstname, role=entry.role,
+                            admin_mail=config['ROOT_MAIL']))
         msg['Subject'] = (
-            config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT'] % entry.role)
+            config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT']
+            % dict(role=entry.role))
         msg['From'] = config['ROOT_MAIL']
         msg['To'] = entry.user.email
 
