@@ -215,6 +215,7 @@ class WebTest(unittest.TestCase):
         count = self.next_count()
         if 'email' not in kwargs:
             kwargs['email'] = u"subscriber-%i@example.com" % count
+        kwargs['_token'] = token_generator(size=20)
         return kwargs
 
     @create_object(models.Session)
@@ -248,6 +249,7 @@ class WebTest(unittest.TestCase):
         if 'user_id' not in kwargs:
             kwargs['user_id'] = -1
             kwargs['_email_unreg'] = u"signupper-%i@example.com" % count
+            kwargs['_token'] = token_generator(size=20)
         return kwargs
 
     @create_object(models.JobOffer)
