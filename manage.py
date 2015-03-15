@@ -18,7 +18,7 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings, models, schemas, cron
+from amivapi import settings, models, schemas
 from amivapi.models import User
 from amivapi.utils import create_new_hash, get_config
 from amivapi.bootstrap import init_database
@@ -296,24 +296,6 @@ def create_config(force=False,
             return
         models.Base.metadata.drop_all(engine)
         init_database(engine, config)
-
-
-#
-# Run cron tasks
-#
-
-
-@manager.command
-def run_cron():
-    """ Run tasks like sending notifications and cleaning the database """
-
-    cfg = get_config()
-
-    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
-    sessionmak = sessionmaker(bind=engine)
-    session = sessionmak()
-
-    cron.run(session, cfg)
 
 
 #

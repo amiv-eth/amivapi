@@ -93,7 +93,7 @@ The main-directory lists following files:
 * authentification.py:
 * bootstrap.py: The Eve-App gets created here. All blueprints and event-hooks are registered in the bootstrap.
 * confirm.py: Blueprint and event-hooks regarding the confirmation of unregistered users.
-* cron.py:
+* cron.py: Jobs run on a regular basis (sending mail about expiring permissions, cleanup)
 * documentation.py: Loads additional documentation for the blueptrints.
 * forwards.py: Hooks to implement the email-functionality of forwards and assignments to forwards.
 * localization.py: Localization of content-fields.
@@ -333,6 +333,5 @@ For every language field the following is necessary:
 
 There are some tasks which are done on a regular basis. This includes removing
 expired permissions and unused sessions. Users who's permissions expire should
-be warned prior to this. This is all done by a cronjob. The cronjob runs
-manage.py with the run_cron method, which will run the actions defined in
+be warned prior to this by mail. This is all done by a cronjob. The cronjob runs
 cron.py.

@@ -8,7 +8,11 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from amivapi.models import Permission, Session
+from amivapi.utils import get_config
 
 
 def delete_expired_sessions(db, config):
@@ -71,10 +75,23 @@ def delete_expired_permissions(db, config):
 
 
 def run(db, config):
-    """ Run cron tasks, this is called by manage.py
+    """ Run cron tasks
 
     :param db: The db session
     :param config: The config dict
     """
     delete_expired_permissions(db, config)
     delete_expired_sessions(db, config)
+
+
+# Run
+
+
+if __name__ == '__main__':
+    cfg = get_config()
+
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    run(session, cfg)
