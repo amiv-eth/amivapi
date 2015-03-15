@@ -4,7 +4,7 @@ Starting point for the API
 
 from datetime import datetime
 
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
 from eve import Eve
@@ -150,14 +150,15 @@ def create_app(disable_auth=False, **kwargs):
 def init_database(connection, config):
     """Create tables and fill with initial anonymous and root user
 
-    Throws sqlalchemy.exc.OperationalError if tables already exist
+    Throws sqlalchemy.exc.OperationalError(sqlite) or
+    sqlalchemy.exc.ProgrammingError(mysql) if tables already exist
 
     :param connection: A database connection
     :param config: The configuration dictionary
     """
     try:
         models.Base.metadata.create_all(connection, checkfirst=False)
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         print("Creating tables failed. Make sure the database does not exist" +
               " already!")
         raise

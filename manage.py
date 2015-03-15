@@ -7,7 +7,7 @@ from base64 import b64encode
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from flask import Flask
 from flask.ext.script import (
@@ -290,7 +290,7 @@ def create_config(force=False,
     try:
         print("Setting up database...")
         init_database(engine, config)
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         if not force and not prompt_bool(
                 "A database seems to exist already. Overwrite it?(y/N)"):
             return
@@ -333,7 +333,7 @@ def set_root_password():
 
     try:
         root = session.query(User).filter(User.id == 0).one()
-    except OperationalError:
+    except (OperationalError, ProgrammingError):
         print ("No root user found, please recreate the config to set up a"
                " database.")
         exit(0)
