@@ -109,12 +109,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_delete_item += confirm.pre_delete_confirmation
     app.on_replace += confirm.pre_replace_confirmation
 
-    app.on_updated += confirm.post_updated_confirmation
-    app.on_inserted += confirm.post_inserted_confirmation
-    app.on_deleted_item += confirm.post_deleted_confirmation
-    app.on_fetched += confirm.post_fetched_confirmation
-    app.on_replaced += confirm.post_replaced_confirmation
-
     # users
     app.on_pre_GET_users += authorization.pre_users_get
     app.on_pre_PATCH_users += authorization.pre_users_patch
@@ -135,6 +129,27 @@ def create_app(disable_auth=False, **kwargs):
     app.on_fetched_item_events += localization.insert_localized_fields
     app.on_insert_joboffers += localization.create_localization_ids
     app.on_insert_events += localization.create_localization_ids
+
+    # EVENTSIGNUPS
+    # Hooks to move 'email' to '_unregistered_email' after db access
+    app.on_insert_eventsignups += confirm.replace_email_insert
+    app.on_update_eventsignups += confirm.replace_email_update
+    app.on_replace_eventsignups += confirm.replace_email_replace
+
+    # Hooks to move '_unregistered_email' to 'email' after db access
+    app.on_inserted_eventsignups += confirm.replace_email_inserted
+    app.on_fetched_item_eventsignups += confirm.replace_email_fetched_item
+    app.on_fetched_resource_eventsignups += (confirm
+                                             .replace_email_fetched_resource)
+    app.on_replaced_eventsignups += confirm.replace_email_replaced
+    app.on_updated_eventsignups += confirm.replace_email_updated
+
+    # Hooks to remove tokens from output
+    app.on_inserted_eventsignups += confirm.remove_token_inserted
+    app.on_fetched_item_eventsignups += confirm.remove_token_fetched_item
+    app.on_fetched_resource_eventsignups += (confirm
+                                             .remove_token_fetched_resource)
+    app.on_replaced_eventsignups += confirm.remove_token_replaced
 
     return app
 
