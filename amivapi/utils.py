@@ -1,5 +1,4 @@
 import datetime as dt
-from os.path import abspath, join
 import json
 from base64 import b64encode, b64decode
 import hashlib
@@ -15,19 +14,15 @@ from flask import Config
 from amivapi.settings import ROOT_DIR
 
 
-def get_config(environment):
-    """Load the config associated with <environment>. The config is loaded
-    from config/<environment>.cfg
+def get_config():
+    """Load the config from settings.py and updates it with config.cfg
 
-    :param environment: Name of the environment, should be 'development',
-                        'testing' or 'production'
     :returns: Config dictionary
     """
-    config_dir = abspath(join(ROOT_DIR, "config"))
-    config = Config(config_dir)
+    config = Config(ROOT_DIR)
     config.from_object("amivapi.settings")
     try:
-        config.from_pyfile("%s.cfg" % environment)
+        config.from_pyfile("config.cfg")
     except IOError as e:
         raise IOError(str(e) + "\nYou can create it by running "
                              + "`python manage.py create_config`.")

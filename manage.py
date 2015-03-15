@@ -25,25 +25,13 @@ from amivapi.bootstrap import init_database
 
 
 manager = Manager(Flask("amivapi"))
+# This must be the same as in amivapi.utils.get_config
+config_path = join(settings.ROOT_DIR, "config.cfg")
 
 
-#
 #
 # Utility functions
 #
-#
-
-
-def config_path(environment):
-    return join(settings.ROOT_DIR, "config", "%s.cfg" % environment)
-
-
-def load_config(environment):
-    if environment is None:
-        print("Please specify an environment using -c.")
-        exit(0)
-
-    return get_config(environment)
 
 
 def save_config(name, **config):
@@ -59,13 +47,12 @@ def save_config(name, **config):
             if key not in dir(settings) or value != getattr(settings, key):
                 f.write("%s = %r\n" % (key.upper(), value))
 #
-#
 # API Key management
 #
-#
 
 
-def change_apikey(environment, permissions):
+@manager.command
+def change_apikey(permissions):
     resources = schemas.get_domain().keys()
 
     while True:
@@ -102,12 +89,11 @@ def change_apikey(environment, permissions):
         print("\n")
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def apikeys_add(environment):
+@manager.command
+def apikeys_add():
     """ Adds a new API key """
 
-    cfg = load_config(environment)
-    target_file = config_path(environment)
+    cfg = get_config()
 
     name = prompt("What purpose does the key have?")
     newkey = b64encode(urandom(512))
@@ -115,24 +101,25 @@ def apikeys_add(environment):
     if "APIKEYS" not in cfg:
         cfg['APIKEYS'] = {}
     permissions = cfg['APIKEYS'][newkey] = {"name": name}
-    change_apikey(environment, permissions)
+    change_apikey(permissions)
 
-    save_config(target_file, **cfg)
+    save_config(config_path, **cfg)
     print("\nSaved key %s:\n" % name)
     print(newkey)
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def apikeys_list(environment):
+@manager.command
+def apikeys_list():
 
-    cfg = load_config(environment)
+    cfg = get_config()
 
     for token, entry in cfg['APIKEYS'].iteritems():
         name = entry['name']
         print("=== %s ===\n\n%s\n" % (name, token))
 
 
-def choose_apikey(environment, cfg):
+@manager.command
+def choose_apikey(cfg):
     keys = cfg['APIKEYS'].keys()
     names = map(lambda entry: entry['name'], cfg['APIKEYS'].values())
 
@@ -147,44 +134,40 @@ def choose_apikey(environment, cfg):
     return keys[int(choice) - 1]
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def apikeys_edit(environment):
-    cfg = load_config(environment)
-    target_file = config_path(environment)
+@manager.command
+def apikeys_edit():
+    cfg = get_config()
 
-    key = choose_apikey(environment, cfg)
+    key = choose_apikey(cfg)
 
     permissions = cfg['APIKEYS'][key]
-    change_apikey(environment, permissions)
+    change_apikey(permissions)
 
-    save_config(target_file, **cfg)
+    save_config(config_path, **cfg)
     print("Saved key: %s" % permissions['name'])
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def apikeys_delete(environment):
-    cfg = load_config(environment)
-    target_file = config_path(environment)
+@manager.command
+def apikeys_delete():
+    cfg = get_config()
 
-    key = choose_apikey(environment, cfg)
+    key = choose_apikey(cfg)
     sure = prompt_choices("Are you sure?", ["y", "n"], "n")
 
     if sure == "y":
         del cfg['APIKEYS'][key]
-        save_config(target_file, **cfg)
+        save_config(config_path, **cfg)
 
 
-#
 #
 # Create new config
 #
-#
 
 
-@manager.option("-c", "--config", dest="environment")
 @manager.option("-f", "--force", dest="force",
                 help="Force to overwrite existing config")
-@manager.option("-d", "--db-type", dest="db_type")
+@manager.option("--debug", dest="debug")
+@manager.option("--db-type", dest="db_type")
 @manager.option("--db-user", dest="db_user")
 @manager.option("--db-pass", dest="db_pass")
 @manager.option("--db-host", dest="db_host")
@@ -194,8 +177,8 @@ def apikeys_delete(environment):
 @manager.option("--root-mail", dest="root_mail")
 @manager.option("--smtp", dest="smtp_server")
 @manager.option("--forward-dir", dest="forward_dir")
-def create_config(environment=None,
-                  force=False,
+def create_config(force=False,
+                  debug=None,
                   db_type=None,
                   db_user=None,
                   db_pass=None,
@@ -206,26 +189,22 @@ def create_config(environment=None,
                   root_mail=None,
                   smtp_server=None,
                   forward_dir=None):
-    """Creates a new configuration for an environment.
+    """Creates a new configuration.
 
-    The config file is stored in the ROOT/config directory.
+    The config is stored in ROOT/config.cfg
     """
-    if not environment:
-        environment = prompt_choices("Choose the environment the config is "
-                                     " for",
-                                     ["development", "testing", "production"],
-                                     default="development")
 
-    target_file = config_path(environment)
-    if exists(target_file) and not force:
-        if not prompt_bool("The file config/%s.cfg already exists, "
-                           "do you want to overwrite it?" % environment):
+    if exists(config_path) and not force:
+        if not prompt_bool("The file config.cfg already exists, "
+                           "do you want to overwrite it?"):
             return
+
+    if not debug:
+        debug = prompt_bool("Activate debug mode?")
 
     # Configuration values
     config = {
-        'DEBUG': environment == "development",
-        'TESTING': environment == "testing",
+        'DEBUG': debug,
     }
 
     # Ask for database settings
@@ -305,32 +284,30 @@ def create_config(environment=None,
     # Write everything to file
     # Note: The file is opened in non-binary mode, because we want python to
     # auto-convert newline characters to the underlying platform.
-    save_config(target_file, **config)
+    save_config(config_path, **config)
 
-    if environment != "testing":
-        engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
-        try:
-            print("Setting up database...")
-            init_database(engine, config)
-        except OperationalError:
-            if not prompt_bool(
-                    "A database seems to exist already. Overwrite it?(y/N)"):
-                return
-            models.Base.metadata.drop_all(engine)
-            init_database(engine, config)
+    engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
+    try:
+        print("Setting up database...")
+        init_database(engine, config)
+    except OperationalError:
+        if not force and not prompt_bool(
+                "A database seems to exist already. Overwrite it?(y/N)"):
+            return
+        models.Base.metadata.drop_all(engine)
+        init_database(engine, config)
 
-#
+
 #
 # Run cron tasks
 #
-#
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def run_cron(environment):
+@manager.command
+def run_cron():
     """ Run tasks like sending notifications and cleaning the database """
 
-    cfg = get_config(environment)
+    cfg = get_config()
 
     engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
     sessionmak = sessionmaker(bind=engine)
@@ -340,17 +317,15 @@ def run_cron(environment):
 
 
 #
-#
 # Change root password
 #
-#
 
 
-@manager.option("-c", "--config", dest="environment", required=True)
-def set_root_password(environment=None):
+@manager.command
+def set_root_password():
     """Sets the root password. """
 
-    cfg = get_config(environment)
+    cfg = get_config()
 
     engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
     sessionmak = sessionmaker(bind=engine)

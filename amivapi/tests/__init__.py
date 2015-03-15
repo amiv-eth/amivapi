@@ -20,7 +20,9 @@ test_config = {
     'FORWARD_DIR': '',
     'ROOT_MAIL': 'nobody@example.com',
     'SMTP_SERVER': '',
-    'APIKEYS': {}
+    'APIKEYS': {},
+    'TESTING': True,
+    'DEBUG': False
 }
 
 
@@ -28,7 +30,7 @@ def setup():
     global engine, connection, dbname
     warnings.filterwarnings('error', module=r'^sqlalchemy')
 
-    config = utils.get_config("testing")
+    config = utils.get_config()
 
     # Create a random database
     if config['TESTS_IN_DB'] and config['DB_TYPE'] == 'mysql':

@@ -95,8 +95,7 @@ class WebTest(unittest.TestCase):
             session_options={'bind': tests.connection})
         eve_sqlalchemy.SQL.driver = eve_sqlalchemy.db
 
-        self.app = bootstrap.create_app("testing",
-                                        disable_auth=self.disable_auth,
+        self.app = bootstrap.create_app(disable_auth=self.disable_auth,
                                         **tests.test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
