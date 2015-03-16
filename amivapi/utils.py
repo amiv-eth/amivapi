@@ -2,6 +2,8 @@ from base64 import b64encode, b64decode
 import hashlib
 from os import urandom
 import re
+import string
+import random
 
 from flask import current_app as app
 from flask import abort
@@ -80,6 +82,15 @@ def check_hash(password, hash):
     ):
         return True
     return False
+
+
+def token_generator(size=6, chars=string.ascii_letters + string.digits):
+    """generates a random string of elements of chars
+    :param size: length of the token
+    :param chars: list of possible chars
+    :returns: a random token
+    """
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def get_owner(model, _id):

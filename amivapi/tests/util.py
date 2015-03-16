@@ -11,8 +11,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
-from amivapi.utils import create_new_hash
-from amivapi.confirm import token_generator
+from amivapi.utils import create_new_hash, token_generator
 
 
 def find_by_pair(dicts, key, value):

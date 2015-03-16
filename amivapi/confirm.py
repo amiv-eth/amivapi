@@ -7,21 +7,10 @@ from eve.utils import config
 from amivapi.authorization import common_authorization
 from amivapi import models
 
-import string
-import random
 import utils
 
 confirmprint = Blueprint('confirm', __name__)
 documentation = {}
-
-
-def token_generator(size=6, chars=string.ascii_letters + string.digits):
-    """generates a random string of elements of chars
-    :param size: length of the token
-    :param chars: list of possible chars
-    :returns: a random token
-    """
-    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def send_confirmmail(resource, token, email):
@@ -46,7 +35,7 @@ def confirm_actions(resource, email, items):
     database
     :param email: The email the confirmation mail will be send to
     """
-    token = token_generator(size=20)
+    token = utils.token_generator(size=20)
     send_confirmmail(resource, token, email)
     if resource == 'eventsignups':
         # email is no relation, move it to _email_unreg
