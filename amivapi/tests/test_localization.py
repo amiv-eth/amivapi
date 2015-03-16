@@ -141,9 +141,9 @@ class LanguageTest(util.WebTestNoAuth):
         self.assertTrue('title_id' in response_offer.keys())
 
         # Create translation
-        id = response_offer['title_id']
+        title_id = response_offer['title_id']
 
-        data_de = {'localization_id': id,
+        data_de = {'localization_id': title_id,
                    'language': 'de',
                    'content': 'Ausgezeichnet!'}
 
@@ -170,7 +170,7 @@ class LanguageTest(util.WebTestNoAuth):
         self.api.post("/translations", data=data_de, status_code=422).json
 
         # Now post different language and try patching it to existing language
-        data_en = {'localization_id': id,
+        data_en = {'localization_id': title_id,
                    'language': 'en',
                    'content': 'Ausgezeichnet!'}
 

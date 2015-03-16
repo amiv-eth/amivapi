@@ -101,7 +101,7 @@ The main-directory lists following files:
 * schemas.py: Creates the basic validation-schema out of the data-model and applies custom changes.
 * settings.py: Constants which should not be changed by the admin, but can be changed by some developer
 * utils.py: General helping functions.
-* validation.py: Every validation that extends the basic Cerberus-schema-definition and Hooks for special semantic checks, e.g. whether an end-time comes after a start-time. 
+* validation.py: Every validation that extends the basic Cerberus-schema-definition and Hooks for special semantic checks, e.g. whether an end-time comes after a start-time.
 
 For understanding the structure of the api, the data-model in models.py is the Point to start.
 
@@ -138,7 +138,7 @@ Replace <resource> with the respective resource name.
 
 File: authentification.py
 
-The process of authentification is straight forward. A user is identified by 
+The process of authentification is straight forward. A user is identified by
 his username and his password. He can sent those to the /sessions resource and
 obtain a token which can prove authenticity of subsequent requests.
 This login process is done by the process_login function. Sessions do not time
@@ -332,3 +332,12 @@ There are some tasks which are done on a regular basis. This includes removing
 expired permissions and unused sessions. Users who's permissions expire should
 be warned prior to this by mail. This is all done by a cronjob. The cronjob runs
 cron.py.
+
+
+# Validation
+
+Luckily the cerberus validator is easily extensible, so we could implement many
+custom rules. Those are found in validator.py and are not very complex.
+
+More information on cerberus and its merits can be found here:
+https://cerberus.readthedocs.org/en/latest/

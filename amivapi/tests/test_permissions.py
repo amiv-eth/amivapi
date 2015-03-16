@@ -194,102 +194,6 @@ class PermissionsTest(util.WebTest):
                       token=entry_user_session.token,
                       status_code=201)
 
-    def test_forward_users_permissions_PATCH(self):
-        """ Test PATCH permissions for ForwardUser objects """
-
-        admin = self.new_user()
-        self.new_permission(user_id=admin.id, role='vorstand')
-        admin_session = self.new_session(user_id=admin.id)
-
-        list_owner = self.new_user()
-        list_owner_session = self.new_session(user_id=list_owner.id)
-        entry_user = self.new_user()
-        entry_user_session = self.new_session(user_id=entry_user.id)
-
-        registered = self.new_user()
-        registered_session = self.new_session(user_id=registered.id)
-
-        forward = self.new_forward(owner_id=list_owner.id, is_public=True)
-        forward2 = self.new_forward(owner_id=list_owner.id, is_public=True)
-        forward_user = self.new_forward_user(forward_id=forward.id,
-                                             user_id=entry_user.id)
-
-        # Try changing the forward
-        data = {
-            "forward_id": forward2.id
-        }
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=401)
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=registered_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=404)
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
-
-        forward3 = self.new_forward(owner_id=0, is_public=True)
-
-        data = {
-            "forward_id": forward3.id
-        }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=403)
-
-        data = {
-            "forward_id": forward.id
-        }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=entry_user_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
-
-        data = {
-            "forward_id": forward2.id
-        }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=admin_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
-
-        forward_user.forward_id = forward.id
-
-        # Try changing the user
-
-        entry_owner2 = self.new_user()
-
-        data = {
-            "user_id": entry_owner2.id
-        }
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=401)
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=registered_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=404)
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
-
-        forward_user.user_id = entry_user.id
-
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=entry_user_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=403)
-
     def test_forward_users_permissions_PUT(self):
         """ Test PUT permissions for ForwardUser objects """
 
@@ -316,19 +220,21 @@ class PermissionsTest(util.WebTest):
             "forward_id": forward2.id
         }
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=401)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     headers={'If-Match': forward_user._etag},
+                     status_code=401)
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=registered_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=404)
+        # Returns 403 because the forward exists but you are not authorized to
+        # enroll
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     token=registered_session.token,
+                     headers={'If-Match': forward_user._etag},
+                     status_code=403)
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
+        put_1 = self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                             token=list_owner_session.token,
+                             headers={'If-Match': forward_user._etag},
+                             status_code=200).json
 
         forward3 = self.new_forward(owner_id=0, is_public=True)
 
@@ -336,28 +242,28 @@ class PermissionsTest(util.WebTest):
             "user_id": entry_user.id,
             "forward_id": forward3.id
         }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=403)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     token=list_owner_session.token,
+                     headers={'If-Match': forward_user._etag},
+                     status_code=403)
 
         data = {
             "user_id": entry_user.id,
             "forward_id": forward.id
         }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=entry_user_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
+        put_2 = self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                             token=entry_user_session.token,
+                             headers={'If-Match': put_1['_etag']},
+                             status_code=200).json
 
         data = {
             "user_id": entry_user.id,
             "forward_id": forward2.id
         }
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=admin_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
+        put_3 = self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                             token=admin_session.token,
+                             headers={'If-Match': put_2['_etag']},
+                             status_code=200).json
 
         # Try changing the user
 
@@ -368,26 +274,26 @@ class PermissionsTest(util.WebTest):
             "forward_id": forward2.id
         }
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=401)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     headers={'If-Match': put_3['_etag']},
+                     status_code=401)
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=registered_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=404)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     token=registered_session.token,
+                     headers={'If-Match': put_3['_etag']},
+                     status_code=403)
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=list_owner_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=200)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     token=list_owner_session.token,
+                     headers={'If-Match': put_3['_etag']},
+                     status_code=200)
 
         forward_user.user_id = entry_user.id
 
-        self.api.patch("/forwardusers/%i" % forward_user.id, data=data,
-                       token=entry_user_session.token,
-                       headers={'If-Match': forward_user._etag},
-                       status_code=403)
+        self.api.put("/forwardusers/%i" % forward_user.id, data=data,
+                     token=entry_user_session.token,
+                     headers={'If-Match': put_3['_etag']},
+                     status_code=403)
 
     def test_forward_users_permissions_DELETE(self):
         """ Test DELETE permissions for ForwardUser objects """

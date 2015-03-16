@@ -1,9 +1,9 @@
-import datetime as dt
-import json
 from base64 import b64encode, b64decode
 import hashlib
 from os import urandom
 import re
+import string
+import random
 
 from flask import current_app as app
 from flask import abort
@@ -28,51 +28,6 @@ def get_config():
                              + "`python manage.py create_config`.")
 
     return config
-
-
-class DateTimeDecoder(json.JSONDecoder):
-    """see DateTimeEncoder below"""
-
-    def __init__(self, *args, **kargs):
-        json.JSONDecoder.__init__(
-            self, object_hook=self.dict_to_object,
-            *args, **kargs
-        )
-
-    def dict_to_object(self, d):
-        if '__type__' not in d:
-            return d
-
-        type = d.pop('__type__')
-        try:
-            dateobj = dt(**d)
-            return dateobj
-        except:
-            d['__type__'] = type
-            return d
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    """ Instead of letting the default encoder convert datetime to string,
-        convert datetime objects into a dict, which can be decoded by the
-        DateTimeDecoder
-        We need this Converter to store the request in the Confirmation table
-    """
-
-    def default(self, obj):
-        if isinstance(obj, dt.datetime):
-            return {
-                '__type__': 'datetime',
-                'year': obj.year,
-                'month': obj.month,
-                'day': obj.day,
-                'hour': obj.hour,
-                'minute': obj.minute,
-                'second': obj.second,
-                'microsecond': obj.microsecond,
-            }
-        else:
-            return json.JSONEncoder.default(self, obj)
 
 
 def get_class_for_resource(models, resource):
@@ -129,7 +84,21 @@ def check_hash(password, hash):
     return False
 
 
+def token_generator(size=6, chars=string.ascii_letters + string.digits):
+    """generates a random string of elements of chars
+    :param size: length of the token
+    :param chars: list of possible chars
+    :returns: a random token
+    """
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
 def get_owner(model, _id):
+    """ will search for the owner(s) of a data-item
+    :param modeL: the SQLAlchemy-model (in models.py)
+    :param _id: The id of the item (unique for each model)
+    :returns: a list of owner-ids
+    """
     db = app.data.driver.session
     doc = db.query(model).get(_id)
     if not doc or not hasattr(model, '__owner__'):

@@ -207,7 +207,7 @@ ROLES = {
             'PUT': 1,
             'DELETE': 1
         },
-        '_forwardaddresses': {
+        'forwardaddresses': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,

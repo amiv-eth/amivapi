@@ -5,20 +5,19 @@
     Also adds hooks to validate other input
 """
 
-import datetime as dt
 import json
 
 from flask import request, current_app as app
-from flask import abort, g
+from flask import g
 from werkzeug.datastructures import FileStorage
 from imghdr import what
 
 from eve_sqlalchemy.validation import ValidatorSQL
 from eve.methods.common import get_document
 from eve.validation import SchemaError
-from eve.utils import debug_error_message, request_method
+from eve.utils import request_method
 
-from amivapi import models
+from amivapi import models, utils
 
 from datetime import datetime
 
@@ -29,6 +28,7 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_type_media(self, field, value):
         """ Enables validation for `media` data type.
+
         :param field: field name.
         :param value: field value.
         .. versionadded:: 0.3
@@ -38,11 +38,16 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_filetype(self, filetype, field, value):
         """ Validates filetype. Can validate images and pdfs
-        filetyp should be a list like ['pdf', 'jpeg', 'png']
+
         Pdf: Check if first 4 characters are '%PDF' because that marks
         a PDF
         Image: Use imghdr library function what()
+
         Cannot validate others formats.
+
+        :param filetype: List of filetypes, e.g. ['pdf', 'png']
+        :param field: field name.
+        :param value: field value.
         """
         if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
                (what(value) in filetype)):
@@ -50,8 +55,14 @@ class ValidatorAMIV(ValidatorSQL):
                         " %s" % str(filetype))
 
     def _validate_type_json_schema(self, field, value):
-        """ Enables validation for schema fields in json-Format.
-        Will check both if it is json and if it is a correct schema"""
+        """ Validates a cerberus schema saved as JSON
+
+        1.  Is it JSON?
+        2.  Is it a valid cerberus schema?
+
+        :param field: field name.
+        :param value: field value.
+        """
         try:
             json_data = json.loads(value)
         except Exception as e:
@@ -65,10 +76,14 @@ class ValidatorAMIV(ValidatorSQL):
                             "valid schema: %s" % str(e))
 
     def _validate_type_json_event_field(self, field, value):
-        """ Validates data in json format that has to correspond to the schema
-        saved in the event
-        Uses a internal validator and passes all errors to the main validator
-        (After adding the prefix: "Additional_fields: ...")
+        """ Validates data in json format with event data
+
+        1.  Is it JSON?
+        2.  Try to find event
+        3.  Validate schema and get all errors with prefix 'additional_fields:'
+
+        :param field: field name.
+        :param value: field value.
         """
         try:
             if value:
@@ -103,10 +118,42 @@ class ValidatorAMIV(ValidatorSQL):
                 for key in v.errors.keys():
                     self._error("%s: %s" % (field, key), v.errors[key])
 
+    def _validate_if_this_then(self, if_this_then, field, value):
+        """ Validates integer condition: Field exists and is > 0, then other
+        fields must exist
+
+        :param if_this_then: List of fields that are required if field > 0
+        :param field: field name.
+        :param value: field value.
+        """
+        if value > 0:
+            for item in if_this_then:
+                if item not in self.document.keys():
+                    self._error(item, "Required field.")
+
+    def _validate_later_than(self, later_than, field, value):
+        """ Validates that field is at the same time or later than a given
+        field
+
+        :param later_than: The field it will be compared to
+        :param field: field name.
+        :param value: field value.
+        """
+        if value < self.document[later_than]:
+            self._error(field, "Must be at a point in time after %s" %
+                        later_than)
+
     def _validate_future_date(self, future_date, field, value):
-        """ Enables validator for dates that need do be in the future"""
+        """ Enables validator for dates that need do be in the future
+
+        If value is just now then there will be no error
+
+        :param future_data: Boolean: Does it need to be in the future or not?
+        :param field: field name.
+        :param value: field value.
+        """
         if future_date:
-            if value <= datetime.now():
+            if value < datetime.now():
                 self._error(field, "date must be in the future.")
         else:
             if value > datetime.now():
@@ -114,21 +161,33 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_not_patchable(self, not_patchable, field, value):
         """ Custom Validator to inhibit patching of the field
-        e.g. eventsignups, userid: can be posted but not patched
+
+        e.g. eventsignups, userid: required for post, but can not be patched
+
+        :param not_patchable: Boolean, should be true
+        :param field: field name.
+        :param value: field value.
         """
         if not_patchable and (request_method() == 'PATCH'):
             self._error(field, "this field can not be changed with PATCH")
 
     def _validate_unique_combination(self, unique_combination, field, value):
-        """ Custom validation if some fields are only unique in combination,
+        """ Custom validation if some fields are only unique in combination
+
         e.g. user with id 1 can have several eventsignups for different events,
         but only 1 eventsignup for event with id 42
+
         unique_combination should be a list: The first item in the list is the
         resource. This is not pretty but necessary to make the validator work
         for different resources
-        Alle other arguments are the fields
+
         Note: Make sure that other fields actually exists (setting them to
         required etc)
+
+        :param unique_combination: list of fields, first entry must be target
+                                   resource
+        :param field: field name.
+        :param value: field value.
         """
         # Step one: Remove resource from list
         resource = unique_combination[0]
@@ -159,19 +218,29 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_signup_requirements(self, signup_possible, field, value):
         """ Validate if signup requirements are met
+
         Used for an event_id field - checks if the value "spots" is
-        not zero. In this case there is no signup
-        Furthermore checks if time is in the singup window for the event.
+        not -1. In this case there is no signup.
+
+        Furthermore checks if current time is in the singup window for the
+        event.
+
         At last check if the event requires additional fields and display error
         if they are not present
-        (Does nothing if signup_possible is set to False)
+
+        This will validate the additional fields with nothing as input to get
+        errors as if additional_fields would be in the schema
+
+        :param singup_possible: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if signup_possible:
             lookup = {'_id': value}
             event = get_document('events', False, **lookup)
 
             if event:
-                if (event['spots'] == 0):
+                if (event['spots'] == -1):
                     self._error(field, "the event with id %s has no signup" %
                                 value)
                 else:
@@ -193,10 +262,14 @@ class ValidatorAMIV(ValidatorSQL):
                                                          None)
 
     def _validate_only_anonymous(self, only_anonymous, field, valie):
-        """ Makes sure that the user is anonymous. If you use this validator,
-        ensure that there is a field 'user_id' in the same resource, e.g. by
-        setting a dependancy
-        (Does nothing if set to false
+        """ Makes sure that the user is anonymous.
+
+        If you use this validator, ensure that there is a field 'user_id' in
+        the same resource, e.g. by setting a dependancy
+
+        :param only_anonymous: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if only_anonymous:
             if not(self.document['user_id'] == -1):
@@ -204,112 +277,75 @@ class ValidatorAMIV(ValidatorSQL):
                             "users with user_id -1")
 
     def _validate_public_check(self, public_check, field, value):
-        """ Validates the following:
-        -1 only allowed if event in event_id
-        random id only allowed for the user itself or resource admins
+        """ Validates if event is public if value is -1
+
+        This is a validation rule for a user_id field.
+
+        If the signup is anonymous, the user has to be -1 and the event needs
+        to be public
+
+        The latter will be checked.
+
+        :param public check: name of field with id of event. In current state
+                             only works if set to 'event_id', but this
+                             function could be extended in the future
+        :param field: field name.
+        :param value: field value.
+
         """
-        if not public_check:
-            return
+        # Implemented like this so it could be extended for other resources in
+        # the future
+        key = public_check
+        resource = 'events'
+
+        # Anonymous user
         if value == -1:
-            lookup = {'id': self.document['event_id']}
-            event = get_document('events', False, **lookup)
-            if not(event):
-                self._error(field, "Can only be -1 for public events. Event "
-                            "with id %s can't be found." % self
-                            .document['event_id'])
+            lookup = {'id': self.document[key]}
+            item = get_document(resource, False, **lookup)
+            if not(item):
+                self._error(field, "Can only be -1 if public. %s: %s does not "
+                            "point to an existing resource" % (key, self
+                                                               .document[key]))
+            elif not(item['is_public']):
+                self._error(field, "Can only be -1 if public. %s: %s does not "
+                            "point to a public resource" % (key, self
+                                                            .document[key]))
 
-            elif not(event['is_public']):
-                self._error(field, "Can only be -1 if event is public events. "
-                            "Event with id %s is not public" % self
-                            .document['event_id'])
-        elif not(g.resource_admin or (g.logged_in_user == value)):
-            self._error(field, "Given your access rights, only your own "
-                        "user_id can be entered here")
+    def _validate_self_enroll(self, self_enroll, field, value):
+        """ Validates if the id can be used to enroll for an event
 
+        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
+            via mail) (if public has to be determined somewhere else)
+        2.  other id: Registered users can only enter their own id
+        3.  Exception are resource_admins: they can sign up others as well
 
-"""
-    Hooks to validate data before requests are performed
-    First we have generic hooks to intercept requests and call validation
-    functions, then we define those validation functions.
-"""
+        :param self_enroll: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
+        """
+        if self_enroll:
+            if not(g.resource_admin or (g.logged_in_user == value)):
+                self._error(field, "You can only enroll yourself. (%s: "
+                            "%s is yours)." % (field, g.logged_in_user))
 
-resources_with_extra_checks = ['forwardusers',
-                               'events']
+    def _validate_self_enroll_forward(self, self_enroll, field, value):
+        """ Validates if the id can be used to enroll for an forward,
+        a little more complex then for events
 
+        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
+            via mail) (if public has to be determined somewhere else)
+        2.  other id: Registered users can only enter their own id
+        3.  Exception are resource_admins: they can sign up others as well
+        4.  Forwards: The list owner can add anyone as well
 
-def pre_insert_check(resource, items):
-    """
-    general function to call the custom logic validation
-    :param resource: The resource we try to find a hook for, comes from eve
-    :param items: the request-content as a list of dicts
-    """
-    if resource in resources_with_extra_checks:
-        for doc in items:
-            # the check-functions are the actual hooks testing the requests
-            # of logical mistakes and everything else zerberus does not do
-            eval("check_%s" % resource)(doc)
-
-
-def pre_update_check(resource, updates, original):
-    """
-    general function to call the custom logic validation"""
-    if resource in resources_with_extra_checks:
-        data = original.copy()
-        data.update(updates)
-        eval("check_%s" % resource)(data)
-
-
-def pre_replace_check(resource, document, original):
-    """
-    general function to call the custom logic validation"""
-    if resource in resources_with_extra_checks:
-        eval("check_%s" % resource)(document)
-
-
-#
-# /forwardusers
-#
-
-
-def check_forwardusers(data):
-    """
-    Checks whether a user is allowed to enroll for the given forward
-    """
-    db = app.data.driver.session
-
-    forwardid = data.get('forward_id')
-    forward = db.query(models.Forward).get(forwardid)
-
-    # Users may only self enroll for public forwards
-    if (not forward.is_public and not
-            g.resource_admin and not
-            g.logged_in_user == forward.owner_id):
-        abort(403, description=debug_error_message(
-            'You are not allowed to self enroll for this forward'
-        ))
-
-#
-# /events
-#
-
-
-def check_events(data):
-    """if we have no spots specified, this meens there is no registration
-    window. Otherwise check for correct time-window."""
-    if data.get('spots', -2) >= 0:
-        if 'time_register_start' not in data or \
-                'time_register_end' not in data:
-            abort(422, description=(
-                'You need to set time_register_start and time_register_end'
-            ))
-        elif data['time_register_end'] <= data['time_register_start']:
-            abort(422, description=(
-                'time_register_start needs to be before time_register_end'
-            ))
-
-    # check for correct times
-    if data.get('time_start', dt.datetime.now()) > data.get('time_end',
-                                                            dt.datetime.max):
-        abort(422, description=(
-            'time_end needs to be after time_start'
-        ))
+        :param self_enroll: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
+        """
+        if self_enroll:
+            owners = utils.get_owner(models.Forward,
+                                     self.document['forward_id'])
+            if not(g.resource_admin or (g.logged_in_user == value) or
+                   (g.logged_in_user in owners)):
+                self._error(field, "You can only enroll yourself. (%s: "
+                            "%s is yours)." % (field, g.logged_in_user))

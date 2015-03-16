@@ -324,7 +324,7 @@ Code:
 
     """Usual login"""
     auth = {'username': user, 'password': pw}
-    r = requests.post('http://localhost:5000/sessions', data=auth)
+    r = requests.post('http://api.amiv.ethz.ch/sessions', data=auth)
     token = r.json().get('token')
     session = requests.Session()
     session.auth = (token, '')
@@ -341,7 +341,7 @@ Code:
     payload = json.dumps(data)
 
     self.session.headers['Content-Type'] = 'application/json'
-    response = self.session.post('http://localhost:5000/events',
+    response = self.session.post('http://api.amiv.ethz.ch/events',
                                  data=payload).json()
     del(self.session.headers['Content-Type']) # Header not needed anymore
 
@@ -370,21 +370,21 @@ Now extract ids to post translations
 Code:
 
     """Now add some titles"""
-    self.session.post('http://localhost:5000/translations',
+    self.session.post('http://api.amiv.ethz.ch/translations',
                       data={'localization_id': r['title_id'],
                             'language': 'de',
                             'content': 'Irgendein Event'})
-    self.session.post('http://localhost:5000/translations',
+    self.session.post('http://api.amiv.ethz.ch/translations',
                       data={'localization_id': r['title_id'],
                             'language': 'en',
                             'content': 'A random Event'})
 
     """And description"""
-    self.session.post('http://localhost:5000/translations',
+    self.session.post('http://api.amiv.ethz.ch/translations',
                       data={'localization_id': r['description_id'],
                             'language': 'de',
                             'content': 'Hier passiert was. Komm vorbei!'})
-    self.session.post('http://localhost:5000/translations',
+    self.session.post('http://api.amiv.ethz.ch/translations',
                       data={'localization_id': r['description_id'],
                             'language': 'en',
                             'content': 'Something is happening. Join us!'})
@@ -395,7 +395,7 @@ Code:
 
     self.session.headers['Accept-Language'] = 'en'
 
-    self.session.get('http://localhost:5000/events/%i' % response['id']).json()
+    self.session.get('http://api.amiv.ethz.ch/events/%i' % response['id']).json()
 
 Response:
 
@@ -442,7 +442,7 @@ Code:
 
     """Usual login"""
     auth = {'username': user, 'password': pw}
-    r = requests.post('http://localhost:5000/sessions', data=auth)
+    r = requests.post('http://api.amiv.ethz.ch/sessions', data=auth)
     token = r.json().get('token')
     session = requests.Session()
     session.auth = (token, '')
@@ -451,7 +451,7 @@ Code:
     with open('somefile.pdf', 'rb') as file:
         data = {'title': 'Some Offer'}
         files = {'pdf': file}
-        session.post('http://localhost:5000/joboffers',
+        session.post('http://api.amiv.ethz.ch/joboffers',
                      data=data, files=files)
 
 Response:
@@ -485,20 +485,20 @@ Study documents are a collection of files. Using them is simple:
 
 Next to GET operations on public data, AMIV API currently allows unregistered users in exactly two cases: Signing up for a public event or managing email-subscribtions for public email lists. In Both cases, 'is_public' of the event or forward must be True.
 
-Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request comes without login, you need to confirm yourself and your email-address with a special token.  
-After the creation of a new item with POST, the User will get an email with the Token. Your Admin might provide links in this mail to a user-friendly tool. However, here is the Workflow that always works:  
+Basically, an unregistered user can perform any GET, POST, PATCH or DELETE action on the supported resource within the usual rights. However, as the HTTP request comes without login, you need to confirm yourself and your email-address with a special token.
+After the creation of a new item with POST, the User will get an email with the Token. Your Admin might provide links in this mail to a user-friendly tool. However, here is the Workflow that always works:
 Just POST the token send to you to '/confirmations' in the following way:
 
     POST /confirmations?token=dagrfvcihk34t8xa2dasfd
 
-After this, the server knows that the given email-address is valid.  
+After this, the server knows that the given email-address is valid.
 Every further Action kann be performed as usually, but with a special Header:
 
     {
         'Token': dagrfvcihk34t8xa2dasfd
     }
 
-The API will return 403 FORBIDDEN if you did forgot to provide a token and will return 412 PRECONDITION FAILED if the provided token is not valid for the requested item. 
+The API will return 403 FORBIDDEN if you did forgot to provide a token and will return 412 PRECONDITION FAILED if the provided token is not valid for the requested item.
 
 ##Public Events
 To subscribe to a public event with an email-address you simply post to "/eventsignups":
