@@ -220,6 +220,7 @@ class SignupDataTest(util.WebTestNoAuth):
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
             is_public=False,
+            spots=10
         )
         eventid = event.id
 

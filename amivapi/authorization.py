@@ -421,3 +421,29 @@ def pre_users_patch(request, lookup):
             abort(403, description=(
                 'You are not allowed to change your ' + f
             ))
+
+
+#
+#
+# Hooks for forwardadresses: only forwars that are public are accessible
+#
+#
+def forward_public_check(items):
+    """
+    Checks whether a forward is accessible for public
+    """
+    for item in items:
+        db = app.data.driver.session
+
+        forwardid = item.get('forward_id')
+        forward = db.query(models.Forward).get(forwardid)
+
+        # Users may only self enroll for public forwards
+        if not forward:
+            abort(404, description="Forward with id %s not found" % forwardid)
+        if (not forward.is_public and not
+                g.resource_admin and not
+                g.logged_in_user == forward.owner_id):
+            abort(403, description=debug_error_message(
+                'You are not allowed to self enroll for this forward'
+            ))

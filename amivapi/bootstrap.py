@@ -95,11 +95,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_PATCH += authorization.pre_patch_permission_filter
     app.on_update += authorization.update_permission_filter
 
-    # validation
-    app.on_insert += validation.pre_insert_check
-    app.on_update += validation.pre_update_check
-    app.on_replace += validation.pre_replace_check
-
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous
     app.on_insert_forwardaddresses += confirm.\
@@ -112,6 +107,12 @@ def create_app(disable_auth=False, **kwargs):
     # users
     app.on_pre_GET_users += authorization.pre_users_get
     app.on_pre_PATCH_users += authorization.pre_users_patch
+
+    # Enrolling for email list: Authorization filters
+    app.on_insert_forwardaddresses += (authorization
+                                       .forward_public_check)
+    app.on_insert_forwardusers += (authorization
+                                   .forward_public_check)
 
     # email-management
     app.on_deleted_item_forwards += forwards.on_forward_deleted

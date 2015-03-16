@@ -66,10 +66,11 @@ def get_domain():
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    """No Patching for files and forwardaddresses, only replacing"""
+    """No Patching for files and forwardaddresses/users, only replacing"""
     domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
                                                          'DELETE']
     domain['forwardaddresses']['item_methods'] = ['GET', 'PUT', 'DELETE']
+    domain['forwardusers']['item_methods'] = ['GET', 'PUT', 'DELETE']
 
     # time_end for /events requires time_start
     domain['events']['schema']['time_end'].update({
@@ -94,7 +95,8 @@ def get_domain():
         'not_patchable': True,
         'unique_combination': ['eventsignups', 'event_id'],
         'dependencies': ['event_id'],
-        'public_check': True})
+        'public_check': 'event_id',
+        'self_enroll': True})
     domain['eventsignups']['schema']['email'].update({
         'not_patchable': True,
         'unique_combination': ['eventsignups', 'event_id'],
@@ -118,6 +120,13 @@ def get_domain():
         'type': 'json_schema'})
     domain['events']['schema']['price'].update({'min': 0})
     domain['events']['schema']['spots'].update({'min': 0})
+
+    """
+    Forward users and addresses
+    """
+    domain['forwardusers']['schema']['user_id'].update({
+        'self_enroll_forward': True,
+        'dependencies': ['forward_id']})
 
     """
     Filetype needs to be specified as media, maybe this can be automated

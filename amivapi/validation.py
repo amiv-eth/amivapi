@@ -16,9 +16,9 @@ from imghdr import what
 from eve_sqlalchemy.validation import ValidatorSQL
 from eve.methods.common import get_document
 from eve.validation import SchemaError
-from eve.utils import debug_error_message, request_method
+from eve.utils import request_method
 
-from amivapi import models
+from amivapi import models, utils
 
 from datetime import datetime
 
@@ -203,28 +203,59 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "This field can only be set for anonymous "
                             "users with user_id -1")
 
-    def _validate_public_check(self, public_check, field, value):
+    def _validate_public_check(self, key, field, value):
         """ Validates the following:
-        -1 only allowed if event in event_id
-        random id only allowed for the user itself or resource admins
+        First, set the field to event_id or forward_id
+        -1 only allowed if public
         """
-        if not public_check:
-            return
-        if value == -1:
-            lookup = {'id': self.document['event_id']}
-            event = get_document('events', False, **lookup)
-            if not(event):
-                self._error(field, "Can only be -1 for public events. Event "
-                            "with id %s can't be found." % self
-                            .document['event_id'])
+        # This is implemented like this because we only have two resources and
+        # its a quite easy implementation without much logic that could fail
+        if key == 'event_id':
+            resource = 'events'
+        elif key == 'forward_id':
+            resource = 'forwards'
 
-            elif not(event['is_public']):
-                self._error(field, "Can only be -1 if event is public events. "
-                            "Event with id %s is not public" % self
-                            .document['event_id'])
-        elif not(g.resource_admin or (g.logged_in_user == value)):
-            self._error(field, "Given your access rights, only your own "
-                        "user_id can be entered here")
+        # Anonymous user
+        if value == -1:
+            lookup = {'id': self.document[key]}
+            item = get_document(resource, False, **lookup)
+            if not(item):
+                self._error(field, "Can only be -1 if public. %s: %s does not "
+                            "point to an existing resource" % (key, self
+                                                               .document[key]))
+            elif not(item['is_public']):
+                self._error(field, "Can only be -1 if public. %s: %s does not "
+                            "point to a public resource" % (key, self
+                                                            .document[key]))
+
+    def _validate_self_enroll(self, self_enroll, field, value):
+        """ If set to true, this validates the userid:
+        -   -1 is a public id, anybody can use this (to e.g. sign up a friend
+            via mail) (if public has to be determined somewhere else)
+        -   other id: Registered users can only enter their own id,
+            resource owners others as well
+        Does nothing if set to false
+        """
+        if self_enroll:
+            if not(g.resource_admin or (g.logged_in_user == value)):
+                self._error(field, "You can only enroll yourself. (%s: "
+                            "%s is yours)." % (field, g.logged_in_user))
+
+    def _validate_self_enroll_forward(self, self_enroll, field, value):
+        """ If set to true, this validates the userid:
+        -   -1 is a public id, anybody can use this (to e.g. sign up a friend
+            via mail) (if public has to be determined somewhere else)
+        -   other id: Registered users can only enter their own id,
+            resource owners others as well
+        Does nothing if set to false
+        """
+        if self_enroll:
+            owners = utils.get_owner(models.Forward,
+                                     self.document['forward_id'])
+            if not(g.resource_admin or (g.logged_in_user == value) or
+                   (g.logged_in_user in owners)):
+                self._error(field, "You can only enroll yourself. (%s: "
+                            "%s is yours)." % (field, g.logged_in_user))
 
 
 """
@@ -233,8 +264,7 @@ class ValidatorAMIV(ValidatorSQL):
     functions, then we define those validation functions.
 """
 
-resources_with_extra_checks = ['forwardusers',
-                               'events']
+resources_with_extra_checks = ['events']
 
 
 def pre_insert_check(resource, items):
@@ -264,29 +294,6 @@ def pre_replace_check(resource, document, original):
     general function to call the custom logic validation"""
     if resource in resources_with_extra_checks:
         eval("check_%s" % resource)(document)
-
-
-#
-# /forwardusers
-#
-
-
-def check_forwardusers(data):
-    """
-    Checks whether a user is allowed to enroll for the given forward
-    """
-    db = app.data.driver.session
-
-    forwardid = data.get('forward_id')
-    forward = db.query(models.Forward).get(forwardid)
-
-    # Users may only self enroll for public forwards
-    if (not forward.is_public and not
-            g.resource_admin and not
-            g.logged_in_user == forward.owner_id):
-        abort(403, description=debug_error_message(
-            'You are not allowed to self enroll for this forward'
-        ))
 
 #
 # /events
