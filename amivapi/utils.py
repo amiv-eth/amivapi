@@ -96,13 +96,13 @@ def create_new_hash(password):
     so it can not be used to check hashes!
 
     :param password: The password to hash
-    :returns: String containing the salt and the hashed password
+    :returns: Bytearray containing the salt and the hashed password
     """
     salt = urandom(16)
     password = bytearray(password, 'utf-8')
     return (
         b64encode(salt) +
-        '$' +
+        b'$' +
         b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
     )
 

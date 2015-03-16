@@ -2,7 +2,7 @@ from eve_sqlalchemy.decorators import registerSchema
 from inspect import getmembers, isclass
 
 from amivapi import models
-from settings import ROLES
+from amivapi.settings import ROLES
 
 
 def get_domain():

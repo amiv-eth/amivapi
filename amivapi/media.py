@@ -9,6 +9,7 @@
 """
 
 from os import path, remove
+from io import FileIO
 import errno
 
 from werkzeug import secure_filename
@@ -17,19 +18,19 @@ from flask import abort, Blueprint, send_from_directory, current_app as app
 from amivapi.authorization import common_authorization
 
 
-class ExtFile(file):
+class ExtFile(FileIO):
     """This Class extends the normal file object
 
     Includes filename (basename of the file), size and content_url
     """
     def __init__(self, filename, app):
-        file.__init__(self, filename)
+        FileIO.__init__(self, filename)
         self.filename = path.basename(self.name)
         self.size = path.getsize(filename)
         self.content_url = '%s/%s' % ('/storage', self.filename)
 
     def close(self):
-        file.close(self)
+        FileIO.close(self)
 
 
 class FileSystemStorage(object):

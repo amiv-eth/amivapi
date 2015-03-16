@@ -5,11 +5,10 @@ from eve.render import send_response
 from eve.methods.common import payload
 from eve.utils import config
 from amivapi.authorization import common_authorization
-from amivapi import models
+from amivapi import models, utils
 
 import string
 import random
-import utils
 
 confirmprint = Blueprint('confirm', __name__)
 documentation = {}

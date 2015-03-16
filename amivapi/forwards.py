@@ -28,7 +28,7 @@ def add_address_to_list(forward_id, address):
     try:
         with open(get_file_for_forward(forward_id), 'a') as f:
             f.write(address + '\n')
-    except IOError, e:
+    except IOError as e:
         app.logger.error(str(e) + "Can not open forward file! "
                          + "Please check permissions!")
         abort(500)
@@ -46,7 +46,7 @@ def remove_address_from_list(forward_id, address):
             lines = [x for x in f.readlines() if x != address + '\n']
         with open(path, 'w') as f:
             f.write(''.join(lines))
-    except IOError, e:
+    except IOError as e:
         app.logger.error(str(e) + "Can not remove forward " + address
                          + " from " + path + "! It seems the forward database"
                          + " is inconsistent!")
@@ -61,7 +61,7 @@ def remove_list(forward):
     path = config.FORWARD_DIR + '/.forward+' + forward['address']
     try:
         os.remove(path)
-    except OSError, e:
+    except OSError as e:
         app.logger.error(str(e) + "Can not remove forward "
                          + forward['address'] + "! It seems the forward "
                          "database is inconsistent!")

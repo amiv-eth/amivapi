@@ -15,8 +15,7 @@ from eve.render import send_response
 
 from sqlalchemy.inspection import inspect
 
-import models
-import utils
+from amivapi import models, utils
 
 
 def common_authorization(resource, method):

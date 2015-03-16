@@ -24,8 +24,8 @@ from eve.utils import debug_error_message, config
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from utils import create_new_hash, check_hash
-import models
+from amivapi.utils import create_new_hash, check_hash
+from amivapi import models
 
 
 class TokenAuth(TokenAuth):
