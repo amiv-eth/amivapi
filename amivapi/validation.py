@@ -28,6 +28,7 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_type_media(self, field, value):
         """ Enables validation for `media` data type.
+
         :param field: field name.
         :param value: field value.
         .. versionadded:: 0.3
@@ -37,11 +38,16 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_filetype(self, filetype, field, value):
         """ Validates filetype. Can validate images and pdfs
-        filetyp should be a list like ['pdf', 'jpeg', 'png']
+
         Pdf: Check if first 4 characters are '%PDF' because that marks
         a PDF
         Image: Use imghdr library function what()
+
         Cannot validate others formats.
+
+        :param filetype: List of filetypes, e.g. ['pdf', 'png']
+        :param field: field name.
+        :param value: field value.
         """
         if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
                (what(value) in filetype)):
@@ -49,8 +55,14 @@ class ValidatorAMIV(ValidatorSQL):
                         " %s" % str(filetype))
 
     def _validate_type_json_schema(self, field, value):
-        """ Enables validation for schema fields in json-Format.
-        Will check both if it is json and if it is a correct schema"""
+        """ Validates a cerberus schema saved as JSON
+
+        1.  Is it JSON?
+        2.  Is it a valid cerberus schema?
+
+        :param field: field name.
+        :param value: field value.
+        """
         try:
             json_data = json.loads(value)
         except Exception as e:
@@ -64,10 +76,14 @@ class ValidatorAMIV(ValidatorSQL):
                             "valid schema: %s" % str(e))
 
     def _validate_type_json_event_field(self, field, value):
-        """ Validates data in json format that has to correspond to the schema
-        saved in the event
-        Uses a internal validator and passes all errors to the main validator
-        (After adding the prefix: "Additional_fields: ...")
+        """ Validates data in json format with event data
+
+        1.  Is it JSON?
+        2.  Try to find event
+        3.  Validate schema and get all errors with prefix 'additional_fields:'
+
+        :param field: field name.
+        :param value: field value.
         """
         try:
             if value:
@@ -102,10 +118,42 @@ class ValidatorAMIV(ValidatorSQL):
                 for key in v.errors.keys():
                     self._error("%s: %s" % (field, key), v.errors[key])
 
+    def _validate_if_this_then(self, if_this_then, field, value):
+        """ Validates integer condition: Field exists and is > 0, then other
+        fields must exist
+
+        :param if_this_then: List of fields that are required if field > 0
+        :param field: field name.
+        :param value: field value.
+        """
+        if value > 0:
+            for item in if_this_then:
+                if item not in self.document.keys():
+                    self._error(item, "Required field.")
+
+    def _validate_later_than(self, later_than, field, value):
+        """ Validates that field is at the same time or later than a given
+        field
+
+        :param later_than: The field it will be compared to
+        :param field: field name.
+        :param value: field value.
+        """
+        if value < self.document[later_than]:
+            self._error(field, "Must be at a point in time after %s" %
+                        later_than)
+
     def _validate_future_date(self, future_date, field, value):
-        """ Enables validator for dates that need do be in the future"""
+        """ Enables validator for dates that need do be in the future
+
+        If value is just now then there will be no error
+
+        :param future_data: Boolean: Does it need to be in the future or not?
+        :param field: field name.
+        :param value: field value.
+        """
         if future_date:
-            if value <= datetime.now():
+            if value < datetime.now():
                 self._error(field, "date must be in the future.")
         else:
             if value > datetime.now():
@@ -113,21 +161,33 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_not_patchable(self, not_patchable, field, value):
         """ Custom Validator to inhibit patching of the field
-        e.g. eventsignups, userid: can be posted but not patched
+
+        e.g. eventsignups, userid: required for post, but can not be patched
+
+        :param not_patchable: Boolean, should be true
+        :param field: field name.
+        :param value: field value.
         """
         if not_patchable and (request_method() == 'PATCH'):
             self._error(field, "this field can not be changed with PATCH")
 
     def _validate_unique_combination(self, unique_combination, field, value):
-        """ Custom validation if some fields are only unique in combination,
+        """ Custom validation if some fields are only unique in combination
+
         e.g. user with id 1 can have several eventsignups for different events,
         but only 1 eventsignup for event with id 42
+
         unique_combination should be a list: The first item in the list is the
         resource. This is not pretty but necessary to make the validator work
         for different resources
-        Alle other arguments are the fields
+
         Note: Make sure that other fields actually exists (setting them to
         required etc)
+
+        :param unique_combination: list of fields, first entry must be target
+                                   resource
+        :param field: field name.
+        :param value: field value.
         """
         # Step one: Remove resource from list
         resource = unique_combination[0]
@@ -158,19 +218,29 @@ class ValidatorAMIV(ValidatorSQL):
 
     def _validate_signup_requirements(self, signup_possible, field, value):
         """ Validate if signup requirements are met
+
         Used for an event_id field - checks if the value "spots" is
-        not zero. In this case there is no signup
-        Furthermore checks if time is in the singup window for the event.
+        not -1. In this case there is no signup.
+
+        Furthermore checks if current time is in the singup window for the
+        event.
+
         At last check if the event requires additional fields and display error
         if they are not present
-        (Does nothing if signup_possible is set to False)
+
+        This will validate the additional fields with nothing as input to get
+        errors as if additional_fields would be in the schema
+
+        :param singup_possible: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if signup_possible:
             lookup = {'_id': value}
             event = get_document('events', False, **lookup)
 
             if event:
-                if (event['spots'] == 0):
+                if (event['spots'] == -1):
                     self._error(field, "the event with id %s has no signup" %
                                 value)
                 else:
@@ -192,27 +262,41 @@ class ValidatorAMIV(ValidatorSQL):
                                                          None)
 
     def _validate_only_anonymous(self, only_anonymous, field, valie):
-        """ Makes sure that the user is anonymous. If you use this validator,
-        ensure that there is a field 'user_id' in the same resource, e.g. by
-        setting a dependancy
-        (Does nothing if set to false
+        """ Makes sure that the user is anonymous.
+
+        If you use this validator, ensure that there is a field 'user_id' in
+        the same resource, e.g. by setting a dependancy
+
+        :param only_anonymous: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if only_anonymous:
             if not(self.document['user_id'] == -1):
                 self._error(field, "This field can only be set for anonymous "
                             "users with user_id -1")
 
-    def _validate_public_check(self, key, field, value):
-        """ Validates the following:
-        First, set the field to event_id or forward_id
-        -1 only allowed if public
+    def _validate_public_check(self, public_check, field, value):
+        """ Validates if event is public if value is -1
+
+        This is a validation rule for a user_id field.
+
+        If the signup is anonymous, the user has to be -1 and the event needs
+        to be public
+
+        The latter will be checked.
+
+        :param public check: name of field with id of event. In current state
+                             only works if set to 'event_id', but this
+                             function could be extended in the future
+        :param field: field name.
+        :param value: field value.
+
         """
-        # This is implemented like this because we only have two resources and
-        # its a quite easy implementation without much logic that could fail
-        if key == 'event_id':
-            resource = 'events'
-        elif key == 'forward_id':
-            resource = 'forwards'
+        # Implemented like this so it could be extended for other resources in
+        # the future
+        key = public_check
+        resource = 'events'
 
         # Anonymous user
         if value == -1:
@@ -228,12 +312,16 @@ class ValidatorAMIV(ValidatorSQL):
                                                             .document[key]))
 
     def _validate_self_enroll(self, self_enroll, field, value):
-        """ If set to true, this validates the userid:
-        -   -1 is a public id, anybody can use this (to e.g. sign up a friend
+        """ Validates if the id can be used to enroll for an event
+
+        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
             via mail) (if public has to be determined somewhere else)
-        -   other id: Registered users can only enter their own id,
-            resource owners others as well
-        Does nothing if set to false
+        2.  other id: Registered users can only enter their own id
+        3.  Exception are resource_admins: they can sign up others as well
+
+        :param self_enroll: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if self_enroll:
             if not(g.resource_admin or (g.logged_in_user == value)):
@@ -241,12 +329,18 @@ class ValidatorAMIV(ValidatorSQL):
                             "%s is yours)." % (field, g.logged_in_user))
 
     def _validate_self_enroll_forward(self, self_enroll, field, value):
-        """ If set to true, this validates the userid:
-        -   -1 is a public id, anybody can use this (to e.g. sign up a friend
+        """ Validates if the id can be used to enroll for an forward,
+        a little more complex then for events
+
+        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
             via mail) (if public has to be determined somewhere else)
-        -   other id: Registered users can only enter their own id,
-            resource owners others as well
-        Does nothing if set to false
+        2.  other id: Registered users can only enter their own id
+        3.  Exception are resource_admins: they can sign up others as well
+        4.  Forwards: The list owner can add anyone as well
+
+        :param self_enroll: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
         """
         if self_enroll:
             owners = utils.get_owner(models.Forward,
@@ -255,20 +349,3 @@ class ValidatorAMIV(ValidatorSQL):
                    (g.logged_in_user in owners)):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
-
-    def _validate_if_this_then(self, if_this_than, field, value):
-        """ Validates conditions: Field exists and is not 0 or '', then
-        the given fields must also exist (and only then!)
-        """
-        if not(value == 0 or value == ''):
-            for item in if_this_than:
-                if item not in self.document.keys():
-                    self._error(item, "Required field.")
-
-    def _validate_later_than(self, later_than, field, value):
-        """ Validates that field is at the same time or later than a given
-        field
-        """
-        if value < self.document[later_than]:
-            self._error(field, "Must be at a point in time after %s" %
-                        later_than)

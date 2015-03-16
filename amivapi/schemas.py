@@ -120,13 +120,13 @@ def get_domain():
         'type': 'json_schema'})
     domain['events']['schema']['price'].update({'min': 0})
     domain['events']['schema']['spots'].update({
-        'min': 0,
+        'min': -1,
         'if_this_then': ['time_register_start', 'time_register_end']})
     domain['events']['schema']['time_register_end'].update({
-        'dependancies': ['time_register_start'],
+        'dependencies': ['time_register_start'],
         'later_than': 'time_register_start'})
     domain['events']['schema']['time_end'].update({
-        'dependancies': ['time_start'],
+        'dependencies': ['time_start'],
         'later_than': 'time_start'})
 
     """
