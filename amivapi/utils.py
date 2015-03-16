@@ -130,6 +130,11 @@ def check_hash(password, hash):
 
 
 def get_owner(model, _id):
+    """ will search for the owner(s) of a data-item
+    :param modeL: the SQLAlchemy-model (in models.py)
+    :param _id: The id of the item (unique for each model)
+    :returns: a list of owner-ids
+    """
     db = app.data.driver.session
     doc = db.query(model).get(_id)
     if not doc or not hasattr(model, '__owner__'):
