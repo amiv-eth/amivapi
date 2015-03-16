@@ -94,3 +94,105 @@ class EventTest(util.WebTestNoAuth):
             'time_register_start': start,
             'time_register_end': end
         }, status_code=422)
+
+    def test_spots_and_time(self):
+        """ This test will create an event with signup. This means registration
+        times are required
+        """
+        time_1 = datetime.today().strftime(DATE_FORMAT)
+        time_2 = (datetime.today() + timedelta(days=21)).strftime(DATE_FORMAT)
+        time_3 = (datetime.today() + timedelta(days=42)).strftime(DATE_FORMAT)
+
+        # Post without registration timee
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'is_public': True,
+            'spots': 10,
+        }, status_code=422)
+
+        # Post only with one time
+
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_1
+        }, status_code=422)
+
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_end': time_2
+        }, status_code=422)
+
+        # Post correctly
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_1,
+            'time_register_end': time_2
+        }, status_code=201)
+
+    def test_swapped_time(self):
+        """ Tests that end times have to be later or equal start times
+        """
+        time_1 = datetime.today().strftime(DATE_FORMAT)
+        time_2 = (datetime.today() + timedelta(days=21)).strftime(DATE_FORMAT)
+        time_3 = (datetime.today() + timedelta(days=42)).strftime(DATE_FORMAT)
+        time_4 = (datetime.today() + timedelta(days=63)).strftime(DATE_FORMAT)
+
+        # End before start
+        self.api.post("/events", data={
+            'time_start': time_4,
+            'time_end': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_2,
+            'time_register_end': time_1
+        }, status_code=422)
+
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'time_end': time_4,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_2,
+            'time_register_end': time_1
+        }, status_code=422)
+
+        self.api.post("/events", data={
+            'time_start': time_4,
+            'time_end': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_1,
+            'time_register_end': time_2
+        }, status_code=422)
+
+        # Now correct
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'time_end': time_4,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_1,
+            'time_register_end': time_2
+        }, status_code=201)
+
+        # Test incomplete
+        self.api.post("/events", data={
+            'time_end': time_4,
+            'is_public': True,
+            'spots': 10,
+            'time_register_start': time_1,
+            'time_register_end': time_2
+        }, status_code=422)
+
+        self.api.post("/events", data={
+            'time_start': time_3,
+            'is_public': True,
+            'spots': 10,
+            'time_register_end': time_2
+        }, status_code=422)

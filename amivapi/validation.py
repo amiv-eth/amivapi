@@ -5,11 +5,10 @@
     Also adds hooks to validate other input
 """
 
-import datetime as dt
 import json
 
 from flask import request, current_app as app
-from flask import abort, g
+from flask import g
 from werkzeug.datastructures import FileStorage
 from imghdr import what
 
@@ -257,66 +256,19 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
 
+    def _validate_if_this_then(self, if_this_than, field, value):
+        """ Validates conditions: Field exists and is not 0 or '', then
+        the given fields must also exist (and only then!)
+        """
+        if not(value == 0 or value == ''):
+            for item in if_this_than:
+                if item not in self.document.keys():
+                    self._error(item, "Required field.")
 
-"""
-    Hooks to validate data before requests are performed
-    First we have generic hooks to intercept requests and call validation
-    functions, then we define those validation functions.
-"""
-
-resources_with_extra_checks = ['events']
-
-
-def pre_insert_check(resource, items):
-    """
-    general function to call the custom logic validation
-    :param resource: The resource we try to find a hook for, comes from eve
-    :param items: the request-content as a list of dicts
-    """
-    if resource in resources_with_extra_checks:
-        for doc in items:
-            # the check-functions are the actual hooks testing the requests
-            # of logical mistakes and everything else zerberus does not do
-            eval("check_%s" % resource)(doc)
-
-
-def pre_update_check(resource, updates, original):
-    """
-    general function to call the custom logic validation"""
-    if resource in resources_with_extra_checks:
-        data = original.copy()
-        data.update(updates)
-        eval("check_%s" % resource)(data)
-
-
-def pre_replace_check(resource, document, original):
-    """
-    general function to call the custom logic validation"""
-    if resource in resources_with_extra_checks:
-        eval("check_%s" % resource)(document)
-
-#
-# /events
-#
-
-
-def check_events(data):
-    """if we have no spots specified, this meens there is no registration
-    window. Otherwise check for correct time-window."""
-    if data.get('spots', -2) >= 0:
-        if 'time_register_start' not in data or \
-                'time_register_end' not in data:
-            abort(422, description=(
-                'You need to set time_register_start and time_register_end'
-            ))
-        elif data['time_register_end'] <= data['time_register_start']:
-            abort(422, description=(
-                'time_register_start needs to be before time_register_end'
-            ))
-
-    # check for correct times
-    if data.get('time_start', dt.datetime.now()) > data.get('time_end',
-                                                            dt.datetime.max):
-        abort(422, description=(
-            'time_end needs to be after time_start'
-        ))
+    def _validate_later_than(self, later_than, field, value):
+        """ Validates that field is at the same time or later than a given
+        field
+        """
+        if value < self.document[later_than]:
+            self._error(field, "Must be at a point in time after %s" %
+                        later_than)

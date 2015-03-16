@@ -119,7 +119,15 @@ def get_domain():
     domain['events']['schema']['additional_fields'].update({
         'type': 'json_schema'})
     domain['events']['schema']['price'].update({'min': 0})
-    domain['events']['schema']['spots'].update({'min': 0})
+    domain['events']['schema']['spots'].update({
+        'min': 0,
+        'if_this_then': ['time_register_start', 'time_register_end']})
+    domain['events']['schema']['time_register_end'].update({
+        'dependancies': ['time_register_start'],
+        'later_than': 'time_register_start'})
+    domain['events']['schema']['time_end'].update({
+        'dependancies': ['time_start'],
+        'later_than': 'time_start'})
 
     """
     Forward users and addresses
