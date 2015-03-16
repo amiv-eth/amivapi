@@ -3,7 +3,7 @@ from flask import Blueprint, request, abort, g
 from eve.methods.post import post
 from eve.render import send_response
 from eve.methods.common import payload
-from eve.utils import config, debug_error_message
+from eve.utils import config
 from amivapi.authorization import common_authorization
 from amivapi import models
 
@@ -230,17 +230,19 @@ def token_authorization(resource, original):
     model = utils.get_class_for_resource(models, resource)
     is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
     if is_owner:
-        print("Access to %s/%d granted for owner %d" % (resource,
-                                                        original['id'],
-                                                        g.logged_in_user))
+        print("Access to %s/%d granted for owner %d without token" % (
+            resource, original['id'], g.logged_in_user))
         return
-    if token is None and not g.resource_admin:
-        abort(412, description=debug_error_message(
-            "Please provide a valid token."
-        ))
+    if g.resource_admin:
+        print("Access to %s/%d granted for admin %d without token" % (
+            resource, original['id'], g.logged_in_user))
+        return
+    if token is None:
+        # consistent with _etag
+        abort(403, description="Please provide a valid token.")
     if token != original['_token']:
-        print("jop")
-        abort(401, description="Token for external user not valid.")
+        # consistent with _etag
+        abort(412, description="Token for external user not valid.")
 
 
 # Remove fields _email_unreg and _token

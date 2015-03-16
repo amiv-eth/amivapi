@@ -356,21 +356,24 @@ class ForwardAuthTest(util.WebTest):
         forward_address = self.new_forward_address(forward_id=forward.id,
                                                    email=email)
 
+        # try to delete without token - 403
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         headers={'If-Match': forward_address._etag},
-                        status_code=401)
+                        status_code=403)
 
+        # try to delete, but you are not allowed without confirmation-token
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=registered_session.token,
                         headers={'If-Match': forward_address._etag},
-                        status_code=412
-                        )
+                        status_code=403)
 
+        # delete as list_owner is allowed
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=list_owner_session.token,
                         headers={'If-Match': forward_address._etag},
                         status_code=204)
 
+        # delete with the token send by email is also allowed
         forward_address = self.new_forward_address(forward_id=forward.id,
                                                    email=email)
         self.api.delete("/forwardaddresses/%i" % forward_address.id,
@@ -378,7 +381,8 @@ class ForwardAuthTest(util.WebTest):
                                  'Token': forward_address._token},
                         status_code=204)
 
-        forward_address = self.new_forward_address(address=email,
+        # delete as an admin works always
+        forward_address = self.new_forward_address(email=email,
                                                    forward_id=forward.id)
 
         self.api.delete("/forwardaddresses/%i" % forward_address.id,

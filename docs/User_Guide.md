@@ -51,6 +51,7 @@ The status code returned by the API are the standard [HTTP status codes](https:/
  * 401 - Please log in
  * 403 - Logged in but not allowed (This is not for you)
  * 404 - No content (This can also mean you could retrive something here, but no object is visible to you because your account is that of a peasant)
+ * 412 - The etag or confirmation-token you provieded is wrong
  * 422 - Semantic error (Your data does not make sense, e.g. dates in the past which should not be)
 
  * 500 - Generic server error
@@ -289,6 +290,8 @@ This will return the third page of 10 items.
 To manipulate an existing object you have to supply the If-Match header to prevent race conditions.
 When you use GET on an element you will be provided with an _etag field. The etag is a string which changes whenever the object is manipulated somehow. When issuing a PUT, PATCH or DELETE query you must supply the etag in the If-Match header to ensure that no one else changed the object in between.
 
+If no etag is provided, you will recieve 403 FORBIDDEN. If the etag is wrong, the api returns 412 PRECONDITION FAILED.
+
 ### Example: Use PATCH to change a password
 
     GET /users/myuser (+Authorization header)
@@ -494,6 +497,8 @@ Every further Action kann be performed as usually, but with a special Header:
     {
         'Token': dagrfvcihk34t8xa2dasfd
     }
+
+The API will return 403 FORBIDDEN if you did forgot to provide a token and will return 412 PRECONDITION FAILED if the provided token is not valid for the requested item. 
 
 ##Public Events
 To subscribe to a public event with an email-address you simply post to "/eventsignups":
