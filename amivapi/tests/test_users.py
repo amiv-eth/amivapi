@@ -17,7 +17,6 @@ class UserResourceTest(util.WebTestNoAuth):
 
         api_user = (u for u in users.json['_items'] if u['username']
                     == user.username).next()
-        print api_user
         for col in models.User.__table__.c:
             if col.key == 'password':
                 continue
