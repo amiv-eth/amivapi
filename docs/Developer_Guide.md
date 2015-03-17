@@ -204,7 +204,8 @@ owner fields, then those will be used to determine the results. This is the
 case for example when a registered user without an admin role performs a GET
 request on the ForwardUser resource. He can perform that query, however he is
 supposed to only see entries which forward to him or where he is the
-listowner.
+listowner.  
+
 This is solved by two functions. When extracting data we need to create
 additional lookup filters. Those are inserted by the
 apply_lookup_filters() function which is called by the hooks below it.
@@ -217,8 +218,12 @@ the will_be_owner() function which is used by the hooks as needed.
 However to achieve this the function needs to figure out what would happen if
 the request was executed. This is currently done by the resolve_future_field()
 function, which tries to resolve relationships using SQLAlchemy meta
-attributes for the data which is not yet inserted.
+attributes for the data which is not yet inserted.   
 If this checks out ok, the hooks return, if not the request is aborted.
+
+To check ownership inside your own function for an existing object, you can use get_owner(resource, _id) from utils. It will return a list of user-ids who are owners of the item. A common owner check looks like this:
+
+    if g.logged_in_user is in utils.get_owner(<resource>, <_id>):
 
 ## API Keys
 
@@ -231,18 +236,17 @@ For implementation see common_authorization() and TokenAuth.check_auth()
 
 # Files
 
-For files we wrote our own MediaStorage class as used by Eve by extending the
-template (https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py).
+For files we wrote our own MediaStorage class as used by Eve by [extending the
+template](https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py) .
 The files need a folder which is created in the process of "create_config".
 
 Maybe in future releases of Eve there will be an official implementation of
 file system storage. Maybe it would be useful to use this instead of our
 implementation instead in this case.
 
-How Eve uses the MediaStorage Class can be found here:
-http://python-eve.org/features.html#file-storage
+How Eve uses the MediaStorage Class can be found [here](http://python-eve.org/features.html#file-storage)
 
-To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"
+To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"  
 contains the class "ExtFile" which contains the file as well as the additional
 information Eve needs.
 
@@ -266,47 +270,44 @@ can be used to provide translated content.
 
 This is solved using two new resources:
 
-1. translationmappings
+1. translationmappings   
+This resource is internal (see schemas.py), which means that it can only
+be accessed by eve internally.  
+To ensure that this works with eve and our modifications (like _author
+fields) we are not using SQLAlchemy relationship configurations to create
+this field.  
+Instead the hook "insert_localization_ids" is called whenever events and
+joboffers are created. It posts internally to languagemappings to create
+the ids which are then added to the data of post.  
+The relationship in models.py ensures that all entries in the mapping
+table are deleted with the event/joboffer
 
-    This resource is internal (see schemas.py), which means that it can only
-    be accessed by eve internally.
-    To ensure that this works with eve and our modifications (like _author
-    fields) we are not using SQLAlchemy relationship configurations to create
-    this field.
-    Instead the hook "insert_localization_ids" is called whenever events and
-    joboffers are created. It posts internally to languagemappings to create
-    the ids which are then added to the data of post.
-
-    The relationship in models.py ensures that all entries in the mapping
-    table are deleted with the event/joboffer
-
-2. translations
-
-    This resource contains the actual translated data and works pretty
-    straightforward:
-    Given a localization id entries can be added
+2. translations  
+This resource contains the actual translated data and works pretty
+straightforward:  
+Given a localization id entries can be added
 
 How is the content added when fetching the resource?
 
-    The insert_localized_fields hook check the language relevant fields and
-    has to query the database to retrieve the language content for the given
-    localization id.
+The insert_localized_fields hook check the language relevant fields and
+has to query the database to retrieve the language content for the given
+localization id.
 
-    Then it uses flasks request.accept_languages.best_match() function to get
-    the best fitting option. (it compares the Accept Language header to the
-    given languages)
+Then it uses flasks request.accept_languages.best_match() function to get
+the best fitting option. (it compares the Accept Language header to the
+given languages)
 
-    When none is matching it tries to return content in default language as
-    specified in settings.py (Idea behind this: There will nearly always be
-    german content). If this it not available, it uses an empty string)
+When none is matching it tries to return content in default language as
+specified in settings.py (Idea behind this: There will nearly always be
+german content). If this it not available, it uses an empty string)
 
-    The field (title or description) is then added to the response
+The field (title or description) is then added to the response
 
 
 ## Note: Testing
 
 Both events and joboffers have the exact language fields, but job_offers have
-less other required fields
+less other required fields.  
 Therefore testing is done with job_offers - if there are any problems with
 language fields in events, ensure that the tests work AND that all language
 fields in events are configured EXACLY like in joboffers
@@ -339,5 +340,4 @@ cron.py.
 Luckily the cerberus validator is easily extensible, so we could implement many
 custom rules. Those are found in validator.py and are not very complex.
 
-More information on cerberus and its merits can be found here:
-https://cerberus.readthedocs.org/en/latest/
+More information on cerberus and its merits can be found in the [Cerberus Documentation](https://cerberus.readthedocs.org/en/latest/)
