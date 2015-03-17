@@ -234,26 +234,6 @@ settings for that key in the config.
 
 For implementation see common_authorization() and TokenAuth.check_auth()
 
-# Files
-
-For files we wrote our own MediaStorage class as used by Eve by [extending the
-template](https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py) .
-The files need a folder which is created in the process of "create_config".
-
-Maybe in future releases of Eve there will be an official implementation of
-file system storage. Maybe it would be useful to use this instead of our
-implementation instead in this case.
-
-How Eve uses the MediaStorage Class can be found [here](http://python-eve.org/features.html#file-storage)
-
-To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"  
-contains the class "ExtFile" which contains the file as well as the additional
-information Eve needs.
-
-As EXTENDED_MEDIA_INFO we use file name, size and a URL to the file.
-The URL can be accessed over a custom endpoint specified in "file_endpoint.py",
-using flask methods.
-
 # Localization
 
 The api includes support for several languages in four fields which contain
@@ -327,12 +307,25 @@ For every language field the following is necessary:
 - Removing id from the schema to prohibit manually setting it (schemas.py)
 
 
-# Cron
+# Files
 
-There are some tasks which are done on a regular basis. This includes removing
-expired permissions and unused sessions. Users who's permissions expire should
-be warned prior to this by mail. This is all done by a cronjob. The cronjob runs
-cron.py.
+For files we wrote our own MediaStorage class as used by Eve by [extending the
+template](https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py) .
+The files need a folder which is created in the process of "create_config".
+
+Maybe in future releases of Eve there will be an official implementation of
+file system storage. Maybe it would be useful to use this instead of our
+implementation instead in this case.
+
+How Eve uses the MediaStorage Class can be found [here](http://python-eve.org/features.html#file-storage)
+
+To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"  
+contains the class "ExtFile" which contains the file as well as the additional
+information Eve needs.
+
+As EXTENDED_MEDIA_INFO we use file name, size and a URL to the file.
+The URL can be accessed over a custom endpoint specified in "file_endpoint.py",
+using flask methods.
 
 
 # Validation
@@ -341,3 +334,10 @@ Luckily the cerberus validator is easily extensible, so we could implement many
 custom rules. Those are found in validator.py and are not very complex.
 
 More information on cerberus and its merits can be found in the [Cerberus Documentation](https://cerberus.readthedocs.org/en/latest/)
+
+# Cron
+
+There are some tasks which are done on a regular basis. This includes removing
+expired permissions and unused sessions. Users who's permissions expire should
+be warned prior to this by mail. This is all done by a cronjob. The cronjob runs
+cron.py.
