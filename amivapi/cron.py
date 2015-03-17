@@ -5,14 +5,12 @@ once per day
 
 
 from datetime import datetime, timedelta
-import smtplib
-from email.mime.text import MIMEText
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from amivapi.models import Permission, Session
-from amivapi.utils import get_config
+from amivapi.utils import get_config, mail
 
 
 def delete_expired_sessions(db, config):
@@ -45,25 +43,13 @@ def delete_expired_permissions(db, config):
         Permission.expiry_date >= datetime.now() + timedelta(days=13))
 
     for entry in query:
-        msg = MIMEText(config['PERMISSION_EXPIRED_WARNMAIL_TEXT'] %
-                       dict(name=entry.user.firstname, role=entry.role,
-                            admin_mail=config['ROOT_MAIL']))
-        msg['Subject'] = (
-            config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT']
-            % dict(role=entry.role))
-        msg['From'] = config['ROOT_MAIL']
-        msg['To'] = entry.user.email
+        text = (config['PERMISSION_EXPIRED_WARNMAIL_TEXT']
+                % dict(name=entry.user.firstname, role=entry.role,
+                       admin_mail=config['ROOT_MAIL']))
+        subject = (config['PERMISSION_EXPIRED_WARNMAIL_SUBJECT']
+                   % dict(role=entry.role))
 
-        try:
-            s = smtplib.SMTP(config['SMTP_SERVER'])
-            try:
-                s.sendmail(msg['From'], [msg['To']], msg.as_string())
-            except smtplib.SMTPRecipientsRefused, e:
-                print("Failed to send mail to %s about expiring "
-                      "permissions: %s" % (entry.user.email, e))
-            s.quit()
-        except smtplib.SMTPException, e:
-            print("Error trying to send mails: %s" % e)
+        mail(config['ROOT_MAIL'], [entry.user.email], subject, text)
 
     # delete permissions which are expired
 

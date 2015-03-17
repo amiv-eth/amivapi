@@ -4,6 +4,8 @@ from os import urandom
 import re
 import string
 import random
+import smtplib
+from email.mime.text import MIMEText
 
 from flask import current_app as app
 from flask import abort
@@ -115,3 +117,29 @@ def get_owner(model, _id):
                     " Please contact it@amiv.ethz.ch"))
         ret.append(doc)
     return ret
+
+
+def mail(sender, to, subject, text):
+    """ Send a mail to a list of recipients
+
+    :param from: From address
+    :param to: List of recipient addresses
+    :param subject: Subject string
+    :param text: Mail content
+    """
+
+    msg = MIMEText(text)
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = ';'.join(to)
+
+    try:
+        s = smtplib.SMTP(config.SMTP_SERVER)
+        try:
+            s.sendmail(msg['From'], to, msg.as_string())
+        except smtplib.SMTPRecipientsRefused as e:
+            print("Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
+                  % (sender , str(to), subject, text))
+        s.quit()
+    except smtplib.SMTPException as e:
+        print("SMTP error trying to send mails: %s" % e)
