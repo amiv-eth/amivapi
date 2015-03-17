@@ -1,8 +1,6 @@
 #amivapi
 
-.. image:: https://secure.travis-ci.org/amiv-eth/amivapi.png?branch=master
-        :target: https://secure.travis-ci.org/amiv-eth/amivapi
-
+[![Build status](https://secure.travis-ci.org/amiv-eth/amivapi.png?branch=master)](https://secure.travis-ci.org/amiv-eth/amivapi)
 
 AMIV API is a Python-EVE based REST interface to manage members, events, mail forwards, job offers and study documents for a student organisation. It was created by AMIV an der ETH to restructure the existing IT infrastructure. If you are not from AMIV and think this is useful feel free to fork and modify.
 
