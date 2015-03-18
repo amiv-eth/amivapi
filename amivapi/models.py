@@ -101,16 +101,17 @@ class User(Base):
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
     birthday = Column(Date)
-    legi = Column(CHAR(8))
-    rfid = Column(CHAR(6))
-    nethz = Column(String(30))
+    legi = Column(CHAR(8), unique=True)
+    rfid = Column(CHAR(6), unique=True)
+    nethz = Column(String(30), unique=True)
     department = Column(Enum("itet", "mavt"))
     phone = Column(String(20))
-    ldapAddress = Column(Unicode(200))
+    ldap_address = Column(Unicode(200))
     gender = Column(Enum("male", "female"), nullable=False)
     email = Column(CHAR(100), nullable=False, unique=True)
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
                         nullable=False, default="none", server_default="none")
+    send_no_mail = Column(Boolean, default=False, nullable=False)
 
     # relationships
     permissions = relationship("Permission", foreign_keys="Permission.user_id",
