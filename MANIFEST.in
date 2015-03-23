@@ -1,0 +1,6 @@
+include AUTHORS LICENSE
+recursive-include tests *
+recursive-include docs *
+recursive-exclude tests *.pyc
+recursive-exclude tests *.pyo
+recursive-exclude * __pycache__
