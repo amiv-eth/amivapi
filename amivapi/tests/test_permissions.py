@@ -65,6 +65,9 @@ class PermissionsTest(util.WebTest):
         patchdata = {
             "rfid": "777777"
         }
+        patchdata_2 = {
+            "rfid": "888888"
+        }
         self.api.patch("/users/%i" % owner.id, data=patchdata,
                        headers={'If-Match': owner._etag}, status_code=401)
 
@@ -76,7 +79,7 @@ class PermissionsTest(util.WebTest):
                        token=owner_session.token,
                        headers={'If-Match': owner._etag}, status_code=200)
 
-        self.api.patch("/users/%i" % owner.id, data=patchdata,
+        self.api.patch("/users/%i" % owner.id, data=patchdata_2,
                        token=admin_session.token,
                        headers={'If-Match': owner._etag}, status_code=200)
 
