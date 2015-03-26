@@ -20,3 +20,22 @@ class APIKeyTest(util.WebTest):
 
         # Can we see the root user?
         self.assertTrue(util.find_by_pair(items, "id", 0) is not None)
+
+    def test_unauthorized_with_apikey(self):
+        apikey = u"dsfsjkdfsdhkfhsdkfjhsdfjh"
+        self.app.config['APIKEYS'][apikey] = {
+            'name': 'Testkey',
+            'users': {'GET': 1},
+        }
+
+        data = {
+            'username': 'test',
+            'password': 'test',
+            'firstname': 'test',
+            'lastname': 'test',
+            'gender': 'female',
+            'membership': 'none',
+            'email': 'test@example.com',
+        }
+
+        self.api.post("/users", token=apikey, data=data, status_code=403)

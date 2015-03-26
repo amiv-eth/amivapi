@@ -98,7 +98,7 @@ def common_authorization(resource, method):
                                  % (config.APIKEYS[g.apikey]['name'],
                                     resource, method))
                 return True
-        except:
+        except KeyError:
             pass
         abort(403)
 
