@@ -5,7 +5,7 @@ env:
   - TOX_ENV=py34
   - TOX_ENV=pypy
   - TOX_ENV=flake8
-install: pip install tox 
+install: pip install tox coveralls
 script: 
   - tox -e $TOX_ENV
 before_script:
@@ -15,3 +15,5 @@ before_script:
 branches:
   only:
     - master
+after_success:
+  coveralls
