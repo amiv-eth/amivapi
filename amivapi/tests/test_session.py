@@ -41,4 +41,4 @@ class SessionResourceTest(util.WebTest):
                         headers={'If-Match': session._etag}, status_code=204)
 
         # Check if still logged in
-        self.api.get("/sessions", session.token, status_code=401)
+        self.api.get("/sessions", token=session.token, status_code=401)
