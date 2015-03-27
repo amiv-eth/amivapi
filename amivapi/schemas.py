@@ -61,7 +61,7 @@ def get_domain():
     # Permissions: Only allow existing roles and expiry date must be in the
     # future
     domain['permissions']['schema']['role'].update(
-        {'allowed': ROLES.keys()})
+        {'allowed': list(ROLES.keys())})
     domain['permissions']['schema']['expiry_date'].update(
         {'future_date': True})
 

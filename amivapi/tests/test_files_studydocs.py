@@ -21,12 +21,12 @@ class FileTest(util.WebTestNoAuth):
 
         h = {'content-type': 'multipart/form-data'}
 
-        filename_post = "post.txt"
+        filename_post = u"post.txt"
         content_post = "random content"
 
         # POST
         data_post = {'study_doc_id': studyid,
-                     'name': 'Randomfile',
+                     'name': u'Randomfile',
                      'data': (StringIO(content_post), filename_post)
                      }
 
@@ -38,11 +38,11 @@ class FileTest(util.WebTestNoAuth):
 
         # PATCH
         # Should return a 405 METHOD NOT ALLOWED since patching is not intended
-        filename_patch = "patch.txt"
+        filename_patch = u"patch.txt"
         content_patch = "more random content"
 
         data_patch = {'study_doc_id': studyid,
-                      'name': 'Better Randomfile',
+                      'name': u'Better Randomfile',
                       'data': (StringIO(content_patch), filename_patch)
                       }
 
@@ -52,10 +52,10 @@ class FileTest(util.WebTestNoAuth):
                        status_code=405).json
 
         # PUT
-        filename_put = "put.txt"
+        filename_put = u"put.txt"
         content_put = "even more random content"
         data_put = {'study_doc_id': studyid,
-                    'name': 'Best Randomfile ever',
+                    'name': u'Best Randomfile ever',
                     'data': (StringIO(content_put), filename_put)
                     }
 
@@ -87,15 +87,15 @@ class FileTest(util.WebTestNoAuth):
         header = {'content-type': 'multipart/form-data'}
 
         data = {'study_doc_id': studyid,
-                'name': 'Randomfile',
-                'data': (StringIO('Content'), 'samename.txt')
+                'name': u'Randomfile',
+                'data': (StringIO('Content'), u'samename.txt')
                 }
 
         r1 = self.api.post('/files', data=data, headers=header).json
 
         data = {'study_doc_id': studyid,
-                'name': 'Randomfile',
-                'data': (StringIO('Different content'), 'samename.txt')
+                'name': u'Randomfile',
+                'data': (StringIO('Different content'), u'samename.txt')
                 }
 
         r2 = self.api.post('/files', data=data, headers=header).json
@@ -113,8 +113,8 @@ class FileTest(util.WebTestNoAuth):
         header = {'content-type': 'multipart/form-data'}
 
         # Without ID
-        data = {'name': 'Randomfile',
-                'data': (StringIO('Content'), 'samename.txt')
+        data = {'name': u'Randomfile',
+                'data': (StringIO('Content'), u'samename.txt')
                 }
 
         self.api.post('/files', data=data, headers=header, status_code=422)
@@ -122,7 +122,7 @@ class FileTest(util.WebTestNoAuth):
         # Wrong ID
         data = {'study_doc_id': 42,
                 'name': 'Randomfile',
-                'data': (StringIO('Content'), 'samename.txt')
+                'data': (StringIO('Content'), u'samename.txt')
                 }
 
         self.api.post('/files', data=data, headers=header, status_code=422)
@@ -148,17 +148,17 @@ class FileTest(util.WebTestNoAuth):
 
         header = {'content-type': 'multipart/form-data'}
 
-        data = {'pdf': (StringIO('Not a pdf'), 'file.pdf')}
+        data = {'pdf': (StringIO('Not a pdf'), u'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
-        data = {'logo': (StringIO('Not a jpeg'), 'file.jpg')}
+        data = {'logo': (StringIO('Not a jpeg'), u'file.jpg')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
-        data = {'logo': (StringIO('Not a png'), 'file.png')}
+        data = {'logo': (StringIO('Not a png'), u'file.png')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
         # Upload something that at least wants to be a PDF
-        data = {'pdf': (StringIO(r'%PDF 1.5% maybe a pdf..'), 'file.pdf')}
+        data = {'pdf': (StringIO(r'%PDF 1.5% maybe a pdf..'), u'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
         # Create Images as jpeg and png which are allowed
@@ -167,14 +167,14 @@ class FileTest(util.WebTestNoAuth):
         image.save(image_file, 'jpeg')
         image_file.seek(0)
 
-        data = {'logo': (image_file, 'file.jpeg')}
+        data = {'logo': (image_file, u'file.jpeg')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
         image_file = StringIO()
         image.save(image_file, 'png')
         image_file.seek(0)
 
-        data = {'logo': (image_file, 'file.png')}
+        data = {'logo': (image_file, u'file.png')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
     def assert_media_stored(self, filename, content):

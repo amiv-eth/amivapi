@@ -231,7 +231,10 @@ def apply_lookup_owner_filters(lookup, resource):
     # Every condition is, that the field is equal to the user id
     conditions = map(lambda x: x + "==" + str(g.logged_in_user), fields)
     # Concatenate all conditions with or
-    condition_string = reduce(lambda x, y: x + " or " + y, conditions)
+    condition_string = ""
+    for cond in conditions:
+        condition_string += cond + " or "
+    condition_string = condition_string[:-4]  # remove last or
 
     lookup[condition_string] = ""
 

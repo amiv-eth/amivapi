@@ -58,7 +58,7 @@ def create_new_hash(password):
     so it can not be used to check hashes!
 
     :param password: The password to hash
-    :returns: Bytearray containing the salt and the hashed password
+    :returns: Unicode string containing the salt and the hashed password
     """
     salt = urandom(16)
     password = bytearray(password, 'utf-8')
@@ -66,7 +66,7 @@ def create_new_hash(password):
         b64encode(salt) +
         b'$' +
         b64encode(hashlib.pbkdf2_hmac('SHA256', password, salt, 100000))
-    )
+    ).decode('utf_8')
 
 
 def check_hash(password, hash):
@@ -77,7 +77,7 @@ def check_hash(password, hash):
     :param hash: The string containing hash and salt to check against
     :returns: True if hash was generated with the same password, else False
     """
-    parts = hash.split('$')
+    parts = hash.encode('utf_8').split(b'$')
     salt = b64decode(parts[0])
     hashed_password = b64decode(parts[1])
 

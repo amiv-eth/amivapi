@@ -54,7 +54,7 @@ class TestClient(FlaskClient):
 
             kwargs['headers'].update({
                 'Authorization': 'Basic ' + b64encode(
-                    kwargs['token'] + ':')
+                    kwargs['token'].encode('utf_8') + b':').decode('utf_8')
             })
 
             kwargs.pop('token', None)
@@ -81,7 +81,7 @@ class TestResponse(Response):
     """Custom response to ease JSON handling."""
     @property
     def json(self):
-        return json.loads(self.data)
+        return json.loads(self.data.decode())
 
 
 class WebTest(unittest.TestCase):
@@ -229,7 +229,7 @@ class WebTest(unittest.TestCase):
         if 'user_id' not in kwargs:
             kwargs['user_id'] = 0
         with self.app.app_context():
-            kwargs['token'] = b64encode(os.urandom(256))
+            kwargs['token'] = b64encode(os.urandom(256)).decode('utf_8')
         return kwargs
 
     @create_object(models.Event)
