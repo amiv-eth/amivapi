@@ -17,7 +17,8 @@ class EventTest(util.WebTestNoAuth):
     def test_additional_fields(self):
         """ Test correct validation of 'additional_fields'"""
         start = datetime.today() + timedelta(days=2)
-        # Not JSON
+
+        # Invalid JSON
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
             'is_public': True,
@@ -25,10 +26,21 @@ class EventTest(util.WebTestNoAuth):
             'spots': 10,
             'time_register_start': datetime.now().strftime(DATE_FORMAT),
             'time_register_end': start.strftime(DATE_FORMAT),
-            'additional_fields': ['This', 'is', 'not', 'JSON']
+            'additional_fields': "{[{Nope, not today{"
         }, status_code=422)
 
-        # Now JSON, but not a correct schema
+        # Now JSON, but no JSON object
+        self.api.post("/events", data={
+            'time_start': start.strftime(DATE_FORMAT),
+            'is_public': True,
+            'price': 0,
+            'spots': 10,
+            'time_register_start': datetime.now().strftime(DATE_FORMAT),
+            'time_register_end': start.strftime(DATE_FORMAT),
+            'additional_fields': json.dumps(['I', 'am', 'a', 'list'])
+        }, status_code=422)
+
+        # Now JSON Object, but not a correct schema
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
             'is_public': True,
