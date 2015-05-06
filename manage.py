@@ -43,7 +43,7 @@ config_path = join(settings.ROOT_DIR, "config.cfg")
 def save_config(name, **config):
     config_dir = dirname(name)
     if not exists(config_dir):
-        mkdir(config_dir, 0700)
+        mkdir(config_dir, 0o700)
 
     with codecs.open(name, "w", encoding="utf-8") as f:
         f.write('# Automatically generated on %s\n\n'
@@ -280,10 +280,10 @@ def create_config(force=False,
     config['FORWARD_DIR'] = abspath(expanduser(forward_dir))
 
     if not exists(file_dir):
-        mkdir(file_dir, 0700)
+        mkdir(file_dir, 0o700)
 
     if not exists(config['FORWARD_DIR']):
-        mkdir(config['FORWARD_DIR'], 0700)
+        mkdir(config['FORWARD_DIR'], 0o700)
 
     config['APIKEYS'] = {}
 
