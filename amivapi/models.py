@@ -14,7 +14,6 @@ from sqlalchemy import (
     String,
     Integer,
     ForeignKey,
-    Date,
     DateTime,
     Enum,
     Boolean,
@@ -100,13 +99,11 @@ class User(Base):
     password = Column(CHAR(100))  # base64 encoded hash data
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
-    birthday = Column(Date)
     legi = Column(CHAR(8), unique=True)
     rfid = Column(CHAR(6), unique=True)
     nethz = Column(String(30), unique=True)
     department = Column(Enum("itet", "mavt"))
     phone = Column(String(20))
-    ldap_address = Column(Unicode(200))
     gender = Column(Enum("male", "female"), nullable=False)
     email = Column(CHAR(100), nullable=False, unique=True)
     membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
