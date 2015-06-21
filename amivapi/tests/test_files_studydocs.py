@@ -3,7 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-from StringIO import StringIO  # Used to create file on the go
+from io import BytesIO  # Simulate a file
 from amivapi.tests import util
 from os.path import exists, join
 from amivapi import models
@@ -22,12 +22,12 @@ class FileTest(util.WebTestNoAuth):
         h = {'content-type': 'multipart/form-data'}
 
         filename_post = u"post.txt"
-        content_post = "random content"
+        content_post = b"random content"
 
         # POST
         data_post = {'study_doc_id': studyid,
                      'name': u'Randomfile',
-                     'data': (StringIO(content_post), filename_post)
+                     'data': (BytesIO(content_post), filename_post)
                      }
 
         file_post = self.api.post('/files', data=data_post, headers=h,
@@ -39,11 +39,11 @@ class FileTest(util.WebTestNoAuth):
         # PATCH
         # Should return a 405 METHOD NOT ALLOWED since patching is not intended
         filename_patch = u"patch.txt"
-        content_patch = "more random content"
+        content_patch = b"more random content"
 
         data_patch = {'study_doc_id': studyid,
                       'name': u'Better Randomfile',
-                      'data': (StringIO(content_patch), filename_patch)
+                      'data': (BytesIO(content_patch), filename_patch)
                       }
 
         h["If-Match"] = file_post['_etag']
@@ -53,10 +53,10 @@ class FileTest(util.WebTestNoAuth):
 
         # PUT
         filename_put = u"put.txt"
-        content_put = "even more random content"
+        content_put = b"even more random content"
         data_put = {'study_doc_id': studyid,
                     'name': u'Best Randomfile ever',
-                    'data': (StringIO(content_put), filename_put)
+                    'data': (BytesIO(content_put), filename_put)
                     }
 
         # Todo: File patch/put:
@@ -88,14 +88,14 @@ class FileTest(util.WebTestNoAuth):
 
         data = {'study_doc_id': studyid,
                 'name': u'Randomfile',
-                'data': (StringIO('Content'), u'samename.txt')
+                'data': (BytesIO(b'Content'), u'samename.txt')
                 }
 
         r1 = self.api.post('/files', data=data, headers=header).json
 
         data = {'study_doc_id': studyid,
                 'name': u'Randomfile',
-                'data': (StringIO('Different content'), u'samename.txt')
+                'data': (BytesIO(b'Different content'), u'samename.txt')
                 }
 
         r2 = self.api.post('/files', data=data, headers=header).json
@@ -114,7 +114,7 @@ class FileTest(util.WebTestNoAuth):
 
         # Without ID
         data = {'name': u'Randomfile',
-                'data': (StringIO('Content'), u'samename.txt')
+                'data': (BytesIO(b'Content'), u'samename.txt')
                 }
 
         self.api.post('/files', data=data, headers=header, status_code=422)
@@ -122,7 +122,7 @@ class FileTest(util.WebTestNoAuth):
         # Wrong ID
         data = {'study_doc_id': 42,
                 'name': 'Randomfile',
-                'data': (StringIO('Content'), u'samename.txt')
+                'data': (BytesIO(b'Content'), u'samename.txt')
                 }
 
         self.api.post('/files', data=data, headers=header, status_code=422)
@@ -148,29 +148,29 @@ class FileTest(util.WebTestNoAuth):
 
         header = {'content-type': 'multipart/form-data'}
 
-        data = {'pdf': (StringIO('Not a pdf'), u'file.pdf')}
+        data = {'pdf': (BytesIO(b'Not a pdf'), u'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
-        data = {'logo': (StringIO('Not a jpeg'), u'file.jpg')}
+        data = {'logo': (BytesIO(b'Not a jpeg'), u'file.jpg')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
-        data = {'logo': (StringIO('Not a png'), u'file.png')}
+        data = {'logo': (BytesIO(b'Not a png'), u'file.png')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 
         # Upload something that at least wants to be a PDF
-        data = {'pdf': (StringIO(r'%PDF 1.5% maybe a pdf..'), u'file.pdf')}
+        data = {'pdf': (BytesIO(r'%PDF 1.5% maybe a pdf..'), u'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
         # Create Images as jpeg and png which are allowed
         image = Image.new('RGBA', size=(50, 50), color=(256, 0, 0))
-        image_file = StringIO()
+        image_file = BytesIO()
         image.save(image_file, 'jpeg')
         image_file.seek(0)
 
         data = {'logo': (image_file, u'file.jpeg')}
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
-        image_file = StringIO()
+        image_file = BytesIO()
         image.save(image_file, 'png')
         image_file.seek(0)
 
