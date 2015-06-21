@@ -16,7 +16,8 @@ class IsolationTest(util.WebTestNoAuth):
 
     def test_a(self):
         """Adding data to the database works."""
-        self.assertEquals(self.db.identity_map, {})
+        # Check that there is no previous data
+        self.assertFalse(self.db.identity_map)
 
         session = models.Session(user_id=0,
                                  token="test",
@@ -42,7 +43,7 @@ class IsolationTest(util.WebTestNoAuth):
     def test_b(self):
         """No data from test_a has survived."""
         # The session is empty again, and the user has not been persisted.
-        self.assertEquals(self.db.identity_map, {})
+        self.assertFalse(self.db.identity_map)
         sessions = self.db.query(models.Session).all()
         self.assertEquals(len(sessions), 0)
 
