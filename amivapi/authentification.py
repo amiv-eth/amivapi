@@ -86,6 +86,26 @@ class TokenAuth(TokenAuth):
 authentification = Blueprint('authentification', __name__)
 
 
+def _token_response(user_id):
+    # Everything is alright, create token for user
+    token = b64encode(urandom(256)).decode('utf_8')
+
+    # Make sure token is unique
+    while app.data.driver.session.query(models.Session).filter_by(
+            token=token).count() != 0:
+        token = b64encode(urandom(256)).decode('utf_8')
+
+    response = post_internal(
+        'sessions',
+        {
+            'user_id': user_id,
+            'token': token
+        }
+    )
+
+    return response
+
+
 @authentification.route('/sessions', methods=['POST'])
 def process_login():
     """ Login
@@ -93,8 +113,11 @@ def process_login():
     token is created and used to register a session in the database, which is
     sent back to the user.
 
-    If the user is not found we try to import the user via LDAP, if he is found
-    we update his data
+    First of all we will try to authenticate the user with LDAP (if enabled).
+    If this succeeds we update or create (if not yet in db) the user data
+
+    If LDAP auth fails and the user is in the db, we will compare the received
+    pw with the pw in the db.
 
     :returns: Flask.Response object
     """
@@ -106,32 +129,44 @@ def process_login():
         abort(422, description=debug_error_message(
             "Please provide the password."))
 
+    # Query user first
     user = app.data.driver.session.query(models.User).filter_by(
-        username=p_data['username']).all()
+        username=p_data['username']).first()
 
-    if(len(user) == 1):
+    error = ""
 
-        if not check_hash(p_data['password'], user[0].password):
-            error = "Wrong login: Password does not match!"
+    # PHASE 1: LDAP
+    # If LDAP is enabled, try to authenticate the user
+    # If this is successful, create/update user data
+    if config.ENABLE_LDAP:  # To LDAP or not to LDAP?
+        if app.ldap_connector.authenticate(
+                p_data['username'], p_data['password']):
+            # LDAP success, now get data
+
+            # Create or update user
+
+            # Successful login and db update with ldap, send response
+            # TODO: using root for now, replace with actual user id
+            return send_response('sessions', _token_response(0))
+        else:
+            error += "LDAP authentication failed, "  # Prove additional info
+    else:
+        error += "LDAP authentication deactivated; "  # Prove additional info
+
+    # PHASE 2: database
+    # If LDAP fails or is not accessible, try to find user in database
+    if user:
+        if check_hash(p_data['password'], user.password):
+            # Sucessful login with db, send response
+            return send_response('sessions', _token_response(user.id))
+        else:
+            error += "Login with db failed: Password does not match!"
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
 
-        token = b64encode(urandom(256)).decode('utf_8')
-        # Make sure token is unique
-        while app.data.driver.session.query(models.Session).filter_by(
-                token=token).count() != 0:
-            token = b64encode(urandom(256)).decode('utf_8')
-
-        response = post_internal(
-            'sessions',
-            {
-                'user_id': user[0].id,
-                'token': token
-            }
-        )
-        return send_response('sessions', response)
-
-    error = "Wrong login: User not found!"
+    # PHASE 3: Abort if everything else fails
+    # LDAP is unsuccessful (deactivated/wrong credentials) and user not found
+    error += "Login with db failed: User not found!"
 
     app.logger.debug(error)
     abort(401, description=debug_error_message(error))
