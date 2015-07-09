@@ -148,3 +148,44 @@ def mail(sender, to, subject, text):
         s.quit()
     except smtplib.SMTPException as e:
         print("SMTP error trying to send mails: %s" % e)
+
+
+def filter_ldap_data(data):
+    """ Utility to filter ldap data. It will take all fields releant for
+    a user update and map them to the correct fields as used by our api.
+
+    Important note: The email adress will not be updated via LDAP and is
+                    therefore not part of the result
+
+    :param data: One single item from LDAP (i.e. data for one student)
+    :returns: A dict with data as needed by our API, containing:
+              firstname,
+              lastname,
+              nethz,
+              legi,
+              gender,
+              department,
+              membership.
+              It does NOT contain username, password, email and RFID
+    """
+    res = {}
+    res['nethz'] = data['cn'][0]
+    res['legi'] = data['swissEduPersonMatriculationNumber'][0]
+    res['firstname'] = data['givenName'][0]
+    res['lastname'] = data['sn'][0]
+    gendermap = {'1': "male", '2': "female"}
+    res['gender'] = gendermap[data['swissEduPersonGender'][0]]
+
+    if ('D-ITET' in data['ou']):
+        res['department'] = "itet"
+    elif ('D-MAVT' in data['ou']):
+        res['department'] = "mavt"
+    else:
+        res['department'] = "other"
+
+    if ('VSETH Mitglied' in data['ou']) and (res['department'] is not "other"):
+        res['membership'] = "regular"
+    else:
+        res['membership'] = "none"
+
+    return res

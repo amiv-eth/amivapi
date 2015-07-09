@@ -183,6 +183,9 @@ def apikeys_delete():
 @manager.option("--root-mail", dest="root_mail")
 @manager.option("--smtp", dest="smtp_server")
 @manager.option("--forward-dir", dest="forward_dir")
+@manager.option("--enable-ldap", dest="enable_ldap")
+@manager.option("--ldap-user", dest="ldap_user")
+@manager.option("--ldap-pass", dest="ldap_pass")
 def create_config(force=False,
                   debug=None,
                   db_type=None,
@@ -194,7 +197,11 @@ def create_config(force=False,
                   file_dir=None,
                   root_mail=None,
                   smtp_server=None,
-                  forward_dir=None):
+                  forward_dir=None,
+                  enable_ldap=False,
+                  ldap_user=None,
+                  ldap_pass=None
+                  ):
     """Creates a new configuration.
 
     The config is stored in ROOT/config.cfg
@@ -258,6 +265,7 @@ def create_config(force=False,
     config['TESTS_IN_DB'] = tests_in_db
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
+    # Filestorage
     if not file_dir:
         file_dir = abspath(expanduser(prompt("Path to file storage folder",
                                              default=join(settings.ROOT_DIR,
@@ -274,6 +282,7 @@ def create_config(force=False,
                              default='localhost')
     config['SMTP_SERVER'] = smtp_server
 
+    # Mailforwardstorage
     if not forward_dir:
         forward_dir = prompt("Directory where forwards are stored",
                              default=join(settings.ROOT_DIR, "forwards"))
@@ -285,6 +294,20 @@ def create_config(force=False,
     if not exists(config['FORWARD_DIR']):
         mkdir(config['FORWARD_DIR'], 0o700)
 
+    # LDAP
+    if not enable_ldap:
+        enable_ldap = prompt_bool(
+            "Use eth ldap for auth? (Only accessible in eth-network/VPN!)")
+    if not ldap_user:
+        ldap_user = prompt("LDAP username")
+    if not ldap_pass:
+        ldap_pass = prompt("LDAP password")
+
+    config['ENABLE_LDAP'] = enable_ldap
+    config['LDAP_USER'] = ldap_user
+    config['LDAP_PASS'] = ldap_pass
+
+    # APIKEYS
     config['APIKEYS'] = {}
 
     # Write everything to file

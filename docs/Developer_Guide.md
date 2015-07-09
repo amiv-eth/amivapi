@@ -57,7 +57,7 @@ The tests will create their own database. If you configure a MySQL Server you wi
 they will create temporary databases on the fly in temporary files. Note that even if they run on a MySQL server they will create their own database, so you need
 to have the permissions for CREATE DATABASE.
 
-## Running the tests
+## Unittests
 
 To run the tests you need to install tox:
 
@@ -75,6 +75,25 @@ To run only some tests specify them in the following way(substitute your test cl
 
     tox -- amivapi.tests.forwards
 
+## Integration tests
+
+We have currently one "integration" test for LDAP. Since we have no "dummy" user for LDAP, you have to test it with your own credentials.
+
+You need to install nosetests:
+
+    pip install nose
+
+Next you need to set some environment variables, since nose does not like command line arguments.
+Example for windows:
+
+    $env:ldap_test_user= "YOURUSERNAMEHERE"
+    $env:ldap_test_pass= "YOURPASSWORDHERE"
+
+Now you can run the test, make sure to show stdout with '-s'
+
+    nosetests -s .\amivapi\tests\ldap_integration.py
+
+Important: Since the test can't know your user data, you have to check the printout if the data imported by ldap is correct.
 
 ## Debugging server
 

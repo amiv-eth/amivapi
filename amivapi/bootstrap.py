@@ -74,7 +74,7 @@ def create_app(disable_auth=False, **kwargs):
     # Create LDAP connector
     if config['ENABLE_LDAP']:
         app.ldap_connector = ldap.AuthenticatedLdap(config['LDAP_USER'],
-                                                    config['LDAP_PW'])
+                                                    config['LDAP_PASS'])
 
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")

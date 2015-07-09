@@ -27,9 +27,10 @@ from eve.methods.post import post_internal
 from eve.render import send_response
 from eve.utils import debug_error_message, config
 
+from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi.utils import create_new_hash, check_hash
+from amivapi.utils import create_new_hash, check_hash, filter_ldap_data
 from amivapi import models
 
 
@@ -129,10 +130,6 @@ def process_login():
         abort(422, description=debug_error_message(
             "Please provide the password."))
 
-    # Query user first
-    user = app.data.driver.session.query(models.User).filter_by(
-        username=p_data['username']).first()
-
     error = ""
 
     # PHASE 1: LDAP
@@ -142,12 +139,59 @@ def process_login():
         if app.ldap_connector.authenticate(
                 p_data['username'], p_data['password']):
             # LDAP success, now get data
+            # Query user by nethz field
+            has_user_nethz = app.data.driver.session.query(exists().where(
+                models.User.nethz == p_data['username']
+            )).scalar()
+
+            # Result will be a list, but since we search for the unique uid,
+            # it will have only one entry anyways
+            raw_ldap_data = app.ldap_connector.search(
+                "(uid=%s)" % p_data['username'])[0]
+
+            ldap_data = filter_ldap_data(raw_ldap_data)
 
             # Create or update user
+            if has_user_nethz:
+                # Can't be done like this bcause of hooks preventing it
+                # If they are in the validator, it could be turned off and this
+                # might be a cleaner, more "high level" solution.
+                # updated_user = app.patch_internal('users/%s' % user.id,
+                #                                 ldap_data)[0]  # 0 is data
 
-            # Successful login and db update with ldap, send response
-            # TODO: using root for now, replace with actual user id
-            return send_response('sessions', _token_response(0))
+                #
+
+                user = app.data.driver.session.query(models.User).filter_by(
+                    nethz=p_data['username'])
+
+                user.update(ldap_data, synchronize_session=False)
+
+                user_id = user.one().id
+
+                return send_response('sessions', _token_response(user_id))
+            else:
+                # Create new user
+
+                # Default username will equal nethz
+                username = ldap_data['nethz']
+
+                # Make sure username doesn't exist already
+                i = 0
+                while (app.data.driver.session.query(models.User)
+                        .filter_by(username=username).count() != 0):
+                    i += 1
+                    username = "%s_%i" % (username, i)
+
+                ldap_data['username'] = username
+
+                # Set Mail now
+                ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
+
+                new_user = post_internal('users', ldap_data)[0]  # 0 is data
+
+                user_id = new_user['id']
+
+                return send_response('sessions', _token_response(user_id))
         else:
             error += "LDAP authentication failed, "  # Prove additional info
     else:
@@ -155,7 +199,15 @@ def process_login():
 
     # PHASE 2: database
     # If LDAP fails or is not accessible, try to find user in database
-    if user:
+    # Query user by username now
+    has_user_username = app.data.driver.session.query(exists().where(
+        models.User.username == p_data['username']
+    )).scalar()
+
+    if has_user_username:
+        user = app.data.driver.session.query(models.User).filter_by(
+            username=p_data['username']).one()
+
         if check_hash(p_data['password'], user.password):
             # Sucessful login with db, send response
             return send_response('sessions', _token_response(user.id))

@@ -102,7 +102,7 @@ class User(Base):
     legi = Column(CHAR(8), unique=True)
     rfid = Column(CHAR(6), unique=True)
     nethz = Column(String(30), unique=True)
-    department = Column(Enum("itet", "mavt"))
+    department = Column(Enum("itet", "mavt", "other"))
     phone = Column(String(20))
     gender = Column(Enum("male", "female"), nullable=False)
     email = Column(CHAR(100), nullable=False, unique=True)
