@@ -153,18 +153,17 @@ def process_login():
 
             # Create or update user
             if has_user_nethz:
-                # Can't be done like this bcause of hooks preventing it
-                # If they are in the validator, it could be turned off and this
-                # might be a cleaner, more "high level" solution.
-                # updated_user = app.patch_internal('users/%s' % user.id,
-                #                                 ldap_data)[0]  # 0 is data
-
-                #
-
                 user = app.data.driver.session.query(models.User).filter_by(
                     nethz=p_data['username'])
 
-                user.update(ldap_data, synchronize_session=False)
+                # Membership status will only be upgraded automatically
+                # If current Membership is not none ignore the ldap result
+                if user.one().membership is not None:
+                    ldap_data.pop('membership')
+
+                user.update(ldap_data)
+
+                app.data.driver.session.commit()
 
                 user_id = user.one().id
 
