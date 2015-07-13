@@ -11,6 +11,7 @@ import string
 import random
 import smtplib
 from email.mime.text import MIMEText
+from datetime import datetime as dt
 
 from flask import current_app as app
 from flask import abort
@@ -154,11 +155,14 @@ def filter_ldap_data(data):
     """ Utility to filter ldap data. It will take all fields releant for
     a user update and map them to the correct fields as used by our api.
 
+    Also sets the _synchronized field to utcnow
+
     Important note: The email adress will not be updated via LDAP and is
                     therefore not part of the result
 
     :param data: One single item from LDAP (i.e. data for one student)
     :returns: A dict with data as needed by our API, containing:
+              _synchronized
               firstname,
               lastname,
               nethz,
@@ -187,5 +191,8 @@ def filter_ldap_data(data):
         res['membership'] = "regular"
     else:
         res['membership'] = "none"
+
+    # Set sycchronized field
+    res['_synchronized'] = dt.utcnow()
 
     return res

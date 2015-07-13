@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from amivapi.models import Permission, Session
-from amivapi.utils import get_config, mail
+from amivapi.models import Permission, Session, User
+from amivapi.utils import get_config, mail, filter_ldap_data
 
 
 def delete_expired_sessions(db, config):
@@ -65,6 +65,63 @@ def delete_expired_permissions(db, config):
     for entry in query:
         db.delete(entry)
 
+    db.commit()
+
+
+def ldap_sync(db, config, ldap_connector):
+    """ Select the n users from the database which have been updated last and
+    query ldap to see if any information has changed.
+
+    n  will be loaded from config entry 'LDAP_SYNC_COUNT'
+
+    If there has never been an LDAP update, _synchronized will be set to None -
+    those will be tried to be updated first
+
+    :param db: The db session
+    :param config: config dict
+    """
+    n_users = config['LDAP_SYNC_COUNT']
+
+    # Get n users with nethz name not Null
+    users = (
+        db.query(User)
+        .filter(User.nethz.isnot(None))
+        .order_by(User._synchronized)
+        [:n_users])
+
+    # Create a dict for easy assignment later
+    # Ignore users without nethz since they can not be queried
+
+    # Prepare ldap query
+    ldap_query = "(|"
+    for user in users:
+        ldap_query += "(cn=%s)" % user.nethz
+    ldap_query += ")"
+
+    # Query ldap
+    ldap_res_raw = ldap_connector.search(ldap_query)
+    # Put in dictionary with nethz as key for access
+    ldap_res = {}
+    for item in ldap_res_raw:
+        filtered = filter_ldap_data(item)
+        ldap_res[filtered['nethz']] = filtered
+
+    # Now update users
+    query_all = db.query(User)
+    for user in users:
+        # Filter for user
+        query = query_all.filter_by(nethz=user.nethz)
+        if user.nethz in ldap_res.keys():
+            # No downgrade of membership
+            if user.membership is not "none":
+                ldap_res[user.nethz].pop('membership')
+
+            query.update(ldap_res[user.nethz])
+        else:
+            # Still set _synchronized
+            query.update({'_synchronized': datetime.utcnow()})
+
+    # Finishing move
     db.commit()
 
 

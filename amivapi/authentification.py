@@ -147,7 +147,7 @@ def process_login():
             # Result will be a list, but since we search for the unique uid,
             # it will have only one entry anyways
             raw_ldap_data = app.ldap_connector.search(
-                "(uid=%s)" % p_data['username'])[0]
+                "(cn=%s)" % p_data['username'])[0]
 
             ldap_data = filter_ldap_data(raw_ldap_data)
 
@@ -170,7 +170,6 @@ def process_login():
                 return send_response('sessions', _token_response(user_id))
             else:
                 # Create new user
-
                 # Default username will equal nethz
                 username = ldap_data['nethz']
 
@@ -186,7 +185,10 @@ def process_login():
                 # Set Mail now
                 ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
 
-                new_user = post_internal('users', ldap_data)[0]  # 0 is data
+                new_user = post_internal('users',
+                                         ldap_data,
+                                         skip_validation=True
+                                         )[0]  # 0 is data
 
                 user_id = new_user['id']
 

@@ -89,6 +89,14 @@ def get_domain():
     domain['users']['schema']['department'].update({
         'allowed': ['itet', 'mavt']
     })
+    domain['users']['schema']['nethz'].update({
+        'empty': False
+    })
+
+    # _synchronzied is only updated by ldap operations
+    domain['users']['schema']['_synchronized'].update({
+        'readonly': True
+    })
 
     """
     Eventsignups, schema extensions including custom validation
