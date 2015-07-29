@@ -3,7 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-from base64 import b64encode, b64decode
+from base64 import b64encode, b64decode, urlsafe_b64encode
 import hashlib
 from os import urandom
 import re
@@ -91,13 +91,12 @@ def check_hash(password, hash):
     return False
 
 
-def token_generator(size=6, chars=string.ascii_letters + string.digits):
+def token_generator(size=6):
     """generates a random string of elements of chars
     :param size: length of the token
-    :param chars: list of possible chars
     :returns: a random token
     """
-    return ''.join(random.choice(chars) for _ in range(size))
+    return urlsafe_b64encode(os.urandom(size))[0:size]
 
 
 def get_owner(model, _id):
