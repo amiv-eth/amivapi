@@ -96,7 +96,7 @@ def token_generator(size=6):
     :param size: length of the token
     :returns: a random token
     """
-    return urlsafe_b64encode(os.urandom(size))[0:size]
+    return urlsafe_b64encode(urandom(size))[0:size]
 
 
 def get_owner(model, _id):
