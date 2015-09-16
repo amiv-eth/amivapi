@@ -7,8 +7,6 @@ from base64 import b64encode, b64decode, urlsafe_b64encode
 import hashlib
 from os import urandom
 import re
-import string
-import random
 import smtplib
 from email.mime.text import MIMEText
 
