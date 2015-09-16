@@ -102,8 +102,8 @@ def create_app(disable_auth=False, **kwargs):
 
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous
-    app.on_insert_forwardaddresses += confirm.\
-        forwardaddresses_insert_anonymous
+    app.on_insert_groupaddressmembers += confirm.\
+        groupaddressmembers_insert_anonymous
 
     app.on_update += confirm.pre_update_confirmation
     app.on_delete_item += confirm.pre_delete_confirmation
@@ -114,21 +114,25 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_PATCH_users += authorization.pre_users_patch
 
     # Enrolling for email list: Authorization filters
-    app.on_insert_forwardaddresses += (authorization
-                                       .forward_public_check)
-    app.on_insert_forwardusers += (authorization
-                                   .forward_public_check)
+    app.on_insert_groupaddressmembers += (authorization
+                                          .group_public_check)
+    app.on_insert_groupusermembers += (authorization
+                                       .group_public_check)
 
     # email-management
-    app.on_deleted_item_forwards += forwards.on_forward_deleted
-    app.on_inserted_forwardusers += forwards.on_forwarduser_inserted
-    app.on_replaced_forwardusers += forwards.on_forwarduser_replaced
-    app.on_updated_forwardusers += forwards.on_forwarduser_updated
-    app.on_deleted_item_forwardusers += forwards.on_forwarduser_deleted
-    app.on_inserted__forwardaddresses += forwards.on_forwardaddress_inserted
-    app.on_replaced__forwardaddresses += forwards.on_forwardaddress_replaced
-    app.on_updated__forwardaddresses += forwards.on_forwardaddress_updated
-    app.on_deleted_item__forwardaddresses += forwards.on_forwardaddress_deleted
+    app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
+    app.on_inserted_groupusermembers += forwards.on_groupusermember_inserted
+    app.on_replaced_groupusermembers += forwards.on_groupusermember_replaced
+    app.on_updated_groupusermembers += forwards.on_groupusermember_updated
+    app.on_deleted_item_groupusermembers += forwards.on_groupusermember_deleted
+    app.on_inserted_groupaddressmembers += \
+        forwards.on_groupaddressmember_inserted
+    app.on_replaced_groupaddressmembers += \
+        forwards.on_groupaddressmember_replaced
+    app.on_updated_groupaddressmembers += \
+        forwards.on_groupaddressmember_updated
+    app.on_deleted_item_groupaddressmembers += \
+        forwards.on_groupaddressmember_deleted
 
     # Hooks for translatable fields, done by resource because there are only 2
     app.on_fetched_item_joboffers += localization.insert_localized_fields

@@ -333,23 +333,23 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
 
-    def _validate_self_enroll_forward(self, self_enroll, field, value):
-        """ Validates if the id can be used to enroll for an forward,
+    def _validate_self_enroll_group(self, self_enroll, field, value):
+        """ Validates if the id can be used to enroll for a group,
         a little more complex then for events
 
         1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
             via mail) (if public has to be determined somewhere else)
         2.  other id: Registered users can only enter their own id
         3.  Exception are resource_admins: they can sign up others as well
-        4.  Forwards: The list owner can add anyone as well
+        4.  Groups: The group owner can add anyone as well
 
         :param self_enroll: boolean, validates nothing if set to false
         :param field: field name.
         :param value: field value.
         """
         if self_enroll:
-            owners = utils.get_owner(models.Forward,
-                                     self.document['forward_id'])
+            owners = utils.get_owner(models.Group,
+                                     self.document['group_id'])
             if not(g.resource_admin or (g.logged_in_user == value) or
                    (g.logged_in_user in owners)):
                 self._error(field, "You can only enroll yourself. (%s: "

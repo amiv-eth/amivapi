@@ -82,25 +82,25 @@ def route_post(resource, lookup, anonymous=True):
     return send_response(resource, response)
 
 
-documentation['forwardaddresses'] = {
-    'general': "This resource organizes email-addresses subscribing a forward"
+documentation['groupaddressmembers'] = {
+    'general': "This resource organizes email-addresses subscribing a group"
     " which are not relating to a user.",
-    'methods': "To add an address to a forward, one must either be admin or "
-    "owner of the forward. In other cases, you can POST subscriptions to "
-    "public forwards. Every POST needs confirmation of the email-address.",
-    'schema': 'forwardaddresses'
+    'methods': "To add an address to a group, one must either be admin or "
+    "owner of the group. In other cases, you can POST subscriptions to "
+    "public groups. Every POST needs confirmation of the email-address.",
+    'schema': 'groupaddressmembers'
 }
 
 
-@confirmprint.route('/forwardaddresses', methods=['POST'])
-def handle_forwardaddresses():
+@confirmprint.route('/groupaddressmembers', methods=['POST'])
+def handle_groupaddressmembers():
     """These are custom api-endpoints from the confirmprint Blueprint.
-    We don't want eve to handle POST to /forwardaddresses because we need to
+    We don't want eve to handle POST to /groupaddressmembers because we need to
     change the status of the response
     :returns: eve-response with (if POST was correct) changed status-code
     """
     data = payload()  # we only allow POST -> no error with payload()
-    return route_post('forwardaddresses', data)
+    return route_post('groupaddressmembers', data)
 
 
 documentation['eventsignups'] = {
@@ -152,10 +152,10 @@ def execute_confirmed_action(token):
     """
     db = app.data.driver.session
     signup = db.query(models.EventSignup).filter_by(_token=token).first()
-    forward = db.query(models.ForwardAddress).filter_by(_token=token).first()
+    group = db.query(models.GroupAddressMember).filter_by(_token=token).first()
     doc = signup
     if doc is None:
-        doc = forward
+        doc = group
     if doc is None:
         abort(404, description=(
             'This token could not be found.'
@@ -185,16 +185,16 @@ def signups_confirm_anonymous(items):
             doc['_confirmed'] = True
 
 
-def forwardaddresses_insert_anonymous(items):
+def groupaddressmembers_insert_anonymous(items):
     for doc in items:
         doc['_confirmed'] = False
-        confirm_actions('forwardaddresses', doc['email'], doc)
+        confirm_actions('groupaddressmembers', doc['email'], doc)
 
 
 def needs_confirmation(resource, doc):
     return (resource == 'eventsignups'
             and doc.get('_email_unreg') is not None) \
-        or (resource == 'forwardaddresses')
+        or (resource == 'groupaddressmembers')
 
 
 def pre_delete_confirmation(resource, original):

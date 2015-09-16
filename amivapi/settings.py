@@ -69,14 +69,7 @@ ROLES = {
             'PUT': 1,
             'DELETE': 1
         },
-        'forwards': {
-            'GET': 1,
-            'POST': 1,
-            'PATCH': 1,
-            'PUT': 1,
-            'DELETE': 1
-        },
-        'forwardusers': {
+        'groups': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
@@ -84,6 +77,20 @@ ROLES = {
             'DELETE': 1
         },
         'forwardaddresses': {
+            'GET': 1,
+            'POST': 1,
+            'PATCH': 1,
+            'PUT': 1,
+            'DELETE': 1
+        },
+        'groupusermembers': {
+            'GET': 1,
+            'POST': 1,
+            'PATCH': 1,
+            'PUT': 1,
+            'DELETE': 1
+        },
+        'groupaddressmembers': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
@@ -137,13 +144,16 @@ ROLES = {
         'permissions': {
             'GET': 1,
         },
-        'forwards': {
+        'groups': {
             'GET': 1,
         },
-        'forwardusers': {
+        'forwardaddresses': {
             'GET': 1,
         },
-        '_forwardaddresses': {
+        'groupusermembers': {
+            'GET': 1,
+        },
+        'groupaddressmembers': {
             'GET': 1,
         },
         'sessions': {
@@ -198,14 +208,7 @@ ROLES = {
         }
     },
     'mail-admin': {
-        'forwards': {
-            'GET': 1,
-            'POST': 1,
-            'PATCH': 1,
-            'PUT': 1,
-            'DELETE': 1
-        },
-        'forwardusers': {
+        'groups': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,
@@ -213,6 +216,20 @@ ROLES = {
             'DELETE': 1
         },
         'forwardaddresses': {
+            'GET': 1,
+            'POST': 1,
+            'PATCH': 1,
+            'PUT': 1,
+            'DELETE': 1
+        },
+        'groupusermembers': {
+            'GET': 1,
+            'POST': 1,
+            'PATCH': 1,
+            'PUT': 1,
+            'DELETE': 1
+        },
+        'groupaddressmembers': {
             'GET': 1,
             'POST': 1,
             'PATCH': 1,

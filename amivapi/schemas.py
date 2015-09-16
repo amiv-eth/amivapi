@@ -53,7 +53,7 @@ def get_domain():
     EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
-    domain['forwardaddresses']['schema']['email'].update(
+    domain['groupaddressmembers']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
@@ -66,16 +66,17 @@ def get_domain():
         {'future_date': True})
 
     """ For confirmation: eve will not handle POST """
-    domain['forwardaddresses']['resource_methods'] = ['GET']
+    domain['groupaddressmembers']['resource_methods'] = ['GET']
     domain['eventsignups']['resource_methods'] = ['GET']
 
     domain[models.Session.__tablename__]['resource_methods'] = ['GET']
 
-    """No Patching for files and forwardaddresses/users, only replacing"""
+    # No Patching for files and no patching/put for
+    # groupaddressmembers/usermembers
     domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
                                                          'DELETE']
-    domain['forwardaddresses']['item_methods'] = ['GET', 'PUT', 'DELETE']
-    domain['forwardusers']['item_methods'] = ['GET', 'PUT', 'DELETE']
+    domain['groupaddressmembers']['item_methods'] = ['GET', 'DELETE']
+    domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
 
     # time_end for /events requires time_start
     domain['events']['schema']['time_end'].update({
@@ -135,11 +136,11 @@ def get_domain():
         'later_than': 'time_start'})
 
     """
-    Forward users and addresses
+    Group user members and address members
     """
-    domain['forwardusers']['schema']['user_id'].update({
-        'self_enroll_forward': True,
-        'dependencies': ['forward_id']})
+    domain['groupusermembers']['schema']['user_id'].update({
+        'self_enroll_group': True,
+        'dependencies': ['group_id']})
 
     """
     Filetype needs to be specified as media, maybe this can be automated

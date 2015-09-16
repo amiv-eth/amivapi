@@ -39,6 +39,21 @@ def find_by_pair(dicts, key, value):
     return found[0]
 
 
+def is_file_content(path, content):
+    """
+    Returns true if the file at path exists and has the content in the
+    second parameter
+    """
+    try:
+        with open(path, "r") as f:
+            if content != f.read():
+                return False
+    except IOError:
+        return False
+
+    return True
+
+
 class TestClient(FlaskClient):
     """Custom test client with additional request/response checks.
 
@@ -195,28 +210,34 @@ class WebTest(unittest.TestCase):
             kwargs['expiry_date'] = datetime(3000, 1, 1)
         return kwargs
 
-    @create_object(models.Forward)
-    def new_forward(self, **kwargs):
+    @create_object(models.Group)
+    def new_group(self, **kwargs):
         """ Create a forward """
-        count = self.next_count()
-        if 'address' not in kwargs:
-            kwargs['address'] = u"test-address-%i@example.com" % count
+        if 'name' not in kwargs:
+            kwargs['name'] = u"test-group-%i" % self.next_count()
         if 'owner_id' not in kwargs:
             kwargs['owner_id'] = 0
         if 'is_public' not in kwargs:
             kwargs['is_public'] = random.choice([True, False])
         return kwargs
 
-    @create_object(models.ForwardUser)
-    def new_forward_user(self, **kwargs):
-        """ Add a user to a forward. At least supply the forward_id """
+    @create_object(models.ForwardAddress)
+    def new_forward_address(self, **kwargs):
+        """ Add a forward address. At least supply the group_id """
+        if 'address' not in kwargs:
+            kwargs['address'] = u"forward-%i@example.com" % self.next_count()
+        return kwargs
+
+    @create_object(models.GroupUserMember)
+    def new_group_user_member(self, **kwargs):
+        """ Add a user to a group. At least supply the group_id """
         if 'user_id' not in kwargs:
             kwargs['user_id'] = 0
         return kwargs
 
-    @create_object(models.ForwardAddress)
-    def new_forward_address(self, **kwargs):
-        """ Add an address to a forward. At least supply the forward_id """
+    @create_object(models.GroupAddressMember)
+    def new_group_address_member(self, **kwargs):
+        """ Add an address to a group. At least supply the group_id """
         count = self.next_count()
         if 'email' not in kwargs:
             kwargs['email'] = u"subscriber-%i@example.com" % count

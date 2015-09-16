@@ -113,8 +113,9 @@ class User(Base):
     # relationships
     permissions = relationship("Permission", foreign_keys="Permission.user_id",
                                backref="user", cascade="all, delete")
-    forwards = relationship("ForwardUser", foreign_keys="ForwardUser.user_id",
-                            backref="user", cascade="all, delete")
+    groups = relationship("GroupUserMember",
+                          foreign_keys="GroupUserMember.user_id",
+                          backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
                             backref="user", cascade="all, delete")
     eventsignups = relationship("EventSignup",
@@ -147,13 +148,14 @@ class Permission(Base):
     # user = relationship("User", foreign_keys=user_id, backref="permissions")
 
 
-class Forward(Base):
+class Group(Base):
     __description__ = {
-        'general': "This resource describes the different email-lists. To see "
-        "the subscriptions, have a look at '/forwardusers' and "
-        "'forwardaddresses'.",
+        'general': "This resource describes the different teams in AMIV."
+        "This is primarily a mailing list. To see "
+        "the subscriptions, have a look at '/groupusermembers' and "
+        "'groupaddressmembers'.",
         'fields': {
-            'is_public': "A public Forward can get subscriptions from external"
+            'is_public': "A public group can get subscriptions from external"
             " users. If False, only AMIV-Members can subscribe to this list.",
             'address': "The address of the new forward: <address>@amiv.ethz.ch"
         }}
@@ -163,53 +165,65 @@ class Forward(Base):
     __owner__ = ['owner_id']
     __owner_methods__ = ['GET', 'DELETE']
 
-    address = Column(Unicode(100), unique=True)
+    name = Column(Unicode(100), unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
 
     owner = relationship(User, foreign_keys=owner_id)
 
-    # relationships
-    user_subscribers = relationship("ForwardUser", backref="forward",
+    user_subscribers = relationship("GroupUserMember", backref="group",
                                     cascade="all, delete")
-    address_subscribers = relationship("ForwardAddress", backref="forward",
+    address_subscribers = relationship("GroupAddressMember", backref="group",
                                        cascade="all, delete")
-
-
-class ForwardUser(Base):
-    __description__ = {
-        'general': "Assignment of registered users to forwards."
-    }
-    __expose__ = True
-    __projected_fields__ = ['forward', 'user']
-
-    __owner__ = ['user_id', 'forward.owner_id']
-    __owner_methods__ = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
-
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
-                     nullable=False)
-    forward_id = Column(
-        Integer, ForeignKey("forwards.id", ondelete="CASCADE"), nullable=False)
-
-    # forward = relationship("Forward", backref="user_subscribers")
-    # user = relationship("User", foreign_keys=user_id)
+    addresses = relationship("ForwardAddress", backref="group",
+                             cascade="all, delete")
 
 
 class ForwardAddress(Base):
+    __expose__ = True
+    __projected_fields__ = ['group']
+
+    __owner__ = ["group.owner_id"]
+    __owner_methods__ = ['GET']
+
+    address = Column(Unicode(100), unique=True)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
+
+
+class GroupUserMember(Base):
     __description__ = {
-        'general': "Assignment of unregisterd users to forwards. Does only "
-        "work if the forward is poblic"
+        'general': "Assignment of registered users to groups."
     }
     __expose__ = True
-    __projected_fields__ = ['forward']
+    __projected_fields__ = ['group', 'user']
 
-    __owner__ = ['forward.owner_id']
-    __owner_methods__ = ['GET']
+    __owner__ = ['user_id', 'group.owner_id']
+    __owner_methods__ = ['GET', 'POST', 'DELETE']
+
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
+                     nullable=False)
+    group_id = Column(
+        Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+
+    # group = relationship("Group", backref="user_subscribers")
+    # user = relationship("User", foreign_keys=user_id)
+
+
+class GroupAddressMember(Base):
+    __description__ = {
+        'general': "Assignment of unregistered users to groups. Does only "
+        "work if the group is public"
+    }
+    __expose__ = True
+    __projected_fields__ = ['group']
+
+    __owner__ = ['group.owner_id']
+    __owner_methods__ = ['GET', 'POST', 'DELETE']
     __public_methods__ = ['POST', 'DELETE']
 
     email = Column(Unicode(100))
-    forward_id = Column(
-        Integer, ForeignKey("forwards.id"), nullable=False)
+    group_id = Column(
+        Integer, ForeignKey("groups.id"), nullable=False)
 
     """for unregistered users"""
     _token = Column(CHAR(20), unique=True, nullable=True)

@@ -9,35 +9,36 @@ from amivapi import models
 
 class DeletionTests(util.WebTestNoAuth):
 
-    def test_delete_user_to_forwarduser(self):
+    def test_delete_user_to_groupusermember(self):
         user = self.new_user()
-        forward = self.new_forward()
-        self.new_forward_user(user_id=user.id, forward_id=forward.id)
+        group = self.new_group()
+        self.new_group_user_member(user_id=user.id, group_id=group.id)
 
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': user._etag}, status_code=204)
-        forwarduser_count = self.db.query(models.ForwardUser).count()
-        self.assertEquals(forwarduser_count, 0)
-        # We want the forwarduser-entry to be deleted but not the forward
+        groupusermember_count = self.db.query(models.GroupUserMember).count()
+        self.assertEquals(groupusermember_count, 0)
+        # We want the groupusermember-entry to be deleted but not the group
         # itself
-        forward_count = self.db.query(models.Forward).count()
-        self.assertEquals(forward_count, 1)
+        group_count = self.db.query(models.Group).count()
+        self.assertEquals(group_count, 1)
 
-    def test_delete_forward_to_forwarduserForwardAddress(self):
+    def test_delete_group_to_groupusermember_groupaddressmember(self):
         user = self.new_user()
-        forward = self.new_forward()
-        self.new_forward_user(user_id=user.id, forward_id=forward.id)
-        self.new_forward_address(forward_id=forward.id)
+        group = self.new_group()
+        self.new_group_user_member(user_id=user.id, group_id=group.id)
+        self.new_group_address_member(group_id=group.id)
 
-        self.api.delete("/forwards/%i" % forward.id,
-                        headers={'If-Match': forward._etag}, status_code=204)
-        forward_count = self.db.query(models.Forward).count()
-        self.assertEquals(forward_count, 0)
-        # forwarduser and forwardaddress entries should now be deleted
-        forwarduser_count = self.db.query(models.ForwardUser).count()
-        self.assertEquals(forwarduser_count, 0)
-        forwardaddress_count = self.db.query(models.ForwardAddress).count()
-        self.assertEquals(forwardaddress_count, 0)
+        self.api.delete("/groups/%i" % group.id,
+                        headers={'If-Match': group._etag}, status_code=204)
+        group_count = self.db.query(models.Group).count()
+        self.assertEquals(group_count, 0)
+        # groupusermember and groupaddressmember entries should now be deleted
+        groupusermember_count = self.db.query(models.GroupUserMember).count()
+        self.assertEquals(groupusermember_count, 0)
+        groupaddressmember_count = (
+            self.db.query(models.GroupAddressMember).count())
+        self.assertEquals(groupaddressmember_count, 0)
 
     def test_delete_user_to_permission(self):
         user = self.new_user()

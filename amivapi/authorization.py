@@ -432,25 +432,25 @@ def pre_users_patch(request, lookup):
 
 #
 #
-# Hooks for forwardadresses: only forwars that are public are accessible
+# Hooks for group address members: only groups that are public are accessible
 #
 #
-def forward_public_check(items):
+def group_public_check(items):
     """
     Checks whether a forward is accessible for public
     """
     for item in items:
         db = app.data.driver.session
 
-        forwardid = item.get('forward_id')
-        forward = db.query(models.Forward).get(forwardid)
+        groupid = item.get('group_id')
+        group = db.query(models.Group).get(groupid)
 
-        # Users may only self enroll for public forwards
-        if not forward:
-            abort(404, description="Forward with id %s not found" % forwardid)
-        if (not forward.is_public and not
+        # Users may only self enroll for public groups
+        if not group:
+            abort(404, description="Group with id %s not found" % groupid)
+        if (not group.is_public and not
                 g.resource_admin and not
-                g.logged_in_user == forward.owner_id):
+                g.logged_in_user == group.owner_id):
             abort(403, description=debug_error_message(
                 'You are not allowed to self enroll for this forward'
             ))

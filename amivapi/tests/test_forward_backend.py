@@ -12,42 +12,57 @@ class ForwardBackendTest(util.WebTestNoAuth):
 
     def test_forward_creation(self):
         session = self.new_session()
+
+        group = self.new_group()
+        forward_address = self.new_forward_address(group_id=group.id)
+        forward_address2 = self.new_forward_address(group_id=group.id)
+
+        # Test adding a user
+
         user = self.new_user(email=u"test@no.no")
-        user2 = self.new_user(email=u"looser92@gmx.com")
 
-        forward = self.new_forward(address=u"test", is_public=True)
-
-        fuser = self.api.post("/forwardusers", data={
+        guser = self.api.post("/groupusermembers", data={
             'user_id': user.id,
-            'forward_id': forward.id,
+            'group_id': group.id,
         }, token=session.token, status_code=201).json
 
-        path = self.app.config['FORWARD_DIR'] + "/.forward+" + forward.address
-        with open(path, "r") as f:
-            content = f.read()
-            self.assertTrue(content == "test@no.no\n")
+        for forw in [forward_address, forward_address2]:
+            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
+                                       forw.address)
+            self.assertTrue(util.is_file_content(path, "test@no.no\n"))
 
-        self.api.post("/forwardusers", data={
-            'forward_id': forward.id,
-            'user_id': user2.id,
+        # Test adding an address directly
+
+        self.api.post("/groupaddressmembers", data={
+            'email': u"looser92@gmx.com",
+            'group_id': group.id,
         }, token=session.token, status_code=201).json
 
-        with open(path, "r") as f:
-            content = f.read()
-            self.assertTrue(content == "test@no.no\nlooser92@gmx.com\n")
+        for forw in [forward_address, forward_address2]:
+            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
+                                       forw.address)
+            self.assertTrue(util.is_file_content(
+                path, "test@no.no\nlooser92@gmx.com\n"))
 
-        self.api.delete("/forwardusers/%i" % fuser['id'],
+        # Test deleting an entry
+
+        self.api.delete("/groupusermembers/%i" % guser['id'],
                         token=session.token,
-                        headers={"If-Match": fuser['_etag']},
+                        headers={"If-Match": guser['_etag']},
                         status_code=204)
 
-        with open(path, "r") as f:
-            content = f.read()
-            self.assertTrue(content == "looser92@gmx.com\n")
+        for forw in [forward_address, forward_address2]:
+            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
+                                       forw.address)
+            self.assertTrue(util.is_file_content(path, "looser92@gmx.com\n"))
 
-        self.api.delete("/forwards/%i" % forward.id,
+        # Test deleting the address
+
+        self.api.delete("/forwardaddresses/%i" % forward_address.id,
                         token=session.token,
-                        headers={"If-Match": forward._etag},
+                        headers={"If-Match": forward_address._etag},
                         status_code=204)
 
+        path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
+                                   forward_address.address)
         self.assertTrue(exists(path) is False)
