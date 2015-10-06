@@ -4,7 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 
 from amivapi.tests import util
-from amivapi import models, cron
+from amivapi import models
+from amivapi.ldap import LdapSynchronizer
 
 from sqlalchemy import exists
 
@@ -22,10 +23,22 @@ class LdapIntegrationTest(util.WebTest):
         self.username = getenv('ldap_test_user', "")
         self.password = getenv('ldap_test_pass', "")
         if not(self.username and self.password):
-            print("You need to specify 'ldap_test_user' and 'ldap_test_pass'" +
-                  " in the environment variables!")
+            self.app.logger.debug("You need to specify 'ldap_test_user' and "
+                                  + "'ldap_test_pass' in the environment "
+                                  + "variables!")
 
-    def test_ldap_create(self):
+        with self.app.app_context():
+            try:
+                # Search for something random to see if the connection works
+                self.app.ldap_connector.check_user("bla", "blorg")
+            except Exception as e:
+                self.app.logger.debug("The LDAP query failed. Make sure that "
+                                      + "you are in the eth network or have "
+                                      + "VPN enabled to find the servers.")
+                self.app.logger.debug("Exception message below:")
+                self.app.logger.debug(e)
+
+    def test_ldap_auth(self):
         """
         Login with real credentials to test LDAP
         Has to be called with -uusername -ppassword
@@ -92,26 +105,34 @@ class LdapIntegrationTest(util.WebTest):
 
     def assertSync(self, l_users, reference):
         for user in l_users:
-            self.assertTrue(user._synchronized > reference)
+            self.assertTrue(user._ldap_updated > reference)
 
     def assertNoSync(self, l_users, reference):
         for user in l_users:
             # No sinc at all or later
-            if user._synchronized is not None:
-                self.assertTrue(user._synchronized < reference)
+            if user._ldap_updated is not None:
+                self.assertTrue(user._ldap_updated < reference)
             # If its None there has been no sync which is ok
 
-    def test_cron(self):
+    def test_cron_update(self):
+        # Create the LDAP Synchronizer
+        # With sync count 2
+        ldap = LdapSynchronizer(self.app.config['LDAP_USER'],
+                                self.app.config['LDAP_PASS'],
+                                self.db,
+                                self.app.config['LDAP_MEMBER_OU_LIST'],
+                                0,
+                                2)
 
         # Create a few fake users, 6 in total
-        u_1 = self.new_user(nethz="Lalala@nonethz", _synchronized=None)
-        u_2 = self.new_user(nethz="Lululu@nonethz", _synchronized=None)
+        u_1 = self.new_user(nethz="Lalala@nonethz", _ldap_updated=None)
+        u_2 = self.new_user(nethz="Lululu@nonethz", _ldap_updated=None)
         # Two without nethz, they should be skipped
-        u_3 = self.new_user(nethz=None, _synchronized=None)
-        u_4 = self.new_user(nethz=None, _synchronized=None)
+        u_3 = self.new_user(nethz=None, _ldap_updated=None)
+        u_4 = self.new_user(nethz=None, _ldap_updated=None)
         # Two with early date that should be synced first
-        u_5 = self.new_user(nethz="Lololo@nonethz", _synchronized=dt.utcnow())
-        u_6 = self.new_user(nethz="Lelele@nonethz", _synchronized=dt.utcnow())
+        u_5 = self.new_user(nethz="Lololo@nonethz", _ldap_updated=dt.utcnow())
+        u_6 = self.new_user(nethz="Lelele@nonethz", _ldap_updated=dt.utcnow())
 
         # Wait some time so the datetime is guaranteed later and create real
         # user
@@ -121,16 +142,13 @@ class LdapIntegrationTest(util.WebTest):
         u_real = self.new_user(nethz=self.username,
                                legi=None,
                                membership=u"honorary",
-                               _synchronized=dt.utcnow())
+                               _ldap_updated=dt.utcnow())
 
         # Create reference time
         sleep(1)
         ref = dt.utcnow()
 
-        # Make a fake config and set numer of sync targets to 2
-        fake_config = {'LDAP_SYNC_COUNT': 2}
-
-        cron.ldap_sync(self.db, fake_config, self.app.ldap_connector)
+        ldap.user_update()
 
         # Now the first to should be synchronized, the others not
         # If yes, then the sync numer is correct and with no sync ever come
@@ -139,7 +157,7 @@ class LdapIntegrationTest(util.WebTest):
         self.assertNoSync([u_3, u_4, u_5, u_6, u_real], ref)
 
         # Sync again
-        cron.ldap_sync(self.db, fake_config, self.app.ldap_connector)
+        ldap.user_update()
 
         # Now if nethz with None are ignored, then u_3 and u_4 should still not
         # be synched
@@ -148,7 +166,7 @@ class LdapIntegrationTest(util.WebTest):
         self.assertNoSync([u_3, u_4, u_real], ref)
 
         # Last sync
-        cron.ldap_sync(self.db, fake_config, self.app.ldap_connector)
+        ldap.user_update()
 
         # Now u_real should have been synced, too.
         self.assertSync([u_1, u_2, u_5, u_6, u_real], ref)
@@ -159,3 +177,27 @@ class LdapIntegrationTest(util.WebTest):
         # But that membership is not downgraded and still honorary
         self.assertIsNotNone(u_real.legi)
         self.assertTrue(u_real.membership == u"honorary")
+
+    def test_cron_import(self):
+        # Create the LDAP Synchronizer
+        # With import count 2
+        ldap = LdapSynchronizer(self.app.config['LDAP_USER'],
+                                self.app.config['LDAP_PASS'],
+                                self.db,
+                                self.app.config['LDAP_MEMBER_OU_LIST'],
+                                5,
+                                0)
+
+        # Only 2 users in the db at this point
+        # (root and anonymous)
+        self.assertTrue(self.db.query(models.User).count() == 2)
+
+        # Now 5 users more, 7 in total
+        ldap.user_import()
+
+        # Now try again to make sure the api does not try to import the same
+        # users twice
+        ldap.user_import()
+
+        # Now 5 users more, 12 in total
+        self.assertTrue(self.db.query(models.User).count() == 12)

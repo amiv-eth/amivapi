@@ -30,7 +30,7 @@ from eve.utils import debug_error_message, config
 from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi.utils import create_new_hash, check_hash, filter_ldap_data
+from amivapi.utils import create_new_hash, check_hash
 from amivapi import models
 
 
@@ -136,20 +136,14 @@ def process_login():
     # If LDAP is enabled, try to authenticate the user
     # If this is successful, create/update user data
     if config.ENABLE_LDAP:  # To LDAP or not to LDAP?
-        if app.ldap_connector.authenticate(
-                p_data['username'], p_data['password']):
-            # LDAP success, now get data
+        ldap_data = app.ldap_connector.check_user(p_data['username'],
+                                                  p_data['password'])
+
+        if ldap_data is not None:  # ldap success
             # Query user by nethz field
             has_user_nethz = app.data.driver.session.query(exists().where(
                 models.User.nethz == p_data['username']
             )).scalar()
-
-            # Result will be a list, but since we search for the unique uid,
-            # it will have only one entry anyways
-            raw_ldap_data = app.ldap_connector.search(
-                "(cn=%s)" % p_data['username'])[0]
-
-            ldap_data = filter_ldap_data(raw_ldap_data)
 
             # Create or update user
             if has_user_nethz:
@@ -188,15 +182,16 @@ def process_login():
                 new_user = post_internal('users',
                                          ldap_data,
                                          skip_validation=True
-                                         )[0]  # 0 is data
+                                         )[0]  # first element is the data
 
                 user_id = new_user['id']
 
                 return send_response('sessions', _token_response(user_id))
+
         else:
-            error += "LDAP authentication failed, "  # Prove additional info
+            error += "LDAP authentication failed, "  # Provide additional info
     else:
-        error += "LDAP authentication deactivated; "  # Prove additional info
+        error += "LDAP authentication deactivated; "  # Provide additional info
 
     # PHASE 2: database
     # If LDAP fails or is not accessible, try to find user in database

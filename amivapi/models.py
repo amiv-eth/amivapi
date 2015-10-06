@@ -96,7 +96,7 @@ class User(Base):
     __owner_methods__ = ['GET', 'PATCH']
 
     # This is only used when LDAP is enabled to track ldap updates
-    _synchronized = Column(DateTime, default=None)
+    _ldap_updated = Column(DateTime, default=None)
 
     username = Column(CHAR(50), unique=True, nullable=False)
     password = Column(CHAR(100))  # base64 encoded hash data

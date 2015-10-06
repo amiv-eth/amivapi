@@ -94,7 +94,7 @@ def get_domain():
     })
 
     # _synchronzied is only updated by ldap operations
-    domain['users']['schema']['_synchronized'].update({
+    domain['users']['schema']['_ldap_updated'].update({
         'readonly': True
     })
 

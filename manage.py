@@ -186,6 +186,8 @@ def apikeys_delete():
 @manager.option("--enable-ldap", dest="enable_ldap")
 @manager.option("--ldap-user", dest="ldap_user")
 @manager.option("--ldap-pass", dest="ldap_pass")
+@manager.option("--ldap-import-count", dest="ldap_import_count")
+@manager.option("--ldap-update-count", dest="ldap_update_count")
 def create_config(force=False,
                   debug=None,
                   db_type=None,
@@ -200,7 +202,9 @@ def create_config(force=False,
                   forward_dir=None,
                   enable_ldap=False,
                   ldap_user=None,
-                  ldap_pass=None
+                  ldap_pass=None,
+                  ldap_import_count=None,
+                  ldap_update_count=None
                   ):
     """Creates a new configuration.
 
@@ -302,10 +306,18 @@ def create_config(force=False,
         ldap_user = prompt("LDAP username")
     if not ldap_pass:
         ldap_pass = prompt("LDAP password")
+    if not ldap_import_count:
+        ldap_import_count = prompt("Maximum number of new imports from ldap:",
+                                   default=500)
+    if not ldap_update_count:
+        ldap_update_count = prompt("Maximum number of ldap updates",
+                                   default=200)
 
     config['ENABLE_LDAP'] = enable_ldap
     config['LDAP_USER'] = ldap_user
     config['LDAP_PASS'] = ldap_pass
+    config['LDAP_IMPORT_COUNT'] = ldap_import_count
+    config['LDAP_UPDATE_COUNT'] = ldap_update_count
 
     # APIKEYS
     config['APIKEYS'] = {}
@@ -345,8 +357,8 @@ def set_root_password():
     try:
         root = session.query(User).filter(User.id == 0).one()
     except (OperationalError, ProgrammingError):
-        print ("No root user found, please recreate the config to set up a"
-               " database.")
+        print("No root user found, please recreate the config to set up a"
+              " database.")
         exit(0)
 
     root.password = create_new_hash(prompt("New root password"))
