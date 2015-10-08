@@ -31,11 +31,11 @@ def _escape(query):
     """
 
     replacements = {
-        '*': r'\\2A',
-        '(': r'\\28',
-        ')': r'\\29',
-        '\\': r'\\5C',  # r as string flag doesnt work with \'
-        chr(0): r'\\00'
+        '*': r'\2A',
+        '(': r'\28',
+        ')': r'\29',
+        '\\': r'\5C',  # r as string flag doesnt work with \'
+        chr(0): r'\00'
     }
 
     return re.sub(
@@ -69,8 +69,9 @@ def _filter_data(data, ou_list):
     res['firstname'] = data['givenName'][0]
     res['lastname'] = data['sn'][0]
     gendermap = {'1': u"male", '2': u"female"}
+    # If gender not specified, the person will be a woman :)
     res['gender'] = gendermap[data['swissEduPersonGender'][0]]
-    # res['email'] = data['mail'][0]
+    # res['email'] = data['mail'][0]  TODO
 
     if ('D-ITET' in data['ou']):
         res['department'] = u"itet"
@@ -166,45 +167,55 @@ class LdapSynchronizer():
         """
         queries ldap for users not existing in the database.
         returns a maximum of results as specified in the app config
+
+        :returns: Number of imported users
         """
         # Build the query
         # Base: is member? VSETH necessary, then any of the fields
-        base = u"(& (ou=VSETH Mitglied)(| "
+        base = u"(ou=VSETH Mitglied)"
+
+        ou = ""
         for item in self.ou_list:
-            base += u"(ou=%s)" % _escape(item)  # Items contain braces
-        base += u" ) )"
+            ou += u"(ou=%s)" % _escape(item)  # Items contain braces
+
+        if len(self.ou_list) > 1:
+            ou = u"(| %s )" % ou
 
         # Now exclude everyone who is in the db - they will be taken care of in
         # ldap_sync
         users = self.session.query(User).filter(User.nethz.isnot(None)).all()
         if users:
-            ext = "(! (|"  # Not ( user or user or user or ...)
+            ext = u""
             for user in users:
-                ext += "(cn=%s)" % _escape(user.nethz)  # just to be sure
+                ext += u"(!(cn=%s))" % _escape(user.nethz)  # just to be sure
 
-            ext += ") )"
-
-            ldap_query = "(&%s%s)" % (base, ext)
+            ldap_query = "(&%s%s%s)" % (ext, ou, base)
         else:
             # No users, base is whole query
-            ldap_query = base
+            ldap_query = "(&%s%s)" % (base, ou)
 
         result = self.ldap.search(ldap_query, limit=self.n_import)
 
+        done = 0
         for item in result:
-            filtered = _filter_data(item, self.ou_list)
-            user = User(
-                _author=0,
-                _created=dt.utcnow(),
-                _updated=dt.utcnow(),
-                _etag=document_etag(filtered),
-                username=filtered['nethz'],
-                email="%s@ethz.ch" % filtered['nethz'],
-                **filtered  # Rest of the daa
-            )
-            self.session.add(user)
+            try:
+                filtered = _filter_data(item, self.ou_list)
+                user = User(
+                    _author=0,
+                    _created=dt.utcnow(),
+                    _updated=dt.utcnow(),
+                    _etag=document_etag(filtered),
+                    username=filtered['nethz'],
+                    email="%s@ethz.ch" % filtered['nethz'],
+                    **filtered  # Rest of the daa
+                )
+                self.session.add(user)
+                self.session.commit()
+                done += 1
+            except:  # If anything is broken with the ldap data just ignore it.
+                self.session.rollback()
 
-        self.session.commit()
+        return done
 
     def user_update(self):
         """
@@ -213,6 +224,8 @@ class LdapSynchronizer():
 
         If there has never been an LDAP update, _ldap_updated will be set to
         None - those will be tried to be updated first
+
+        :returns: Number of updated users
         """
         # Get n users with nethz name not Null
         users = (
@@ -222,7 +235,7 @@ class LdapSynchronizer():
             [:self.n_update])
 
         if len(users) == 0:
-            return  # Nothing to update
+            return 0  # Nothing to update
 
         # Create a dict for easy assignment later
         # Ignore users without nethz since they can not be queried
@@ -258,3 +271,5 @@ class LdapSynchronizer():
 
         # Finishing move
         self.session.commit()
+
+        return len(ldap_res_raw)

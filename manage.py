@@ -28,7 +28,7 @@ from amivapi import settings, models, schemas
 from amivapi.models import User
 from amivapi.utils import create_new_hash, get_config
 from amivapi.bootstrap import init_database
-
+from amivapi.ldap import LdapSynchronizer
 
 manager = Manager(Flask("amivapi"))
 # This must be the same as in amivapi.utils.get_config
@@ -365,6 +365,61 @@ def set_root_password():
 
     session.commit()
     session.close()
+
+
+#
+# Import and update users from ldap
+#
+
+
+@manager.option('-n', '--n-import', dest='import_count_input')
+def ldap_import(import_count_input=None):
+    """ Import users from ldap """
+    cfg = get_config()
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    if import_count_input is None:
+        import_count = cfg['LDAP_IMPORT_COUNT']
+    else:
+        import_count = int(import_count_input)  # Input comes as string
+
+    ldap = LdapSynchronizer(cfg['LDAP_USER'],
+                            cfg['LDAP_PASS'],
+                            session,
+                            cfg['LDAP_MEMBER_OU_LIST'],
+                            import_count,
+                            cfg['LDAP_UPDATE_COUNT'])
+
+    n_res = ldap.user_import()
+
+    print("Successfully imported %i new users" % n_res)
+
+
+@manager.option('-n', '--n-update', dest='update_count_input')
+def ldap_update(update_count_input=None):
+    """ Update users in database with ldap data """
+    cfg = get_config()
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    if update_count_input is None:
+        update_count = cfg['LDAP_UPDATE_COUNT']
+    else:
+        update_count = int(update_count_input)  # Input comes as string
+
+    ldap = LdapSynchronizer(cfg['LDAP_USER'],
+                            cfg['LDAP_PASS'],
+                            session,
+                            cfg['LDAP_MEMBER_OU_LIST'],
+                            cfg['LDAP_IMPORT_COUNT'],
+                            update_count)
+
+    n_res = ldap.user_update()
+
+    print("Successfully updated %i new users" % n_res)
 
 
 #
