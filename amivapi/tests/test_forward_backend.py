@@ -36,7 +36,7 @@ class ForwardBackendTest(util.WebTestNoAuth):
         self.api.post("/groupaddressmembers", data={
             'email': u"looser92@gmx.com",
             'group_id': group.id,
-        }, token=session.token, status_code=201).json
+        }, token=session.token, status_code=202).json
 
         for forw in [forward_address, forward_address2]:
             path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
