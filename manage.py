@@ -298,7 +298,8 @@ def create_config(force=False,
     if not enable_ldap:
         enable_ldap = prompt_bool(
             "Use eth ldap for auth? (Only accessible in eth-network/VPN!)")
-        config['ENABLE_LDAP'] = enable_ldap
+
+    config['ENABLE_LDAP'] = enable_ldap
 
     # enable_ldap is a string!
     if (enable_ldap == "True") and not ldap_user:
