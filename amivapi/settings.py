@@ -51,6 +51,31 @@ PERMISSION_EXPIRED_WARNMAIL_TEXT = (
     " %(admin_mail)s.\n\nRegards\n\nAutomatically sent by AMIV API"
 )
 
+# All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
+LDAP_MEMBER_OU_LIST = [
+    u'Biomedical Engineering MSc',
+    u'Dr. Informationstechnologie und Elektrotechnik',
+    u'Dr. Maschinenbau und Verfahrenstechnik',
+    u'DZ Elektrotechnik und Informationstechnologie',
+    u'DZ Maschineningenieurwiss. und Verfahrenstechnik',
+    u'Elektrotech. und Informationstechnol. (Mobilität)',
+    u'Elektrotechnik und Informationstechnologie BSc',
+    u'Elektrotechnik und Informationstechnologie MSc',
+    u'Energy Science and Technology MSc',
+    u'Informationstechnologie und Elektrotechnik',
+    u'Maschinenbau und Verfahrenstechnik',
+    u'Maschineningenieurwissenschaften (Mobilität)',
+    u'Maschineningenieurwissenschaften BSc',
+    u'Maschineningenieurwissenschaften MSc',
+    u'Micro- and Nanosystems MSc',
+    u'Nuclear Engineering MSc',
+    u'Nuclear Engineering MSc (EPFL)',
+    u'Robotics, Systems and Control MSc',
+    u'Verfahrenstechnik MSc',
+    u'Doktorat Informationstechnologie & Elektrotechnik',
+    u'Doktorat Maschinenbau und Verfahrenstechnik'
+]
+
 # This is a list of which groups exist to grant permissions. It should be
 # possible to change anything without breaking stuff.
 ROLES = {

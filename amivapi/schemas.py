@@ -90,6 +90,9 @@ def get_domain():
     domain['users']['schema']['department'].update({
         'allowed': ['itet', 'mavt']
     })
+    domain['users']['schema']['nethz'].update({
+        'empty': False
+    })
 
     """
     Eventsignups, schema extensions including custom validation

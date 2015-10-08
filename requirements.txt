@@ -1,5 +1,6 @@
 -e git+https://github.com/nicolaiarocci/eve.git@dd8568b43c9689154484d8ebb0198bdadd91aa37#egg=eve
 -e git+https://github.com/Leonidaz0r/eve-sqlalchemy.git@283849fa3ef6bcb68771702f99fc079fbe8dc663#egg=eve_sqlalchemy
 -e git+https://github.com/hermannsblum/eve-docs.git@c36c5a2d637c244f3b5c3fd443dbd911eff037bd#egg=Eve_docs-master
+-e git+https://github.com/NotSpecial/nethz.git@9f05c2252e4559b98d8a80cb628bafa0c587cf98#egg=nethz
 mysql-connector-python==2.0.3
 Flask-Script==2.0.5

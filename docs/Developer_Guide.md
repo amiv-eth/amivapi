@@ -57,7 +57,7 @@ The tests will create their own database. If you configure a MySQL Server you wi
 they will create temporary databases on the fly in temporary files. Note that even if they run on a MySQL server they will create their own database, so you need
 to have the permissions for CREATE DATABASE.
 
-## Running the tests
+## Unittests
 
 To run the tests you need to install tox:
 
@@ -75,6 +75,25 @@ To run only some tests specify them in the following way(substitute your test cl
 
     tox -- amivapi.tests.forwards
 
+## Integration tests
+
+We have currently one "integration" test for LDAP. Since we have no "dummy" user for LDAP, you have to test it with your own credentials.
+
+You need to install nosetests:
+
+    pip install nose
+
+Next you need to set some environment variables, since nose does not like command line arguments.
+Example for windows:
+
+    $env:ldap_test_user= "YOURUSERNAMEHERE"
+    $env:ldap_test_pass= "YOURPASSWORDHERE"
+
+Now you can run the test, make sure to show stdout with '-s'
+
+    nosetests -s .\amivapi\tests\ldap_integration.py
+
+Important: Since the test can't know your user data, you have to check the printout if the data imported by ldap is correct.
 
 ## Debugging server
 
@@ -99,7 +118,8 @@ The main-directory lists following files:
 * media.py: File Storage. Handles uploaded files and serves them to the user.
 * models.py: The Data-Model. As a basis of the API, in the Data-Model the different Data-Classes and their relations get defined.
 * schemas.py: Creates the basic validation-schema out of the data-model and applies custom changes.
-* settings.py: Constants which should not be changed by the admin, but can be changed by some developer
+* ldap.py: Contains everything to connect the api with ldap and carry out user imports and updates.
+* settings.py: Constants which should not be changed by the admin, but can be changed by some developer.
 * utils.py: General helping functions.
 * validation.py: Every validation that extends the basic Cerberus-schema-definition and Hooks for special semantic checks, e.g. whether an end-time comes after a start-time.
 
@@ -237,7 +257,7 @@ For implementation see common_authorization() and TokenAuth.check_auth()
 # Localization
 
 The api includes support for several languages in four fields which contain
-language_dependant content, these are:
+language dependant content, these are:
 
 - joboffers.title
 - joboffers.description
@@ -251,53 +271,37 @@ can be used to provide translated content.
 This is solved using two new resources:
 
 1. translationmappings
-This resource is internal (see schemas.py), which means that it can only
-be accessed by eve internally.
+This resource is internal (see schemas.py), which means that it can only be accessed by eve internally.
 To ensure that this works with eve and our modifications (like _author
-fields) we are not using SQLAlchemy relationship configurations to create
-this field.
-Instead the hook "insert_localization_ids" is called whenever events and
-joboffers are created. It posts internally to languagemappings to create
-the ids which are then added to the data of post.
+fields) we are not using SQLAlchemy relationship configurations to create this field. (Since the eve sqlalchmey extension can not handle this)
+Instead the hook "insert_localization_ids" is called whenever events and joboffers are created. It posts internally to languagemappings to create the ids which are then added to the data of post.
 The relationship in models.py ensures that all entries in the mapping
 table are deleted with the event/joboffer
 
 2. translations
-This resource contains the actual translated data and works pretty
-straightforward:
+This resource contains the actual translated data and works pretty straightforward:
 Given a localization id entries can be added
 
 How is the content added when fetching the resource?
 
-The insert_localized_fields hook check the language relevant fields and
-has to query the database to retrieve the language content for the given
-localization id.
+The insert_localized_fields hook check the language relevant fields and has to query the database to retrieve the language content for the given localization id.
 
-Then it uses flasks request.accept_languages.best_match() function to get
-the best fitting option. (it compares the Accept Language header to the
-given languages)
+Then it uses flasks request.accept_languages.best_match() function to get the best fitting option. (it compares the Accept Language header to the given languages)
 
-When none is matching it tries to return content in default language as
-specified in settings.py (Idea behind this: There will nearly always be
-german content). If this it not available, it uses an empty string)
+When none is matching it tries to return content in default language as specified in settings.py (Idea behind this: There will nearly always be german content). If this it not available, it uses an empty string)
 
 The field (title or description) is then added to the response
 
 
 ## Note: Testing
 
-Both events and joboffers have the exact language fields, but job_offers have
-less other required fields.
-Therefore testing is done with job_offers - if there are any problems with
-language fields in events, ensure that the tests work AND that all language
-fields in events are configured EXACLY like in joboffers
+Both events and joboffers have the exact language fields, but job_offers have less other required fields.
+Therefore testing is done with job_offers - if there are any problems with language fields in events, ensure that the tests work AND that all language fields in events are configured EXACLY like in joboffers
+(Or extend the tests to cover events as well to be sure)
 
 ## Note: Automatization
 
-Since there are only four language fields (with title and description for both
-events and joboffers, which is convenient) all hooks and schema updates are
-done manually. Should a update of the api be intended which includes several
-more language fields automating this should be considered.
+Since there are only four language fields (with title and description for both events and joboffers, which is convenient) all hooks and schema updates are done manually. Should a update of the api be intended which includes several more language fields automating this should be considered.
 
 For every language field the following is necessary:
 
@@ -306,32 +310,64 @@ For every language field the following is necessary:
 - Adding a  id (foreignkey) and relationship to translationmappings (models.py)
 - Removing id from the schema to prohibit manually setting it (schemas.py)
 
+# LDAP
+
+The ETH uses the Lightweight Directory Access Protocol (LDAP) to provide data about students etc. [(More about ldap)](https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol)
+
+It is important that users can log in using their ETH credentials. But we cannot use shibboleth alone because extraordinary or honorary members without nethz credentials would not be able to log in. Therefore the api just authenticates via LDAP.
+
+We use a self-developed ETH-LDAP connector (based on the python ldap3 library) for all connections. [(Check it out)](https://github.com/NotSpecial/nethz)
+The file ldap.py contains all related code.
+
+## LDAP Connector
+
+This class is a small LDAP connector used by the api during authentication. It provides one basic function:
+Provide a username and password and the connector will try to authenticate the user and, if successful, query LDAP for the user data.
+
+This way the LDAP signup works and we make sure that relogging can be used to ensure the user data is up to date
+
+It is implemented as a class to be able to create the connector only once and keep it for the app.
+
+## ldap_synchronize
+
+This function is intended for periodic database updates. It queries all members from ldap and compares them to the database. Those missing are imported, those existing are updated (if necessary)
+
+This function takes a little time so it should not be executed when processing requests. It is intended to be used by manage.py (see admin docs) or cron jobs.
+
+### Why all users at the same time?
+
+Because ldap is stupid, basically. It can not handle complex logical statements very well so it is not effective to try to exclude users already existing ("Give me all users except user with names a, b or c")
+
+After a lot of testing we settled on just importing them all as the most effective solution.
+
+## About LDAP entries
+
+Most of the field ins LDAP are straightforward. Many fields exist and most of them can be ignored. See ldap.py for the relevant fields.
+
+Important is only the field "ou" which stands for "organisational unit" in LDAP.
+This field contains info about field of study and VSETH membership.
+The fields which are part of AMIV are specified in settings.py and can be changed there (if necessary)
+The list itself can be aquired from VSETH IT.
+
 
 # Files
 
-For files we wrote our own MediaStorage class as used by Eve by [extending the
-template](https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py) .
+For files we wrote our own MediaStorage class as used by Eve by [extending the template](https://github.com/nicolaiarocci/eve/blob/develop/eve/io/media.py).
 The files need a folder which is created in the process of "create_config".
 
-Maybe in future releases of Eve there will be an official implementation of
-file system storage. Maybe it would be useful to use this instead of our
-implementation instead in this case.
+Maybe in future releases of Eve there will be an official implementation of file system storage. Maybe it would be useful to use this instead of our implementation instead in this case.
 
 How Eve uses the MediaStorage Class can be found [here](http://python-eve.org/features.html#file-storage)
 
-To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py"
-contains the class "ExtFile" which contains the file as well as the additional
-information Eve needs.
+To serve the information specified in EXTENDED_MEDIA_INFO the file "media.py" contains the class "ExtFile" which contains the file as well as the additional information Eve needs.
 
 As EXTENDED_MEDIA_INFO we use file name, size and a URL to the file.
-The URL can be accessed over a custom endpoint specified in "file_endpoint.py",
-using flask methods.
+The URL can be accessed over a custom endpoint specified in "file_endpoint.py", using flask methods.
 
 
 # Validation
 
-Luckily the cerberus validator is easily extensible, so we could implement many
-custom rules. Those are found in validator.py and are not very complex.
+Luckily the cerberus validator is easily extensible, so we could implement many custom rules. Those are found in validator.py and are not very complex.
 
 More information on cerberus and its merits can be found in the [Cerberus Documentation](https://cerberus.readthedocs.org/en/latest/)
 

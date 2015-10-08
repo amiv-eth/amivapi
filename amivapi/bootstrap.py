@@ -28,6 +28,7 @@ from amivapi import (
     forwards,
     localization,
     validation,
+    ldap,
     documentation
 )
 
@@ -68,6 +69,13 @@ def create_app(disable_auth=False, **kwargs):
     Bootstrap(app)
     with app.app_context():
         g.db = db.session
+
+    # Create LDAP connector
+    if config['ENABLE_LDAP']:
+        # app.ldap_connector = ldap.AuthenticatedLdap(config['LDAP_USER'],
+        #                                             config['LDAP_PASS'])
+        app.ldap_connector = ldap.LdapConnector(config['LDAP_USER'],
+                                                config['LDAP_PASS'])
 
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")

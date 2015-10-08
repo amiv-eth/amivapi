@@ -28,7 +28,7 @@ from amivapi import settings, models, schemas
 from amivapi.models import User
 from amivapi.utils import create_new_hash, get_config
 from amivapi.bootstrap import init_database
-
+from amivapi.ldap import ldap_synchronize
 
 manager = Manager(Flask("amivapi"))
 # This must be the same as in amivapi.utils.get_config
@@ -183,6 +183,9 @@ def apikeys_delete():
 @manager.option("--root-mail", dest="root_mail")
 @manager.option("--smtp", dest="smtp_server")
 @manager.option("--forward-dir", dest="forward_dir")
+@manager.option("--enable-ldap", dest="enable_ldap")
+@manager.option("--ldap-user", dest="ldap_user")
+@manager.option("--ldap-pass", dest="ldap_pass")
 def create_config(force=False,
                   debug=None,
                   db_type=None,
@@ -194,7 +197,13 @@ def create_config(force=False,
                   file_dir=None,
                   root_mail=None,
                   smtp_server=None,
-                  forward_dir=None):
+                  forward_dir=None,
+                  enable_ldap=False,
+                  ldap_user=None,
+                  ldap_pass=None,
+                  ldap_import_count=None,
+                  ldap_update_count=None
+                  ):
     """Creates a new configuration.
 
     The config is stored in ROOT/config.cfg
@@ -258,6 +267,7 @@ def create_config(force=False,
     config['TESTS_IN_DB'] = tests_in_db
     config['SQLALCHEMY_DATABASE_URI'] = db_uri
 
+    # Filestorage
     if not file_dir:
         file_dir = abspath(expanduser(prompt("Path to file storage folder",
                                              default=join(settings.ROOT_DIR,
@@ -274,6 +284,7 @@ def create_config(force=False,
                              default='localhost')
     config['SMTP_SERVER'] = smtp_server
 
+    # Mailforwardstorage
     if not forward_dir:
         forward_dir = prompt("Directory where forwards are stored",
                              default=join(settings.ROOT_DIR, "forwards"))
@@ -285,6 +296,26 @@ def create_config(force=False,
     if not exists(config['FORWARD_DIR']):
         mkdir(config['FORWARD_DIR'], 0o700)
 
+    # LDAP
+    if not enable_ldap:
+        enable_ldap = prompt_bool(
+            "Use eth ldap for auth? (Only accessible in eth-network/VPN!)")
+    if not ldap_user:
+        ldap_user = prompt("LDAP username")
+    if not ldap_pass:
+        ldap_pass = prompt("LDAP password")
+    if not ldap_import_count:
+        ldap_import_count = prompt("Maximum number of new imports from ldap:",
+                                   default=500)
+    if not ldap_update_count:
+        ldap_update_count = prompt("Maximum number of ldap updates",
+                                   default=200)
+
+    config['ENABLE_LDAP'] = enable_ldap
+    config['LDAP_USER'] = ldap_user
+    config['LDAP_PASS'] = ldap_pass
+
+    # APIKEYS
     config['APIKEYS'] = {}
 
     # Write everything to file
@@ -322,14 +353,49 @@ def set_root_password():
     try:
         root = session.query(User).filter(User.id == 0).one()
     except (OperationalError, ProgrammingError):
-        print ("No root user found, please recreate the config to set up a"
-               " database.")
+        print("No root user found, please recreate the config to set up a"
+              " database.")
         exit(0)
 
     root.password = create_new_hash(prompt("New root password"))
 
     session.commit()
     session.close()
+
+
+#
+# Import and update users from ldap
+#
+
+def _failed(faildict):
+    for key, value in faildict.items():
+        if len(value) > 0:
+            return True
+    return False
+
+
+@manager.command
+def ldap_sync():
+    """ Import users from ldap """
+    cfg = get_config()
+    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
+    sessionmak = sessionmaker(bind=engine)
+    session = sessionmak()
+
+    print("Starting ldap sync, this may take a minute...")
+    n_res = ldap_synchronize(cfg['LDAP_USER'],
+                             cfg['LDAP_PASS'],
+                             session,
+                             cfg['LDAP_MEMBER_OU_LIST'])
+
+    print("Successfully imported %i new users" % n_res[0])
+    print("Successfully updated %i users" % n_res[1])
+
+    if _failed(n_res[2]):
+        print("There have been some errors!")
+        pprint(n_res[2])
+    else:
+        print("No errors.")
 
 
 #

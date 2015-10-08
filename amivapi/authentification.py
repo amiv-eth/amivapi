@@ -27,6 +27,7 @@ from eve.methods.post import post_internal
 from eve.render import send_response
 from eve.utils import debug_error_message, config
 
+from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
 from amivapi.utils import create_new_hash, check_hash
@@ -86,6 +87,26 @@ class TokenAuth(TokenAuth):
 authentification = Blueprint('authentification', __name__)
 
 
+def _token_response(user_id):
+    # Everything is alright, create token for user
+    token = b64encode(urandom(256)).decode('utf_8')
+
+    # Make sure token is unique
+    while app.data.driver.session.query(models.Session).filter_by(
+            token=token).count() != 0:
+        token = b64encode(urandom(256)).decode('utf_8')
+
+    response = post_internal(
+        'sessions',
+        {
+            'user_id': user_id,
+            'token': token
+        }
+    )
+
+    return response
+
+
 @authentification.route('/sessions', methods=['POST'])
 def process_login():
     """ Login
@@ -93,8 +114,11 @@ def process_login():
     token is created and used to register a session in the database, which is
     sent back to the user.
 
-    If the user is not found we try to import the user via LDAP, if he is found
-    we update his data
+    First of all we will try to authenticate the user with LDAP (if enabled).
+    If this succeeds we update or create (if not yet in db) the user data
+
+    If LDAP auth fails and the user is in the db, we will compare the received
+    pw with the pw in the db.
 
     :returns: Flask.Response object
     """
@@ -106,32 +130,91 @@ def process_login():
         abort(422, description=debug_error_message(
             "Please provide the password."))
 
-    user = app.data.driver.session.query(models.User).filter_by(
-        username=p_data['username']).all()
+    error = ""
 
-    if(len(user) == 1):
+    # PHASE 1: LDAP
+    # If LDAP is enabled, try to authenticate the user
+    # If this is successful, create/update user data
+    if config.ENABLE_LDAP:  # To LDAP or not to LDAP?
+        ldap_data = app.ldap_connector.check_user(p_data['username'],
+                                                  p_data['password'])
 
-        if not check_hash(p_data['password'], user[0].password):
-            error = "Wrong login: Password does not match!"
+        if ldap_data is not None:  # ldap success
+            # Query user by nethz field
+            has_user_nethz = app.data.driver.session.query(exists().where(
+                models.User.nethz == p_data['username']
+            )).scalar()
+
+            # Create or update user
+            if has_user_nethz:
+                user = app.data.driver.session.query(models.User).filter_by(
+                    nethz=p_data['username'])
+
+                # Membership status will only be upgraded automatically
+                # If current Membership is not none ignore the ldap result
+                if user.one().membership is not None:
+                    ldap_data.pop('membership')
+
+                user.update(ldap_data)
+
+                app.data.driver.session.commit()
+
+                user_id = user.one().id
+
+                return send_response('sessions', _token_response(user_id))
+            else:
+                # Create new user
+                # Default username will equal nethz
+                username = ldap_data['nethz']
+
+                # Make sure username doesn't exist already
+                i = 0
+                while (app.data.driver.session.query(models.User)
+                        .filter_by(username=username).count() != 0):
+                    i += 1
+                    username = "%s_%i" % (username, i)
+
+                ldap_data['username'] = username
+
+                # Set Mail now
+                ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
+
+                new_user = post_internal('users',
+                                         ldap_data,
+                                         skip_validation=True
+                                         )[0]  # first element is the data
+
+                user_id = new_user['id']
+
+                return send_response('sessions', _token_response(user_id))
+
+        else:
+            error += "LDAP authentication failed, "  # Provide additional info
+    else:
+        error += "LDAP authentication deactivated; "  # Provide additional info
+
+    # PHASE 2: database
+    # If LDAP fails or is not accessible, try to find user in database
+    # Query user by username now
+    has_user_username = app.data.driver.session.query(exists().where(
+        models.User.username == p_data['username']
+    )).scalar()
+
+    if has_user_username:
+        user = app.data.driver.session.query(models.User).filter_by(
+            username=p_data['username']).one()
+
+        if check_hash(p_data['password'], user.password):
+            # Sucessful login with db, send response
+            return send_response('sessions', _token_response(user.id))
+        else:
+            error += "Login with db failed: Password does not match!"
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
 
-        token = b64encode(urandom(256)).decode('utf_8')
-        # Make sure token is unique
-        while app.data.driver.session.query(models.Session).filter_by(
-                token=token).count() != 0:
-            token = b64encode(urandom(256)).decode('utf_8')
-
-        response = post_internal(
-            'sessions',
-            {
-                'user_id': user[0].id,
-                'token': token
-            }
-        )
-        return send_response('sessions', response)
-
-    error = "Wrong login: User not found!"
+    # PHASE 3: Abort if everything else fails
+    # LDAP is unsuccessful (deactivated/wrong credentials) and user not found
+    error += "Login with db failed: User not found!"
 
     app.logger.debug(error)
     abort(401, description=debug_error_message(error))
