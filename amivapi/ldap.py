@@ -161,7 +161,15 @@ class LdapConnector():
 
 
 def ldap_synchronize(user, pw, session, ou_list):
+    """
+    Queries the ETH LDAP for all our members. Adds nonexisting ones to db.
+    Updates existing ones if ldap data has changed.
 
+    :param user: the ldap user. must be privileged to search for all ldap users
+    :param pw: the password for the ldap user
+    :param session: a database session
+    :param ou_list: list of assigned organisational units in ldap
+    """
     # Part 1: Get data from ldap
     connector = ldap.AuthenticatedLdap(user, pw)
 
