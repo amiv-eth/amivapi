@@ -72,8 +72,6 @@ def create_app(disable_auth=False, **kwargs):
 
     # Create LDAP connector
     if config['ENABLE_LDAP']:
-        # app.ldap_connector = ldap.AuthenticatedLdap(config['LDAP_USER'],
-        #                                             config['LDAP_PASS'])
         app.ldap_connector = ldap.LdapConnector(config['LDAP_USER'],
                                                 config['LDAP_PASS'])
 

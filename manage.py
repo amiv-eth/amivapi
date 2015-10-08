@@ -198,7 +198,7 @@ def create_config(force=False,
                   root_mail=None,
                   smtp_server=None,
                   forward_dir=None,
-                  enable_ldap=False,
+                  enable_ldap=None,
                   ldap_user=None,
                   ldap_pass=None,
                   ):
@@ -295,9 +295,13 @@ def create_config(force=False,
         mkdir(config['FORWARD_DIR'], 0o700)
 
     # LDAP
-    if not enable_ldap:
+    if enable_ldap is None:
         enable_ldap = prompt_bool(
             "Use eth ldap for auth? (Only accessible in eth-network/VPN!)")
+    elif enable_ldap == "True":
+        enable_ldap = True
+    else:
+        enable_ldap = False
 
     config['ENABLE_LDAP'] = enable_ldap
 
