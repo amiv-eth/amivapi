@@ -201,8 +201,6 @@ def create_config(force=False,
                   enable_ldap=False,
                   ldap_user=None,
                   ldap_pass=None,
-                  ldap_import_count=None,
-                  ldap_update_count=None
                   ):
     """Creates a new configuration.
 
@@ -300,20 +298,15 @@ def create_config(force=False,
     if not enable_ldap:
         enable_ldap = prompt_bool(
             "Use eth ldap for auth? (Only accessible in eth-network/VPN!)")
-    if not ldap_user:
-        ldap_user = prompt("LDAP username")
-    if not ldap_pass:
-        ldap_pass = prompt("LDAP password")
-    if not ldap_import_count:
-        ldap_import_count = prompt("Maximum number of new imports from ldap:",
-                                   default=500)
-    if not ldap_update_count:
-        ldap_update_count = prompt("Maximum number of ldap updates",
-                                   default=200)
+        config['ENABLE_LDAP'] = enable_ldap
 
-    config['ENABLE_LDAP'] = enable_ldap
-    config['LDAP_USER'] = ldap_user
-    config['LDAP_PASS'] = ldap_pass
+    if enable_ldap and not ldap_user:
+        ldap_user = prompt("LDAP username")
+        config['LDAP_USER'] = ldap_user
+
+    if enable_ldap and not ldap_pass:
+        ldap_pass = prompt("LDAP password")
+        config['LDAP_PASS'] = ldap_pass
 
     # APIKEYS
     config['APIKEYS'] = {}

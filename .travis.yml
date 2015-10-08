@@ -1,17 +1,17 @@
 language: python
-python: 2.7 
+python: 2.7
 env:
   - TOX_ENV=py27
   - TOX_ENV=py34
   - TOX_ENV=pypy
   - TOX_ENV=flake8
 install: pip install tox coveralls
-script: 
+script:
   - tox -e $TOX_ENV
 before_script:
   - mysql -e 'create database amivapi;'
   - pip install --allow-external mysql-connector-python -r requirements.txt # We need this to run manage.py, tox will install libraries again
-  - python manage.py create_config -f 1 --debug 1 --db-type mysql --db-user travis --db-host localhost --db-name amivapi --tests-in-db 1 --file-dir files --root-mail root@example.com --smtp localhost --forward-dir forwards
+  - python manage.py create_config -f 1 --debug 1 --db-type mysql --db-user travis --db-host localhost --db-name amivapi --tests-in-db 1 --file-dir files --root-mail root@example.com --smtp localhost --forward-dir forwards --enable-ldap 0
 branches:
   only:
     - master
