@@ -93,11 +93,6 @@ def get_domain():
         'empty': False
     })
 
-    # _synchronzied is only updated by ldap operations
-    domain['users']['schema']['_ldap_updated'].update({
-        'readonly': True
-    })
-
     """
     Eventsignups, schema extensions including custom validation
     """

@@ -18,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from amivapi.models import Permission, Session
 from amivapi.utils import get_config, mail
 
-from amivapi.ldap import LdapSynchronizer
+from amivapi.ldap import ldap_synchronize
 
 
 def delete_expired_sessions(db, config):
@@ -80,17 +80,12 @@ def run(db, config):
     delete_expired_sessions(db, config)
 
     if config['ENABLE_LDAP']:
-        ldap = LdapSynchronizer(config['LDAP_USER'], config['LDAP_PASS'],
-                                db,
-                                config['LDAP_MEMBER_OU_LIST'],
-                                config['LDAP_IMPORT_COUNT'],
-                                config['LDAP_UPDATE_COUNT'])
-
-        ldap.user_import()
-        ldap.user_update()
+        ldap_synchronize(config['LDAP_USER'],
+                         config['LDAP_PASS'],
+                         db,
+                         config['LDAP_MEMBER_OU_LIST'])
 
 # Run
-
 
 if __name__ == '__main__':
     cfg = get_config()

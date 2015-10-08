@@ -4,7 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 
 """
-Create ldap shizzle
+All ldap functions are collected here.
+
+Contains a connector class designed for use with the app and a sync function
+designed for cron jobs or manual imports
 """
 from datetime import datetime as dt
 import re
@@ -12,8 +15,19 @@ import re
 from flask import current_app as app
 from eve.utils import document_etag
 from amivapi.models import User
+from sqlalchemy import exc
 
 from nethz import ldap
+
+# The LDAP attributes we need for the api
+LDAP_ATTR = [
+    'cn',
+    'swissEduPersonMatriculationNumber',
+    'givenName',
+    'sn',
+    'swissEduPersonGender',
+    'ou'
+]
 
 
 def _escape(query):
@@ -31,11 +45,11 @@ def _escape(query):
     """
 
     replacements = {
-        '*': r'\2A',
-        '(': r'\28',
-        ')': r'\29',
-        '\\': r'\5C',  # r as string flag doesnt work with \'
-        chr(0): r'\00'
+        '*': r'\\2A',
+        '(': r'\\28',
+        ')': r'\\29',
+        '\\': r'\\5C',  # r as string flag doesnt work with \'
+        chr(0): r'\\00'
     }
 
     return re.sub(
@@ -90,10 +104,15 @@ def _filter_data(data, ou_list):
     else:
         res['membership'] = u"none"
 
-    # Set datetime for this update
-    res['_ldap_updated'] = dt.utcnow()
-
     return res
+
+
+def _changed(db_user, ldap_user):
+    """ Compare user from db with ldap data """
+    for key in ldap_user:
+        if getattr(db_user, key) != ldap_user[key]:
+            return True
+    return False
 
 
 class LdapConnector():
@@ -128,7 +147,10 @@ class LdapConnector():
             # first result
             app.logger.debug("Successful ldap auth for user with cn '%s'" % cn)
 
-            raw_data = self.ldap.search("(cn=%s)" % _escape(cn))[0]
+            raw_data = self.ldap.search(
+                "(cn=%s)" % _escape(cn),
+                attributes=LDAP_ATTR
+            )[0]
             data = _filter_data(raw_data, app.config['LDAP_MEMBER_OU_LIST'])
 
             return data  # success!
@@ -138,138 +160,86 @@ class LdapConnector():
         return None
 
 
-class LdapSynchronizer():
-    """
-    a specialised ldap connector for database updates.
-    the synchronizer will add users from ldap to our database if missing and
-    can update existing users
-    """
-    def __init__(self, user, pw, session, ou_list, n_import, n_update):
-        """
-        :param user: the ldap user. must be privileged to search for all ldap
-        users
-        :param pw: the password for the ldap user
-        :param session: the database session
-        :param ou_list: organisational units to consider for membership
-        :param n_import: maximum number of new imports from ldap
-        :param n_update: maximum number of users that will be updated
-        """
-        self.ldap = ldap.AuthenticatedLdap(user, pw)
+def ldap_synchronize(user, pw, session, ou_list):
 
-        self.session = session
+    # Part 1: Get data from ldap
+    connector = ldap.AuthenticatedLdap(user, pw)
 
-        self.ou_list = ou_list
+    # Build the query
+    # Member? VSETH necessary, then any of the fields
+    query_string = u"(& (ou=VSETH Mitglied)(| "
+    for item in ou_list:
+        query_string += u"(ou=%s)" % _escape(item)  # Items contain braces
+    query_string += u" ) )"
 
-        self.n_import = n_import
-        self.n_update = n_update
+    results = connector.search(query_string, attributes=LDAP_ATTR)
 
-    def user_import(self):
-        """
-        queries ldap for users not existing in the database.
-        returns a maximum of results as specified in the app config
+    res_dict = {item['cn'][0]: item for item in results}
 
-        :returns: Number of imported users
-        """
-        # Build the query
-        # Base: is member? VSETH necessary, then any of the fields
-        base = u"(ou=VSETH Mitglied)"
+    res_set = set(res_dict.keys())
 
-        ou = ""
-        for item in self.ou_list:
-            ou += u"(ou=%s)" % _escape(item)  # Items contain braces
+    # Part 2: Get data from db
+    users = session.query(User).all()
 
-        if len(self.ou_list) > 1:
-            ou = u"(| %s )" % ou
+    u_set = set([item.nethz for item in users])
 
-        # Now exclude everyone who is in the db - they will be taken care of in
-        # ldap_sync
-        users = self.session.query(User).filter(User.nethz.isnot(None)).all()
-        if users:
-            ext = u""
-            for user in users:
-                ext += u"(!(cn=%s))" % _escape(user.nethz)  # just to be sure
+    # Part 3: Import users not yet in database
+    new = res_set.difference(u_set)  # items in results which are not in users
 
-            ldap_query = "(&%s%s%s)" % (ext, ou, base)
-        else:
-            # No users, base is whole query
-            ldap_query = "(&%s%s)" % (base, ou)
+    failed = {
+        'bad_ldap_data': [],
+        'failed_import': [],
+        'failed_update': []
+    }
 
-        result = self.ldap.search(ldap_query, limit=self.n_import)
-
-        done = 0
-        for item in result:
+    n_new = 0
+    for nethz in new:
+        try:
+            filtered = _filter_data(res_dict[nethz], ou_list)
+            user = User(
+                _author=0,
+                _created=dt.utcnow(),
+                _updated=dt.utcnow(),
+                _etag=document_etag(filtered),
+                username=filtered['nethz'],
+                email="%s@ethz.ch" % filtered['nethz'],
+                **filtered  # Rest of the daa
+            )
+            session.add(user)
             try:
-                filtered = _filter_data(item, self.ou_list)
-                user = User(
-                    _author=0,
-                    _created=dt.utcnow(),
-                    _updated=dt.utcnow(),
-                    _etag=document_etag(filtered),
-                    username=filtered['nethz'],
-                    email="%s@ethz.ch" % filtered['nethz'],
-                    **filtered  # Rest of the daa
-                )
-                self.session.add(user)
-                self.session.commit()
-                done += 1
-            except:  # If anything is broken with the ldap data just ignore it.
-                self.session.rollback()
+                session.commit()
+                n_new += 1
+            except exc.SQLAlchemyError:
+                failed['failed_import'] += user
+                session.rollback()
+        except KeyError:  # A key error will happen if ldap data is incomplete
+            failed['bad_ldap_data'] += res_dict[nethz]
 
-        return done
+    # Part 4: Update users already in database
+    old = res_set.intersection(u_set)
 
-    def user_update(self):
-        """
-        Select the n users from the database which have been updated last and
-        query ldap to see if any information has changed.
+    user_query = session.query(User)
+    n_old = 0
+    for nethz in old:
+        try:
+            filtered = _filter_data(res_dict[nethz], ou_list)
+            user = user_query.filter_by(nethz=nethz)
+            userdata = user.one()
 
-        If there has never been an LDAP update, _ldap_updated will be set to
-        None - those will be tried to be updated first
-
-        :returns: Number of updated users
-        """
-        # Get n users with nethz name not Null
-        users = (
-            self.session.query(User)
-            .filter(User.nethz.isnot(None))
-            .order_by(User._ldap_updated)
-            [:self.n_update])
-
-        if len(users) == 0:
-            return 0  # Nothing to update
-
-        # Create a dict for easy assignment later
-        # Ignore users without nethz since they can not be queried
-
-        # Prepare ldap query
-        ldap_query = "(|"
-        for user in users:
-            ldap_query += "(cn=%s)" % _escape(user.nethz)
-        ldap_query += ")"
-
-        # Query ldap
-        ldap_res_raw = self.ldap.search(ldap_query)
-        # Put in dictionary with nethz as key for access
-        ldap_res = {}
-        for item in ldap_res_raw:
-            filtered = _filter_data(item, self.ou_list)
-            ldap_res[filtered['nethz']] = filtered
-
-        # Now update users
-        query_all = self.session.query(User)
-        for user in users:
-            # Filter for user
-            query = query_all.filter_by(nethz=user.nethz)
-            if user.nethz in ldap_res.keys():
+            # Is anything different?
+            if _changed(userdata, filtered):
                 # No downgrade of membership
-                if user.membership is not "none":
-                    ldap_res[user.nethz].pop('membership')
+                if userdata.membership is not "none":
+                    filtered.pop('membership')
 
-                query.update(ldap_res[user.nethz])
-            else:
-                # Still set _synchronized
-                query.update({'_ldap_updated': dt.utcnow()})
+                user.update(filtered)
+                try:
+                    session.commit()
+                    n_old += 1
+                except exc.SQLAlchemyError:
+                    failed['failed_update'] += filtered
+                    session.rollback()
+        except KeyError:
+            failed['bad_ldap_data'] += res_dict[nethz]
 
-        # Finishing move
-        self.session.commit()
-
-        return len(ldap_res_raw)
+    return (n_new, n_old, failed)

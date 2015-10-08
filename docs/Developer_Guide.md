@@ -317,21 +317,28 @@ The ETH uses the Lightweight Directory Access Protocol (LDAP) to provide data ab
 It is important that users can log in using their ETH credentials. But we cannot use shibboleth alone because extraordinary or honorary members without nethz credentials would not be able to log in. Therefore the api just authenticates via LDAP.
 
 We use a self-developed ETH-LDAP connector (based on the python ldap3 library) for all connections. [(Check it out)](https://github.com/NotSpecial/nethz)
-The file ldap.py contains two different classes based on our nethz library.
+The file ldap.py contains all related code.
 
 ## LDAP Connector
 
-The first class is a small LDAP connector used by the api during authentication. It provides one basic function:
+This class is a small LDAP connector used by the api during authentication. It provides one basic function:
 Provide a username and password and the connector will try to authenticate the user and, if successful, query LDAP for the user data.
 
 This way the LDAP signup works and we make sure that relogging can be used to ensure the user data is up to date
 
-## LDAP Synchronizer
+It is implemented as a class to be able to create the connector only once and keep it for the app.
 
-This class is equipped for cron tasks and requires a database connection.
-It can import users from LDAP which are not in the database yet and update users (with up-to-date LDAP data) which already exist.
+## ldap_synchronize
 
-The latter function makes use of the "_ldap_updated" field for users to track who to update next
+This function is intended for periodic database updates. It queries all members from ldap and compares them to the database. Those missing are imported, those existing are updated (if necessary)
+
+This function takes a little time so it should not be executed when processing requests. It is intended to be used by manage.py (see admin docs) or cron jobs.
+
+### Why all users at the same time?
+
+Because ldap is stupid, basically. It can not handle complex logical statements very well so it is not effective to try to exclude users already existing ("Give me all users except user with names a, b or c")
+
+After a lot of testing we settled on just importing them all as the most effective solution.
 
 ## About LDAP entries
 

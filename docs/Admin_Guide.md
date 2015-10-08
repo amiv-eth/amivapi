@@ -22,16 +22,8 @@ A quick guide for the most important functions:
 
 ## LDAP
 
-manage.py offers two functions to trigger ldap imports.
+manage.py offers a functions to trigger ldap synchronization.
 
-If you want to import new users to the api, enter
+    python manage.py ldap_sync
 
-    python manage.py ldap_import -n=500
-
-Where -n=500 specifies the max. number of imports. You can of course change this or omit it entirely (in this case the default value will be loaded from the config)
-
-If you want to update users in the database, enter
-
-    python manage.py ldap_update -n=100
-
-Where again the -n option can be used to ignore the config values.
+This imports all users missing from ldap to the api and updates existing users

@@ -28,7 +28,7 @@ from amivapi import settings, models, schemas
 from amivapi.models import User
 from amivapi.utils import create_new_hash, get_config
 from amivapi.bootstrap import init_database
-from amivapi.ldap import LdapSynchronizer
+from amivapi.ldap import ldap_synchronize
 
 manager = Manager(Flask("amivapi"))
 # This must be the same as in amivapi.utils.get_config
@@ -186,8 +186,6 @@ def apikeys_delete():
 @manager.option("--enable-ldap", dest="enable_ldap")
 @manager.option("--ldap-user", dest="ldap_user")
 @manager.option("--ldap-pass", dest="ldap_pass")
-@manager.option("--ldap-import-count", dest="ldap_import_count")
-@manager.option("--ldap-update-count", dest="ldap_update_count")
 def create_config(force=False,
                   debug=None,
                   db_type=None,
@@ -316,8 +314,6 @@ def create_config(force=False,
     config['ENABLE_LDAP'] = enable_ldap
     config['LDAP_USER'] = ldap_user
     config['LDAP_PASS'] = ldap_pass
-    config['LDAP_IMPORT_COUNT'] = ldap_import_count
-    config['LDAP_UPDATE_COUNT'] = ldap_update_count
 
     # APIKEYS
     config['APIKEYS'] = {}
@@ -371,55 +367,35 @@ def set_root_password():
 # Import and update users from ldap
 #
 
+def _failed(faildict):
+    for key, value in faildict.items():
+        if len(value) > 0:
+            return True
+    return False
 
-@manager.option('-n', '--n-import', dest='import_count_input')
-def ldap_import(import_count_input=None):
+
+@manager.command
+def ldap_sync():
     """ Import users from ldap """
     cfg = get_config()
     engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
     sessionmak = sessionmaker(bind=engine)
     session = sessionmak()
 
-    if import_count_input is None:
-        import_count = cfg['LDAP_IMPORT_COUNT']
+    print("Starting ldap sync, this may take a minute...")
+    n_res = ldap_synchronize(cfg['LDAP_USER'],
+                             cfg['LDAP_PASS'],
+                             session,
+                             cfg['LDAP_MEMBER_OU_LIST'])
+
+    print("Successfully imported %i new users" % n_res[0])
+    print("Successfully updated %i users" % n_res[1])
+
+    if _failed(n_res[2]):
+        print("There have been some errors!")
+        pprint(n_res[2])
     else:
-        import_count = int(import_count_input)  # Input comes as string
-
-    ldap = LdapSynchronizer(cfg['LDAP_USER'],
-                            cfg['LDAP_PASS'],
-                            session,
-                            cfg['LDAP_MEMBER_OU_LIST'],
-                            import_count,
-                            cfg['LDAP_UPDATE_COUNT'])
-
-    n_res = ldap.user_import()
-
-    print("Successfully imported %i new users" % n_res)
-
-
-@manager.option('-n', '--n-update', dest='update_count_input')
-def ldap_update(update_count_input=None):
-    """ Update users in database with ldap data """
-    cfg = get_config()
-    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
-    sessionmak = sessionmaker(bind=engine)
-    session = sessionmak()
-
-    if update_count_input is None:
-        update_count = cfg['LDAP_UPDATE_COUNT']
-    else:
-        update_count = int(update_count_input)  # Input comes as string
-
-    ldap = LdapSynchronizer(cfg['LDAP_USER'],
-                            cfg['LDAP_PASS'],
-                            session,
-                            cfg['LDAP_MEMBER_OU_LIST'],
-                            cfg['LDAP_IMPORT_COUNT'],
-                            update_count)
-
-    n_res = ldap.user_update()
-
-    print("Successfully updated %i new users" % n_res)
+        print("No errors.")
 
 
 #
