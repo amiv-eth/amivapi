@@ -12,7 +12,7 @@ class AuthentificationTest(util.WebTest):
         """ Try to login with an unknown username """
         self.new_user(username=u"user1", password=u"user1")
 
-        self.api.post("/sessions", data={'username': u"user1\0",
+        self.api.post("/sessions", data={'username': u"user2",
                                          'password': u"user1"}, status_code=401)
 
     def test_no_usernames(self):
