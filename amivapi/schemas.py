@@ -150,8 +150,9 @@ def get_domain():
     """
     domain['events']['schema'].update({
         'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'img_web': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'img_1920_1080': {'type': 'media', 'filetype': ['png', 'jpeg']}
+        'img_banner': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_poster': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_infoscreen': {'type': 'media', 'filetype': ['png', 'jpeg']}
     })
 
     domain['files']['schema'].update({

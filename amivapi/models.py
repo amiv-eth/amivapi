@@ -276,10 +276,12 @@ class Event(Base):
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
+
     # Images
     img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
-    img_web = Column(CHAR(100))  # This will be modified in schemas.py!
-    img_1920_1080 = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_banner = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_poster = Column(CHAR(100))  # This will be modified in schemas.py!
+    img_infoscreen = Column(CHAR(100))  # This will be modified in schemas.py!
 
     # Translatable fields
     # The relationship exists to ensure cascading delete and will be hidden
