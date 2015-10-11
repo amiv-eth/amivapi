@@ -292,6 +292,13 @@ class SignupDataTest(util.WebTestNoAuth):
         }, status_code=422).json
         self.assertFalse('exception' in r['_issues'].keys())
 
+        # Now with missing event id
+        r = self.api.post("/eventsignups", data={
+            'user_id': userid,
+            'additional_fields': json.dumps({'department': 'mavt'}),
+        }, status_code=422).json
+        self.assertFalse('exception' in r['_issues'].keys())
+
     def test_signup_twice(self):
         """Test to signup twice for same event"""
         event = self.new_event(additional_fields=json.dumps({

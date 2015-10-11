@@ -103,18 +103,22 @@ class ValidatorAMIV(ValidatorSQL):
             # If PATCH, then event_id will not be provided, we have to find it
             if request_method() == 'PATCH':
                 lookup = request.view_args
-            else:
-                if not('event_id' in self.document.keys()):
-                    self._error(field, "Cannot evaluate additional field " +
-                                "without event_id")
+            elif ('event_id' in self.document.keys()):
                 lookup = {'_id': self.document['event_id']}
+            else:
+                self._error(field, "Cannot evaluate additional field " +
+                                   "without event_id")
+                lookup = None
 
             # Use Eve method get_document to avoid accessing the db manually
-            event = get_document('events', False, **lookup)
+            if lookup is not None:
+                event = get_document('events', False, **lookup)
+            else:
+                event = None
 
             # Load schema, we can use this without caution because only valid
             # json schemas can be written to the database
-            if event:
+            if event is not None:
                 schema = json.loads(event['additional_fields'])
                 v = app.validator(schema)  # Create a new validator
                 v.validate(data)

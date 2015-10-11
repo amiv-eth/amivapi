@@ -148,6 +148,9 @@ class FileTest(util.WebTestNoAuth):
 
         header = {'content-type': 'multipart/form-data'}
 
+        data = {'pdf': 'Not a file at all.'}
+        self.api.post('/joboffers', data=data, headers=header, status_code=422)
+
         data = {'pdf': (BytesIO(b'Not a pdf'), u'file.pdf')}
         self.api.post('/joboffers', data=data, headers=header, status_code=422)
 

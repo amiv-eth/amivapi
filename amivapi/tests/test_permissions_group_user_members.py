@@ -82,6 +82,7 @@ class GroupUserMemberAuthTest(util.WebTest):
                       token=registered_session.token,
                       status_code=403)
 
+        # Admin can add user
         new_usermember = self.api.post("/groupusermembers", data=data,
                                        token=admin_session.token,
                                        status_code=201).json
@@ -90,6 +91,7 @@ class GroupUserMemberAuthTest(util.WebTest):
             filter_by(id=new_usermember['id']).delete()
         db.commit()
 
+        # Group owner as well
         new_usermember = self.api.post("/groupusermembers", data=data,
                                        token=group_owner_session.token,
                                        status_code=201).json
@@ -98,6 +100,7 @@ class GroupUserMemberAuthTest(util.WebTest):
             filter_by(id=new_usermember['id']).delete()
         db.commit()
 
+        # And the user himself, too
         self.api.post("/groupusermembers", data=data,
                       token=entry_user_session.token,
                       status_code=201)
