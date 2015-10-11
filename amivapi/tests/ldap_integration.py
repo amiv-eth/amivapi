@@ -17,10 +17,10 @@ from copy import copy
 class LdapIntegrationTest(util.WebTest):
     def setUp(self, *args, **kwargs):  # __init__(self, *args, **kwargs):
         super(LdapIntegrationTest, self).setUp(*args, **kwargs)
-        self.username = getenv('ldap_test_user', "")
+        self.nethz = getenv('ldap_test_nethz', "")
         self.password = getenv('ldap_test_pass', "")
-        if not(self.username and self.password):
-            self.app.logger.debug("You need to specify 'ldap_test_user' and "
+        if not(self.nethz and self.password):
+            self.app.logger.debug("You need to specify 'ldap_test_nethz' and "
                                   + "'ldap_test_pass' in the environment "
                                   + "variables!")
 
@@ -38,24 +38,24 @@ class LdapIntegrationTest(util.WebTest):
     def test_ldap_auth(self):
         """
         Login with real credentials to test LDAP
-        Has to be called with -uusername -ppassword
+        Has to be called with -nnethz -ppassword
         """
         # Make sure that user with nethz name does not exist in db
         self.assertFalse(
-            self.db.query(exists().where(models.User.nethz == self.username))
+            self.db.query(exists().where(models.User.nethz == self.nethz))
             .scalar())
 
         self.api.post("/sessions", data={
-            'username': self.username,
+            'nethz': self.nethz,
             'password': self.password,
         }, status_code=201)  # .json
 
         # Make sure the user exists now
         self.assertTrue(
-            self.db.query(exists().where(models.User.nethz == self.username))
+            self.db.query(exists().where(models.User.nethz == self.nethz))
             .scalar())
 
-        user = self.db.query(models.User).filter_by(nethz=self.username).one()
+        user = self.db.query(models.User).filter_by(nethz=self.nethz).one()
         user = copy(user)
 
         gender = user.gender
@@ -69,24 +69,24 @@ class LdapIntegrationTest(util.WebTest):
         # Change gender and member status
         # Since from ldap we can only get regular or none as membership, we can
         # test this with setting it to honorary
-        query = self.db.query(models.User).filter_by(nethz=self.username)
+        query = self.db.query(models.User).filter_by(nethz=self.nethz)
         query.update({'gender': new_gender, 'membership': "honorary"})
         self.db.commit()
 
         # Now the data should be different (duh.)
-        get_1 = self.db.query(models.User).filter_by(nethz=self.username).one()
+        get_1 = self.db.query(models.User).filter_by(nethz=self.nethz).one()
         self.assertNotEqual(get_1.gender, gender)
         self.assertEqual(get_1.membership, "honorary")
 
         # Log in again, this should cause the API to sync with LDAP again
         self.api.post("/sessions", data={
-            'username': self.username,
+            'nethz': self.nethz,
             'password': self.password,
         }, status_code=201)
 
         # Now gender should be the same again
         # But the membership status should not downgraded
-        get_2 = self.db.query(models.User).filter_by(nethz=self.username).one()
+        get_2 = self.db.query(models.User).filter_by(nethz=self.nethz).one()
         self.assertEqual(get_2.gender, gender)
         self.assertEqual(get_2.membership, "honorary")
 

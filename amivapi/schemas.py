@@ -37,11 +37,11 @@ def get_domain():
             domain[cls.__tablename__]['schema']['_author'].update(
                 {'readonly': True})
 
-    # Make it possible to retrive a user with his username (/users/name)
+    # Make it possible to retrive a user with his nethz (/users/nethz)
     domain['users'].update({
         'additional_lookup': {
             'url': 'regex(".*[\w].*")',
-            'field': 'username',
+            'field': 'nethz',
         }
     })
 

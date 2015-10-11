@@ -110,9 +110,11 @@ def _token_response(user_id):
 @authentification.route('/sessions', methods=['POST'])
 def process_login():
     """ Login
-    A POST to /sessions exspects a username and password. If they are correct a
+    A POST to /sessions exspects nethz and password. If they are correct a
     token is created and used to register a session in the database, which is
     sent back to the user.
+
+    Instead of nethz email is also accepted.
 
     First of all we will try to authenticate the user with LDAP (if enabled).
     If this succeeds we update or create (if not yet in db) the user data
@@ -123,9 +125,18 @@ def process_login():
     :returns: Flask.Response object
     """
     p_data = payload()
-    if 'username' not in p_data:
+
+    # Self-made validation. Maybe use cerberus here?
+    if not(('nethz' in p_data) or ('email' in p_data)):
         abort(422, description=debug_error_message(
-            "Please provide a username."))
+            "Please provide your nethz or email. (Not both)"))
+    if ('nethz' in p_data) and ('email' in p_data):
+        abort(422, description=debug_error_message(
+            "Please provide only your nethz or email, not both."))
+    if ('nethz' in p_data) and (p_data['nethz'] is None):
+        abort(422, description=debug_error_message(
+            "Field nethz can not be NULL"))
+
     if 'password' not in p_data:
         abort(422, description=debug_error_message(
             "Please provide the password."))
@@ -135,20 +146,20 @@ def process_login():
     # PHASE 1: LDAP
     # If LDAP is enabled, try to authenticate the user
     # If this is successful, create/update user data
-    if config.ENABLE_LDAP:  # To LDAP or not to LDAP?
-        ldap_data = app.ldap_connector.check_user(p_data['username'],
+    if config.ENABLE_LDAP and ('nethz' in p_data):  # LDAP?
+        ldap_data = app.ldap_connector.check_user(p_data['nethz'],
                                                   p_data['password'])
 
         if ldap_data is not None:  # ldap success
             # Query user by nethz field
             has_user_nethz = app.data.driver.session.query(exists().where(
-                models.User.nethz == p_data['username']
+                models.User.nethz == p_data['nethz']
             )).scalar()
 
             # Create or update user
             if has_user_nethz:
                 user = app.data.driver.session.query(models.User).filter_by(
-                    nethz=p_data['username'])
+                    nethz=p_data['nethz'])
 
                 # Membership status will only be upgraded automatically
                 # If current Membership is not none ignore the ldap result
@@ -164,18 +175,6 @@ def process_login():
                 return send_response('sessions', _token_response(user_id))
             else:
                 # Create new user
-                # Default username will equal nethz
-                username = ldap_data['nethz']
-
-                # Make sure username doesn't exist already
-                i = 0
-                while (app.data.driver.session.query(models.User)
-                        .filter_by(username=username).count() != 0):
-                    i += 1
-                    username = "%s_%i" % (username, i)
-
-                ldap_data['username'] = username
-
                 # Set Mail now
                 ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
 
@@ -195,15 +194,25 @@ def process_login():
 
     # PHASE 2: database
     # If LDAP fails or is not accessible, try to find user in database
-    # Query user by username now
-    has_user_username = app.data.driver.session.query(exists().where(
-        models.User.username == p_data['username']
-    )).scalar()
+    # Query user by nethz or email now
+    if ('nethz' in p_data) and (
+            app.data.driver.session.query(exists().where(
+            models.User.nethz == p_data['nethz'])).scalar()):
 
-    if has_user_username:
         user = app.data.driver.session.query(models.User).filter_by(
-            username=p_data['username']).one()
+            nethz=p_data['nethz']).one()
 
+    elif ('email' in p_data) and (
+            app.data.driver.session.query(exists().where(
+            models.User.email == p_data['email'])).scalar()):
+
+        user = app.data.driver.session.query(models.User).filter_by(
+            email=p_data['email']).one()
+
+    else:
+        user = None  # Neither found by nethz nor email
+
+    if user:
         if check_hash(p_data['password'], user.password):
             # Sucessful login with db, send response
             return send_response('sessions', _token_response(user.id))
@@ -211,6 +220,14 @@ def process_login():
             error += "Login with db failed: Password does not match!"
             app.logger.debug(error)
             abort(401, description=debug_error_message(error))
+
+    # PHASE 2B: root user shortcut
+    # if nethz is root, try to auth the root user
+    if (('nethz' in p_data) and (p_data['nethz'] == 'root')):
+        root = app.data.driver.session.query(models.User).filter_by(id=0).one()
+        if check_hash(p_data['password'], root.password):
+            # Sucessful login with db as root, send response
+            return send_response('sessions', _token_response(0))
 
     # PHASE 3: Abort if everything else fails
     # LDAP is unsuccessful (deactivated/wrong credentials) and user not found

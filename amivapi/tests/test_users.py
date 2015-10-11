@@ -20,8 +20,9 @@ class UserResourceTest(util.WebTestNoAuth):
         users = self.api.get("/users", status_code=200)
         self.assertEquals(len(users.json['_items']), 3)
 
-        api_user = next(u for u in users.json['_items'] if u['username']
-                        == user.username)
+        api_user = next(u for u in users.json['_items'] if u['email']
+                        == user.email)
+
         for col in models.User.__table__.c:
             if col.key == 'password':
                 continue
@@ -51,10 +52,9 @@ class UserResourceTest(util.WebTestNoAuth):
             'lastname': "Doe",
             'email': "john-doe@example.net",
             'gender': "male",
-            'username': "johndoe",
             'membership': "none",
         }
-        for key in ["firstname", "lastname", "username", "email", "gender",
+        for key in ["firstname", "lastname", "email", "gender",
                     "membership"]:
             crippled_data = data.copy()
             crippled_data.pop(key)
@@ -85,7 +85,6 @@ class UserResourceTest(util.WebTestNoAuth):
             'lastname': "Doe",
             'email': "youdontgetmail",
             'gender': "male",
-            'username': "johndoe",
             'membership': "none",
         }
         self.api.post("/users", data=data, status_code=422)

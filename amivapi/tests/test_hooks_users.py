@@ -7,18 +7,6 @@ from amivapi.tests import util
 
 
 class UserHooksTest(util.WebTest):
-
-    def test_username_change(self):
-        """ Test if a user can change his username """
-
-        user = self.new_user()
-        session = self.new_session(user_id=user.id)
-
-        self.api.patch("/users/%i" % user.id, token=session.token,
-                       headers={"If-Match": user._etag},
-                       data={"username": "new_name"},
-                       status_code=403)
-
     def test_password_change(self):
         """ Test if a user can change his password """
 
@@ -35,7 +23,7 @@ class UserHooksTest(util.WebTest):
                        status_code=200)
 
         data = {
-            "username": user.username,
+            "email": user.email,
             "password": new_pw
         }
         self.api.post("/sessions", data=data, status_code=201)

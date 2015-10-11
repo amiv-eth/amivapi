@@ -52,7 +52,6 @@ class UsersPermissionsTest(util.WebTest):
         registered_session = self.new_session(user_id=registered.id)
 
         data = {
-            "username": "guy",
             "firstname": u"random",
             "lastname": u"guy",
             "email": u"guy@example.com",
@@ -62,12 +61,10 @@ class UsersPermissionsTest(util.WebTest):
         self.api.post("/users", data=data, token=admin_session.token,
                       status_code=201)
 
-        data['username'] = "guy2"
         data['email'] = u"guy2@example.com"
         self.api.post("/users", data=data, token=root_session.token,
                       status_code=201)
 
-        data['username'] = "guy3"
         data['email'] = u"guy3@example.com"
         self.api.post("/users", data=data, token=registered_session.token,
                       status_code=403)
@@ -131,7 +128,6 @@ class UsersPermissionsTest(util.WebTest):
         registered_session = self.new_session(user_id=registered.id)
 
         data = {
-            'username': 'replacement',
             'password': 'replacement',
             'firstname': 'replacement',
             'lastname': 'replacement',
@@ -157,7 +153,6 @@ class UsersPermissionsTest(util.WebTest):
         owner_session = self.new_session(user_id=owner.id)
 
         data = {
-            'username': 'replacement2',
             'password': 'replacement2',
             'firstname': 'replacement2',
             'lastname': 'replacement2',

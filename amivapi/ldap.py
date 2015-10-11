@@ -75,7 +75,7 @@ def _filter_data(data, ou_list):
               gender,
               department,
               membership
-              It does NOT contain username, password, email and RFID
+              It does NOT contain, password, email and RFID
     """
     res = {}
     res['nethz'] = data['cn'][0]
@@ -209,7 +209,6 @@ def ldap_synchronize(user, pw, session, ou_list):
                 _created=dt.utcnow(),
                 _updated=dt.utcnow(),
                 _etag=document_etag(filtered),
-                username=filtered['nethz'],
                 email="%s@ethz.ch" % filtered['nethz'],
                 **filtered  # Rest of the daa
             )

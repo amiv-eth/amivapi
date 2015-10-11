@@ -28,7 +28,7 @@ def find_by_pair(dicts, key, value):
     Example:
 
     users = api.get("/users")
-    root_user = find_by_pair(users, "username", "root")
+    root_user = find_by_pair(users, "nethz", "adietmue")
 
     This will find the entry in the response which corresponds to the root
     user
@@ -188,8 +188,6 @@ class WebTest(unittest.TestCase):
     @create_object(models.User)
     def new_user(self, **kwargs):
         count = self.next_count()
-        if 'username' not in kwargs:
-            kwargs['username'] = u"test-user-%i" % count
         if 'firstname' not in kwargs:
             kwargs['firstname'] = u"Test"
         if 'lastname' not in kwargs:

@@ -194,7 +194,6 @@ def init_database(connection, config):
         _etag='d34db33f',  # We need some etag, not important what it is
         _created=datetime.now(),
         _updated=datetime.now(),
-        username="root",
         password=create_new_hash(u"root"),
         firstname=u"Lord",
         lastname=u"Root",
@@ -207,7 +206,8 @@ def init_database(connection, config):
 
     # Because mysql is retarded it has ignored id=0 and we have to set it again
     # Also it will not ignore -1 for anonymous
-    root = session.query(models.User).filter_by(username=u'root').one()
+    # There is only one user in the db now
+    root = session.query(models.User).one()
     root.id = 0
     session.commit()
 
@@ -217,7 +217,6 @@ def init_database(connection, config):
         _etag='4l3x15F4G',
         _created=datetime.now(),
         _updated=datetime.now(),
-        username="anonymous",
         password=create_new_hash(u""),
         firstname=u"Anon",
         lastname=u"X",

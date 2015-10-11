@@ -95,7 +95,6 @@ class User(Base):
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
 
-    username = Column(CHAR(50), unique=True, nullable=False)
     password = Column(CHAR(100))  # base64 encoded hash data
     firstname = Column(Unicode(50), nullable=False)
     lastname = Column(Unicode(50), nullable=False)
