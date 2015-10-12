@@ -159,8 +159,7 @@ Replace <resource> with the respective resource name.
 File: authentification.py
 
 The process of authentification is straight forward. A user is identified by
-his username and his password. He can sent those to the /sessions resource and
-obtain a token which can prove authenticity of subsequent requests.
+his nethz (or email) and his password. He can sent those to the /sessions resource and obtain a token which can prove authenticity of subsequent requests.
 This login process is done by the process_login function. Sessions do not time
 out, but can be deleted.
 
@@ -322,7 +321,7 @@ The file ldap.py contains all related code.
 ## LDAP Connector
 
 This class is a small LDAP connector used by the api during authentication. It provides one basic function:
-Provide a username and password and the connector will try to authenticate the user and, if successful, query LDAP for the user data.
+Provide a nethz and password and the connector will try to authenticate the user and, if successful, query LDAP for the user data.
 
 This way the LDAP signup works and we make sure that relogging can be used to ensure the user data is up to date
 

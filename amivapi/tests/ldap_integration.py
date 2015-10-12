@@ -46,7 +46,7 @@ class LdapIntegrationTest(util.WebTest):
             .scalar())
 
         self.api.post("/sessions", data={
-            'nethz': self.nethz,
+            'user': self.nethz,
             'password': self.password,
         }, status_code=201)  # .json
 
@@ -80,7 +80,7 @@ class LdapIntegrationTest(util.WebTest):
 
         # Log in again, this should cause the API to sync with LDAP again
         self.api.post("/sessions", data={
-            'nethz': self.nethz,
+            'user': self.nethz,
             'password': self.password,
         }, status_code=201)
 

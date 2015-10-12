@@ -23,7 +23,7 @@ class UserHooksTest(util.WebTest):
                        status_code=200)
 
         data = {
-            "email": user.email,
+            "user": user.email,
             "password": new_pw
         }
         self.api.post("/sessions", data=data, status_code=201)

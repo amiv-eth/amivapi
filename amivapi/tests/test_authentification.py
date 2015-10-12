@@ -16,39 +16,44 @@ class AuthentificationTest(util.WebTest):
 
         # Login with mail
         self.api.post("/sessions", data={
-            'email': user.email,
+            'user': user.email,
             'password': password,
         }, status_code=201)
 
         # Login with nethz
         self.api.post("/sessions", data={
-            'nethz': user.nethz,
+            'user': user.nethz,
             'password': password,
         }, status_code=201)
 
-    def test_nethz_and_mail(self):
-        """ Test to obtain a login token wiht both nethz and mail
-        Login can only be done with either one, not both
-         """
-        password = u"some-really-secure-password"
-        user = self.new_user(nethz=u"abc", password=password)
-
-        self.api.post("/sessions", data={
-            'nethz': u"abc",
-            'email': user.email,
-            'password': password,
-        }, status_code=422)
-
-    def test_nethz_none(self):
-        """ Test to obtain a login token wiht both nethz and mail
-        Login can only be done with either one, not both
-         """
+    def test_bad_nethz(self):
+        """
+        user may not be None or empty
+        """
         password = u"some-really-secure-password"
         self.new_user(nethz=u"abc", password=password)
 
         self.api.post("/sessions", data={
-            'nethz': None,
+            'user': None,
             'password': password,
+        }, status_code=422)
+
+        self.api.post("/sessions", data={
+            'user': '',
+            'password': password,
+        }, status_code=422)
+
+    def test_bad_pass(self):
+        """
+        password can not be None.
+        """
+        user = u"abc"
+        password = u"some-really-secure-password"
+        self.new_user(nethz=user, password=password)
+
+        self.api.post("/sessions", data={
+            'user': user,
+            'password': None,
         }, status_code=422)
 
     def test_wrong_password(self):
@@ -56,7 +61,7 @@ class AuthentificationTest(util.WebTest):
         user = self.new_user(password=u"something")
 
         self.api.post("/sessions", data={
-            'email': user.email,
+            'user': user.email,
             'password': u"something-else",
         }, status_code=401)
 
@@ -80,7 +85,7 @@ class AuthentificationTest(util.WebTest):
         """ Try to login with an unknown username """
         self.new_user(email=u"user1@amiv", password=u"user1")
 
-        self.api.post("/sessions", data={'email': u"user2@amiv",
+        self.api.post("/sessions", data={'user': u"user2@amiv",
                                          'password': u"user1"}, status_code=401)
 
     def test_no_email(self):
@@ -93,7 +98,7 @@ class AuthentificationTest(util.WebTest):
         """ Try to login without password """
         self.new_user(email=u"user1@amiv")
 
-        self.api.post("/sessions", data={'email': u'user1@amiv'},
+        self.api.post("/sessions", data={'user': u'user1@amiv'},
                       status_code=422)
 
     def test_invalid_token(self):
@@ -107,7 +112,7 @@ class AuthentificationTest(util.WebTest):
 
         # Per default the password is "root"
         r = self.api.post("/sessions", data={
-            'nethz': 'root',
+            'user': 'root',
             'password': 'root',
         }, status_code=201)
 
