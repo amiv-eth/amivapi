@@ -306,12 +306,11 @@ def create_config(force=False,
     config['ENABLE_LDAP'] = enable_ldap
 
     # enable_ldap is a string!
-    if (enable_ldap == "True") and not ldap_user:
-        print("hea")
+    if enable_ldap and not ldap_user:
         ldap_user = prompt("LDAP username")
         config['LDAP_USER'] = ldap_user
 
-    if (enable_ldap == "True") and not ldap_pass:
+    if enable_ldap and not ldap_pass:
         ldap_pass = prompt("LDAP password")
         config['LDAP_PASS'] = ldap_pass
 
