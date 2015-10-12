@@ -15,16 +15,23 @@ class AuthentificationTest(util.WebTest):
         user = self.new_user(nethz=nethz, password=password)
 
         # Login with mail
-        self.api.post("/sessions", data={
+        r = self.api.post("/sessions", data={
             'user': user.email,
             'password': password,
-        }, status_code=201)
+        }, status_code=201).json
+
+        self.assertEqual(r['user_id'], user.id)
 
         # Login with nethz
-        self.api.post("/sessions", data={
+        r = self.api.post("/sessions", data={
             'user': user.nethz,
             'password': password,
-        }, status_code=201)
+        }, status_code=201).json
+
+        self.assertEqual(r['user_id'], user.id)
+
+        from pprint import pprint
+        pprint(r)
 
     def test_bad_nethz(self):
         """
