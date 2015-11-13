@@ -322,6 +322,20 @@ def create_config(force=False,
     # auto-convert newline characters to the underlying platform.
     save_config(config_path, **config)
 
+    create_database(force)
+
+
+#
+# Recreate the database
+#
+
+
+@manager.option("-f", "--force", dest="force",
+                help="Force to overwrite existing config")
+def create_database(force=False):
+    """ Creates the database with existing config file """
+
+    config = get_config()
     engine = create_engine(config['SQLALCHEMY_DATABASE_URI'])
     try:
         print("Setting up database...")
