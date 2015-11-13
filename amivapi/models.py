@@ -275,6 +275,9 @@ class Event(Base):
     time_register_start = Column(DateTime)
     time_register_end = Column(DateTime)
     additional_fields = Column(Text)
+    show_infoscreen = Column(Boolean, default=False)
+    show_website = Column(Boolean, default=False)
+    show_announce = Column(Boolean, default=False)
 
     # Images
     img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
