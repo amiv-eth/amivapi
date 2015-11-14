@@ -213,3 +213,23 @@ class EventTest(util.WebTestNoAuth):
             'spots': 10,
             'time_register_end': time_2
         }, status_code=422)
+
+    def test_signup_count(self):
+        """ Test whether the signup_count property works """
+
+        start = datetime.today() - timedelta(days=1)
+        end = datetime.today() + timedelta(days=1)
+        ev = self.new_event(time_register_start=start, time_register_end=end)
+
+        event_resp = self.api.get("/events/%i" % ev.id, status_code=200).json
+        self.assertEqual(event_resp['signup_count'], 0)
+
+        self.new_signup(event_id=ev.id, user_id=0)
+
+        event_resp = self.api.get("/events/%i" % ev.id, status_code=200).json
+        self.assertEqual(event_resp['signup_count'], 1)
+
+        user = self.new_user()
+        self.new_signup(event_id=ev.id, user_id=user.id)
+        event_resp = self.api.get("/events/%i" % ev.id, status_code=200).json
+        self.assertEqual(event_resp['signup_count'], 2)

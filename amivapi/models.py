@@ -21,6 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.ext.hybrid import hybrid_property
 
 #
 # Eve exspects the resource names to be equal to the table names. Therefore
@@ -297,6 +298,10 @@ class Event(Base):
     show_infoscreen = Column(Boolean, default=False)
     show_website = Column(Boolean, default=False)
     show_announce = Column(Boolean, default=False)
+
+    @hybrid_property
+    def signup_count(self):
+        return len(self.signups)
 
     # Images
     img_thumbnail = Column(CHAR(100))  # This will be modified in schemas.py!
