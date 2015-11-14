@@ -256,10 +256,10 @@ class ValidatorAMIV(ValidatorSQL):
                     # The event has signup, check if it is open
                     now = datetime.now()
                     if now < event['time_register_start']:
-                        self._error(field, "the signup for event with %s is" +
+                        self._error(field, "the signup for event with %s is"
                                     "not open yet." % value)
                     elif now > event['time_register_end']:
-                        self._error(field, "the signup for event with id %s" +
+                        self._error(field, "the signup for event with id %s"
                                     "closed." % value)
 
                 # If additional fields is missing still call the validator,
