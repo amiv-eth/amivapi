@@ -26,7 +26,6 @@ from amivapi import (
     authorization,
     media,
     forwards,
-    localization,
     validation,
     ldap,
     documentation

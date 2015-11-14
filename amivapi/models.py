@@ -304,12 +304,12 @@ class Event(Base):
     img_poster = Column(CHAR(100))  # This will be modified in schemas.py!
     img_infoscreen = Column(CHAR(100))  # This will be modified in schemas.py!
 
-    title_de = Column(TEXT)
-    title_en = Column(TEXT)
-    description_de = Column(TEXT)
-    description_en = Column(TEXT)
-    catchphrase_de = Column(TEXT)
-    catchphrase_en = Column(TEXT)
+    title_de = Column(UnicodeText)
+    title_en = Column(UnicodeText)
+    description_de = Column(UnicodeText)
+    description_en = Column(UnicodeText)
+    catchphrase_de = Column(UnicodeText)
+    catchphrase_en = Column(UnicodeText)
     
     # relationships
     signups = relationship("EventSignup", backref="event",
@@ -410,10 +410,10 @@ class JobOffer(Base):
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    title_de = Column(TEXT)
-    title_en = Column(TEXT)
-    description_de = Column(TEXT)
-    description_en = Column(TEXT)
+    title_de = Column(UnicodeText)
+    title_en = Column(UnicodeText)
+    description_de = Column(UnicodeText)
+    description_en = Column(UnicodeText)
 
 class Purchase(Base):
     __description__ = {
