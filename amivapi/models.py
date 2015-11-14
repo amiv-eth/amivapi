@@ -405,6 +405,27 @@ class JobOffer(Base):
                                    foreign_keys=description_id)
 
 
+class Purchase(Base):
+    __description__ = {
+        'general': "A beer machine or kaffi machine transaction. Users should"
+        " be able to get beer or kaffi, if their last timestamp is older than"
+        " one day and they are AMIV members. This resource is used to log"
+        " their purchases.",
+        'fields': {
+            'slot': "Slot in the machine which was purchased(different items,"
+            " which may have different prices)."
+        }
+    }
+    __expose__ = True
+
+    __owner__ = ['user_id']
+
+    user_id = Column(Integer)
+    timestamp = Column(DateTime)
+    type = Column(Enum("beer", "kaffi"))
+    slot = Column(Integer)
+
+
 # Language ids are in here
 class TranslationMapping(Base):
     __expose__ = True
