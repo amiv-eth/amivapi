@@ -79,7 +79,7 @@ def change_apikey(permissions):
         resource = resources[int(choice) - 1]
 
         method = prompt_choices("Choose method to toggle",
-                                ['get', 'post', 'patch', 'put', 'delete'])
+                                ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'])
 
         if (resource not in permissions
                 or method not in permissions[resource]
