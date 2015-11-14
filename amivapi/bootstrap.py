@@ -7,8 +7,6 @@
 Starting point for the API
 """
 
-from datetime import datetime
-
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
 
@@ -172,6 +170,10 @@ def init_database(connection, config):
     :param connection: A database connection
     :param config: The configuration dictionary
     """
+    # Tell MySQL to not treat 0 as NULL
+    if connection.engine.url.drivername == "mysql":
+        connection.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
+
     try:
         models.Base.metadata.create_all(connection, checkfirst=False)
     except (OperationalError, ProgrammingError):
@@ -179,14 +181,10 @@ def init_database(connection, config):
               " already!")
         raise
 
-    session = Session(bind=connection)
-
-    root = models.User(
+    root_user = models.User(
         id=0,
         _author=None,
         _etag='d34db33f',  # We need some etag, not important what it is
-        _created=datetime.now(),
-        _updated=datetime.now(),
         password=create_new_hash(u"root"),
         firstname=u"Lord",
         lastname=u"Root",
@@ -194,22 +192,10 @@ def init_database(connection, config):
         email=config['ROOT_MAIL'],
         membership="none"
     )
-    session.add(root)
-    session.commit()
-
-    # Because mysql is retarded it has ignored id=0 and we have to set it again
-    # Also it will not ignore -1 for anonymous
-    # There is only one user in the db now
-    root = session.query(models.User).one()
-    root.id = 0
-    session.commit()
-
-    anonymous = models.User(
+    anonymous_user = models.User(
         id=-1,
-        _author=0,
+        _author=root_user.id,
         _etag='4l3x15F4G',
-        _created=datetime.now(),
-        _updated=datetime.now(),
         password=create_new_hash(u""),
         firstname=u"Anon",
         lastname=u"X",
@@ -217,5 +203,7 @@ def init_database(connection, config):
         email=u"nobody@example.com",
         membership="none"
     )
-    session.add(anonymous)
+
+    session = Session(bind=connection)
+    session.add_all([root_user, anonymous_user])
     session.commit()
