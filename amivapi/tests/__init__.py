@@ -4,19 +4,18 @@
 #          you to buy us beer if we meet and you like the software.
 
 import warnings
-import string
 import random
 from tempfile import NamedTemporaryFile, mkdtemp
 from os import unlink, rmdir
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine.url import make_url
 
 from amivapi import bootstrap, utils
 
 
 engine = None
 connection = None
-dbname = None
 
 # Config overwrites
 test_config = {
@@ -32,59 +31,53 @@ test_config = {
 
 
 def setup():
-    global engine, connection, dbname
+    global engine, connection
     warnings.filterwarnings('error', module=r'^sqlalchemy')
 
     config = utils.get_config()
+    db_uri = config['SQLALCHEMY_DATABASE_URI']
 
     # Create a random database
-    if config['TESTS_IN_DB'] and config['DB_TYPE'] == 'mysql':
-        dbname = ('test_' +
-                  ''.join(random.choice(string.ascii_lowercase + string.digits)
-                          for _ in range(10)))
-        tmpengine = create_engine("mysql+mysqldb://%s:%s@%s" %
-                                  (config['DB_USER'], config['DB_PASS'],
-                                   config['DB_HOST']))
-        tmpengine.connect().execute("CREATE DATABASE %s" % dbname)
-
-        db_uri = ("mysql+mysqldb://%s:%s@%s/%s?charset=utf8" %
-                  (config['DB_USER'], config['DB_PASS'],
-                   config['DB_HOST'], dbname))
+    if config['TESTS_IN_DB'] and db_uri.startswith("mysql"):
+        db_name = "test-%d" % random.randint(0, 10**6)
     else:
         # Use tempfile for database
         db_file = NamedTemporaryFile(delete=False,
                                      prefix='testdb_',
                                      suffix='.db')
-        dbname = db_file.name
+        db_name = db_file.name
         db_file.close()
-        db_uri = "sqlite:///%s" % dbname
 
-    test_config['SQLALCHEMY_DATABASE_URI'] = db_uri
+        db_uri = "sqlite:///"
+
+    db_url = make_url(db_uri)
+    engine = create_engine(db_url)
+
+    # Connect and create the test database
+    connection = engine.connect()
+    connection.execute("CREATE DATABASE `%s`" % db_name)
+    connection.execute("USE `%s`" % db_name)
+    connection.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
+
+    # Update test configuration
+    db_url.database = db_name
+    test_config['SQLALCHEMY_DATABASE_URI'] = str(db_url)
     test_config['STORAGE_DIR'] = mkdtemp(prefix='amivapi_storage')
     test_config['FORWARD_DIR'] = mkdtemp(prefix='amivapi_forwards')
 
-    # Connect to the created database
-    engine = create_engine(db_uri)
-    connection = engine.connect()
-
+    # Create tables
     bootstrap.init_database(connection, config)
 
 
 def teardown():
     """Drop database created above"""
+    db_name = engine.url.database
+
+    connection.execute("DROP DATABASE `%s`" % db_name)
     connection.close()
 
-    config = bootstrap.get_config()
-
-    # Delete the test database
-
-    if config['TESTS_IN_DB'] and config['DB_TYPE'] == 'mysql':
-        tmpengine = create_engine("mysql+mysqldb://%s:%s@%s" %
-                                  (config['DB_USER'], config['DB_PASS'],
-                                   config['DB_HOST']))
-        tmpengine.connect().execute("DROP DATABASE %s" % dbname)
-    else:
-        unlink(dbname)
+    if engine.url.drivername == "sqlite":
+        unlink(db_name)
 
     # Remove test folders
     rmdir(test_config['STORAGE_DIR'])
