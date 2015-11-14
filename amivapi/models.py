@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 import datetime as dt
+import json
 
 from sqlalchemy import (
     Column,
@@ -22,12 +23,49 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.types import TypeDecorator
 
 #
 # Eve exspects the resource names to be equal to the table names. Therefore
 # we generate all names from the Class names. Please choose classnames
 # carefully, as changing them might break a lot of code
 #
+
+
+class JSON(TypeDecorator):
+    """ Column type to transparently handle JSONified content.
+
+    Converts between python objects and a String column in the database.
+
+    Usage:
+        JSON(255) (implies a String(255) column)
+
+    See also:
+        http://docs.sqlalchemy.org/en/rel_0_7/core/types.html#marshal-json-strings
+    """
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        """ Application -> Database """
+        if value is not None:
+            value = json.dumps(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        """ Database -> Application """
+        if value is not None:
+            try:
+                value = json.loads(value)
+            except (TypeError, ValueError):
+                print "No valid JSON in database: %r", value
+                value = None
+
+        return value
+
+
+class JSONText(JSON):
+    impl = Text
 
 
 class BaseModel(object):
@@ -309,15 +347,12 @@ class Event(Base):
     img_poster = Column(CHAR(100))  # This will be modified in schemas.py!
     img_infoscreen = Column(CHAR(100))  # This will be modified in schemas.py!
 
-    # Translatable fields
-    # The relationship exists to ensure cascading delete and will be hidden
-    # from the user
-    title_id = Column(Integer, ForeignKey('translationmappings.id'))
-    title_rel = relationship("TranslationMapping", cascade="all, delete",
-                             foreign_keys=title_id)
-    description_id = Column(Integer, ForeignKey('translationmappings.id'))
-    description_rel = relationship("TranslationMapping", cascade="all, delete",
-                                   foreign_keys=description_id)
+    title_de = Column(UnicodeText)
+    title_en = Column(UnicodeText)
+    description_de = Column(UnicodeText)
+    description_en = Column(UnicodeText)
+    catchphrase_de = Column(UnicodeText)
+    catchphrase_en = Column(UnicodeText)
 
     # relationships
     signups = relationship("EventSignup", backref="event",
@@ -418,16 +453,10 @@ class JobOffer(Base):
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    # Translatable fields
-    # The relationship exists to ensure cascading delete and will be hidden
-    # from the user
-    title_id = Column(Integer, ForeignKey('translationmappings.id'))
-    title_rel = relationship("TranslationMapping", cascade="all, delete",
-                             foreign_keys=title_id)
-    description_id = Column(Integer, ForeignKey('translationmappings.id'))
-    description_rel = relationship("TranslationMapping", cascade="all, delete",
-                                   foreign_keys=description_id)
-
+    title_de = Column(UnicodeText)
+    title_en = Column(UnicodeText)
+    description_de = Column(UnicodeText)
+    description_en = Column(UnicodeText)
 
 class Purchase(Base):
     __description__ = {
@@ -448,27 +477,6 @@ class Purchase(Base):
     timestamp = Column(DateTime)
     type = Column(Enum("beer", "kaffi"))
     slot = Column(Integer)
-
-
-# Language ids are in here
-class TranslationMapping(Base):
-    __expose__ = True
-
-    content = relationship("Translation",
-                           cascade="all, delete", uselist=True)
-
-
-# This is the translated content
-class Translation(Base):
-    __expose__ = True
-
-    localization_id = Column(Integer, ForeignKey('translationmappings.id'),
-                             nullable=False)
-    language = Column(Unicode(10), nullable=False)
-    content = Column(UnicodeText, nullable=False)
-
-    __table_args__ = (UniqueConstraint('localization_id', 'language'),)
-
 
 #
 # Permissions for custom endpoints

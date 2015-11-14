@@ -259,7 +259,7 @@ def create_config(force=False,
         config['DB_PASS'] = db_pass
         config['DB_NAME'] = db_name
 
-        db_uri = "mysql+mysqlconnector://%s:%s@%s/%s?charset=utf8" % \
+        db_uri = "mysql+mysqldb://%s:%s@%s/%s?charset=utf8" % \
             (db_user, db_pass, db_host, db_name)
 
     config['TESTS_IN_DB'] = tests_in_db

@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 from eve_sqlalchemy.decorators import registerSchema
-from inspect import getmembers, isclass
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi import models
 from amivapi.settings import ROLES
@@ -13,29 +13,28 @@ from amivapi.settings import ROLES
 def get_domain():
     domain = {}
 
-    for cls_name, cls in getmembers(models):
-        if(isclass(cls) and
-                cls.__module__ == "amivapi.models" and
-                cls.__expose__ is True):
-            registerSchema(cls.__tablename__)(cls)
-            domain.update(cls._eve_schema)
+    for model in models.Base._decl_class_registry.values():
+        if not isinstance(model, DeclarativeMeta):
+            continue
 
-            for field in cls.__projected_fields__:
-                domain[cls.__tablename__]['datasource']['projection'].update(
-                    {field: 1}
-                )
+        tbl_name = model.__tablename__
 
-            domain[cls.__tablename__]['public_methods'] = (
-                cls.__public_methods__)
-            domain[cls.__tablename__]['public_item_methods'] = (
-                cls.__public_methods__)
+        registerSchema(tbl_name)(model)
+        domain.update(model._eve_schema)
 
-            # For documentation
-            domain[cls.__tablename__]['description'] = cls.__description__
+        for field in model.__projected_fields__:
+            domain[tbl_name]['datasource']['projection'].update(
+                {field: 1}
+            )
 
-            # Users should not provide _author fields
-            domain[cls.__tablename__]['schema']['_author'].update(
-                {'readonly': True})
+        domain[tbl_name]['public_methods'] = (model.__public_methods__)
+        domain[tbl_name]['public_item_methods'] = (model.__public_methods__)
+
+        # For documentation
+        domain[tbl_name]['description'] = model.__description__
+
+        # Users should not provide _author fields
+        domain[tbl_name]['schema']['_author'].update({'readonly': True})
 
     # Make it possible to retrive a user with his nethz (/users/nethz)
     domain['users'].update({
@@ -163,20 +162,5 @@ def get_domain():
         'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
-
-    """
-    Locatization-revelant: Hide the mapping table
-    Set title and description id from events and joboffers schema to read only
-    so they can not be set manually
-    Also make the localization_id and language a unique combination to avoid
-    several translations in the same language
-    """
-    domain['translationmappings']['internal_resource'] = True
-    domain['joboffers']['schema']['title_id'].update({'readonly': True})
-    domain['joboffers']['schema']['description_id'].update({'readonly': True})
-    domain['events']['schema']['title_id'].update({'readonly': True})
-    domain['events']['schema']['description_id'].update({'readonly': True})
-    domain['translations']['schema']['language'].update({
-        'unique_combination': ['translations', 'localization_id']})
 
     return domain

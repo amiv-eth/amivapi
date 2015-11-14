@@ -42,12 +42,12 @@ def setup():
         dbname = ('test_' +
                   ''.join(random.choice(string.ascii_lowercase + string.digits)
                           for _ in range(10)))
-        tmpengine = create_engine("mysql+mysqlconnector://%s:%s@%s" %
+        tmpengine = create_engine("mysql+mysqldb://%s:%s@%s" %
                                   (config['DB_USER'], config['DB_PASS'],
                                    config['DB_HOST']))
         tmpengine.connect().execute("CREATE DATABASE %s" % dbname)
 
-        db_uri = ("mysql+mysqlconnector://%s:%s@%s/%s?charset=utf8" %
+        db_uri = ("mysql+mysqldb://%s:%s@%s/%s?charset=utf8" %
                   (config['DB_USER'], config['DB_PASS'],
                    config['DB_HOST'], dbname))
     else:
@@ -79,7 +79,7 @@ def teardown():
     # Delete the test database
 
     if config['TESTS_IN_DB'] and config['DB_TYPE'] == 'mysql':
-        tmpengine = create_engine("mysql+mysqlconnector://%s:%s@%s" %
+        tmpengine = create_engine("mysql+mysqldb://%s:%s@%s" %
                                   (config['DB_USER'], config['DB_PASS'],
                                    config['DB_HOST']))
         tmpengine.connect().execute("DROP DATABASE %s" % dbname)

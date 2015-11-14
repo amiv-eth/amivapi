@@ -5,9 +5,8 @@
 
 from io import BytesIO  # Simulate a file
 from amivapi.tests import util
-from os.path import exists, join
+from os.path import dirname, extsep, exists, join
 from amivapi import models
-from PIL import Image
 
 
 class FileTest(util.WebTestNoAuth):
@@ -165,20 +164,14 @@ class FileTest(util.WebTestNoAuth):
         self.api.post('/joboffers', data=data, headers=header, status_code=201)
 
         # Create Images as jpeg and png which are allowed
-        image = Image.new('RGBA', size=(50, 50), color=(256, 0, 0))
-        image_file = BytesIO()
-        image.save(image_file, 'jpeg')
-        image_file.seek(0)
-
-        data = {'logo': (image_file, u'file.jpeg')}
-        self.api.post('/joboffers', data=data, headers=header, status_code=201)
-
-        image_file = BytesIO()
-        image.save(image_file, 'png')
-        image_file.seek(0)
-
-        data = {'logo': (image_file, u'file.png')}
-        self.api.post('/joboffers', data=data, headers=header, status_code=201)
+        for ext in ("jpg", "png"):
+            filename = "lena" + extsep + ext
+            filepath = join(dirname(__file__), "fixtures", filename)
+            with open(filepath, "rb") as image:
+                data = {'logo': (image, filename)}
+                self.api.post(
+                    '/joboffers', data=data, headers=header, status_code=201
+                )
 
     def assert_media_stored(self, filename, content):
         """Is the file there?"""

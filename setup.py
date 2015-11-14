@@ -19,6 +19,6 @@ setup(
     license=LICENSE,
     platforms=["any"],
     test_suite="amivapi.tests",
-    tests_require=['pillow'],
+    tests_require=[],
     packages=find_packages(),
 )
