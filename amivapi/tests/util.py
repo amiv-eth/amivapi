@@ -7,7 +7,7 @@ import json
 import random
 import unittest
 from base64 import b64encode
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 import eve_sqlalchemy
@@ -165,17 +165,10 @@ class WebTest(unittest.TestCase):
     def create_object(model):
         def decorate(func):
             def decorated(self, **kwargs):
-                if '_etag' not in kwargs:
-                    kwargs['_etag'] = 'initial_etag'
-                if '_author' not in kwargs:
-                    kwargs['_author'] = -1
-                if '_created' not in kwargs:
-                    kwargs['_created'] = datetime.utcnow()
-                if '_updated' not in kwargs:
-                    kwargs['_updated'] = datetime.utcnow()
+                kwargs.setdefault('_etag', "initial_etag")
+                kwargs.setdefault('_author', -1)
 
                 kwargs = func(self, **kwargs)
-
                 obj = model(**kwargs)
 
                 self.db.add(obj)
@@ -187,90 +180,89 @@ class WebTest(unittest.TestCase):
 
     @create_object(models.User)
     def new_user(self, **kwargs):
-        count = self.next_count()
-        if 'firstname' not in kwargs:
-            kwargs['firstname'] = u"Test"
-        if 'lastname' not in kwargs:
-            kwargs['lastname'] = u"User"
-        if 'email' not in kwargs:
-            kwargs['email'] = u"testuser-%i@example.com" % count
-        if 'gender' not in kwargs:
-            kwargs['gender'] = random.choice(["male", "female"])
-        if 'password' in kwargs:
-            kwargs['password'] = create_new_hash(kwargs['password'])
-        return kwargs
+        firstname, gender = random.choice([
+            (u"John", "male"), (u"Jane", "female")
+        ])
+
+        data = {
+            'firstname': firstname,
+            'lastname': u"Doe",
+            'email': u"testuser-%i@example.com" % self.next_count(),
+            'gender': gender,
+        }
+        data.update(**kwargs)
+
+        if 'password' in data:
+            data['password'] = create_new_hash(data['password'])
+
+        return data
 
     @create_object(models.Permission)
     def new_permission(self, **kwargs):
-        """ Add a role to a user. You must provide at least user_id and role
-        """
-        if 'expiry_date' not in kwargs:
-            kwargs['expiry_date'] = datetime(3000, 1, 1)
+        """ Add a role to a user. You must provide at least user_id and role """
+        kwargs.setdefault('expiry_date', datetime.utcnow() + timedelta(days=14))
         return kwargs
 
     @create_object(models.Group)
     def new_group(self, **kwargs):
         """ Create a forward """
-        if 'name' not in kwargs:
-            kwargs['name'] = u"test-group-%i" % self.next_count()
-        if 'owner_id' not in kwargs:
-            kwargs['owner_id'] = 0
-        if 'is_public' not in kwargs:
-            kwargs['is_public'] = random.choice([True, False])
-        return kwargs
+        data = {
+            'name': u"test-group-%i" % self.next_count(),
+            'owner_id': 0,
+            'is_public': random.choice([True, False]),
+        }
+        data.update(kwargs)
+        return data
 
     @create_object(models.ForwardAddress)
     def new_forward_address(self, **kwargs):
         """ Add a forward address. At least supply the group_id """
-        if 'address' not in kwargs:
-            kwargs['address'] = u"forward-%i@example.com" % self.next_count()
+        kwargs.setdefault('address',
+                          u"forward-%i@example.com" % self.next_count())
         return kwargs
 
     @create_object(models.GroupUserMember)
     def new_group_user_member(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
-        if 'user_id' not in kwargs:
-            kwargs['user_id'] = 0
+        kwargs.setdefault('user_id', 0)
         return kwargs
 
     @create_object(models.GroupAddressMember)
     def new_group_address_member(self, **kwargs):
         """ Add an address to a group. At least supply the group_id """
-        count = self.next_count()
-        if 'email' not in kwargs:
-            kwargs['email'] = u"subscriber-%i@example.com" % count
+        kwargs.setdefault('email',
+                          u"subscriber-%i@example.com" % self.next_count())
         kwargs['_token'] = token_generator(size=20)
         return kwargs
 
     @create_object(models.Session)
     def new_session(self, **kwargs):
         """ Create a new session, default is root session """
-        if 'user_id' not in kwargs:
-            kwargs['user_id'] = 0
+        kwargs.setdefault('user_id', 0)
+
         with self.app.app_context():
             kwargs['token'] = b64encode(os.urandom(256)).decode('utf_8')
+
         return kwargs
 
     @create_object(models.Event)
     def new_event(self, **kwargs):
         """ Create a new event """
-        if 'is_public' not in kwargs:
-            kwargs['is_public'] = random.choice([True, False])
-        if 'spots' not in kwargs:
-            kwargs['spots'] = random.randint(0, 100)
-        if 'time_register_start' not in kwargs and kwargs['spots'] >= 0:
-            kwargs['time_register_start'] = datetime.now()
-        if 'time_register_end' not in kwargs and kwargs['spots'] >= 0:
-            kwargs['time_register_end'] = datetime.max
-        if 'time_start' not in kwargs:
-            kwargs['time_start'] = datetime.now()
-        return kwargs
+        data = {
+            'is_public': random.choice([True, False]),
+            'spots': random.randint(0, 100),
+            'time_register_start': datetime.utcnow() - timedelta(days=14),
+            'time_register_end': datetime.utcnow() + timedelta(days=14),
+            'time_start': datetime.utcnow() + timedelta(days=7),
+        }
+        data.update(kwargs)
+        return data
 
     @create_object(models.EventSignup)
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
-        count = self.next_count()
         if 'user_id' not in kwargs:
+            count = self.next_count()
             kwargs['user_id'] = -1
             kwargs['_email_unreg'] = u"signupper-%i@example.com" % count
             kwargs['_token'] = token_generator(size=20)
@@ -279,34 +271,27 @@ class WebTest(unittest.TestCase):
     @create_object(models.JobOffer)
     def new_joboffer(self, **kwargs):
         """ Create a new job offer """
-        count = self.next_count()
-        if 'company' not in kwargs:
-            kwargs['company'] = u"Default company-%i" % count
+        kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())
         return kwargs
 
     @create_object(models.StudyDocument)
     def new_studydocument(self, **kwargs):
         """ Create a new study document """
-        count = self.next_count()
-        if 'name' not in kwargs:
-            kwargs['name'] = u"Your default studydoc-%i" % count
+        kwargs.setdefault('name', u"Example Exam %i" % self.next_count())
         return kwargs
 
     @create_object(models.File)
     def new_file(self, **kwargs):
         """ Create a new file, needs study_doc_id """
-        count = self.next_count()
         if 'data' not in kwargs:
-            filename = 'default_file_%i.txt' % count
-            f = open(os.path.join(self.app.config['STORAGE_DIR'], filename),
-                     'w')
-            f.write('Your default content.')
-            f.close()
+            filename = 'default_file_%i.txt' % self.next_count()
+            with open(os.path.join(self.app.config['STORAGE_DIR'], filename),
+                      'wb') as f:
+                f.write("Some example content.")
+
             kwargs['data'] = filename
         return kwargs
 
 
 class WebTestNoAuth(WebTest):
-    def setUp(self):
-        self.disable_auth = True
-        super(WebTestNoAuth, self).setUp()
+    disable_auth = True
