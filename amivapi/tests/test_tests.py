@@ -50,3 +50,18 @@ class IsolationTest(util.WebTestNoAuth):
         # The API also does not return users anymore
         resp = self.api.get("/sessions", status_code=200)
         self.assertEquals(len(resp.json['_items']), 0)
+
+    def test_testrelations(self):
+        """ Check whether relations can be resolved with the test database
+        system and get is updated with new data """
+
+        user = self.new_user()
+        self.new_session(user_id=user.id)
+        self.api.get("/users/%i?projection={\"sessions\":1}" % user.id,
+                     status_code=200)
+        self.new_session(user_id=user.id)
+
+        resp = self.api.get("/users/%i?projection={\"sessions\":1}" % user.id,
+                            status_code=200).json
+
+        self.assertEqual(len(resp["sessions"]), 2)
