@@ -29,7 +29,7 @@ from amivapi import (
     documentation
 )
 
-from amivapi.utils import get_config, create_new_hash
+from amivapi.utils import get_config
 
 
 def create_app(disable_auth=False, **kwargs):
@@ -88,10 +88,6 @@ def create_app(disable_auth=False, **kwargs):
     #
 
     # authentification
-    app.on_insert_users += authentification.hash_password_before_insert
-    app.on_replace_users += authentification.hash_password_before_replace
-    app.on_update_users += authentification.hash_password_before_update
-
     app.on_insert += authentification.set_author_on_insert
     app.on_replace += authentification.set_author_on_replace
 
@@ -185,7 +181,7 @@ def init_database(connection, config):
         id=0,
         _author=None,
         _etag='d34db33f',  # We need some etag, not important what it is
-        password=create_new_hash(u"root"),
+        password=u"root",
         firstname=u"Lord",
         lastname=u"Root",
         gender="male",
@@ -196,7 +192,7 @@ def init_database(connection, config):
         id=-1,
         _author=root_user.id,
         _etag='4l3x15F4G',
-        password=create_new_hash(u""),
+        password=u"",
         firstname=u"Anon",
         lastname=u"X",
         gender="male",

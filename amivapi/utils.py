@@ -50,41 +50,6 @@ def get_class_for_resource(models, resource):
     return None
 
 
-from passlib.context import CryptContext
-
-
-PASSWORD_CONTEXT = CryptContext(
-    schemes=["pbkdf2_sha256"],
-
-    # default_rounds is used when hashing new passwords
-    pbkdf2_sha256__default_rounds=10**5,
-
-    # min_rounds is used to determine if a hash needs to be upgraded
-    pbkdf2_sha256__min_rounds=10**5,
-)
-
-
-def create_new_hash(password):
-    """Creates a new salted hash for a password. This generates a random salt,
-    so it can not be used to check hashes!
-
-    :param password: The password to hash
-    :returns: Unicode string containing the salt and the hashed password
-    """
-    return PASSWORD_CONTEXT.encrypt(password)
-
-
-def check_hash(password, hash):
-    """ Check a password against a string containing salt and hash generated
-    by create_new_hash()
-
-    :param password: The password to check
-    :param hash: The string containing hash and salt to check against
-    :returns: True if hash was generated with the same password, else False
-    """
-    return PASSWORD_CONTEXT.verify(password, hash)
-
-
 def token_generator(size=6):
     """generates a random string of elements of chars
     :param size: length of the token

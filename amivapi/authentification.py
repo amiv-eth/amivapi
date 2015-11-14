@@ -30,7 +30,6 @@ from eve.utils import debug_error_message, config
 from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi.utils import create_new_hash, check_hash
 from amivapi import models
 
 
@@ -216,7 +215,7 @@ def process_login():
         user = None  # Neither found by nethz nor email
 
     if user:
-        if check_hash(p_data['password'], user.password):
+        if user.verify_password(p_data['password']):
             # Sucessful login with db, send response
             return send_response('sessions', _token_response(user.id))
         else:
@@ -228,7 +227,7 @@ def process_login():
     # if nethz is root, try to auth the root user
     if p_data['user'] == 'root':
         root = app.data.driver.session.query(models.User).filter_by(id=0).one()
-        if check_hash(p_data['password'], root.password):
+        if root.verify_password(p_data['password']):
             # Sucessful login with db as root, send response
             return send_response('sessions', _token_response(0))
 
@@ -238,31 +237,6 @@ def process_login():
 
     app.logger.debug(error)
     abort(401, description=debug_error_message(error))
-
-
-#
-#
-# Hooks to hash passwords when user entries are changed in the database
-#
-#
-
-
-def hash_password_before_insert(users):
-    """ Hook to hash the password when a new user is inserted into the
-    database """
-    for u in users:
-        if 'password' in u:
-            u['password'] = create_new_hash(u['password'])
-
-
-def hash_password_before_update(user, original_user):
-    """ Hook to hash the password when it is changed """
-    hash_password_before_insert([user])
-
-
-def hash_password_before_replace(user, original_user):
-    """ Hook to hash the password when a user is replaced with a new one """
-    hash_password_before_insert([user])
 
 
 #

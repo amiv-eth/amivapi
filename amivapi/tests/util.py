@@ -16,7 +16,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
-from amivapi.utils import create_new_hash, token_generator
+from amivapi.utils import token_generator
 
 
 def find_by_pair(dicts, key, value):
@@ -191,10 +191,6 @@ class WebTest(unittest.TestCase):
             'gender': gender,
         }
         data.update(**kwargs)
-
-        if 'password' in data:
-            data['password'] = create_new_hash(data['password'])
-
         return data
 
     @create_object(models.Permission)

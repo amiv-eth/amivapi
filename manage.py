@@ -26,7 +26,7 @@ from flask.ext.script import (
 
 from amivapi import settings, models, schemas
 from amivapi.models import User
-from amivapi.utils import create_new_hash, get_config
+from amivapi.utils import get_config
 from amivapi.bootstrap import init_database
 from amivapi.ldap import ldap_synchronize
 
@@ -363,7 +363,7 @@ def set_root_password():
               " database.")
         exit(0)
 
-    root.password = create_new_hash(prompt("New root password"))
+    root.password = prompt("New root password")
 
     session.commit()
     session.close()

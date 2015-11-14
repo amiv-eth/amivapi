@@ -20,9 +20,11 @@ from sqlalchemy import (
     Boolean
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.orm import relationship, synonym, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.types import TypeDecorator
+
+from settings import PASSWORD_CONTEXT
 
 
 #
@@ -159,6 +161,22 @@ class User(Base):
     eventsignups = relationship("EventSignup",
                                 foreign_keys="EventSignup.user_id",
                                 backref="user", cascade="all, delete")
+
+    @validates("password")
+    def update_password(self, key, plaintext):
+        """Transparently encodes the plaintext password as a salted hash.
+
+        The salt is regenerated each time a new password is set.
+        """
+        return PASSWORD_CONTEXT.encrypt(plaintext)
+
+    def verify_password(self, plaintext):
+        is_valid = PASSWORD_CONTEXT.verify(plaintext, self.password)
+        if is_valid and PASSWORD_CONTEXT.needs_update(self.password):
+            # rehash password
+            self.password = plaintext
+
+        return is_valid
 
 
 class Permission(Base):
