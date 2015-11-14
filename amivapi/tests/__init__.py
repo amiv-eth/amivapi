@@ -38,29 +38,31 @@ def setup():
     db_uri = config['SQLALCHEMY_DATABASE_URI']
 
     # Create a random database
-    if config['TESTS_IN_DB'] and db_uri.startswith("mysql"):
+    use_mysql = config['TESTS_IN_DB'] and db_uri.startswith("mysql")
+
+    if use_mysql:
         db_name = "test-%d" % random.randint(0, 10**6)
     else:
         # Use tempfile for database
-        db_file = NamedTemporaryFile(delete=False,
-                                     prefix='testdb_',
-                                     suffix='.db')
-        db_name = db_file.name
-        db_file.close()
+        with NamedTemporaryFile(delete=False,
+                                prefix='testdb-',
+                                suffix='.db') as db_file:
+            db_name = db_file.name
 
-        db_uri = "sqlite:///"
+        # Use in-memory sqlite database
+        db_uri = "sqlite:///%s" % db_name
 
     db_url = make_url(db_uri)
     engine = create_engine(db_url)
 
     # Connect and create the test database
     connection = engine.connect()
-    connection.execute("CREATE DATABASE `%s`" % db_name)
-    connection.execute("USE `%s`" % db_name)
-    connection.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
+    if use_mysql:
+        connection.execute("CREATE DATABASE `%s`" % db_name)
+        connection.execute("USE `%s`" % db_name)
+        db_url.database = db_name
 
     # Update test configuration
-    db_url.database = db_name
     test_config['SQLALCHEMY_DATABASE_URI'] = str(db_url)
     test_config['STORAGE_DIR'] = mkdtemp(prefix='amivapi_storage')
     test_config['FORWARD_DIR'] = mkdtemp(prefix='amivapi_forwards')
@@ -73,11 +75,11 @@ def teardown():
     """Drop database created above"""
     db_name = engine.url.database
 
-    connection.execute("DROP DATABASE `%s`" % db_name)
-    connection.close()
-
     if engine.url.drivername == "sqlite":
         unlink(db_name)
+    else:
+        connection.execute("DROP DATABASE `%s`" % db_name)
+        connection.close()
 
     # Remove test folders
     rmdir(test_config['STORAGE_DIR'])
