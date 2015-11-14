@@ -17,13 +17,13 @@ from sqlalchemy import (
     ForeignKey,
     DateTime,
     Enum,
-    Boolean,
-    UniqueConstraint
+    Boolean
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.types import TypeDecorator
+
 
 #
 # Eve exspects the resource names to be equal to the table names. Therefore
@@ -458,6 +458,7 @@ class JobOffer(Base):
     description_de = Column(UnicodeText)
     description_en = Column(UnicodeText)
 
+
 class Purchase(Base):
     __description__ = {
         'general': "A beer machine or kaffi machine transaction. Users should"
@@ -483,6 +484,7 @@ class Purchase(Base):
 # These are not created in the database due to __abstract__ = True
 # utils.get_class_for_resource will find these
 #
+
 
 class Storage(Base):
     __expose__ = False  # Don't create a schema
