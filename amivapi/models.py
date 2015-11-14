@@ -304,16 +304,13 @@ class Event(Base):
     img_poster = Column(CHAR(100))  # This will be modified in schemas.py!
     img_infoscreen = Column(CHAR(100))  # This will be modified in schemas.py!
 
-    # Translatable fields
-    # The relationship exists to ensure cascading delete and will be hidden
-    # from the user
-    title_id = Column(Integer, ForeignKey('translationmappings.id'))
-    title_rel = relationship("TranslationMapping", cascade="all, delete",
-                             foreign_keys=title_id)
-    description_id = Column(Integer, ForeignKey('translationmappings.id'))
-    description_rel = relationship("TranslationMapping", cascade="all, delete",
-                                   foreign_keys=description_id)
-
+    title_de = Column(TEXT)
+    title_en = Column(TEXT)
+    description_de = Column(TEXT)
+    description_en = Column(TEXT)
+    catchphrase_de = Column(TEXT)
+    catchphrase_en = Column(TEXT)
+    
     # relationships
     signups = relationship("EventSignup", backref="event",
                            cascade="all, delete")
@@ -413,16 +410,10 @@ class JobOffer(Base):
     pdf = Column(CHAR(100))  # This will be modified in schemas.py!
     time_end = Column(DateTime)
 
-    # Translatable fields
-    # The relationship exists to ensure cascading delete and will be hidden
-    # from the user
-    title_id = Column(Integer, ForeignKey('translationmappings.id'))
-    title_rel = relationship("TranslationMapping", cascade="all, delete",
-                             foreign_keys=title_id)
-    description_id = Column(Integer, ForeignKey('translationmappings.id'))
-    description_rel = relationship("TranslationMapping", cascade="all, delete",
-                                   foreign_keys=description_id)
-
+    title_de = Column(TEXT)
+    title_en = Column(TEXT)
+    description_de = Column(TEXT)
+    description_en = Column(TEXT)
 
 class Purchase(Base):
     __description__ = {
@@ -443,27 +434,6 @@ class Purchase(Base):
     timestamp = Column(DateTime)
     type = Column(Enum("beer", "kaffi"))
     slot = Column(Integer)
-
-
-# Language ids are in here
-class TranslationMapping(Base):
-    __expose__ = True
-
-    content = relationship("Translation",
-                           cascade="all, delete", uselist=True)
-
-
-# This is the translated content
-class Translation(Base):
-    __expose__ = True
-
-    localization_id = Column(Integer, ForeignKey('translationmappings.id'),
-                             nullable=False)
-    language = Column(Unicode(10), nullable=False)
-    content = Column(UnicodeText, nullable=False)
-
-    __table_args__ = (UniqueConstraint('localization_id', 'language'),)
-
 
 #
 # Permissions for custom endpoints

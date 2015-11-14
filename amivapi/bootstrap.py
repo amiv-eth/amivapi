@@ -140,12 +140,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_deleted_item_groupaddressmembers += \
         forwards.on_groupaddressmember_deleted
 
-    # Hooks for translatable fields, done by resource because there are only 2
-    app.on_fetched_item_joboffers += localization.insert_localized_fields
-    app.on_fetched_item_events += localization.insert_localized_fields
-    app.on_insert_joboffers += localization.create_localization_ids
-    app.on_insert_events += localization.create_localization_ids
-
     # EVENTSIGNUPS
     # Hooks to move 'email' to '_unregistered_email' after db access
     app.on_insert_eventsignups += confirm.replace_email_insert

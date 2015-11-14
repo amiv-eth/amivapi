@@ -164,19 +164,4 @@ def get_domain():
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
-    """
-    Locatization-revelant: Hide the mapping table
-    Set title and description id from events and joboffers schema to read only
-    so they can not be set manually
-    Also make the localization_id and language a unique combination to avoid
-    several translations in the same language
-    """
-    domain['translationmappings']['internal_resource'] = True
-    domain['joboffers']['schema']['title_id'].update({'readonly': True})
-    domain['joboffers']['schema']['description_id'].update({'readonly': True})
-    domain['events']['schema']['title_id'].update({'readonly': True})
-    domain['events']['schema']['description_id'].update({'readonly': True})
-    domain['translations']['schema']['language'].update({
-        'unique_combination': ['translations', 'localization_id']})
-
     return domain
