@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 import datetime as dt
+import json
 
 from sqlalchemy import (
     Column,
@@ -21,12 +22,49 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym
+from sqlalchemy.types import TypeDecorator
 
 #
 # Eve exspects the resource names to be equal to the table names. Therefore
 # we generate all names from the Class names. Please choose classnames
 # carefully, as changing them might break a lot of code
 #
+
+
+class JSON(TypeDecorator):
+    """ Column type to transparently handle JSONified content.
+
+    Converts between python objects and a String column in the database.
+
+    Usage:
+        JSON(255) (implies a String(255) column)
+
+    See also:
+        http://docs.sqlalchemy.org/en/rel_0_7/core/types.html#marshal-json-strings
+    """
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        """ Application -> Database """
+        if value is not None:
+            value = json.dumps(value)
+
+        return value
+
+    def process_result_value(self, value, dialect):
+        """ Database -> Application """
+        if value is not None:
+            try:
+                value = json.loads(value)
+            except (TypeError, ValueError):
+                print "No valid JSON in database: %r", value
+                value = None
+
+        return value
+
+
+class JSONText(JSON):
+    impl = Text
 
 
 class BaseModel(object):
