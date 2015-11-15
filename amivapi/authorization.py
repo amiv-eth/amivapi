@@ -107,21 +107,13 @@ def common_authorization(resource, method):
         app.logger.debug("Access granted for root user %s %s"
                          % (method, resource))
         return True
-
-    # User has admin role for this endpoint -> allow
-    permissions = app.data.driver.session.query(models.Permission).filter(
-        models.Permission.user_id == g.logged_in_user
-    ).all()
-    for permission in permissions:
-        try:
-            if config.ROLES[permission.role][resource][method] == 1:
-                app.logger.debug("Access granted to %s %s "
-                                 "for user %i with role %s"
-                                 % (method, resource, g.logged_in_user,
-                                    permission.role))
-                return True
-        except KeyError:
-            pass
+    
+    # User is in a group that grants admin rights -> allow
+    if utils.check_group_permission(g.logged_in_user, resource, method):
+            app.logger.debug("Access granted to %s %s "
+                             "for user %i"
+                             % (method, resource, g.logged_in_user))
+            return True
 
     g.resource_admin = False
 

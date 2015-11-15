@@ -40,17 +40,6 @@ class DeletionTests(util.WebTestNoAuth):
             self.db.query(models.GroupAddressMember).count())
         self.assertEquals(groupaddressmember_count, 0)
 
-    def test_delete_user_to_permission(self):
-        user = self.new_user()
-        permission = self.new_permission(user_id=user.id, role='vorstand')
-
-        self.api.delete("/users/%i" % user.id,
-                        headers={'If-Match': permission._etag},
-                        status_code=204)
-        # We have with ids -1 and 0 2 users left after our user got deleted
-        self.assert_count(models.User, 2)
-        self.assert_count(models.Permission, 0)
-
     def test_delete_event_to_signup(self):
         event = self.new_event()
         self.new_signup(event_id=event.id)

@@ -7,9 +7,6 @@ from eve_sqlalchemy.decorators import registerSchema
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi import models
-from amivapi.settings import ROLES
-from amivapi.group_permissions import create_group_permissions_jsonschema
-
 
 def get_domain():
     domain = {}
@@ -58,12 +55,6 @@ def get_domain():
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
-    # Permissions: Only allow existing roles and expiry date must be in the
-    # future
-    domain['permissions']['schema']['role'].update(
-        {'allowed': list(ROLES.keys())})
-    domain['permissions']['schema']['expiry_date'].update(
-        {'future_date': True})
 
     """ For confirmation: eve will not handle POST """
     domain['groupaddressmembers']['resource_methods'] = ['GET']
@@ -170,7 +161,7 @@ def get_domain():
     ensure that the domain doesnt change anymore
     """
     domain['groups']['schema']['permissions'].update({
-        'jsonschema': create_group_permissions_jsonschema(domain.keys())
+        'type': 'permissions_jsonschema'
     })                                     
     
 

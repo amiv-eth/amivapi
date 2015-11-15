@@ -83,8 +83,14 @@ class SignupTest(util.WebTest):
         """Test /eventsignups for registered user and private event"""
         user = self.new_user()
         user_token = self.new_session(user_id=user.id).token
+        
         admin = self.new_user()
-        self.new_permission(user_id=admin.id, role='vorstand')
+        # Create a group with permissions and add admin
+        g = self.new_group(permissions = {
+                           "eventsignups": {"POST": True}
+                           })
+        self.new_group_user_member(user_id=admin.id, group_id=g.id)
+        
         admin_token = self.new_session(user_id=admin.id).token
         peon = self.new_user()
         peon_token = self.new_session(user_id=peon.id).token

@@ -193,12 +193,6 @@ class WebTest(unittest.TestCase):
         data.update(**kwargs)
         return data
 
-    @create_object(models.Permission)
-    def new_permission(self, **kwargs):
-        """ Add a role to a user. You must provide at least user_id and role """
-        kwargs.setdefault('expiry_date', datetime.utcnow() + timedelta(days=14))
-        return kwargs
-
     @create_object(models.Group)
     def new_group(self, **kwargs):
         """ Create a forward """

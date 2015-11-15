@@ -181,7 +181,7 @@ class User(Base):
             'GET': "Authorization is required for most of the fields"
         }}
     __expose__ = True
-    __projected_fields__ = ['permissions', 'groups']
+    __projected_fields__ = ['groups']
 
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
@@ -201,8 +201,6 @@ class User(Base):
     send_newsletter = Column(Boolean, default=True)
 
     # relationships
-    permissions = relationship("Permission", foreign_keys="Permission.user_id",
-                               backref="user", cascade="all, delete")
     groupmemberships = relationship("GroupUserMember",
                           foreign_keys="GroupUserMember.user_id",
                           backref="user", cascade="all, delete")
@@ -229,31 +227,6 @@ class User(Base):
         return is_valid
 
 
-class Permission(Base):
-    """Intermediate table for 'many-to-many' mapping
-        split into one-to-many from Group and many-to-one with User
-    We need to use a class here in stead of a table because of additional data
-        expiry_date
-    """
-    __description__ = {
-        'general': "Mapping between users and their roles. Assigning a user to"
-        " a role will add permissions for certain resources.",
-        'fields': {
-            'role': "Possible roles can be extracted with the /roles endpoint"
-        }
-    }
-    __expose__ = True
-
-    __owner__ = ['user_id']
-    __owner_methods__ = ['GET']
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    role = Column(CHAR(20), nullable=False)
-    expiry_date = Column(DateTime, nullable=False)
-
-    # user = relationship("User", foreign_keys=user_id, backref="permissions")
-
-
 class Group(Base):
     __description__ = {
         'general': "This resource describes the different teams in AMIV."
@@ -261,15 +234,14 @@ class Group(Base):
         "the subscriptions, have a look at '/groupusermembers' and "
         "'groupaddressmembers'.",
         'fields': {
-            'is_public': "A public group can get subscriptions from external"
-            " users. If False, only AMIV-Members can subscribe to this list.",
+            'is_public': "If true, then users can sign up themselves",
             'address': "The address of the new forward: <address>@amiv.ethz.ch"
         }}
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
     __owner__ = ['owner_id']
-    __owner_methods__ = ['GET', 'DELETE']
+    __owner_methods__ = ['GET']
 
     name = Column(Unicode(100), unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)

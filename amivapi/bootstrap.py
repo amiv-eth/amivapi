@@ -27,6 +27,7 @@ from amivapi import (
     validation,
     ldap,
     documentation,
+    group_permissions
     )
 
 from amivapi.utils import get_config
@@ -77,7 +78,15 @@ def create_app(disable_auth=False, **kwargs):
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentication.authentication)
     app.register_blueprint(authorization.permission_info)
-    app.register_blueprint(media.download)    
+    app.register_blueprint(media.download)
+    
+    # Now create the schema to validate endpoint permissions
+    # Todo: Domain is maybe not the right entry since it does not contain custom routes
+    app.config["GROUP_PERMISSIONS_JSONSCHEMA"] = (
+        group_permissions.create_group_permissions_jsonschema(
+            config["DOMAIN"].keys()
+        )
+    )
             
     #
     #
