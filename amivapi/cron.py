@@ -30,7 +30,7 @@ def delete_expired_sessions(db, config):
     timeout = config['SESSION_TIMEOUT']
 
     query = db.query(Session).filter(
-        Session._updated <= datetime.now() - timeout)
+        Session._updated <= datetime.utcnow() - timeout)
 
     for entry in query:
         db.delete(entry)
@@ -47,8 +47,8 @@ def delete_expired_permissions(db, config):
     """
     # warn people if it will expire in 14 days
     query = db.query(Permission).filter(
-        Permission.expiry_date <= datetime.now() + timedelta(days=14),
-        Permission.expiry_date >= datetime.now() + timedelta(days=13))
+        Permission.expiry_date <= datetime.utcnow() + timedelta(days=14),
+        Permission.expiry_date >= datetime.utcnow() + timedelta(days=13))
 
     for entry in query:
         text = (config['PERMISSION_EXPIRED_WARNMAIL_TEXT']
@@ -62,7 +62,7 @@ def delete_expired_permissions(db, config):
     # delete permissions which are expired
 
     query = db.query(Permission).filter(
-        Permission.expiry_date <= datetime.now())
+        Permission.expiry_date <= datetime.utcnow())
 
     for entry in query:
         db.delete(entry)

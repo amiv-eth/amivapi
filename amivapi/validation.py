@@ -162,10 +162,10 @@ class ValidatorAMIV(ValidatorSQL):
         :param value: field value.
         """
         if future_date:
-            if value < datetime.now():
+            if value < datetime.utcnow():
                 self._error(field, "date must be in the future.")
         else:
-            if value > datetime.now():
+            if value > datetime.utcnow():
                 self._error(field, "date must not be in the future.")
 
     def _validate_not_patchable(self, not_patchable, field, value):
@@ -254,7 +254,7 @@ class ValidatorAMIV(ValidatorSQL):
                                 value)
                 else:
                     # The event has signup, check if it is open
-                    now = datetime.now()
+                    now = datetime.utcnow()
                     if now < event['time_register_start']:
                         self._error(field, "the signup for event with %s is"
                                     "not open yet." % value)
