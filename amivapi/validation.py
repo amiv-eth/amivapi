@@ -11,6 +11,7 @@
 """
 
 import json
+import jsonschema
 
 from flask import request, current_app as app
 from flask import g
@@ -358,3 +359,22 @@ class ValidatorAMIV(ValidatorSQL):
                    (g.logged_in_user in owners)):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
+
+    def _validate_jsonschema(self, jsonschema, field, value):
+        """
+        Validates the jsonschema provided using the python jsonschema library
+            
+        :param jsonschema: The jsonschema to use
+        :param field: field name.
+        :param value: field value.
+        """
+        try:
+            jsonschema.validate(value, jsonschema)
+        except jsonschema.exceptions.ValidationError as v_error:
+            # Something was not according to schema
+            self._error(field, v_error.message)
+        except jsonschema.exceptions.ValidationError as s_error:
+            # The schema is broken - nothing can be validated
+            # Something is wrong with the server
+            app.logger.error(s_error.message)
+            abort(500)

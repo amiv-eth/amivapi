@@ -8,6 +8,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi import models
 from amivapi.settings import ROLES
+from amivapi.group_permissions import create_group_permissions_jsonschema
 
 
 def get_domain():
@@ -136,7 +137,7 @@ def get_domain():
     domain['events']['schema']['time_end'].update({
         'dependencies': ['time_start'],
         'later_than': 'time_start'})
-
+    
     """
     Group user members and address members
     """
@@ -162,5 +163,15 @@ def get_domain():
         'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
+    
+                                         
+    """
+    Groups, jsonschema validation for permissions - last thing to do to
+    ensure that the domain doesnt change anymore
+    """
+    domain['groups']['schema']['permissions'].update({
+        'jsonschema': create_group_permissions_jsonschema(domain.keys())
+    })                                     
+    
 
     return domain

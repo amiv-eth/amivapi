@@ -181,7 +181,7 @@ class User(Base):
             'GET': "Authorization is required for most of the fields"
         }}
     __expose__ = True
-    __projected_fields__ = ['permissions']
+    __projected_fields__ = ['permissions', 'groups']
 
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
@@ -203,7 +203,7 @@ class User(Base):
     # relationships
     permissions = relationship("Permission", foreign_keys="Permission.user_id",
                                backref="user", cascade="all, delete")
-    groups = relationship("GroupUserMember",
+    groupmemberships = relationship("GroupUserMember",
                           foreign_keys="GroupUserMember.user_id",
                           backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
@@ -274,8 +274,11 @@ class Group(Base):
     name = Column(Unicode(100), unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
-    has_zoidberg_share = Column(Boolean, default=False, nullable=False)
 
+    has_zoidberg_share = Column(Boolean, default=False, nullable=False)
+    
+    permissions = Column(JSON)
+    
     owner = relationship(User, foreign_keys=owner_id)
 
     user_subscribers = relationship("GroupUserMember", backref="group",

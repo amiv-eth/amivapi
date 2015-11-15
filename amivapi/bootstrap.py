@@ -26,8 +26,8 @@ from amivapi import (
     forwards,
     validation,
     ldap,
-    documentation
-)
+    documentation,
+    )
 
 from amivapi.utils import get_config
 
@@ -77,8 +77,8 @@ def create_app(disable_auth=False, **kwargs):
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentication.authentication)
     app.register_blueprint(authorization.permission_info)
-    app.register_blueprint(media.download)
-
+    app.register_blueprint(media.download)    
+            
     #
     #
     # Event hooks
