@@ -75,7 +75,7 @@ def teardown():
     """Drop database created above"""
     db_name = engine.url.database
 
-    if engine.url.drivername == "sqlite":
+    if engine.dialect.name == "sqlite":
         unlink(db_name)
     else:
         connection.execute("DROP DATABASE `%s`" % db_name)
