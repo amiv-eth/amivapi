@@ -167,7 +167,7 @@ def init_database(connection, config):
     :param config: The configuration dictionary
     """
     # Tell MySQL to not treat 0 as NULL
-    if connection.engine.url.drivername == "mysql":
+    if "mysql" in connection.engine.url.drivername:
         connection.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
 
     try:
