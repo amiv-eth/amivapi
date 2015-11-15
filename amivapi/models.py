@@ -275,6 +275,7 @@ class Group(Base):
     name = Column(Unicode(100), unique=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
+    has_zoidberg_share = Column(Boolean, default=False, nullable=False)
 
     owner = relationship(User, foreign_keys=owner_id)
 
