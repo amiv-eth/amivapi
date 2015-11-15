@@ -206,6 +206,7 @@ class WebTest(unittest.TestCase):
             'name': u"test-group-%i" % self.next_count(),
             'owner_id': 0,
             'is_public': random.choice([True, False]),
+            'has_zoidberg_share': random.choice([True, False]),
         }
         data.update(kwargs)
         return data
