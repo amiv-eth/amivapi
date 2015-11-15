@@ -226,17 +226,27 @@ def apply_lookup_owner_filters(lookup, resource):
     if not hasattr(resource_class, '__owner__'):
         abort(403)
 
+    # [:] copies the list (and looks like a weird chest with a buttoned shirt
     fields = resource_class.__owner__[:]
 
-    # Every condition is, that the field is equal to the user id
-    conditions = map(lambda x: x + "==" + str(g.logged_in_user), fields)
-    # Concatenate all conditions with or
-    condition_string = ""
-    for cond in conditions:
-        condition_string += cond + " or "
-    condition_string = condition_string[:-4]  # remove last or
+    conditions = []
 
-    lookup[condition_string] = ""
+    # We loop through all owner fields and for each field we generate a filter
+    # which will allow the owner to see the object.
+    for field in fields:
+        if '.' not in field:
+            # owner id is simple field of the class
+            conditions.append({field: g.logged_in_user})
+        else:
+            # owner id is over relation
+            conditions.append(
+                {"__self__": "indirect_any(\"%s,%i\")"
+                    % (field, g.logged_in_user)})
+
+    if 'and_' not in lookup:
+        lookup['and_'] = []
+    lookup['and_'].append({'or_': conditions})
+    print lookup
 
 
 #

@@ -23,6 +23,7 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import relationship, synonym, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.types import TypeDecorator
+from sqlalchemy.exc import InvalidRequestError
 
 from settings import PASSWORD_CONTEXT
 
@@ -116,6 +117,56 @@ class BaseModel(object):
     @declared_attr
     def _author(cls):
         return Column(Integer, ForeignKey("users.id"))  # , nullable=False)
+
+    @declared_attr
+    def __self__(cls):
+        """ This makes it possible to reference fields indirectly with
+        User.__self__.sessions. We use this as a workaround, as the lookup dict
+        for eve can not contain sqlalchemy operators for a relation.
+
+            { "sessions": "indirect_any(\"token\")" }
+
+        This would fail cause eve_sqlalchemy first checks wether sessions is a
+        relation and therefore never reaches the custom operator clause.
+
+            { "__self__": "indirect_any(\"sessions.token\")" }
+
+        This works as __self__ is not a relation. """
+        return cls
+
+    @classmethod
+    def indirect_any(cls, querystring):
+        """ This is a custom SQL alchemy operator, used to check if any field
+        is matched over various relations
+
+        This is used to check indirect permissions in authorization.py
+
+        When the parser hits one to many relations it will create any clauses
+
+        Example:
+            User.recursive_any("groups.addresses.address, \"it@amiv.ethz.ch\"")
+
+            this will return all users, which are in a group which receives
+            emails from it@amiv.ethz.ch
+
+        @argument querystring: String of two comma seperated arguments. The
+                               first is the field which is to be checked. The
+                               second is the value to match.
+
+        @returns: sqlalchemy statement """
+
+        field, value = map(unicode.strip, querystring.split(','))
+
+        parts = field.strip().split('.')
+        relation = getattr(cls, parts[0])
+        try:
+            # This will work for many-to-one relationships
+            return relation.has(**{'.'.join(parts[1:]): value})
+        except InvalidRequestError:
+            # This will work for one-to-many relationships
+            # In this case we accept if there is any related object which
+            # satisfies the requirement
+            return relation.any(**{'.'.join(parts[1:]): value})
 
 
 Base = declarative_base(cls=BaseModel)
