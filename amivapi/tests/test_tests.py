@@ -51,6 +51,11 @@ class IsolationTest(util.WebTestNoAuth):
         resp = self.api.get("/sessions", status_code=200)
         self.assertEquals(len(resp.json['_items']), 0)
 
+    def test_zero_values_on_insert(self):
+        """Inserting a zero-value inserts a 0 instead of treating it as NULL."""
+        session = self.new_session(_id=0)
+        self.assertEquals(session._id, 0)
+
     def test_testrelations(self):
         """ Check whether relations can be resolved with the test database
         system and get is updated with new data """

@@ -25,7 +25,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.exc import InvalidRequestError
 
-from settings import PASSWORD_CONTEXT
+from amivapi.settings import PASSWORD_CONTEXT
 
 
 #
@@ -61,8 +61,7 @@ class JSON(TypeDecorator):
             try:
                 value = json.loads(value)
             except (TypeError, ValueError):
-                print "No valid JSON in database: %r", value
-                value = None
+                raise ValueError("Invalid JSON found in database: %r", value)
 
         return value
 
