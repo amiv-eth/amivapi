@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 """
-This file provides token based authentification(identification of users). A
+This file provides token based authentication (identification of users). A
 user can POST the /sessions resource to obtain a token.
 
 When a user sends his token with a request the g.logged_in_user global variable
@@ -37,7 +37,7 @@ class TokenAuth(TokenAuth):
     """ We could have used eve's allowed_roles parameter, but that does not
     support roles on endpoint level, but only on resource level"""
     def check_auth(self, token, allowed_roles, resource, method):
-        """ This is the authentification function called by eve. It will parse
+        """ This is the authentication function called by eve. It will parse
         the send token and determine if it is from a valid user or a know
         apikey.
 
@@ -83,7 +83,7 @@ class TokenAuth(TokenAuth):
         return True
 
 
-authentification = Blueprint('authentification', __name__)
+authentication = Blueprint('authentication', __name__)
 
 
 def _token_response(user_id):
@@ -106,7 +106,7 @@ def _token_response(user_id):
     return response
 
 
-@authentification.route('/sessions', methods=['POST'])
+@authentication.route('/sessions', methods=['POST'])
 def process_login():
     """ Login
     A POST to /sessions exspects nethz and password. If they are correct a

@@ -25,7 +25,7 @@ from amivapi import models, utils
 
 def common_authorization(resource, method):
     """ Determine the type of authorization check we have to make and execute
-    checks common to all methods. Also this will perform authentification if
+    checks common to all methods. Also this will perform authentication if
     it has not been done already(public methods skip it).
 
     Returns whether the user has been authorized. If he has not been
@@ -74,14 +74,14 @@ def common_authorization(resource, method):
     """
     resource_class = utils.get_class_for_resource(models, resource)
 
-    # Allow if authentification is disabled
+    # Allow if authentication is disabled
     if not app.auth:
         g.logged_in_user = 0
         g.resource_admin = 1
         return True
 
     # If the method is public or this is called by a custom endpoint,
-    # authentification has not been performed yet automatically. If the user
+    # authentication has not been performed yet automatically. If the user
     # has set a token, check that now to generate g.logged_in_user. If he has
     # no token, set user ID to -1
     if (not hasattr(g, 'logged_in_user')

@@ -41,7 +41,7 @@ Item methods(use i.e. on /users/4)
 
 ## Response format
 
-The status code returned by the API are the standard [HTTP status codes](https://de.wikipedia.org/wiki/HTTP-Statuscode). Codes starting with 2 mean the operation was successfull, starting with 3 are authentification related, 4 are client errors, 5 are server errors, 6 are global errors. Most important codes are:
+The status code returned by the API are the standard [HTTP status codes](https://de.wikipedia.org/wiki/HTTP-Statuscode). Codes starting with 2 mean the operation was successfull, starting with 3 are authentication related, 4 are client errors, 5 are server errors, 6 are global errors. Most important codes are:
 
  * 200 - OK (Generic success)
  * 201 - Created (successful POST)

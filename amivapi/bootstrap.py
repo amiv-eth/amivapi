@@ -20,7 +20,7 @@ from amivapi import (
     models,
     confirm,
     schemas,
-    authentification,
+    authentication,
     authorization,
     media,
     forwards,
@@ -37,7 +37,7 @@ def create_app(disable_auth=False, **kwargs):
     Create a new eve app object and initialize everything.
 
     :param disable_auth: This can be used to allow every request without
-                         authentification for testing purposes
+                         authentication for testing purposes
     :param **kwargs: All other parameters overwrite config values
     :returns: eve.Eve object, the app object
     """
@@ -55,7 +55,7 @@ def create_app(disable_auth=False, **kwargs):
         app = Eve(settings=config,
                   data=SQL,
                   validator=validation.ValidatorAMIV,
-                  auth=authentification.TokenAuth,
+                  auth=authentication.TokenAuth,
                   media=media.FileSystemStorage)
 
     # Bind SQLAlchemy
@@ -75,7 +75,7 @@ def create_app(disable_auth=False, **kwargs):
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
-    app.register_blueprint(authentification.authentification)
+    app.register_blueprint(authentication.authentication)
     app.register_blueprint(authorization.permission_info)
     app.register_blueprint(media.download)
 
@@ -87,9 +87,9 @@ def create_app(disable_auth=False, **kwargs):
     # the database
     #
 
-    # authentification
-    app.on_insert += authentification.set_author_on_insert
-    app.on_replace += authentification.set_author_on_replace
+    # authentication
+    app.on_insert += authentication.set_author_on_insert
+    app.on_replace += authentication.set_author_on_replace
 
     # authorization
     app.on_pre_GET += authorization.pre_get_permission_filter

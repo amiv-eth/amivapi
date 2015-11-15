@@ -107,7 +107,7 @@ When the debug server is running it will be available at http://localhost:5000 a
 
 The main-directory lists following files:
 
-* authentification.py: Everything about who somebody is. Tokens are mapped to sessions and logins are handled. Also author fields are set.
+* authentication.py: Everything about who somebody is. Tokens are mapped to sessions and logins are handled. Also author fields are set.
 * authorization.py: Everything about what somebody can do. Permissions are implemented here.
 * bootstrap.py: The Eve-App gets created here. All blueprints and event-hooks are registered in the bootstrap.
 * confirm.py: Blueprint and event-hooks regarding the confirmation of unregistered users.
@@ -128,7 +128,7 @@ For understanding the structure of the api, the data-model in models.py is the P
 # Security
 
 Checking whether a request should be allowed consists of two steps,
-authentification and authorization. Authentification is the process of
+authentication and authorization. Authentification is the process of
 determining the user which is performing the action. Authorization is the
 process of determining which actions should be allowed for the authentificated
 user.
@@ -139,14 +139,14 @@ g.logged_in_user
 Authorization will provide whether the user has an admin role in
 g.resource_admin
 
-Requests which are handled by eve will automatically perform authentification
+Requests which are handled by eve will automatically perform authentication
 and authorization. If you implement a custom endpoint you have to call them
 yourself. However authorization really depends on what is about to happen,
 so you might have to do it yourself. To get an idea of what to do look at
 the authorization hooks(pre_xxx_permission_filter()). You can quite certainly
 reuse that code somehow.
 
-Perform authentification(will abort the request for anonymous users):
+Perform authentication(will abort the request for anonymous users):
 
     if app.auth and not app.auth.authorized([], <resource>, request.method):
         return app.auth.authenticate()
@@ -156,9 +156,9 @@ Replace <resource> with the respective resource name.
 
 ## Authentification
 
-File: authentification.py
+File: authentication.py
 
-The process of authentification is straight forward. A user is identified by
+The process of authentication is straight forward. A user is identified by
 his nethz (or email) and his password. He can sent those to the /sessions resource and obtain a token which can prove authenticity of subsequent requests.
 This login process is done by the process_login function. Sessions do not time
 out, but can be deleted.
@@ -206,7 +206,7 @@ The function will also set the variable g.resource_admin depending on whether
 the user has an admin role(or is root).
 
 One thing to note is that users which are not logged in are already aborted by
-eve when authentification fails for resources which are not public, therefore
+eve when authentication fails for resources which are not public, therefore
 this is not checked anymore in step 4.
 
 ### Roles
