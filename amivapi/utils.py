@@ -5,12 +5,10 @@
 
 from base64 import urlsafe_b64encode
 from os import urandom
-import re
 import smtplib
 from email.mime.text import MIMEText
 
 from flask import current_app as app
-from flask import abort
 
 from eve.utils import config
 from flask import Config
@@ -58,27 +56,43 @@ def token_generator(size=6):
     return urlsafe_b64encode(urandom(size))[0:size]
 
 
-def get_owner(model, _id):
+def recursive_any_getattr(obj, path):
+    """ Given some object and a path, retrive any value, which is reached with
+    this path. Lists are looped through.
+
+    @argument obj: Object to start with
+    @argument path: List of attribute names
+
+    @returns: List of values
+    """
+    if isinstance(obj, list):
+        results = []
+        for item in obj:
+            results.extend(recursive_any_getattr(item, path))
+        return results
+
+    next_field = getattr(obj, path[0])
+
+    if len(path) == 1:
+        return [next_field]
+    else:
+        return recursive_any_getattr(next_field, path[1:])
+
+
+def get_owner(model, id):
     """ will search for the owner(s) of a data-item
-    :param modeL: the SQLAlchemy-model (in models.py)
+    :param model: the SQLAlchemy-model (in models.py)
     :param _id: The id of the item (unique for each model)
     :returns: a list of owner-ids
     """
     db = app.data.driver.session
-    doc = db.query(model).get(_id)
+    doc = db.query(model).get(id)
     if not doc or not hasattr(model, '__owner__'):
         return None
     ret = []
     for path in doc.__owner__:
-        attrs = re.split(r'\.', path)
-        for attr in attrs:
-            try:
-                doc = getattr(doc, attr)
-            except:
-                abort(500, description=(
-                    "Something is wrong with the data model."
-                    " Please contact it@amiv.ethz.ch"))
-        ret.append(doc)
+        ret.extend(recursive_any_getattr(doc, path.split('.')))
+    print "Found owners: %s" % ret
     return ret
 
 
