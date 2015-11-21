@@ -241,7 +241,7 @@ class Group(Base):
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
-    __owner__ = ['owner_id']
+    __owner__ = ['owner_id', 'user_subscribers.user_id']
     __owner_methods__ = ['GET']
 
     name = Column(Unicode(100), unique=True, nullable=False)
@@ -249,9 +249,9 @@ class Group(Base):
     is_public = Column(Boolean, default=False, nullable=False)
 
     has_zoidberg_share = Column(Boolean, default=False, nullable=False)
-    
+
     permissions = Column(JSON)
-    
+
     owner = relationship(User, foreign_keys=owner_id)
 
     user_subscribers = relationship("GroupUserMember", backref="group",
