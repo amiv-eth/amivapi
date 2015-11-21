@@ -238,7 +238,6 @@ def apply_lookup_owner_filters(lookup, resource):
     if 'and_' not in lookup:
         lookup['and_'] = []
     lookup['and_'].append({'or_': conditions})
-    print lookup
 
 
 #
