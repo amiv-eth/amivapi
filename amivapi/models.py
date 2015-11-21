@@ -92,6 +92,7 @@ class BaseModel(object):
     __public_methods__ = []
     __owner_methods__ = []
     __registered_methods__ = []
+    __owner__ = []
 
     @declared_attr
     def __tablename__(cls):
@@ -518,7 +519,7 @@ class Purchase(Base):
 
     __owner__ = ['user_id']
 
-    user_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey('users.id'))
     timestamp = Column(DateTime)
     type = Column(Enum("beer", "kaffi"))
     slot = Column(Integer)
