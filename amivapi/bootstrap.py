@@ -9,6 +9,14 @@ Starting point for the API
 
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
+from sqlalchemy.engine import reflection
+from sqlalchemy.schema import (
+    MetaData,
+    Table,
+    DropTable,
+    ForeignKeyConstraint,
+    DropConstraint,
+    )
 
 from eve import Eve
 from eve_sqlalchemy import SQL  # , ValidatorSQL
@@ -212,3 +220,51 @@ def init_database(connection, config):
     session = Session(bind=connection)
     session.add_all([root_user, anonymous_user])
     session.commit()
+
+def clear_database(engine):
+    """ Clears all the tables from the database
+    To do this first all ForeignKey constraints are removed,
+    then all tables are dropped.
+
+    Code is from
+    https://bitbucket.org/zzzeek/sqlalchemy/wiki/UsageRecipes/DropEverything
+
+    :param engine: SQLalchemy engine to use
+    """
+
+    conn = engine.connect()
+
+    # the transaction only applies if the DB supports
+    # transactional DDL, i.e. Postgresql, MS SQL Server
+    trans = conn.begin()
+
+    inspector = reflection.Inspector.from_engine(engine)
+
+    # gather all data first before dropping anything.
+    # some DBs lock after things have been dropped in
+    # a transaction.
+
+    metadata = MetaData()
+
+    tbs = []
+    all_fks = []
+
+    for table_name in inspector.get_table_names():
+        fks = []
+        for fk in inspector.get_foreign_keys(table_name):
+            if not fk['name']:
+                continue
+            fks.append(
+                ForeignKeyConstraint((),(),name=fk['name'])
+                )
+        t = Table(table_name,metadata,*fks)
+        tbs.append(t)
+        all_fks.extend(fks)
+
+    for fkc in all_fks:
+        conn.execute(DropConstraint(fkc))
+
+    for table in tbs:
+        conn.execute(DropTable(table))
+
+    trans.commit()

@@ -24,10 +24,10 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings, models, schemas
+from amivapi import settings, schemas
 from amivapi.models import User
 from amivapi.utils import get_config
-from amivapi.bootstrap import init_database
+from amivapi.bootstrap import init_database, clear_database
 from amivapi.ldap import ldap_synchronize
 
 manager = Manager(Flask("amivapi"))
@@ -337,7 +337,7 @@ def create_database(force=False):
         if not force and not prompt_bool(
                 "A database seems to exist already. Overwrite it?(y/N)"):
             return
-        models.Base.metadata.drop_all(engine)
+        clear_database(engine)
         init_database(engine, config)
 
 
