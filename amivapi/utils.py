@@ -65,6 +65,12 @@ def recursive_any_getattr(obj, path):
 
     @returns: List of values
     """
+
+    if len(path) == 0:
+        if isinstance(obj, list):
+            return obj
+        return [obj]
+
     if isinstance(obj, list):
         results = []
         for item in obj:
@@ -73,10 +79,7 @@ def recursive_any_getattr(obj, path):
 
     next_field = getattr(obj, path[0])
 
-    if len(path) == 1:
-        return [next_field]
-    else:
-        return recursive_any_getattr(next_field, path[1:])
+    return recursive_any_getattr(next_field, path[1:])
 
 
 def get_owner(model, id):
