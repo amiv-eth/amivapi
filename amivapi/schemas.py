@@ -24,6 +24,12 @@ def get_domain():
             domain[tbl_name]['datasource']['projection'].update(
                 {field: 1}
             )
+            if not 'embedded_fields' in domain[tbl_name]:
+                domain[tbl_name]['embedded_fields'] = {}
+            for field in model.__embedded_fields__:
+                domain[tbl_name]['embedded_fields'].update(
+                    {field: 1}
+                )
 
         domain[tbl_name]['public_methods'] = (model.__public_methods__)
         domain[tbl_name]['public_item_methods'] = (model.__public_methods__)

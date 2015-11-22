@@ -86,6 +86,9 @@ class BaseModel(object):
     # eve. Add any additional field to be delivered on GET requests by default
     # in the subclasses.
     __projected_fields__ = []
+    # These fields are embedded by default meaning that not only the related
+    # ids are used, but the whole object included
+    __embedded_fields__ = []
 
     # These can contain a list of methods which need some kind of
     # authorization. If nothing is set only admins can access the method
@@ -241,6 +244,7 @@ class Group(Base):
         }}
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
+    __embedded_fields__ = ['user_subscribers', 'address_subscribers']
 
     __owner__ = ['moderator_id', 'user_subscribers.user_id']
     __owner_methods__ = ['GET']
