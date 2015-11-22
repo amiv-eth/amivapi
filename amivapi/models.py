@@ -250,7 +250,7 @@ class Group(Base):
 
     has_zoidberg_share = Column(Boolean, default=False, nullable=False)
 
-    permissions = Column(JSON)
+    permissions = Column(JSONText)
 
     owner = relationship(User, foreign_keys=owner_id)
 
