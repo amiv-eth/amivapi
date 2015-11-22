@@ -147,10 +147,8 @@ def common_authorization(resource, method):
 
 
 def resolve_future_field(model, payload, field):
-    """ This function (HACK ALERT) tries to figure out where a relationship
-    would point to if an object was created with the passed request. If
-    somebody finds a better way to check permissions please consider changing
-    this. We depend on a lot of knowledge of relationship internals.
+    """ This function resolves a field of the object that would be created
+    if the passed payload would be used to create an instance of model.
 
     This also resolves one-to-many relationships, therefore a list of objects
     is returned
@@ -160,15 +158,22 @@ def resolve_future_field(model, payload, field):
     :param field: Name of the field to resolve(like 'owner.email')
 
     :returns: Resolved field's values(list)"""
-    # TODO(Conrad): This can be done better with detached sqlalchemy objects
-    if field not in inspect(model).relationships:
-        print getattr(model, field).property
-        if isinstance(getattr(model, field).property.columns[0].type, Integer):
-            return [int(payload[field])]
-        return [payload[field]]
 
+    # The easy case, a regular field
+    if field not in inspect(model).relationships:
+        value = payload[field]
+
+        # Apply default if not set
+        default = getattr(model.__table__.c, field).default
+        if value is None and default:
+            value = default.arg
+
+        return [value]
+
+    # A relation, so lets find out what type of objects it would point to
     relationship = inspect(model).relationships[field]
 
+    # And now create a query to find the targets
     query = app.data.driver.session.query(relationship.target)
     for l, r in relationship.local_remote_pairs:
         query = query.filter(r.__eq__(payload[l.name]))
