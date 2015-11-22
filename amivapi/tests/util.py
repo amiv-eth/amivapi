@@ -198,7 +198,7 @@ class WebTest(unittest.TestCase):
         """ Create a forward """
         data = {
             'name': u"test-group-%i" % self.next_count(),
-            'owner_id': 0,
+            'moderator_id': 0,
             'is_public': random.choice([True, False]),
             'has_zoidberg_share': random.choice([True, False]),
         }

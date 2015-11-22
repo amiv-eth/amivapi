@@ -451,7 +451,7 @@ def group_public_check(items):
             abort(404, description="Group with id %s not found" % groupid)
         if (not group.is_public and not
                 g.resource_admin and not
-                g.logged_in_user == group.owner_id):
+                g.logged_in_user == group.moderator_id):
             abort(403, description=debug_error_message(
                 'You are not allowed to self enroll for this forward'
             ))

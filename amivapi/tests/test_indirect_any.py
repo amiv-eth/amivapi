@@ -12,7 +12,7 @@ class IndirectAnyTest(util.WebTest):
     def test_indirect_any(self):
         user = self.new_user()
         group_mem = self.new_group()      # user is member
-        self.new_group(owner_id=user.id)  # user is owner
+        self.new_group(moderator_id=user.id)  # user is moderator
         self.new_group()                  # user is unrelated
 
         self.new_group_user_member(user_id=user.id, group_id=group_mem.id)

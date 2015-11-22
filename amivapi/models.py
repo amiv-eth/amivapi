@@ -241,18 +241,18 @@ class Group(Base):
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
 
-    __owner__ = ['owner_id', 'user_subscribers.user_id']
+    __owner__ = ['moderator_id', 'user_subscribers.user_id']
     __owner_methods__ = ['GET']
 
     name = Column(Unicode(100), unique=True, nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    moderator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
 
     has_zoidberg_share = Column(Boolean, default=False, nullable=False)
 
     permissions = Column(JSONText)
 
-    owner = relationship(User, foreign_keys=owner_id)
+    owner = relationship(User, foreign_keys=moderator_id)
 
     user_subscribers = relationship("GroupUserMember", backref="group",
                                     cascade="all, delete")
@@ -274,7 +274,7 @@ class ForwardAddress(Base):
     __expose__ = True
     __projected_fields__ = ['group']
 
-    __owner__ = ["group.owner_id"]
+    __owner__ = ["group.moderator_id"]
     __owner_methods__ = ['GET']
 
     address = Column(Unicode(100), unique=True)
@@ -288,7 +288,7 @@ class GroupUserMember(Base):
     __expose__ = True
     __projected_fields__ = ['group', 'user']
 
-    __owner__ = ['user_id', 'group.owner_id']
+    __owner__ = ['user_id', 'group.moderator_id']
     __owner_methods__ = ['GET', 'POST', 'DELETE']
 
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
@@ -308,7 +308,7 @@ class GroupAddressMember(Base):
     __expose__ = True
     __projected_fields__ = ['group']
 
-    __owner__ = ['group.owner_id']
+    __owner__ = ['group.moderator_id']
     __owner_methods__ = ['GET', 'POST', 'DELETE']
     __public_methods__ = ['POST', 'DELETE']
 

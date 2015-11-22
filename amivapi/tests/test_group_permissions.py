@@ -40,7 +40,7 @@ class GroupPermissionTest(util.WebTest):
             r = self.api.post("/groups", data = {
                               "name": "Testgroup%i" % gen.next(),
                               "permissions": permissions,
-                              "owner_id": 0,
+                              "moderator_id": 0,
                               "is_public": False
                               }, token=token, status_code=status)
             
