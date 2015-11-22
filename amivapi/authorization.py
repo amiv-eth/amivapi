@@ -19,6 +19,7 @@ from eve.utils import home_link, config, debug_error_message
 from eve.render import send_response
 
 from sqlalchemy.inspection import inspect
+from sqlalchemy import Integer
 
 from amivapi import models, utils
 
@@ -151,33 +152,30 @@ def resolve_future_field(model, payload, field):
     somebody finds a better way to check permissions please consider changing
     this. We depend on a lot of knowledge of relationship internals.
 
+    This also resolves one-to-many relationships, therefore a list of objects
+    is returned
+
     :param model: the sqlalchemy model to use(like models.User)
     :param payload: A dict which contains the values of the object
     :param field: Name of the field to resolve(like 'owner.email')
 
-    :returns: Resolved field's value"""
+    :returns: Resolved field's values(list)"""
     # TODO(Conrad): This can be done better with detached sqlalchemy objects
-    field_parts = field.split('.')  # This looks like an emoticon
+    if field not in inspect(model).relationships:
+        print getattr(model, field).property
+        if isinstance(getattr(model, field).property.columns[0].type, Integer):
+            return [int(payload[field])]
+        return [payload[field]]
 
-    if len(field_parts) == 1:
-        return payload[field]
-
-    relationship = inspect(model).relationships[field_parts[0]]
+    relationship = inspect(model).relationships[field]
 
     query = app.data.driver.session.query(relationship.target)
     for l, r in relationship.local_remote_pairs:
         query = query.filter(r.__eq__(payload[l.name]))
 
-    value = query.one()
+    return query.all()
 
-    for part in field_parts[1:]:
-        value = getattr(value, part)
-
-    return value
-
-
-# TODO: Remove unused method parameter
-def will_be_owner(resource, method, obj):
+def will_be_owner(resource, obj):
     """ Check if an object would have the currently logged in user as an owner
     if the passed obj was created in the database or an existing object
     patched to contain the data
@@ -191,17 +189,17 @@ def will_be_owner(resource, method, obj):
 
     resource_class = utils.get_class_for_resource(models, resource)
 
-    if hasattr(resource_class, '__owner__'):
-        try:
-            for field in resource_class.__owner__:
+    for field in resource_class.__owner__:
+        path = field.split('.')  # This looks like an emoticon
 
-                v = resolve_future_field(resource_class, obj, field)
-                if v == g.logged_in_user:
-                    return True
-        except AttributeError:
-            app.logger.error("Unknown owner field for %s: %s"
-                             % (resource, field))
-            raise
+        # Resolve first step using predicted relationships
+        v = resolve_future_field(resource_class, obj, path[0])
+
+        # After one step the object should be existing, use normal resolving
+        v = utils.recursive_any_getattr(v, path[1:])
+
+        if g.logged_in_user in v:
+            return True
 
     return False
 
@@ -269,7 +267,7 @@ def pre_post_permission_filter(resource, request):
     """
     authorized = common_authorization(resource, request.method)
     if (not authorized
-            and not will_be_owner(resource, request.method, payload())):
+            and not will_be_owner(resource, payload())):
         app.logger.debug("Access forbidden for %s to %s for unauthorized user"
                          % (request.method, resource))
         abort(403)
@@ -283,7 +281,7 @@ def pre_put_permission_filter(resource, request, lookup):
     :param lookup: The lookup dict to filter results
     """
     if not common_authorization(resource, request.method):
-        if not will_be_owner(resource, request.method, payload()):
+        if not will_be_owner(resource, payload()):
             abort(403)
         apply_lookup_owner_filters(lookup, resource)
 
@@ -326,7 +324,7 @@ def update_permission_filter(resource, updates, original):
 
     data = original.copy()
     data.update(updates)
-    if not will_be_owner(resource, request.method, data):
+    if not will_be_owner(resource, data):
         abort(403)
 
 
