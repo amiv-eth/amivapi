@@ -41,7 +41,7 @@ class GroupPermissionTest(util.WebTest):
                               "name": "Testgroup%i" % gen.next(),
                               "permissions": permissions,
                               "moderator_id": 0,
-                              "is_public": False
+                              "allow_self_enrollment": False
                               }, token=token, status_code=status)
             
     
@@ -131,7 +131,7 @@ class GroupPermissionTest(util.WebTest):
         h = {"If-Match": g3._etag}
         self.api.post("/events", data={
                         "spots": -1,
-                        "is_public": False
+                        "allow_email_signup": False
                       }, token=token, status_code=403)
         self.api.patch("/groups/%i" % g3.id, data = {
                                         "name": "newname"
@@ -146,7 +146,7 @@ class GroupPermissionTest(util.WebTest):
         # Authorized this time
         self.api.post("/events", data={
                       "spots": -1,
-                      "is_public": False
+                      "allow_email_signup": False
                       }, token=token, status_code=201)
         self.api.patch("/groups/%i" % g3.id, data = {
                        "name": "newname"

@@ -25,7 +25,7 @@ class SignupTest(util.WebTest):
                               'allowed': ['itet', 'mavt'],
                               }})
 
-        event = self.new_event(is_public=True, spots=10,
+        event = self.new_event(allow_email_signup=True, spots=10,
                                additional_fields=payload)
 
         other_signup = self.new_signup(user_id=peon.id, event_id=event.id)
@@ -101,9 +101,9 @@ class SignupTest(util.WebTest):
                               'allowed': ['itet', 'mavt'],
                               }})
 
-        event = self.new_event(is_public=False, spots=10,
+        event = self.new_event(allow_email_signup=False, spots=10,
                                additional_fields=payload)
-        event2 = self.new_event(is_public=False, spots=10,
+        event2 = self.new_event(allow_email_signup=False, spots=10,
                                 additional_fields=payload)
 
         # let's signup our user
@@ -169,7 +169,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
             spots=10
         ).id
         userid = self.new_user().id
@@ -194,7 +194,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
         ).id
 
         # Post correctly with mail and user set to -1
@@ -230,7 +230,7 @@ class SignupDataTest(util.WebTestNoAuth):
         event = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=False,
+            allow_email_signup=False,
             spots=10
         )
         eventid = event.id
@@ -250,7 +250,7 @@ class SignupDataTest(util.WebTestNoAuth):
             }}),
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=False,
+            allow_email_signup=False,
         )
         eventid = event.id
 
@@ -315,14 +315,14 @@ class SignupDataTest(util.WebTestNoAuth):
             }}),
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
         )
         eventid = event.id
 
         event_alt = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
             spots=10
         )
         eventid_alt = event_alt.id
@@ -387,13 +387,13 @@ class SignupDataTest(util.WebTestNoAuth):
             }}),
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=False,
+            allow_email_signup=False,
         )
         eventid_1 = event_1.id
         event_2 = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=False,
+            allow_email_signup=False,
         )
         eventid_2 = event_2.id
 
@@ -436,7 +436,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=False,
+            allow_email_signup=False,
             spots=-1
         ).id
 
@@ -454,7 +454,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.today() + timedelta(days=21),
             time_register_end=datetime.today() + timedelta(days=42),
-            is_public=False
+            allow_email_signup=False
         ).id
 
         userid = self.new_user().id
@@ -471,7 +471,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
             spots=10
         ).id
 
@@ -510,7 +510,7 @@ class SignupDataTest(util.WebTestNoAuth):
         eventid = self.new_event(
             time_register_start=datetime.utcnow(),
             time_register_end=datetime.today() + timedelta(days=2),
-            is_public=True,
+            allow_email_signup=True,
             spots=10
         ).id
 

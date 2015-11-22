@@ -11,7 +11,7 @@ class GroupTest(util.WebTestNoAuth):
 
     def test_assign_registered(self):
         user = self.new_user()
-        group = self.new_group(is_public=True)
+        group = self.new_group(allow_self_enrollment=True)
 
         # add non-existing user
         self.api.post("/groupusermembers", data={
@@ -36,7 +36,7 @@ class GroupTest(util.WebTestNoAuth):
 
     def test_assign_unregistered(self):
         email = "test-mail@amiv.ethz.ch"
-        group = self.new_group(is_public=True)
+        group = self.new_group(allow_self_enrollment=True)
 
         # add non-email-address
         self.api.post("/groupaddressmembers", data={

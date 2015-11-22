@@ -21,7 +21,7 @@ class EventTest(util.WebTestNoAuth):
         # Invalid JSON
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': datetime.utcnow().strftime(DATE_FORMAT),
@@ -32,7 +32,7 @@ class EventTest(util.WebTestNoAuth):
         # Now JSON, but no JSON object
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': datetime.utcnow().strftime(DATE_FORMAT),
@@ -43,7 +43,7 @@ class EventTest(util.WebTestNoAuth):
         # Now JSON Object, but not a correct schema
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': datetime.utcnow().strftime(DATE_FORMAT),
@@ -58,7 +58,7 @@ class EventTest(util.WebTestNoAuth):
         # Now everything correct
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': datetime.utcnow().strftime(DATE_FORMAT),
@@ -73,7 +73,7 @@ class EventTest(util.WebTestNoAuth):
         # Double check that its nullable
         self.api.post("/events", data={
             'time_start': start.strftime(DATE_FORMAT),
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': datetime.utcnow().strftime(DATE_FORMAT),
@@ -87,7 +87,7 @@ class EventTest(util.WebTestNoAuth):
 
         self.api.post("/events", data={
             'time_start': end,
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 0,
             'spots': 10,
             'time_register_start': start,
@@ -96,7 +96,7 @@ class EventTest(util.WebTestNoAuth):
 
         self.api.post("/events", data={
             'time_start': end,
-            'is_public': True,
+            'allow_email_signup': True,
             'price': 10.5,
             'spots': 10,
             'time_register_start': start,
@@ -105,7 +105,7 @@ class EventTest(util.WebTestNoAuth):
 
         self.api.post("/events", data={
             'time_start': end,
-            'is_public': True,
+            'allow_email_signup': True,
             'price': -10,
             'spots': 10,
             'time_register_start': start,
@@ -123,7 +123,7 @@ class EventTest(util.WebTestNoAuth):
         # Post without registration timee
         self.api.post("/events", data={
             'time_start': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
         }, status_code=422)
 
@@ -131,14 +131,14 @@ class EventTest(util.WebTestNoAuth):
 
         self.api.post("/events", data={
             'time_start': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_1
         }, status_code=422)
 
         self.api.post("/events", data={
             'time_start': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_end': time_2
         }, status_code=422)
@@ -146,7 +146,7 @@ class EventTest(util.WebTestNoAuth):
         # Post correctly
         self.api.post("/events", data={
             'time_start': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_1,
             'time_register_end': time_2
@@ -164,7 +164,7 @@ class EventTest(util.WebTestNoAuth):
         self.api.post("/events", data={
             'time_start': time_4,
             'time_end': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_2,
             'time_register_end': time_1
@@ -173,7 +173,7 @@ class EventTest(util.WebTestNoAuth):
         self.api.post("/events", data={
             'time_start': time_3,
             'time_end': time_4,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_2,
             'time_register_end': time_1
@@ -182,7 +182,7 @@ class EventTest(util.WebTestNoAuth):
         self.api.post("/events", data={
             'time_start': time_4,
             'time_end': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_1,
             'time_register_end': time_2
@@ -192,7 +192,7 @@ class EventTest(util.WebTestNoAuth):
         self.api.post("/events", data={
             'time_start': time_3,
             'time_end': time_4,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_1,
             'time_register_end': time_2
@@ -201,7 +201,7 @@ class EventTest(util.WebTestNoAuth):
         # Test incomplete
         self.api.post("/events", data={
             'time_end': time_4,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_start': time_1,
             'time_register_end': time_2
@@ -209,7 +209,7 @@ class EventTest(util.WebTestNoAuth):
 
         self.api.post("/events", data={
             'time_start': time_3,
-            'is_public': True,
+            'allow_email_signup': True,
             'spots': 10,
             'time_register_end': time_2
         }, status_code=422)

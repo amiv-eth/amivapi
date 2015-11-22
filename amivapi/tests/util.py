@@ -199,7 +199,7 @@ class WebTest(unittest.TestCase):
         data = {
             'name': u"test-group-%i" % self.next_count(),
             'moderator_id': 0,
-            'is_public': random.choice([True, False]),
+            'allow_self_enrollment': random.choice([True, False]),
             'has_zoidberg_share': random.choice([True, False]),
         }
         data.update(kwargs)
@@ -240,7 +240,7 @@ class WebTest(unittest.TestCase):
     def new_event(self, **kwargs):
         """ Create a new event """
         data = {
-            'is_public': random.choice([True, False]),
+            'allow_email_signup': random.choice([True, False]),
             'spots': random.randint(0, 100),
             'time_register_start': datetime.utcnow() - timedelta(days=14),
             'time_register_end': datetime.utcnow() + timedelta(days=14),

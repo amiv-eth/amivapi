@@ -449,7 +449,7 @@ def group_public_check(items):
         # Users may only self enroll for public groups
         if not group:
             abort(404, description="Group with id %s not found" % groupid)
-        if (not group.is_public and not
+        if (not group.allow_self_enrollment and not
                 g.resource_admin and not
                 g.logged_in_user == group.moderator_id):
             abort(403, description=debug_error_message(

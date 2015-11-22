@@ -235,7 +235,8 @@ class Group(Base):
         "the subscriptions, have a look at '/groupusermembers' and "
         "'groupaddressmembers'.",
         'fields': {
-            'is_public': "If true, then users can sign up themselves",
+            'allow_self_enrollment': "If true, then users can join and leave, "
+            "else only group moderators and admins can change membership",
             'address': "The address of the new forward: <address>@amiv.ethz.ch"
         }}
     __expose__ = True
@@ -246,7 +247,7 @@ class Group(Base):
 
     name = Column(Unicode(100), unique=True, nullable=False)
     moderator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    is_public = Column(Boolean, default=False, nullable=False)
+    allow_self_enrollment = Column(Boolean, default=False, nullable=False)
 
     has_zoidberg_share = Column(Boolean, default=False, nullable=False)
 
@@ -358,8 +359,8 @@ class Event(Base):
             'additional_fields': "must be provided in form of a JSON-Schema. "
             "You can add here fields you want to know from people signing up "
             "going further than their email-address",
-            'is_public': "If False, only AMIV-Members can sign up for this "
-            "event",
+            'allow_email_signup': "If False, only AMIV-Members can sign up for "
+            "this event",
             'spots': "For no limit, set to '0'. If no signup required, set to "
             "'-1'. Otherwise just provide an integer.",
         }
@@ -372,7 +373,7 @@ class Event(Base):
     time_start = Column(DateTime)
     time_end = Column(DateTime)
     location = Column(Unicode(50))
-    is_public = Column(Boolean, default=False, nullable=False)
+    allow_email_signup = Column(Boolean, default=False, nullable=False)
     price = Column(Integer)  # Price in Rappen
     spots = Column(Integer, nullable=False)
     time_register_start = Column(DateTime)

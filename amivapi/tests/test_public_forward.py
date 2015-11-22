@@ -10,7 +10,7 @@ class PublicForwardTest(util.WebTest):
 
     def test_self_enroll_public_group(self):
         user = self.new_user()
-        group = self.new_group(is_public=True)
+        group = self.new_group(allow_self_enrollment=True)
         session = self.new_session(user_id=user.id)
 
         self.api.post("/groupusermembers", data={
@@ -18,7 +18,7 @@ class PublicForwardTest(util.WebTest):
             'group_id': group.id,
         }, token=session.token, status_code=201)
 
-        group2 = self.new_group(is_public=False)
+        group2 = self.new_group(allow_self_enrollment=False)
 
         self.api.post("/groupusermembers", data={
             'user_id': user.id,

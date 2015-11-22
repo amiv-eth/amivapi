@@ -315,10 +315,10 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "Can only be -1 if public. %s: %s does not "
                             "point to an existing resource" % (key, self
                                                                .document[key]))
-            elif not(item['is_public']):
-                self._error(field, "Can only be -1 if public. %s: %s does not "
-                            "point to a public resource" % (key, self
-                                                            .document[key]))
+            elif not(item['allow_email_signup']):
+                self._error(field, "Can only be -1 if email signup is allowed. "
+                            "%s: %s does not point to a public resource"
+                            % (key, self.document[key]))
 
     def _validate_self_enroll(self, self_enroll, field, value):
         """ Validates if the id can be used to enroll for an event
