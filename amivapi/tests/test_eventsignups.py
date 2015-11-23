@@ -54,28 +54,30 @@ class SignupTest(util.WebTest):
 
         # Try to PATCH the eventsignup additional fields
         ticket = self.api.patch("/eventsignups/%d" % ticket['_id'],
-                                data={'additional_fields': {'department':
-                                                            'mavt'}},
+                                data={'additional_fields':
+                                      '{"department": "mavt"}'},
                                 headers={'If-Match': ticket['_etag']},
                                 token=user_token,
-                                status_code=201).json
+                                status_code=200).json
 
-        # DELETE the signup as other user -> not allowed
-        self.api.delete("/eventsignups/%i" % ticket['_id'],
-                        token=peon_token, status_code=403,
+        # DELETE the signup as unpriviledged user -> resource not visible
+        self.api.delete("/eventsignups/%i" % ticket['id'],
+                        token=peon_token, status_code=404,
                         headers={'If-Match': ticket['_etag']})
 
         # DELETE the signup
-        self.api.delete("/eventsignups/%i" % ticket['_id'],
-                        token=user_token, status_code=200,
+        self.api.delete("/eventsignups/%i" % ticket['id'],
+                        token=user_token, status_code=204,
                         headers={'If-Match': ticket['_etag']})
 
         # DELETE peon's signup as vorstand
-        vorstand = self.new_user(role='vorstand')
+        vorstand = self.new_user()
+        group = self.new_group(permissions={'eventsignups': {'DELETE': 1}})
+        self.new_group_user_member(group_id=group.id, user_id=vorstand.id)
         vorstand_token = self.new_session(user_id=vorstand.id).token
 
         self.api.delete("/eventsignups/%i" % other_signup.id,
-                        token=vorstand_token, status_code=200,
+                        token=vorstand_token, status_code=204,
                         headers={'If-Match': other_signup._etag})
 
     def test_non_public_event_signup(self):

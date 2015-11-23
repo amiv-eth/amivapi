@@ -40,7 +40,8 @@ class GroupPermissionTest(util.WebTest):
                 "name": "Testgroup%i" % gen.next(),
                 "permissions": permissions,
                 "moderator_id": 0,
-                "allow_self_enrollment": False
+                "allow_self_enrollment": False,
+                "has_zoidberg_share": False
             }, token=token, status_code=status)
 
         # Empty is ok
