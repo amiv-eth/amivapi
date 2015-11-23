@@ -13,7 +13,7 @@
 import json
 import jsonschema
 
-from flask import request, g, abort, current_app as app
+from flask import request, g, current_app as app
 from werkzeug.datastructures import FileStorage
 from imghdr import what
 
@@ -362,13 +362,13 @@ class ValidatorAMIV(ValidatorSQL):
     def _validate_type_permissions_jsonschema(self, field, value):
         """
         Validates the jsonschema provided using the python jsonschema library
-            
+
         :param jsonschema: The jsonschema to use
         :param field: field name.
         :param value: field value.
         """
         schema = app.config["GROUP_PERMISSIONS_JSONSCHEMA"]
-        
+
         try:
             jsonschema.validate(value, schema)
         except jsonschema.exceptions.ValidationError as v_error:

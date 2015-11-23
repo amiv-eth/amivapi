@@ -19,7 +19,6 @@ from eve.utils import home_link, config, debug_error_message
 from eve.render import send_response
 
 from sqlalchemy.inspection import inspect
-from sqlalchemy import Integer
 
 from amivapi import models, utils
 
@@ -108,7 +107,7 @@ def common_authorization(resource, method):
         app.logger.debug("Access granted for root user %s %s"
                          % (method, resource))
         return True
-    
+
     # User is in a group that grants admin rights -> allow
     if utils.check_group_permission(g.logged_in_user, resource, method):
             app.logger.debug("Access granted to %s %s "
@@ -179,6 +178,7 @@ def resolve_future_field(model, payload, field):
         query = query.filter(r.__eq__(payload[l.name]))
 
     return query.all()
+
 
 def will_be_owner(resource, obj):
     """ Check if an object would have the currently logged in user as an owner

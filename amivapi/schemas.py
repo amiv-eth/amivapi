@@ -8,6 +8,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi import models
 
+
 def get_domain():
     domain = {}
 
@@ -24,7 +25,7 @@ def get_domain():
             domain[tbl_name]['datasource']['projection'].update(
                 {field: 1}
             )
-            if not 'embedded_fields' in domain[tbl_name]:
+            if not('embedded_fields' in domain[tbl_name]):
                 domain[tbl_name]['embedded_fields'] = {}
             for field in model.__embedded_fields__:
                 domain[tbl_name]['embedded_fields'].update(
@@ -60,7 +61,6 @@ def get_domain():
         {'regex': EMAIL_REGEX})
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
-
 
     """ For confirmation: eve will not handle POST """
     domain['groupaddressmembers']['resource_methods'] = ['GET']
@@ -134,7 +134,7 @@ def get_domain():
     domain['events']['schema']['time_end'].update({
         'dependencies': ['time_start'],
         'later_than': 'time_start'})
-    
+
     """
     Group user members and address members
     """
@@ -160,15 +160,13 @@ def get_domain():
         'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
-    
-                                         
+
     """
     Groups, jsonschema validation for permissions - last thing to do to
     ensure that the domain doesnt change anymore
     """
     domain['groups']['schema']['permissions'].update({
         'type': 'permissions_jsonschema'
-    })                                     
-    
+    })
 
     return domain

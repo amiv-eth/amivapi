@@ -130,25 +130,24 @@ def check_group_permission(user_id, resource, method):
         This function checks wether the user is permitted to access
         the given resource with the given method based on the groups
         he is in.
-        
+
         :param user_id: the id of the user to check
         :param resource: the requested resource
         :param method: the used method
-        
+
         :returns: Boolean, True if permitted, False otherwise
         """
     from amivapi.models import Group, GroupUserMember
-    
+
     db = app.data.driver.session
     query = db.query(Group.permissions).filter(
-        Group.user_subscribers.any(GroupUserMember.user_id==user_id))
-    
-    
+        Group.user_subscribers.any(GroupUserMember.user_id == user_id))
+
     # All entries are dictionaries
     # If any dicitionary contains the permission it is good.
     for row in query:
         if (row.permissions and
-            (row.permissions.get(resource, {}).get(method, False))):
+                (row.permissions.get(resource, {}).get(method, False))):
             return True
-    
+
     return False

@@ -23,11 +23,11 @@ PASSWORD_CONTEXT = CryptContext(
 
     # default_rounds is used when hashing new passwords, to be varied each
     # time by vary_rounds
-    pbkdf2_sha256__default_rounds=10**5,
+    pbkdf2_sha256__default_rounds=10 ** 5,
     pbkdf2_sha256__vary_rounds=0.1,
 
     # min_rounds is used to determine if a hash needs to be upgraded
-    pbkdf2_sha256__min_rounds=8 * 10**4,
+    pbkdf2_sha256__min_rounds=8 * 10 ** 4,
 )
 
 # Flask

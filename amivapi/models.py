@@ -206,8 +206,8 @@ class User(Base):
 
     # relationships
     groupmemberships = relationship("GroupUserMember",
-                          foreign_keys="GroupUserMember.user_id",
-                          backref="user", cascade="all, delete")
+                                    foreign_keys="GroupUserMember.user_id",
+                                    backref="user", cascade="all, delete")
     sessions = relationship("Session", foreign_keys="Session.user_id",
                             backref="user", cascade="all, delete")
     eventsignups = relationship("EventSignup",

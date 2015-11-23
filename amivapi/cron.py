@@ -10,13 +10,13 @@ once per day
 """
 
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from amivapi.models import Session
-from amivapi.utils import get_config, mail
+from amivapi.utils import get_config
 
 from amivapi.ldap import ldap_synchronize
 
@@ -36,6 +36,7 @@ def delete_expired_sessions(db, config):
         db.delete(entry)
 
     db.commit()
+
 
 def run(db, config):
     """ Run cron tasks

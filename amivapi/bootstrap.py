@@ -16,7 +16,7 @@ from sqlalchemy.schema import (
     DropTable,
     ForeignKeyConstraint,
     DropConstraint,
-    )
+)
 
 from eve import Eve
 from eve_sqlalchemy import SQL  # , ValidatorSQL
@@ -36,7 +36,7 @@ from amivapi import (
     ldap,
     documentation,
     group_permissions
-    )
+)
 
 from amivapi.utils import get_config
 
@@ -87,15 +87,16 @@ def create_app(disable_auth=False, **kwargs):
     app.register_blueprint(authentication.authentication)
     app.register_blueprint(authorization.permission_info)
     app.register_blueprint(media.download)
-    
+
     # Now create the schema to validate endpoint permissions
-    # Todo: Domain is maybe not the right entry since it does not contain custom routes
+    # Todo: Domain is maybe not the right entry since it does not contain
+    # custom routes
     app.config["GROUP_PERMISSIONS_JSONSCHEMA"] = (
         group_permissions.create_group_permissions_jsonschema(
             config["DOMAIN"].keys()
         )
     )
-            
+
     #
     #
     # Event hooks
@@ -221,6 +222,7 @@ def init_database(connection, config):
     session.add_all([root_user, anonymous_user])
     session.commit()
 
+
 def clear_database(engine):
     """ Clears all the tables from the database
     To do this first all ForeignKey constraints are removed,
@@ -255,9 +257,9 @@ def clear_database(engine):
             if not fk['name']:
                 continue
             fks.append(
-                ForeignKeyConstraint((),(),name=fk['name'])
-                )
-        t = Table(table_name,metadata,*fks)
+                ForeignKeyConstraint((), (), name=fk['name'])
+            )
+        t = Table(table_name, metadata, *fks)
         tbs.append(t)
         all_fks.extend(fks)
 
