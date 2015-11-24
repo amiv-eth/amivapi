@@ -104,7 +104,7 @@ class GroupPermissionTest(util.WebTest):
         self.api.patch("/groups/%i" % g3.id, data={"name": "newname"},
                        headers=h, token=token, status_code=403)
 
-        # User is member of two groups only
+        # User is member of g1 and g2 -> no owner permissions for g3
         self.new_group_user_member(user_id=u, group_id=g1)
         self.new_group_user_member(user_id=u, group_id=g2)
 
