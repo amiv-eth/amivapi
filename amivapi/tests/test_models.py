@@ -23,6 +23,19 @@ class ModelValidationTest(util.WebTestNoAuth):
             if not isinstance(model, DeclarativeMeta):
                 continue
 
+            # Verify owner methods. if owners are specified:
+            # owner methods must contain GET. Without access to the item the
+            # owner can do nothing
+            # methods must not contain POST, since this is for resource
+            # endpoints only
+            if model.__owner__:
+                print("Test if GET exists in the owner methods of %s" %
+                      str(model))
+                self.assertTrue('GET' in model.__owner_methods__)
+                print("Test that POST doesnt exist in the owner methods of %s" %
+                      str(model))
+                self.assertFalse('POST' in model.__owner_methods__)
+
             for owner in model.__owner__:
                 print("Testing owner field %s of %s" % (owner, str(model)))
 

@@ -8,6 +8,14 @@ from amivapi.tests import util
 
 
 class GroupTest(util.WebTestNoAuth):
+    def redo_everthing(self):
+        """Remind me that its not done
+
+        What to do:
+        group visibility,
+        group membership
+        """
+        raise Exception
 
     def test_assign_registered(self):
         user = self.new_user()

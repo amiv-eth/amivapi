@@ -12,6 +12,7 @@ from amivapi import models
 def get_domain():
     domain = {}
 
+    # generate from model
     for model in models.Base._decl_class_registry.values():
         if not isinstance(model, DeclarativeMeta):
             continue
@@ -41,17 +42,9 @@ def get_domain():
         # Users should not provide _author fields
         domain[tbl_name]['schema']['_author'].update({'readonly': True})
 
-    # Make it possible to retrive a user with his nethz (/users/nethz)
-    domain['users'].update({
-        'additional_lookup': {
-            'url': 'regex(".*[\w].*")',
-            'field': 'nethz',
-        }
-    })
+    # Now some modifications are required for each resource:
 
-    # Hide passwords
-
-    domain['users']['datasource']['projection']['password'] = 0
+    # general email fields
 
     # Only accept email addresses for email fields
     EMAIL_REGEX = '^.+@.+$'
@@ -62,25 +55,12 @@ def get_domain():
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
-    """ For confirmation: eve will not handle POST """
-    domain['groupaddressmembers']['resource_methods'] = ['GET']
-    domain['eventsignups']['resource_methods'] = ['GET']
+    # /users
 
-    domain[models.Session.__tablename__]['resource_methods'] = ['GET']
+    # Hide passwords
+    domain['users']['datasource']['projection']['password'] = 0
 
-    # No Patching for files and no patching/put for
-    # groupaddressmembers/usermembers
-    domain[models.File.__tablename__]['item_methods'] = ['GET', 'PUT',
-                                                         'DELETE']
-    domain['groupaddressmembers']['item_methods'] = ['GET', 'DELETE']
-    domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
-
-    # time_end for /events requires time_start
-    domain['events']['schema']['time_end'].update({
-        'dependencies': ['time_start']
-    })
-
-    # enums of sqlalchemy should directly be catched by the validator
+    # TODO: enums of sqlalchemy should directly be caught by the validator
     domain['users']['schema']['gender'].update({
         'allowed': ['male', 'female']
     })
@@ -91,9 +71,54 @@ def get_domain():
         'empty': False
     })
 
-    """
-    Eventsignups, schema extensions including custom validation
-    """
+    # Make it possible to retrive a user with his nethz (/users/nethz)
+    domain['users'].update({
+        'additional_lookup': {
+            'url': 'regex(".*[\w].*")',
+            'field': 'nethz',
+        }
+    })
+
+    # /sessions
+
+    # POST will be handled by custom endpoint
+    domain['sessions']['resource_methods'] = ['GET']
+
+    # /events
+
+    # additional validation
+    domain['events']['schema']['additional_fields'].update({
+        'type': 'json_schema'})
+    domain['events']['schema']['price'].update({'min': 0})
+    domain['events']['schema']['spots'].update({
+        'min': -1,
+        'if_this_then': ['time_register_start', 'time_register_end']})
+    domain['events']['schema']['time_register_end'].update({
+        'dependencies': ['time_register_start'],
+        'later_than': 'time_register_start'})
+    domain['events']['schema']['time_end'].update({
+        'dependencies': ['time_start'],
+        'later_than': 'time_start'})
+
+    # time_end for /events requires time_start
+    domain['events']['schema']['time_end'].update({
+        'dependencies': ['time_start']
+    })
+
+    # event images
+    domain['events']['schema'].update({
+        'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_banner': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_poster': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_infoscreen': {'type': 'media', 'filetype': ['png', 'jpeg']}
+    })
+
+    # /eventsignups
+
+    # POST done by custom endpoint
+    domain['eventsignups']['resource_methods'] = ['GET']
+
+    # schema extensions including custom validation
     domain['eventsignups']['schema']['event_id'].update({
         'not_patchable': True,
         'signup_requirements': True})
@@ -108,6 +133,7 @@ def get_domain():
         'unique_combination': ['eventsignups', 'event_id'],
         'dependencies': ['user_id'],
         'only_anonymous': True})
+
     # Since the data relation is not evaluated for posting, we need to remove
     # it from the schema TODO: EXPLAIN BETTER
     del(domain['eventsignups']['schema']['email']['data_relation'])
@@ -119,54 +145,37 @@ def get_domain():
     domain['eventsignups']['schema']['additional_fields'].update({
         'type': 'json_event_field'})
 
-    """
-    Events, schema extensions
-    """
-    domain['events']['schema']['additional_fields'].update({
-        'type': 'json_schema'})
-    domain['events']['schema']['price'].update({'min': 0})
-    domain['events']['schema']['spots'].update({
-        'min': -1,
-        'if_this_then': ['time_register_start', 'time_register_end']})
-    domain['events']['schema']['time_register_end'].update({
-        'dependencies': ['time_register_start'],
-        'later_than': 'time_register_start'})
-    domain['events']['schema']['time_end'].update({
-        'dependencies': ['time_start'],
-        'later_than': 'time_start'})
+    # /groups
 
-    """
-    Group user members and address members
-    """
+    # jsonschema validation for permissions
+    domain['groups']['schema']['permissions'].update({
+        'type': 'permissions_jsonschema'
+    })
+
+    # /groupusermembers and /groupaddressmembers
+
     domain['groupusermembers']['schema']['user_id'].update({
         'self_enroll_group': True,
         'dependencies': ['group_id']})
+    domain['groupaddressmembers']['resource_methods'] = ['GET']
 
-    """
-    Filetype needs to be specified as media, maybe this can be automated
-    """
-    domain['events']['schema'].update({
-        'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'img_banner': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'img_poster': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'img_infoscreen': {'type': 'media', 'filetype': ['png', 'jpeg']}
-    })
+    # Membership is not transferable -> remove PUT and PATCH
+    domain['groupaddressmembers']['item_methods'] = ['GET', 'DELETE']
+    domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
 
+    # /files
+
+    # No Patching for files
+    domain['files']['item_methods'] = ['GET', 'PUT', 'DELETE']
     domain['files']['schema'].update({
         'data': {'type': 'media', 'required': True}
     })
 
+    # /joboffers
+
     domain['joboffers']['schema'].update({
         'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
         'pdf': {'type': 'media', 'filetype': ['pdf']},
-    })
-
-    """
-    Groups, jsonschema validation for permissions - last thing to do to
-    ensure that the domain doesnt change anymore
-    """
-    domain['groups']['schema']['permissions'].update({
-        'type': 'permissions_jsonschema'
     })
 
     return domain

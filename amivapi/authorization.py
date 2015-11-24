@@ -180,35 +180,6 @@ def resolve_future_field(model, payload, field):
     return query.all()
 
 
-def will_be_owner(resource, obj):
-    """ Check if an object would have the currently logged in user as an owner
-    if the passed obj was created in the database or an existing object
-    patched to contain the data
-
-    :param resource: The requested resource(used to figure out model)
-    :param method: unused
-    :param obj: dict containing the values for the imaginary object
-
-    :returns: True if the user will be the owner of obj when it is created
-    """
-
-    resource_class = utils.get_class_for_resource(models, resource)
-
-    for field in resource_class.__owner__:
-        path = field.split('.')  # This looks like an emoticon
-
-        # Resolve first step using predicted relationships
-        v = resolve_future_field(resource_class, obj, path[0])
-
-        # After one step the object should be existing, use normal resolving
-        v = utils.recursive_any_getattr(v, path[1:])
-
-        if g.logged_in_user in v:
-            return True
-
-    return False
-
-
 def apply_lookup_owner_filters(lookup, resource):
     """ This function adds filters to the lookup, so the results will only
     contain objects which belong to the user(using the owner feature).
@@ -270,9 +241,7 @@ def pre_post_permission_filter(resource, request):
     :param resource: requested resource
     :param request: The request object
     """
-    authorized = common_authorization(resource, request.method)
-    if (not authorized
-            and not will_be_owner(resource, payload())):
+    if not common_authorization(resource, request.method):
         app.logger.debug("Access forbidden for %s to %s for unauthorized user"
                          % (request.method, resource))
         abort(403)
@@ -286,8 +255,6 @@ def pre_put_permission_filter(resource, request, lookup):
     :param lookup: The lookup dict to filter results
     """
     if not common_authorization(resource, request.method):
-        if not will_be_owner(resource, payload()):
-            abort(403)
         apply_lookup_owner_filters(lookup, resource)
 
 
@@ -329,8 +296,6 @@ def update_permission_filter(resource, updates, original):
 
     data = original.copy()
     data.update(updates)
-    if not will_be_owner(resource, data):
-        abort(403)
 
 
 def pre_delete_permission_filter(resource, request, lookup):
@@ -431,30 +396,4 @@ def pre_users_patch(request, lookup):
                              + "to change " + f)
             abort(403, description=(
                 'You are not allowed to change your ' + f
-            ))
-
-
-#
-#
-# Hooks for group address members: only groups that are public are accessible
-#
-#
-def group_public_check(items):
-    """
-    Checks whether a forward is accessible for public
-    """
-    for item in items:
-        db = app.data.driver.session
-
-        groupid = item.get('group_id')
-        group = db.query(models.Group).get(groupid)
-
-        # Users may only self enroll for public groups
-        if not group:
-            abort(404, description="Group with id %s not found" % groupid)
-        if (not group.allow_self_enrollment and not
-                g.resource_admin and not
-                g.logged_in_user == group.moderator_id):
-            abort(403, description=debug_error_message(
-                'You are not allowed to self enroll for this forward'
             ))

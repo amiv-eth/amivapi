@@ -294,15 +294,14 @@ class GroupUserMember(Base):
     __projected_fields__ = ['group', 'user']
 
     __owner__ = ['user_id', 'group.moderator_id']
-    __owner_methods__ = ['GET', 'POST', 'DELETE']
+    __owner_methods__ = ['GET', 'DELETE']
+
+    __registered_methods__ = ['POST']
 
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
                      nullable=False)
     group_id = Column(
         Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
-
-    # group = relationship("Group", backref="user_subscribers")
-    # user = relationship("User", foreign_keys=user_id)
 
 
 class GroupAddressMember(Base):
@@ -314,8 +313,7 @@ class GroupAddressMember(Base):
     __projected_fields__ = ['group']
 
     __owner__ = ['group.moderator_id']
-    __owner_methods__ = ['GET', 'POST', 'DELETE']
-    __public_methods__ = ['POST', 'DELETE']
+    __owner_methods__ = ['GET', 'DELETE']
 
     email = Column(Unicode(100))
     group_id = Column(
@@ -426,8 +424,8 @@ class EventSignup(Base):
     __projected_fields__ = ['event', 'user']
 
     __owner__ = ['user_id']
-    __owner_methods__ = ['POST', 'GET', 'PATCH', 'DELETE']
-    __public_methods__ = []
+    __owner_methods__ = ['GET', 'PATCH', 'DELETE']
+    __registered_methods__ = ['POST']
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -452,7 +450,7 @@ class File(Base):
     __expose__ = True
 
     __owner__ = ['_author']  # This permitts everybody to post here!
-    __owner_methods__ = ['GET', 'POST', 'PUT', 'DELETE']
+    __owner_methods__ = ['GET', 'PUT', 'DELETE']
     __registered_methods__ = ['GET']
 
     name = Column(Unicode(100))
@@ -523,6 +521,7 @@ class Purchase(Base):
     __expose__ = True
 
     __owner__ = ['user_id']
+    __owner_methods__ = ['GET']
 
     user_id = Column(Integer, ForeignKey('users.id'))
     timestamp = Column(DateTime)
