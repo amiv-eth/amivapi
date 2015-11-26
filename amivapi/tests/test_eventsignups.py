@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 
 class SignupTest(util.WebTest):
-    def work_needed(self):
+    def test_work_needed(self):
         """check if signups for user work with new system"""
         raise Exception
 

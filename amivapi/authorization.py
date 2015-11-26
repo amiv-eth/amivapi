@@ -233,6 +233,11 @@ def pre_get_permission_filter(resource, request, lookup):
     if not common_authorization(resource, request.method):
         apply_lookup_owner_filters(lookup, resource)
 
+    elif resource == "groups":
+        apply_lookup_owner_filters(lookup, resource)
+        from pprint import pprint
+        pprint(lookup)
+
 
 # TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):

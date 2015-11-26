@@ -249,6 +249,8 @@ class Group(Base):
     __owner__ = ['moderator_id', 'user_subscribers.user_id']
     __owner_methods__ = ['GET']
 
+    __registered_methods__ = ['GET']  # All users can check for open groups
+
     name = Column(Unicode(100), unique=True, nullable=False)
     moderator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     allow_self_enrollment = Column(Boolean, default=False, nullable=False)

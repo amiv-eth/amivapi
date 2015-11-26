@@ -130,12 +130,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_GET_users += authorization.pre_users_get
     app.on_pre_PATCH_users += authorization.pre_users_patch
 
-    # Enrolling for email list: Authorization filters
-    app.on_insert_groupaddressmembers += (authorization
-                                          .group_public_check)
-    app.on_insert_groupusermembers += (authorization
-                                       .group_public_check)
-
     # email-management
     app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
     app.on_inserted_groupusermembers += forwards.on_groupusermember_inserted
