@@ -116,6 +116,7 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_DELETE += authorization.pre_delete_permission_filter
     app.on_pre_PATCH += authorization.pre_patch_permission_filter
     app.on_update += authorization.update_permission_filter
+    app.on_pre_GET_groups += authorization.group_visibility_filter
 
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous

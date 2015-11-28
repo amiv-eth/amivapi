@@ -20,7 +20,8 @@ class PublicForwardTest(util.WebTest):
 
         group2 = self.new_group(allow_self_enrollment=False)
 
+        # group 2 not visible
         self.api.post("/groupusermembers", data={
             'user_id': user.id,
             'group_id': group2.id,
-        }, token=session.token, status_code=403)
+        }, token=session.token, status_code=422)

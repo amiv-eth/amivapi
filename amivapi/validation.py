@@ -22,7 +22,8 @@ from eve.methods.common import get_document
 from eve.validation import SchemaError
 from eve.utils import request_method
 
-from amivapi import models, utils
+from amivapi.models import Group
+from amivapi.utils import get_owner
 
 from datetime import datetime
 
@@ -320,6 +321,19 @@ class ValidatorAMIV(ValidatorSQL):
                             "%s: %s does not point to a public resource"
                             % (key, self.document[key]))
 
+    def _get_moderator_id(self, group_id):
+        """ Helper function to get the moderator
+
+        :param group_id: group id
+        :returns: None if group not found, otherwise the moderator id
+        """
+        group = get_document("groups", False, id=group_id)
+
+        if group:
+            return group.moderator_id
+        else:
+            return None
+
     def _validate_self_enroll(self, self_enroll, field, value):
         """ Validates if the id can be used to enroll for an event
 
@@ -337,27 +351,91 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
 
-    def _validate_self_enroll_group(self, self_enroll, field, value):
+    def _validate_only_self_enrollment(self, enabled, field, value):
         """ Validates if the id can be used to enroll for a group,
-        a little more complex then for events
 
-        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
-            via mail) (if public has to be determined somewhere else)
-        2.  other id: Registered users can only enter their own id
-        3.  Exception are resource_admins: they can sign up others as well
-        4.  Groups: The group owner can add anyone as well
+        Users can only sign up themselves
+        Moderators and admins can sign up everyone
 
-        :param self_enroll: boolean, validates nothing if set to false
+        :param enabled: boolean, validates nothing if set to false
         :param field: field name.
         :param value: field value.
         """
-        if self_enroll:
-            owners = utils.get_owner(models.Group,
-                                     self.document['group_id'])
+        if enabled:
+            # Get moderator id
+            group_id = self.document.get('group_id', None)
+            group = get_document("groups", False, id=group_id)
+            if group is not None:
+                moderator_id = group["moderator_id"]
+            else:
+                moderator_id = None
+
             if not(g.resource_admin or (g.logged_in_user == value) or
-                   (g.logged_in_user in owners)):
+                   (g.logged_in_user == moderator_id)):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
+
+    def _validate_self_enrollment_must_be_allowed(self, enabled, field, value):
+        """ Validation for a group_id field in useraddressmembers
+        Validates if the group allows self enrollment.
+
+        Except group moderator and admins, they can ignore this
+
+        :param enabled: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
+        """
+        if enabled:
+            # Get moderator id
+            group = get_document("groups", False, id=value)
+
+            # If the group doesnt exist we dont have to do anything,
+            # The 'type' validator will generate an error anyway
+            if group is not None:
+                moderator_id = group["moderator_id"]
+                if not(g.resource_admin or (g.logged_in_user == moderator_id)
+                        or group["allow_self_enrollment"]):
+                    # This copies the validation error for the case this group
+                    # doesnt exist (since its hidden to the user)
+                    self._error(field,
+                                "value '%s' must exist in resource 'groups', "
+                                "field 'id'." % value)
+
+    def _validate_only_groups_you_moderate(self, enabled, field, value):
+        """ Validation for a group_id field in forwardaddresses
+        If you are not member or admin of the group you get the same
+        error as if the group wouldn't exist
+
+        If you are member, but not moderator, you will get a message that you
+        cannot enter this group_id
+
+        If you are moderator or have admin permissions it is alright.
+
+        :param enabled: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
+        """
+        if enabled:
+            # Get moderator id
+            group = get_document("groups", False, id=value)
+
+            # If the group doesnt exist we dont have to do anything,
+            # The 'type' validator will generate an error anyway
+            if group is not None:
+                if not g.resource_admin:
+                    moderator_id = group["moderator_id"]
+                    if not(g.logged_in_user == moderator_id):
+                        owners = get_owner(Group, value)
+                        if g.logged_in_user in owners:
+                            self._error(field, "you are not the moderator of"
+                                        "this group.")
+                        else:
+                            # Not Member either
+                            # Copies the validation error for the case this
+                            # group doesnt exist (since its hidden to the user)
+                            self._error(field,
+                                        "value '%s' must exist in resource "
+                                        "'groups', field 'id'." % value)
 
     def _validate_type_permissions_jsonschema(self, field, value):
         """

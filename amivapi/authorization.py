@@ -47,8 +47,8 @@ def common_authorization(resource, method):
             => else abort(403)
         2. Check if the user is root
             => return True, g.resource_admin = True
-        3. Check if the user has a role, which allowes everything for this
-            endpoint
+        3. Check if the user is in a group that gives admin permissions
+                for the endpoint and method
             => return True, g.resource_admin = True
         4. Check if the endpoint is public
             => return True, g.resource_admin = False
@@ -108,7 +108,7 @@ def common_authorization(resource, method):
                          % (method, resource))
         return True
 
-    # User is in a group that grants admin rights -> allow
+    # User is in a group with admin rights for this method-> allow
     if utils.check_group_permission(g.logged_in_user, resource, method):
             app.logger.debug("Access granted to %s %s "
                              "for user %i"
@@ -180,12 +180,12 @@ def resolve_future_field(model, payload, field):
     return query.all()
 
 
-def apply_lookup_owner_filters(lookup, resource):
-    """ This function adds filters to the lookup, so the results will only
-    contain objects which belong to the user(using the owner feature).
+def _create_lookup_owner_filter(resource):
+    """ This function creates the filter
 
     :param lookup: The lookup to manipulate
     :param resource: Resource name(used to find the model)
+    :returns: Dict with or conditions
     """
     resource_class = utils.get_class_for_resource(models, resource)
 
@@ -209,9 +209,24 @@ def apply_lookup_owner_filters(lookup, resource):
                 {"__self__": "indirect_any(\"%s,%i\")"
                     % (field, g.logged_in_user)})
 
+    return {'or_': conditions}
+
+
+def apply_lookup_owner_filters(lookup, resource):
+    """ This function adds filters to the lookup, so the results will only
+    contain objects which belong to the user(using the owner feature).
+
+    :param lookup: The lookup to manipulate
+    :param resource: Resource name(used to find the model)
+    """
+    owner_filter = _create_lookup_owner_filter(resource)
+
+    # Make sure the auth is in an and_ statement,
+    # otherwise authorization could be avoided be adding
+    # ?where={"_or":[{<something true}]} to the request
     if 'and_' not in lookup:
         lookup['and_'] = []
-    lookup['and_'].append({'or_': conditions})
+    lookup['and_'].append(owner_filter)
 
 
 #
@@ -232,11 +247,6 @@ def pre_get_permission_filter(resource, request, lookup):
     """
     if not common_authorization(resource, request.method):
         apply_lookup_owner_filters(lookup, resource)
-
-    elif resource == "groups":
-        apply_lookup_owner_filters(lookup, resource)
-        from pprint import pprint
-        pprint(lookup)
 
 
 # TODO(Conrad): Does this work with bulk insert?
@@ -313,6 +323,35 @@ def pre_delete_permission_filter(resource, request, lookup):
     """
     pre_get_permission_filter(resource, request, lookup)
 
+
+def group_visibility_filter(request, lookup):
+    """ Hook to filter GET requests to /groups
+    Other methods are not concerned because normal owner filters
+    suffice.
+    But since some groups are open for self enrollment users must be
+    able to find those groups
+
+    Therefore groups are visible either for their owners or for
+    everybody if self enrollment is allowed
+
+    This essentially works like "apply_lookup_owner_filter",
+    but extends the or statement
+
+    This rules do not apply to admins
+
+    :param lookup: The lookup to manipulate
+    :param resource: Resource name(used to find the model)
+    """
+    if not g.resource_admin:
+        group_filter = _create_lookup_owner_filter("groups")
+
+        # visible if user is owner OR self enrollment is permitted
+        group_filter['or_'].append({'allow_self_enrollment': True})
+
+        # see apply_lookup_owner_filter why this is important
+        if 'and_' not in lookup:
+            lookup['and_'] = []
+        lookup['and_'].append(group_filter)
 
 #
 #

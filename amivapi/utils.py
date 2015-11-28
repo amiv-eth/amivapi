@@ -95,7 +95,6 @@ def get_owner(model, id):
     ret = []
     for path in doc.__owner__:
         ret.extend(recursive_any_getattr(doc, path.split('.')))
-    print "Found owners: %s" % ret
     return ret
 
 

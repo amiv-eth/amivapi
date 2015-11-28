@@ -155,13 +155,20 @@ def get_domain():
     # /groupusermembers and /groupaddressmembers
 
     domain['groupusermembers']['schema']['user_id'].update({
-        'self_enroll_group': True,
-        'dependencies': ['group_id']})
+        'only_self_enrollment': True})
+    domain['groupusermembers']['schema']['group_id'].update({
+        'self_enrollment_must_be_allowed': True})
+
     domain['groupaddressmembers']['resource_methods'] = ['GET']
 
     # Membership is not transferable -> remove PUT and PATCH
     domain['groupaddressmembers']['item_methods'] = ['GET', 'DELETE']
     domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
+
+    # /forwardaddresses
+    domain['forwardaddresses']['schema']['group_id'].update({
+        'only_groups_you_moderate': True
+    })
 
     # /files
 

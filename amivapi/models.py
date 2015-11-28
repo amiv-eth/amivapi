@@ -162,6 +162,7 @@ class BaseModel(object):
 
         parts = field.strip().split('.')
         relation = getattr(cls, parts[0])
+
         try:
             # This will work for many-to-one relationships
             return relation.has(**{'.'.join(parts[1:]): value})
@@ -282,7 +283,11 @@ class ForwardAddress(Base):
     __projected_fields__ = ['group']
 
     __owner__ = ["group.moderator_id"]
-    __owner_methods__ = ['GET']
+    __owner_methods__ = ['GET', 'DELETE']
+
+    # All registered users must be able to post
+    # Only way to allow moderators to create addresses
+    __registered_methods__ = ['POST']
 
     address = Column(Unicode(100), unique=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
@@ -475,8 +480,8 @@ class StudyDocument(Base):
     __projected_fields__ = ['files']
 
     __owner__ = ['_author']
-    __owner_methods__ = ['GET', 'PUT', 'POST', 'PATCH', 'DELETE']
-    __registered_methods__ = ['GET']
+    __owner_methods__ = ['GET', 'PUT', 'PATCH', 'DELETE']
+    __registered_methods__ = ['GET', 'POST']
 
     name = Column(Unicode(100))
     type = Column(String(30))
