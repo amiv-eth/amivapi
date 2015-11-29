@@ -208,12 +208,12 @@ class User(Base):
     # relationships
     groupmemberships = relationship("GroupUserMember",
                                     foreign_keys="GroupUserMember.user_id",
-                                    backref="user", cascade="all, delete")
+                                    backref="user", cascade="all")
     sessions = relationship("Session", foreign_keys="Session.user_id",
-                            backref="user", cascade="all, delete")
+                            backref="user", cascade="all")
     eventsignups = relationship("EventSignup",
                                 foreign_keys="EventSignup.user_id",
-                                backref="user", cascade="all, delete")
+                                backref="user", cascade="all")
 
     @validates("password")
     def update_password(self, key, plaintext):
@@ -263,9 +263,9 @@ class Group(Base):
     owner = relationship(User, foreign_keys=moderator_id)
 
     user_subscribers = relationship("GroupUserMember", backref="group",
-                                    cascade="all, delete")
+                                    cascade="all")
     addresses = relationship("ForwardAddress", backref="group",
-                             cascade="all, delete")
+                             cascade="all")
 
 
 class ForwardAddress(Base):
@@ -303,10 +303,10 @@ class GroupUserMember(Base):
 
     __registered_methods__ = ['POST']
 
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"),
-                     nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id"), nullable=False)
     group_id = Column(
-        Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
+        Integer, ForeignKey("groups.id"), nullable=False)
 
 
 class Session(Base):
@@ -389,7 +389,7 @@ class Event(Base):
 
     # relationships
     signups = relationship("EventSignup", backref="event",
-                           cascade="all, delete")
+                           cascade="all")
 
 
 class EventSignup(Base):
@@ -472,7 +472,7 @@ class StudyDocument(Base):
 
     # relationships
     files = relationship("File", backref="study_doc",
-                         cascade="all, delete")
+                         cascade="all")
 
 
 class JobOffer(Base):
