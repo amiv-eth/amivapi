@@ -398,7 +398,7 @@ class EventSignup(Base):
         "registration-window. External Users can only sign up to public "
         "events.",
         'fields': {
-            'additional fields': "Data-schema depends on 'additional_fields' "
+            'additional_fields': "Data-schema depends on 'additional_fields' "
             "from the mapped event. Please provide in json-format.",
             'user_id': "To sign up as external user, set 'user_id' to '-1'",
             'email': "For registered users, this is just a projection of your "

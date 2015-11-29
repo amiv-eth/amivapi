@@ -350,3 +350,34 @@ class GroupTest(util.WebTest):
                      token=admin_token, status_code=200)
         self.api.get("/groupusermembers/%i" % signup_3.id,
                      token=admin_token, status_code=200)
+
+
+class GroupNoAuthTests(util.WebTestNoAuth):
+
+    def test_unique_signup(self):
+        """Tests that you can signup the same user for the same group only
+        once, but other user to the same group and the same user to other
+        groups
+        """
+        user_1 = self.new_user()
+        user_2 = self.new_user()
+
+        group_1 = self.new_group()
+        group_2 = self.new_group()
+
+        # Signup twice, second should give validation error, since fields
+        # are wrong
+        self.api.post("/groupusermembers", data={
+            "user_id": user_1.id, "group_id": group_1.id},
+            status_code=201)
+        self.api.post("/groupusermembers", data={
+            "user_id": user_1.id, "group_id": group_1.id},
+            status_code=422)
+
+        # Other group und other user work fine
+        self.api.post("/groupusermembers", data={
+            "user_id": user_1.id, "group_id": group_2.id},
+            status_code=201)
+        self.api.post("/groupusermembers", data={
+            "user_id": user_2.id, "group_id": group_1.id},
+            status_code=201)

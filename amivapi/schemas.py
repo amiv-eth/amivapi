@@ -119,18 +119,17 @@ def get_domain():
     # schema extensions including custom validation
     domain['eventsignups']['schema']['event_id'].update({
         'not_patchable': True,
+        'unique_combination': ['eventsignups', 'user_id', 'email'],
         'signup_requirements': True})
     domain['eventsignups']['schema']['user_id'].update({
         'not_patchable': True,
         'unique_combination': ['eventsignups', 'event_id'],
-        'dependencies': ['event_id'],
-        'public_check': 'event_id',
-        'self_enroll': True})
+        'only_self_enrollment_for_event': True})
     domain['eventsignups']['schema']['email'].update({
         'not_patchable': True,
         'unique_combination': ['eventsignups', 'event_id'],
-        'dependencies': ['user_id'],
-        'only_anonymous': True})
+        'only_anonymous': True,
+        'email_signup_must_be_allowed': True})
 
     # Since the data relation is not evaluated for posting, we need to remove
     # it from the schema TODO: EXPLAIN BETTER
@@ -153,9 +152,11 @@ def get_domain():
     # /groupusermembers
 
     domain['groupusermembers']['schema']['user_id'].update({
-        'only_self_enrollment': True})
+        'only_self_enrollment_for_group': True,
+        'unique_combination': ['groupusermembers', 'group_id']})
     domain['groupusermembers']['schema']['group_id'].update({
-        'self_enrollment_must_be_allowed': True})
+        'self_enrollment_must_be_allowed': True,
+        'unique_combination': ['groupusermembers', 'user_id']})
 
     # Membership is not transferable -> remove PUT and PATCH
     domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']

@@ -208,7 +208,7 @@ class ValidatorAMIV(ValidatorSQL):
         data = get_document(resource, False, **lookup)
         if data and ((request_method() == 'POST') or
                      not (data['id'] == int(request.view_args['_id']))):
-            self._error(field, "the field already exist in the database in " +
+            self._error(field, "value already exists in the database in " +
                         "combination with values for: %s" %
                         unique_combination[1:])
 
@@ -268,46 +268,11 @@ class ValidatorAMIV(ValidatorSQL):
         :param value: field value.
         """
         if only_anonymous:
-            if not(self.document['user_id'] == -1):
+            if not(self.document.get('user_id', None) == -1):
                 self._error(field, "This field can only be set for anonymous "
                             "users with user_id -1")
 
-    def _validate_public_check(self, public_check, field, value):
-        """ Validates if event is public if value is -1
-
-        This is a validation rule for a user_id field.
-
-        If the signup is anonymous, the user has to be -1 and the event needs
-        to be public
-
-        The latter will be checked.
-
-        :param public check: name of field with id of event. In current state
-                             only works if set to 'event_id', but this
-                             function could be extended in the future
-        :param field: field name.
-        :param value: field value.
-
-        """
-        # Implemented like this so it could be extended for other resources in
-        # the future
-        key = public_check
-        resource = 'events'
-
-        # Anonymous user
-        if value == -1:
-            lookup = {'id': self.document[key]}
-            item = get_document(resource, False, **lookup)
-            if not(item):
-                self._error(field, "Can only be -1 if public. %s: %s does not "
-                            "point to an existing resource" % (key, self
-                                                               .document[key]))
-            elif not(item['allow_email_signup']):
-                self._error(field, "Can only be -1 if email signup is allowed. "
-                            "%s: %s does not point to a public resource"
-                            % (key, self.document[key]))
-
-    def _validate_self_enroll(self, self_enroll, field, value):
+    def _validate_only_self_enrollment_for_event(self, enabled, field, value):
         """ Validates if the id can be used to enroll for an event
 
         1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
@@ -315,16 +280,16 @@ class ValidatorAMIV(ValidatorSQL):
         2.  other id: Registered users can only enter their own id
         3.  Exception are resource_admins: they can sign up others as well
 
-        :param self_enroll: boolean, validates nothing if set to false
+        :param enabled: boolean, validates nothing if set to false
         :param field: field name.
         :param value: field value.
         """
-        if self_enroll:
+        if enabled:
             if not(g.resource_admin or (g.logged_in_user == value)):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
 
-    def _validate_only_self_enrollment(self, enabled, field, value):
+    def _validate_only_self_enrollment_for_group(self, enabled, field, value):
         """ Validates if the id can be used to enroll for a group,
 
         Users can only sign up themselves
@@ -373,6 +338,28 @@ class ValidatorAMIV(ValidatorSQL):
                     self._error(field,
                                 "value '%s' must exist in resource 'groups', "
                                 "field 'id'." % value)
+
+    def _validate_email_signup_must_be_allowed(self, enabled, field, value):
+        """ Validation for a event_id field in eventsignups
+        Validates if the group allows self enrollment.
+
+        Except group moderator and admins, they can ignore this
+
+        :param enabled: boolean, validates nothing if set to false
+        :param field: field name.
+        :param value: field value.
+        """
+        if enabled:
+            # Get event
+            event_id = self.document.get('event_id', None)
+            event = get_document("events", False, id=event_id)
+
+            # If the event doesnt exist we dont have to do anything,
+            # The 'type' validator will generate an error anyway
+            if event is not None and not(event["allow_email_signup"]):
+                self._error(field,
+                            "event with id '%s' does not allow signup with "
+                            "email address." % event_id)
 
     def _validate_only_groups_you_moderate(self, enabled, field, value):
         """ Validation for a group_id field in forwardaddresses
