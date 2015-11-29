@@ -52,8 +52,6 @@ X_HEADERS = ['Authorization', 'If-Match']
 RETURN_MEDIA_AS_BASE64_STRING = False
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
 
-# Custom Default language
-DEFAULT_LANGUAGE = 'de'
 SESSION_TIMEOUT = timedelta(days=365)
 
 # Text for automatically sent mails

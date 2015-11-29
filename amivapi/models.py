@@ -235,13 +235,17 @@ class User(Base):
 class Group(Base):
     __description__ = {
         'general': "This resource describes the different teams in AMIV."
-        "This is primarily a mailing list. To see "
-        "the subscriptions, have a look at '/groupusermembers' and "
-        "'groupaddressmembers'.",
+        "A group can grant API permissions and can be reached with several "
+        "addresses. To see the subscriptions, have a look at "
+        "'/groupusermembers'. To see the mail addresses, see "
+        "'/forwardaddresses'.",
         'fields': {
-            'allow_self_enrollment': "If true, then users can join and leave, "
-            "else only group moderators and admins can change membership",
-            'address': "The address of the new forward: <address>@amiv.ethz.ch"
+            'allow_self_enrollment': "If true, the group can be seen by all "
+            "users and they can subscribe themselves",
+            'has_zoidberg_share': "Wether the group has a share in the amiv "
+            "storage",
+            "permissions": "permissions the group grants. has to be according "
+            "to the jsonschema available at /notyetavailable"  # TODO!
         }}
     __expose__ = True
     __projected_fields__ = ['user_subscribers', 'address_subscribers']
@@ -274,7 +278,7 @@ class ForwardAddress(Base):
         "an address here, all mails sent to that address will be forwarded "
         "to all members of the associated group.",
         'fields': {
-            'address': "E-Mail address to forward"
+            'address': "E-Mail address to forward",
         }
     }
     __expose__ = True
@@ -336,7 +340,9 @@ class Session(Base):
 
 class Event(Base):
     __description__ = {
-        'general': "An Event is basically everything happening in the AMIV.",
+        'general': "An Event is basically everything happening in the AMIV. "
+        "All time fields have the format YYYY-MM-DDThh:mmZ, e.g. "
+        "2014-12-20T11:50:06Z",
         'methods': {
             'GET': "You are always allowed, even without session, to view "
             "AMIV-Events"
@@ -346,8 +352,8 @@ class Event(Base):
             'additional_fields': "must be provided in form of a JSON-Schema. "
             "You can add here fields you want to know from people signing up "
             "going further than their email-address",
-            'allow_email_signup': "If False, only AMIV-Members can sign up for "
-            "this event",
+            'allow_email_signup': "If False, only AMIV-Members can sign up "
+            "for this event",
             'spots': "For no limit, set to '0'. If no signup required, set to "
             "'-1'. Otherwise just provide an integer.",
         }
@@ -526,13 +532,4 @@ class Storage(Base):
     __registered_methods__ = ['GET']
     __description__ = {
         'general': 'Endpoint to download files, get the URLs via /files'
-    }
-
-
-class Roles(Base):
-    __expose__ = False  # Don't create a schema
-    __abstract__ = True
-    __registered_methods__ = ['GET']
-    __description__ = {
-        'general': 'Resource to get available roles. Only GET is supported'
     }
