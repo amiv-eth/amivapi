@@ -10,59 +10,66 @@ from amivapi.tests import util
 
 class ForwardBackendTest(util.WebTestNoAuth):
 
+    def _get_path(self, forward_address):
+        return "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
+                                   forward_address)
+
+    def _assert_content(self, forward_address, content):
+        path = self._get_path(forward_address)
+        self.assertTrue(util.is_file_content(path, content))
+
     def test_forward_creation(self):
+        """ Test that new email addresses are added and removed correctly from
+        all associated forwards
+
+        In this tests it is important to use the api methods instead of the
+        self.new_xxx shortcut since the latter aproach doesnt trigger the hooks
+        which manage the forwards
+        """
         session = self.new_session()
 
         group = self.new_group()
-        forward_address = self.new_forward_address(group_id=group.id)
-        forward_address2 = self.new_forward_address(group_id=group.id)
+        forward_1 = self.new_forward_address(group_id=group.id)
+        forward_2 = self.new_forward_address(group_id=group.id)
 
         # Test adding a user
+        user_1 = self.new_user(email=u"test@no.no")
+        guser_1 = self.api.post("/groupusermembers", data=dict(
+            user_id=user_1.id, group_id=group.id)).json
 
-        user = self.new_user(email=u"test@no.no")
+        # Verify addresses are added to both forwards
+        for forward in [forward_1.address, forward_2.address]:
+            self._assert_content(forward, "%s\n" % user_1.email)
 
-        guser = self.api.post("/groupusermembers", data={
-            'user_id': user.id,
-            'group_id': group.id,
-        }, token=session.token, status_code=201).json
+        # Add another
+        user_2 = self.new_user(email=u"zzz@yes.maybe")
+        guser_2 = self.api.post("/groupusermembers", data=dict(
+            user_id=user_2.id, group_id=group.id)).json
 
-        for forw in [forward_address, forward_address2]:
-            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
-                                       forw.address)
-            self.assertTrue(util.is_file_content(path, "test@no.no\n"))
+        # Verify both addresses are in both forwards
+        content = "%s\n%s\n" % (user_1.email, user_2.email)
+        for forward in [forward_1.address, forward_2.address]:
+            self._assert_content(forward, content)
 
-        # Test adding an address directly
-
-        self.api.post("/groupaddressmembers", data={
-            'email': u"looser92@gmx.com",
-            'group_id': group.id,
-        }, token=session.token, status_code=202).json
-
-        for forw in [forward_address, forward_address2]:
-            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
-                                       forw.address)
-            self.assertTrue(util.is_file_content(
-                path, "test@no.no\nlooser92@gmx.com\n"))
-
-        # Test deleting an entry
-
-        self.api.delete("/groupusermembers/%i" % guser['id'],
+        # Delete one entry
+        self.api.delete("/groupusermembers/%i" % guser_1['id'],
                         token=session.token,
-                        headers={"If-Match": guser['_etag']},
+                        headers={"If-Match": guser_1['_etag']},
                         status_code=204)
 
-        for forw in [forward_address, forward_address2]:
-            path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
-                                       forw.address)
-            self.assertTrue(util.is_file_content(path, "looser92@gmx.com\n"))
+        for forward in [forward_1.address, forward_2.address]:
+            self._assert_content(forward, "%s\n" % user_2.email)
 
-        # Test deleting the address
-
-        self.api.delete("/forwardaddresses/%i" % forward_address.id,
+        # Delete second entry, files should be gone then
+        self.api.delete("/groupusermembers/%i" % guser_2['id'],
                         token=session.token,
-                        headers={"If-Match": forward_address._etag},
+                        headers={"If-Match": guser_2['_etag']},
                         status_code=204)
 
-        path = "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
-                                   forward_address.address)
-        self.assertTrue(exists(path) is False)
+        # Remove forwardaddresses, lists should be gone then
+        for forward in [forward_1, forward_2]:
+            self.api.delete('/forwardaddresses/%s' % forward.id,
+                            headers={"If-Match": forward._etag})
+
+            path = self._get_path(forward.address)
+            self.assertFalse(exists(path))

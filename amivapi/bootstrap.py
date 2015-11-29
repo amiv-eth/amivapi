@@ -85,11 +85,10 @@ def create_app(disable_auth=False, **kwargs):
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentication.authentication)
-    app.register_blueprint(authorization.permission_info)
     app.register_blueprint(media.download)
 
     # Now create the schema to validate endpoint permissions
-    # Todo: Domain is maybe not the right entry since it does not contain
+    # Todo: Domain is maybe not the right key since it does not contain
     # custom routes
     app.config["GROUP_PERMISSIONS_JSONSCHEMA"] = (
         group_permissions.create_group_permissions_jsonschema(
@@ -97,7 +96,6 @@ def create_app(disable_auth=False, **kwargs):
         )
     )
 
-    #
     #
     # Event hooks
     #
@@ -120,8 +118,6 @@ def create_app(disable_auth=False, **kwargs):
 
     # Hooks for anonymous users
     app.on_insert_eventsignups += confirm.signups_confirm_anonymous
-    app.on_insert_groupaddressmembers += confirm.\
-        groupaddressmembers_insert_anonymous
 
     app.on_update += confirm.pre_update_confirmation
     app.on_delete_item += confirm.pre_delete_confirmation
@@ -137,14 +133,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_replaced_groupusermembers += forwards.on_groupusermember_replaced
     app.on_updated_groupusermembers += forwards.on_groupusermember_updated
     app.on_deleted_item_groupusermembers += forwards.on_groupusermember_deleted
-    app.on_inserted_groupaddressmembers += \
-        forwards.on_groupaddressmember_inserted
-    app.on_replaced_groupaddressmembers += \
-        forwards.on_groupaddressmember_replaced
-    app.on_updated_groupaddressmembers += \
-        forwards.on_groupaddressmember_updated
-    app.on_deleted_item_groupaddressmembers += \
-        forwards.on_groupaddressmember_deleted
 
     # EVENTSIGNUPS
     # Hooks to move 'email' to '_unregistered_email' after db access

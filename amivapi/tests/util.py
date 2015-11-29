@@ -218,14 +218,6 @@ class WebTest(unittest.TestCase):
         kwargs.setdefault('user_id', 0)
         return kwargs
 
-    @create_object(models.GroupAddressMember)
-    def new_group_address_member(self, **kwargs):
-        """ Add an address to a group. At least supply the group_id """
-        kwargs.setdefault('email',
-                          u"subscriber-%i@example.com" % self.next_count())
-        kwargs['_token'] = token_generator(size=20)
-        return kwargs
-
     @create_object(models.Session)
     def new_session(self, **kwargs):
         """ Create a new session, default is root session """

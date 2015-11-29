@@ -248,7 +248,7 @@ class Group(Base):
     __embedded_fields__ = ['user_subscribers', 'address_subscribers']
 
     __owner__ = ['moderator_id', 'user_subscribers.user_id']
-    __owner_methods__ = ['GET']
+    __owner_methods__ = ['GET']  # Only admins can modify the group itself!
 
     __registered_methods__ = ['GET']  # All users can check for open groups
 
@@ -264,8 +264,6 @@ class Group(Base):
 
     user_subscribers = relationship("GroupUserMember", backref="group",
                                     cascade="all, delete")
-    address_subscribers = relationship("GroupAddressMember", backref="group",
-                                       cascade="all, delete")
     addresses = relationship("ForwardAddress", backref="group",
                              cascade="all, delete")
 
@@ -289,7 +287,7 @@ class ForwardAddress(Base):
     # Only way to allow moderators to create addresses
     __registered_methods__ = ['POST']
 
-    address = Column(Unicode(100), unique=True)
+    address = Column(Unicode(100), unique=True, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
@@ -309,26 +307,6 @@ class GroupUserMember(Base):
                      nullable=False)
     group_id = Column(
         Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
-
-
-class GroupAddressMember(Base):
-    __description__ = {
-        'general': "Assignment of unregistered users to groups. Does only "
-        "work if the group is public"
-    }
-    __expose__ = True
-    __projected_fields__ = ['group']
-
-    __owner__ = ['group.moderator_id']
-    __owner_methods__ = ['GET', 'DELETE']
-
-    email = Column(Unicode(100))
-    group_id = Column(
-        Integer, ForeignKey("groups.id"), nullable=False)
-
-    """for unregistered users"""
-    _token = Column(CHAR(20), unique=True, nullable=True)
-    _confirmed = Column(Boolean, default=False)
 
 
 class Session(Base):

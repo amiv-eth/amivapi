@@ -12,13 +12,10 @@ admin role for the endpoint, otherwise to False
 
 
 from flask import current_app as app
-from flask import Blueprint, abort, request, g
+from flask import abort, request, g
 
-from eve.methods.common import resource_link, payload
-from eve.utils import home_link, config, debug_error_message
-from eve.render import send_response
-
-from sqlalchemy.inspection import inspect
+from eve.methods.common import payload
+from eve.utils import config, debug_error_message
 
 from amivapi import models, utils
 
@@ -145,41 +142,6 @@ def common_authorization(resource, method):
     abort(403, description=debug_error_message(error))
 
 
-def resolve_future_field(model, payload, field):
-    """ This function resolves a field of the object that would be created
-    if the passed payload would be used to create an instance of model.
-
-    This also resolves one-to-many relationships, therefore a list of objects
-    is returned
-
-    :param model: the sqlalchemy model to use(like models.User)
-    :param payload: A dict which contains the values of the object
-    :param field: Name of the field to resolve(like 'owner.email')
-
-    :returns: Resolved field's values(list)"""
-
-    # The easy case, a regular field
-    if field not in inspect(model).relationships:
-        value = payload[field]
-
-        # Apply default if not set
-        default = getattr(model.__table__.c, field).default
-        if value is None and default:
-            value = default.arg
-
-        return [value]
-
-    # A relation, so lets find out what type of objects it would point to
-    relationship = inspect(model).relationships[field]
-
-    # And now create a query to find the targets
-    query = app.data.driver.session.query(relationship.target)
-    for l, r in relationship.local_remote_pairs:
-        query = query.filter(r.__eq__(payload[l.name]))
-
-    return query.all()
-
-
 def _create_lookup_owner_filter(resource):
     """ This function creates the filter
 
@@ -252,14 +214,14 @@ def pre_get_permission_filter(resource, request, lookup):
 # TODO(Conrad): Does this work with bulk insert?
 def pre_post_permission_filter(resource, request):
     """ Hook to apply authorization to POST requests
+    Since POST cant be a owner method common auth will never return False
+    Just call it to make sure the request globals are set
+
 
     :param resource: requested resource
     :param request: The request object
     """
-    if not common_authorization(resource, request.method):
-        app.logger.debug("Access forbidden for %s to %s for unauthorized user"
-                         % (request.method, resource))
-        abort(403)
+    common_authorization(resource, request.method)
 
 
 def pre_put_permission_filter(resource, request, lookup):
@@ -352,53 +314,6 @@ def group_visibility_filter(request, lookup):
         if 'and_' not in lookup:
             lookup['and_'] = []
         lookup['and_'].append(group_filter)
-
-#
-#
-# Authorization related endpoints
-#
-#
-
-
-permission_info = Blueprint('permission_info', __name__)
-
-
-@permission_info.route('/roles', methods=['GET'])
-def get_roles():
-    """ GET to /roles
-
-    This can be used to extract available roles via the API
-
-    :returns: Flask.Response object
-    """
-
-    if not common_authorization('roles', 'GET'):
-        abort(401)
-
-    response = {}
-
-    items = []
-    for role, perms in config.ROLES.items():
-        for p in perms.values():
-            for k in ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']:
-                if k not in p.keys():
-                    p[k] = 0
-        items.append({
-            'name': role,
-            'permissions': perms
-        })
-    response[config.ITEMS] = items
-
-    response[config.LINKS] = {
-        'parent': home_link(),
-        'self': {
-            'title': 'roles',
-            'href': resource_link()
-        }
-    }
-
-    return send_response(None, [response])
-
 
 #
 #

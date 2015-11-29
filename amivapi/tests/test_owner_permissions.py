@@ -23,8 +23,8 @@ class OwnerPermissionsTest(util.WebTest):
         member = self.new_user()
         mem_token = self.new_session(user_id=member.id).token
 
-        # Create a group and allow self enrolls
-        group = self.new_group(allow_self_enrollment=True,
+        # Create a group without self-enrollment
+        group = self.new_group(allow_self_enrollment=False,
                                moderator_id=moderator.id)
 
         # Moderator can see the group, member not
@@ -51,6 +51,7 @@ class OwnerPermissionsTest(util.WebTest):
         # Ensure that both mod and member can delete
         self.api.delete("/groupusermembers/%i" % membership.id,
                         token=mod_token,
+                        headers={'If-Match': membership._etag},
                         status_code=204)
 
         # Recreate
@@ -59,4 +60,5 @@ class OwnerPermissionsTest(util.WebTest):
 
         self.api.delete("/groupusermembers/%i" % membership.id,
                         token=mem_token,
+                        headers={'If-Match': membership._etag},
                         status_code=204)

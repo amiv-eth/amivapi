@@ -12,8 +12,22 @@ from amivapi.settings import DATE_FORMAT
 import json
 
 
+class EventAccessTest(util.WebTest):
+    def test_event_access(self):
+        """ Tests that all events are publicly available """
+        n = 10
+
+        for _ in range(n):
+            self.new_event()
+
+        events = self.api.get("/events").json
+
+        self.assertTrue(len(events['_items']) == n)
+
+
 class EventTest(util.WebTestNoAuth):
     """ This class contains test for events"""
+
     def test_additional_fields(self):
         """ Test correct validation of 'additional_fields'"""
         start = datetime.today() + timedelta(days=2)
@@ -673,20 +687,33 @@ class SignupDataTest(util.WebTestNoAuth):
             'user_id': userid,
         }, status_code=422)
 
-    def test_signup_out_of_time(self):
+    def test_signup_time(self):
         """ This test will create an event with signup window in the future
         and tries to sign up immediately, should fail
+
+        Also tries to sign up after the signup period
         """
-        eventid = self.new_event(
+        future_event_id = self.new_event(
             time_register_start=datetime.today() + timedelta(days=21),
             time_register_end=datetime.today() + timedelta(days=42),
+            allow_email_signup=False
+        ).id
+
+        past_event_id = self.new_event(
+            time_register_start=datetime.today() - timedelta(days=42),
+            time_register_end=datetime.today() - timedelta(days=21),
             allow_email_signup=False
         ).id
 
         userid = self.new_user().id
 
         self.api.post("/eventsignups", data={
-            'event_id': eventid,
+            'event_id': future_event_id,
+            'user_id': userid,
+        }, status_code=422)
+
+        self.api.post("/eventsignups", data={
+            'event_id': past_event_id,
             'user_id': userid,
         }, status_code=422)
 

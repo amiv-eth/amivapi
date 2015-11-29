@@ -153,22 +153,6 @@ class ValidatorAMIV(ValidatorSQL):
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
-    def _validate_future_date(self, future_date, field, value):
-        """ Enables validator for dates that need do be in the future
-
-        If value is just now then there will be no error
-
-        :param future_data: Boolean: Does it need to be in the future or not?
-        :param field: field name.
-        :param value: field value.
-        """
-        if future_date:
-            if value < datetime.utcnow():
-                self._error(field, "date must be in the future.")
-        else:
-            if value > datetime.utcnow():
-                self._error(field, "date must not be in the future.")
-
     def _validate_not_patchable(self, not_patchable, field, value):
         """ Custom Validator to inhibit patching of the field
 
@@ -205,10 +189,12 @@ class ValidatorAMIV(ValidatorSQL):
         for key in unique_combination[1:]:
             lookup[key] = self.document.get(key)  # all fields in combination
 
+        # ! At the moment unique_combination is not used with patchable fields
+        # ! If this changes this should help prevent errors, but testing will
+        # ! be required
         # If we are patching the issue is more complicated, some fields might
         # have to be checked but are not part of the document because they will
         # not be patched. We have to load them from the database
-
         patch = (request_method() == 'PATCH')
         if patch:
             original = get_document(resource, False, **request.view_args)
@@ -320,19 +306,6 @@ class ValidatorAMIV(ValidatorSQL):
                 self._error(field, "Can only be -1 if email signup is allowed. "
                             "%s: %s does not point to a public resource"
                             % (key, self.document[key]))
-
-    def _get_moderator_id(self, group_id):
-        """ Helper function to get the moderator
-
-        :param group_id: group id
-        :returns: None if group not found, otherwise the moderator id
-        """
-        group = get_document("groups", False, id=group_id)
-
-        if group:
-            return group.moderator_id
-        else:
-            return None
 
     def _validate_self_enroll(self, self_enroll, field, value):
         """ Validates if the id can be used to enroll for an event

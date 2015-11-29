@@ -3,6 +3,8 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
+from itertools import count
+
 from amivapi.tests import util
 
 from jsonschema import Draft4Validator
@@ -26,13 +28,7 @@ class GroupPermissionTest(util.WebTest):
         """
         token = self.new_session(user_id=0).token  # root login
 
-        def _gen():
-            i = 0
-            while True:
-                i += 1
-                yield i
-
-        gen = _gen()
+        gen = count()
 
         # Helper function to post group
         def p_post(permissions, status):

@@ -82,27 +82,6 @@ def route_post(resource, lookup, anonymous=True):
     return send_response(resource, response)
 
 
-documentation['groupaddressmembers'] = {
-    'general': "This resource organizes email-addresses subscribing a group"
-    " which are not relating to a user.",
-    'methods': "To add an address to a group, one must either be admin or "
-    "owner of the group. In other cases, you can POST subscriptions to "
-    "public groups. Every POST needs confirmation of the email-address.",
-    'schema': 'groupaddressmembers'
-}
-
-
-@confirmprint.route('/groupaddressmembers', methods=['POST'])
-def handle_groupaddressmembers():
-    """These are custom api-endpoints from the confirmprint Blueprint.
-    We don't want eve to handle POST to /groupaddressmembers because we need to
-    change the status of the response
-    :returns: eve-response with (if POST was correct) changed status-code
-    """
-    data = payload()  # we only allow POST -> no error with payload()
-    return route_post('groupaddressmembers', data)
-
-
 documentation['eventsignups'] = {
     'general': "Signing up to an event is possible in two cases: Either you "
     "are a registered user ot you are not registered, but the event is "
@@ -152,10 +131,7 @@ def execute_confirmed_action(token):
     """
     db = app.data.driver.session
     signup = db.query(models.EventSignup).filter_by(_token=token).first()
-    group = db.query(models.GroupAddressMember).filter_by(_token=token).first()
     doc = signup
-    if doc is None:
-        doc = group
     if doc is None:
         abort(404, description=(
             'This token could not be found.'
@@ -185,16 +161,9 @@ def signups_confirm_anonymous(items):
             doc['_confirmed'] = True
 
 
-def groupaddressmembers_insert_anonymous(items):
-    for doc in items:
-        doc['_confirmed'] = False
-        confirm_actions('groupaddressmembers', doc['email'], doc)
-
-
 def needs_confirmation(resource, doc):
     return (resource == 'eventsignups'
-            and doc.get('_email_unreg') is not None) \
-        or (resource == 'groupaddressmembers')
+            and doc.get('_email_unreg') is not None)
 
 
 def pre_delete_confirmation(resource, original):

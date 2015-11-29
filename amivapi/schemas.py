@@ -50,8 +50,6 @@ def get_domain():
     EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
-    domain['groupaddressmembers']['schema']['email'].update(
-        {'regex': EMAIL_REGEX})
     domain['eventsignups']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
 
@@ -152,17 +150,14 @@ def get_domain():
         'type': 'permissions_jsonschema'
     })
 
-    # /groupusermembers and /groupaddressmembers
+    # /groupusermembers
 
     domain['groupusermembers']['schema']['user_id'].update({
         'only_self_enrollment': True})
     domain['groupusermembers']['schema']['group_id'].update({
         'self_enrollment_must_be_allowed': True})
 
-    domain['groupaddressmembers']['resource_methods'] = ['GET']
-
     # Membership is not transferable -> remove PUT and PATCH
-    domain['groupaddressmembers']['item_methods'] = ['GET', 'DELETE']
     domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
 
     # /forwardaddresses

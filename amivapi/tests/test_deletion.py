@@ -23,22 +23,22 @@ class DeletionTests(util.WebTestNoAuth):
         group_count = self.db.query(models.Group).count()
         self.assertEquals(group_count, 1)
 
-    def test_delete_group_to_groupusermember_groupaddressmember(self):
+    def test_delete_group_to_groupusermember_and_forwards(self):
         user = self.new_user()
         group = self.new_group()
         self.new_group_user_member(user_id=user.id, group_id=group.id)
-        self.new_group_address_member(group_id=group.id)
+        self.new_forward_address(group_id=group.id)
 
         self.api.delete("/groups/%i" % group.id,
                         headers={'If-Match': group._etag}, status_code=204)
         group_count = self.db.query(models.Group).count()
         self.assertEquals(group_count, 0)
-        # groupusermember and groupaddressmember entries should now be deleted
+        # groupusermember and forwardaddress entries should now be deleted
         groupusermember_count = self.db.query(models.GroupUserMember).count()
         self.assertEquals(groupusermember_count, 0)
-        groupaddressmember_count = (
-            self.db.query(models.GroupAddressMember).count())
-        self.assertEquals(groupaddressmember_count, 0)
+        forward_count = (
+            self.db.query(models.ForwardAddress).count())
+        self.assertEquals(forward_count, 0)
 
     def test_delete_event_to_signup(self):
         event = self.new_event()
