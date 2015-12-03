@@ -46,7 +46,7 @@ ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 PUBLIC_METHODS = ['GET']  # This is the only way to make / public
 XML = False
 X_DOMAINS = '*'
-X_HEADERS = ['Authorization', 'If-Match']
+X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
 
 # Eve, file storage options
 RETURN_MEDIA_AS_BASE64_STRING = False
