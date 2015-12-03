@@ -42,6 +42,9 @@ def get_domain():
         # Users should not provide _author fields
         domain[tbl_name]['schema']['_author'].update({'readonly': True})
 
+        # Remove id field (eve will provide id)
+        domain[tbl_name]['schema'].pop('id')
+
     # Now some modifications are required for each resource:
 
     # general email fields

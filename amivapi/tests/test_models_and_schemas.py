@@ -77,3 +77,14 @@ class ModelValidationTest(util.WebTestNoAuth):
                 self.assertTrue(foundUserIdFk,
                                 "Owner field %s of %s is not a foreign key of "
                                 "User.id" % (owner, str(model)))
+
+
+class SchemaValidationTest(util.WebTestNoAuth):
+    """ Check if the schema was generated correctly """
+
+    def test_id_not_in_schema(self):
+        """ Test that the id is not in the schema and can not be provided
+        eve will add the id automatically"""
+        for resource, resource_dict in self.app.config['DOMAIN'].items():
+            # Test that for resource the id is read-only
+            self.assertTrue('id' not in resource_dict['schema'])
