@@ -206,8 +206,8 @@ class User(Base):
     send_newsletter = Column(Boolean, default=True)
 
     # relationships
-    groupmemberships = relationship("GroupUserMember",
-                                    foreign_keys="GroupUserMember.user_id",
+    groupmemberships = relationship("GroupMember",
+                                    foreign_keys="GroupMember.user_id",
                                     backref="user", cascade="all")
     sessions = relationship("Session", foreign_keys="Session.user_id",
                             backref="user", cascade="all")
@@ -236,9 +236,9 @@ class Group(Base):
     __description__ = {
         'general': "This resource describes the different teams in AMIV."
         "A group can grant API permissions and can be reached with several "
-        "addresses. To see the subscriptions, have a look at "
-        "'/groupusermembers'. To see the mail addresses, see "
-        "'/forwardaddresses'.",
+        "addresses. To see the addresses of this group, see /groupaddresses"
+        "To see the members, have a look at '/groupmembers'. "
+        "To see the addresses messages are forwarded to, see /groupforwards",
         'fields': {
             'allow_self_enrollment': "If true, the group can be seen by all "
             "users and they can subscribe themselves",
@@ -248,10 +248,10 @@ class Group(Base):
             "to the jsonschema available at /notyetavailable"  # TODO!
         }}
     __expose__ = True
-    __projected_fields__ = ['user_subscribers', 'address_subscribers']
-    __embedded_fields__ = ['user_subscribers', 'address_subscribers']
+    __projected_fields__ = ['members', 'addresses', 'forwards']
+    __embedded_fields__ = ['members', 'addresses', 'forwards']
 
-    __owner__ = ['moderator_id', 'user_subscribers.user_id']
+    __owner__ = ['moderator_id', 'members.user_id']
     __owner_methods__ = ['GET']  # Only admins can modify the group itself!
 
     __registered_methods__ = ['GET']  # All users can check for open groups
@@ -266,19 +266,18 @@ class Group(Base):
 
     owner = relationship(User, foreign_keys=moderator_id)
 
-    user_subscribers = relationship("GroupUserMember", backref="group",
-                                    cascade="all")
-    addresses = relationship("ForwardAddress", backref="group",
-                             cascade="all")
+    members = relationship("GroupMember", backref="group", cascade="all")
+    addresses = relationship("GroupAddress", backref="group", cascade="all")
+    forwards = relationship("GroupForward", backref="group", cascade="all")
 
 
-class ForwardAddress(Base):
+class GroupAddress(Base):
     __description__ = {
         'general': "An email address associated with a group. By adding "
         "an address here, all mails sent to that address will be forwarded "
-        "to all members of the associated group.",
+        "to all members and forwards of the associated group.",
         'fields': {
-            'address': "E-Mail address to forward",
+            'address': "E-Mail address for the group",
         }
     }
     __expose__ = True
@@ -295,7 +294,7 @@ class ForwardAddress(Base):
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
-class GroupUserMember(Base):
+class GroupMember(Base):
     __description__ = {
         'general': "Assignment of registered users to groups."
     }
@@ -311,6 +310,27 @@ class GroupUserMember(Base):
         Integer, ForeignKey("users.id"), nullable=False)
     group_id = Column(
         Integer, ForeignKey("groups.id"), nullable=False)
+
+
+class GroupForward(Base):
+    __description__ = {
+        'general': "All messages to the group will be additionally forwarded"
+        "to this address The group will NOT receive messages sent to this "
+        "address, see /groupaddress for this.",
+        'fields': {
+            'address': "E-Mail address to which mails will be forwarded"
+        }
+    }
+    __expose__ = True
+    __projected_fields__ = ['group', 'user']
+
+    __owner__ = ['group.moderator_id']
+    __owner_methods__ = ['GET', 'DELETE']
+
+    __registered_methods__ = ['POST']
+
+    address = Column(Unicode(100), unique=True, nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
 class Session(Base):

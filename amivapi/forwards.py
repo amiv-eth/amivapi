@@ -10,19 +10,19 @@ from flask import abort
 
 from eve.utils import config
 
-from amivapi.models import User, ForwardAddress
+from amivapi.models import User, GroupAddress
 
 
-def get_file_for_forwardaddress(forwardaddress_id):
+def get_file_for_groupaddress(groupaddress_id):
     """ Generates the filename for a forward file for itet mail forwarding
 
-    :param forwardaddress_id: The id of the forwardaddress object(which
+    :param groupaddress_id: The id of the groupaddress object(which
                               address is forwarded)
     :returns: path of forward file
     """
     db = app.data.driver.session
-    forwardaddress = db.query(ForwardAddress).get(forwardaddress_id)
-    return config.FORWARD_DIR + '/.forward+' + forwardaddress.address
+    groupaddress = db.query(GroupAddress).get(groupaddress_id)
+    return config.FORWARD_DIR + '/.forward+' + groupaddress.address
 
 
 def add_address_to_lists(group_id, address):
@@ -33,11 +33,11 @@ def add_address_to_lists(group_id, address):
     """
     db = app.data.driver.session
 
-    forwardaddresses = db.query(ForwardAddress).filter(
-        ForwardAddress.group_id == group_id)
-    for forwardaddress in forwardaddresses:
+    groupaddresses = db.query(GroupAddress).filter(
+        GroupAddress.group_id == group_id)
+    for groupaddress in groupaddresses:
         try:
-            with open(get_file_for_forwardaddress(forwardaddress.id), 'a') as f:
+            with open(get_file_for_groupaddress(groupaddress.id), 'a') as f:
                 f.write(address + '\n')
         except IOError as e:
             app.logger.error(str(e) + "Can not open forward file! "
@@ -53,10 +53,10 @@ def remove_address_from_lists(group_id, address):
     """
     db = app.data.driver.session
 
-    forwardaddresses = db.query(ForwardAddress).filter(
-        ForwardAddress.group_id == group_id)
-    for forwardaddress in forwardaddresses:
-        path = get_file_for_forwardaddress(forwardaddress.id)
+    groupaddresses = db.query(GroupAddress).filter(
+        GroupAddress.group_id == group_id)
+    for groupaddress in groupaddresses:
+        path = get_file_for_groupaddress(groupaddress.id)
         try:
             with open(path, 'r') as f:
                 lines = [x for x in f.readlines() if x != address + '\n']
@@ -69,23 +69,23 @@ def remove_address_from_lists(group_id, address):
             pass
 
 
-def remove_list(forwardaddress):
+def remove_list(groupaddress):
     """ Removes a forward file from the server
 
-    :param forwardaddress: forwardaddress object associated with the file
+    :param groupaddress: groupaddress object associated with the file
     """
-    path = config.FORWARD_DIR + '/.forward+' + forwardaddress['address']
+    path = config.FORWARD_DIR + '/.forward+' + groupaddress['address']
     try:
         os.remove(path)
     except OSError as e:
         app.logger.error(str(e) + "Can not remove forward "
-                         + forwardaddress['address'] + "! It seems the forward "
+                         + groupaddress['address'] + "! It seems the forward "
                          "database is inconsistent!")
         pass
 
 
 def add_user(group_id, user_id):
-    """ Add a user to all ForwardAddresses of a group in the filesystem
+    """ Add a user to all GroupAddresses of a group in the filesystem
 
     :param group_id: id of the group object
     :param user_id: id of the user to add
@@ -115,7 +115,7 @@ def remove_user(group_id, user_id):
 #
 
 
-def on_forwardaddress_deleted(item):
+def on_groupaddress_deleted(item):
     """ Hook to delete a list in the filesystem when the object is deleted
 
     :param item: forward object which is being deleted
@@ -174,7 +174,7 @@ def on_groupusermember_deleted(item):
 
 #
 #
-# Hooks for changes to forwardaddresses
+# Hooks for changes to groupaddresses
 #
 #
 
