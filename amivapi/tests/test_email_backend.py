@@ -29,47 +29,47 @@ class ForwardBackendTest(util.WebTestNoAuth):
         session = self.new_session()
 
         group = self.new_group()
-        forward_1 = self.new_forward_address(group_id=group.id)
-        forward_2 = self.new_forward_address(group_id=group.id)
+        forward_1 = self.new_group_address(group_id=group.id)
+        forward_2 = self.new_group_address(group_id=group.id)
 
         # Test adding a user
         user_1 = self.new_user(email=u"test@no.no")
-        guser_1 = self.api.post("/groupusermembers", data=dict(
+        guser_1 = self.api.post("/groupmembers", data=dict(
             user_id=user_1.id, group_id=group.id)).json
 
         # Verify addresses are added to both forwards
-        for forward in [forward_1.address, forward_2.address]:
+        for forward in [forward_1.email, forward_2.email]:
             self._assert_content(forward, "%s\n" % user_1.email)
 
         # Add another
         user_2 = self.new_user(email=u"zzz@yes.maybe")
-        guser_2 = self.api.post("/groupusermembers", data=dict(
+        guser_2 = self.api.post("/groupmembers", data=dict(
             user_id=user_2.id, group_id=group.id)).json
 
         # Verify both addresses are in both forwards
         content = "%s\n%s\n" % (user_1.email, user_2.email)
-        for forward in [forward_1.address, forward_2.address]:
+        for forward in [forward_1.email, forward_2.email]:
             self._assert_content(forward, content)
 
         # Delete one entry
-        self.api.delete("/groupusermembers/%i" % guser_1['id'],
+        self.api.delete("/groupmembers/%i" % guser_1['id'],
                         token=session.token,
                         headers={"If-Match": guser_1['_etag']},
                         status_code=204)
 
-        for forward in [forward_1.address, forward_2.address]:
+        for forward in [forward_1.email, forward_2.email]:
             self._assert_content(forward, "%s\n" % user_2.email)
 
         # Delete second entry, files should be gone then
-        self.api.delete("/groupusermembers/%i" % guser_2['id'],
+        self.api.delete("/groupmembers/%i" % guser_2['id'],
                         token=session.token,
                         headers={"If-Match": guser_2['_etag']},
                         status_code=204)
 
-        # Remove forwardaddresses, lists should be gone then
+        # Remove groupaddresses, lists should be gone then
         for forward in [forward_1, forward_2]:
-            self.api.delete('/forwardaddresses/%s' % forward.id,
+            self.api.delete('/groupaddresses/%s' % forward.id,
                             headers={"If-Match": forward._etag})
 
-            path = self._get_path(forward.address)
+            path = self._get_path(forward.email)
             self.assertFalse(exists(path))

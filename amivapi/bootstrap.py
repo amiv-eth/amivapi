@@ -128,11 +128,11 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_PATCH_users += authorization.pre_users_patch
 
     # email-management
-    app.on_deleted_item_forwardaddresses += forwards.on_forwardaddress_deleted
-    app.on_inserted_groupusermembers += forwards.on_groupusermember_inserted
-    app.on_replaced_groupusermembers += forwards.on_groupusermember_replaced
-    app.on_updated_groupusermembers += forwards.on_groupusermember_updated
-    app.on_deleted_item_groupusermembers += forwards.on_groupusermember_deleted
+    app.on_deleted_item_groupaddresses += forwards.on_groupaddress_deleted
+    app.on_inserted_groupmembers += forwards.on_groupmember_inserted
+    app.on_replaced_groupmembers += forwards.on_groupmember_replaced
+    app.on_updated_groupmembers += forwards.on_groupmember_updated
+    app.on_deleted_item_groupmembers += forwards.on_groupmember_deleted
 
     # EVENTSIGNUPS
     # Hooks to move 'email' to '_unregistered_email' after db access

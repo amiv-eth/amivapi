@@ -22,7 +22,7 @@ def get_file_for_groupaddress(groupaddress_id):
     """
     db = app.data.driver.session
     groupaddress = db.query(GroupAddress).get(groupaddress_id)
-    return config.FORWARD_DIR + '/.forward+' + groupaddress.address
+    return config.FORWARD_DIR + '/.forward+' + groupaddress.email
 
 
 def add_address_to_lists(group_id, address):
@@ -74,12 +74,12 @@ def remove_list(groupaddress):
 
     :param groupaddress: groupaddress object associated with the file
     """
-    path = config.FORWARD_DIR + '/.forward+' + groupaddress['address']
+    path = config.FORWARD_DIR + '/.forward+' + groupaddress['email']
     try:
         os.remove(path)
     except OSError as e:
         app.logger.error(str(e) + "Can not remove forward "
-                         + groupaddress['address'] + "! It seems the forward "
+                         + groupaddress['email'] + "! It seems the forward "
                          "database is inconsistent!")
         pass
 
@@ -125,49 +125,49 @@ def on_groupaddress_deleted(item):
 
 #
 #
-# Hooks for changes to GroupUserMembers
+# Hooks for changes to GroupMembers
 #
 #
 
 
-def on_groupusermember_inserted(items):
+def on_groupmember_inserted(items):
     """ Hook to add a user to a forward in the filesystem when a ForwardUser
     object is created
 
-    :param items: GroupUserMember objects
+    :param items: GroupMember objects
     """
     for i in items:
         add_user(i['group_id'], i['user_id'])
 
 
-def on_groupusermember_replaced(item, original):
+def on_groupmember_replaced(item, original):
     """ Hook to replace a user in a group in the forward filesystem when a
-    GroupUserMember object is replaced using PUT
+    GroupMember object is replaced using PUT
 
-    :param item: new GroupUserMember object
-    :param original: old GroupUserMember object, which is being deleted
+    :param item: new GroupMember object
+    :param original: old GroupMember object, which is being deleted
     """
     remove_user(original['group_id'], original['user_id'])
     add_user(item['group_id'], item['user_id'])
 
 
-def on_groupusermember_updated(updates, original):
+def on_groupmember_updated(updates, original):
     """ Hook to update an entry in a forward file in the filesystem when a
-    GroupUserMember object is PATCHed
+    GroupMember object is PATCHed
 
-    :param updates: dict containing changes to GroupUserMember
+    :param updates: dict containing changes to GroupMember
     :param original: dict of original object
     """
     new_item = original.copy()
     new_item.update(updates)
-    on_groupusermember_replaced(new_item, original)
+    on_groupmember_replaced(new_item, original)
 
 
-def on_groupusermember_deleted(item):
+def on_groupmember_deleted(item):
     """ Hook to remove the entries in the forward files in the filesystem when
-    a GroupUserMember is DELETEd
+    a GroupMember is DELETEd
 
-    :param item: dict of the GroupUserMember which is deleted
+    :param item: dict of the GroupMember which is deleted
     """
     remove_user(item['group_id'], item['user_id'])
 

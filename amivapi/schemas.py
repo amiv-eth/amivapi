@@ -152,22 +152,35 @@ def get_domain():
         'type': 'permissions_jsonschema'
     })
 
-    # /groupusermembers
+    # /groupaddresses
+    domain['groupaddresses']['schema']['group_id'].update({
+        'only_groups_you_moderate': True,
+        'unique_combination': ['groupaddresses', 'email']
+    })
+    domain['groupaddresses']['schema']['email'].update({
+        'regex': EMAIL_REGEX,
+        'unique_combination': ['groupaddresses', 'group_id']})
 
-    domain['groupusermembers']['schema']['user_id'].update({
+    # /groupforwards
+    domain['groupforwards']['schema']['group_id'].update({
+        'only_groups_you_moderate': True,
+        'unique_combination': ['groupforwards', 'email']
+    })
+    domain['groupforwards']['schema']['email'].update({
+        'regex': EMAIL_REGEX,
+        'unique_combination': ['groupforwards', 'group_id']})
+
+    # /groupmembers
+
+    domain['groupmembers']['schema']['user_id'].update({
         'only_self_enrollment_for_group': True,
-        'unique_combination': ['groupusermembers', 'group_id']})
-    domain['groupusermembers']['schema']['group_id'].update({
+        'unique_combination': ['groupmembers', 'group_id']})
+    domain['groupmembers']['schema']['group_id'].update({
         'self_enrollment_must_be_allowed': True,
-        'unique_combination': ['groupusermembers', 'user_id']})
+        'unique_combination': ['groupmembers', 'user_id']})
 
     # Membership is not transferable -> remove PUT and PATCH
-    domain['groupusermembers']['item_methods'] = ['GET', 'DELETE']
-
-    # /forwardaddresses
-    domain['forwardaddresses']['schema']['group_id'].update({
-        'only_groups_you_moderate': True
-    })
+    domain['groupmembers']['item_methods'] = ['GET', 'DELETE']
 
     # /files
 

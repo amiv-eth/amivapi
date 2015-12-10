@@ -14,7 +14,7 @@ class UsersPermissionsTest(util.WebTest):
 
         admin = self.new_user()
         admingroup_id = self.new_group(permissions={'users': {'GET': 1}}).id
-        self.new_group_user_member(user_id=admin.id, group_id=admingroup_id)
+        self.new_group_member(user_id=admin.id, group_id=admingroup_id)
         admin_session = self.new_session(user_id=admin.id)
 
         owner = self.new_user()
@@ -47,7 +47,7 @@ class UsersPermissionsTest(util.WebTest):
 
         admin = self.new_user()
         admingroup_id = self.new_group(permissions={'users': {'POST': 1}}).id
-        self.new_group_user_member(user_id=admin.id, group_id=admingroup_id)
+        self.new_group_member(user_id=admin.id, group_id=admingroup_id)
         admin_session = self.new_session(user_id=admin.id)
 
         registered = self.new_user()
@@ -79,7 +79,7 @@ class UsersPermissionsTest(util.WebTest):
 
         admin = self.new_user()
         admingroup_id = self.new_group(permissions={'users': {'PATCH': 1}}).id
-        self.new_group_user_member(user_id=admin.id, group_id=admingroup_id)
+        self.new_group_member(user_id=admin.id, group_id=admingroup_id)
         admin_session = self.new_session(user_id=admin.id)
 
         owner = self.new_user()
@@ -122,7 +122,7 @@ class UsersPermissionsTest(util.WebTest):
 
         admin = self.new_user()
         admingroup_id = self.new_group(permissions={'users': {'PUT': 1}}).id
-        self.new_group_user_member(user_id=admin.id, group_id=admingroup_id)
+        self.new_group_member(user_id=admin.id, group_id=admingroup_id)
         admin_session = self.new_session(user_id=admin.id)
 
         owner = self.new_user()
@@ -175,7 +175,7 @@ class UsersPermissionsTest(util.WebTest):
 
         admin = self.new_user()
         admingroup_id = self.new_group(permissions={'users': {'DELETE': 1}}).id
-        self.new_group_user_member(user_id=admin.id, group_id=admingroup_id)
+        self.new_group_member(user_id=admin.id, group_id=admingroup_id)
         admin_session = self.new_session(user_id=admin.id)
 
         owner = self.new_user()

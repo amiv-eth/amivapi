@@ -205,17 +205,24 @@ class WebTest(unittest.TestCase):
         data.update(kwargs)
         return data
 
-    @create_object(models.ForwardAddress)
-    def new_forward_address(self, **kwargs):
+    @create_object(models.GroupAddress)
+    def new_group_address(self, **kwargs):
         """ Add a forward address. At least supply the group_id """
-        kwargs.setdefault('address',
-                          u"forward-%i@example.com" % self.next_count())
+        kwargs.setdefault('email',
+                          u"adress-%i@example.com" % self.next_count())
         return kwargs
 
-    @create_object(models.GroupUserMember)
-    def new_group_user_member(self, **kwargs):
+    @create_object(models.GroupMember)
+    def new_group_member(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
         kwargs.setdefault('user_id', 0)
+        return kwargs
+
+    @create_object(models.GroupForward)
+    def new_group_forward(self, **kwargs):
+        """ Add a user to a group. At least supply the group_id """
+        kwargs.setdefault('email',
+                          u"forward-%i@example.com" % self.next_count())
         return kwargs
 
     @create_object(models.Session)

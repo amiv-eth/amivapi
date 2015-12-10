@@ -312,7 +312,7 @@ class SignupTest(util.WebTest):
         # DELETE peon's signup as vorstand
         vorstand = self.new_user()
         group = self.new_group(permissions={'eventsignups': {'DELETE': 1}})
-        self.new_group_user_member(group_id=group.id, user_id=vorstand.id)
+        self.new_group_member(group_id=group.id, user_id=vorstand.id)
         vorstand_token = self.new_session(user_id=vorstand.id).token
 
         self.api.delete("/eventsignups/%i" % other_signup.id,
@@ -329,7 +329,7 @@ class SignupTest(util.WebTest):
         g = self.new_group(permissions={
                            "eventsignups": {"POST": True}
                            })
-        self.new_group_user_member(user_id=admin.id, group_id=g.id)
+        self.new_group_member(user_id=admin.id, group_id=g.id)
 
         admin_token = self.new_session(user_id=admin.id).token
         peon = self.new_user()

@@ -14,6 +14,7 @@ from eve.utils import config
 from flask import Config
 
 from amivapi.settings import ROOT_DIR
+from amivapi.models import Group, GroupMember
 
 
 def get_config():
@@ -136,11 +137,10 @@ def check_group_permission(user_id, resource, method):
 
         :returns: Boolean, True if permitted, False otherwise
         """
-    from amivapi.models import Group, GroupUserMember
 
     db = app.data.driver.session
     query = db.query(Group.permissions).filter(
-        Group.user_subscribers.any(GroupUserMember.user_id == user_id))
+        Group.members.any(GroupMember.user_id == user_id))
 
     # All entries are dictionaries
     # If any dicitionary contains the permission it is good.

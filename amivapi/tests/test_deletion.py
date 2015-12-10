@@ -9,35 +9,35 @@ from amivapi import models
 
 class DeletionTests(util.WebTestNoAuth):
 
-    def test_delete_user_to_groupusermember(self):
+    def test_delete_user_to_groupmember(self):
         user = self.new_user()
         group = self.new_group()
-        self.new_group_user_member(user_id=user.id, group_id=group.id)
+        self.new_group_member(user_id=user.id, group_id=group.id)
 
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': user._etag}, status_code=204)
-        groupusermember_count = self.db.query(models.GroupUserMember).count()
-        self.assertEquals(groupusermember_count, 0)
-        # We want the groupusermember-entry to be deleted but not the group
+        groupmember_count = self.db.query(models.GroupMember).count()
+        self.assertEquals(groupmember_count, 0)
+        # We want the groupmember-entry to be deleted but not the group
         # itself
         group_count = self.db.query(models.Group).count()
         self.assertEquals(group_count, 1)
 
-    def test_delete_group_to_groupusermember_and_forwards(self):
+    def test_delete_group_to_groupmember_and_forwards(self):
         user = self.new_user()
         group = self.new_group()
-        self.new_group_user_member(user_id=user.id, group_id=group.id)
-        self.new_forward_address(group_id=group.id)
+        self.new_group_member(user_id=user.id, group_id=group.id)
+        self.new_group_address(group_id=group.id)
 
         self.api.delete("/groups/%i" % group.id,
                         headers={'If-Match': group._etag}, status_code=204)
         group_count = self.db.query(models.Group).count()
         self.assertEquals(group_count, 0)
-        # groupusermember and forwardaddress entries should now be deleted
-        groupusermember_count = self.db.query(models.GroupUserMember).count()
-        self.assertEquals(groupusermember_count, 0)
+        # groupmember and forwardaddress entries should now be deleted
+        groupmember_count = self.db.query(models.GroupMember).count()
+        self.assertEquals(groupmember_count, 0)
         forward_count = (
-            self.db.query(models.ForwardAddress).count())
+            self.db.query(models.GroupAddress).count())
         self.assertEquals(forward_count, 0)
 
     def test_delete_event_to_signup(self):

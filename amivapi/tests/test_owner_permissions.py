@@ -34,31 +34,31 @@ class OwnerPermissionsTest(util.WebTest):
                      status_code=404)
 
         # let the second user join the group
-        membership = self.new_group_user_member(user_id=member.id,
-                                                group_id=group.id)
+        membership = self.new_group_member(user_id=member.id,
+                                           group_id=group.id)
 
         # Group is visible by member now
         self.api.get("/groups/%i" % group.id, token=mem_token,
                      status_code=200)
 
         # Groupmembership visible by moderator and member (both owners)
-        self.api.get("/groupusermembers/%i" % membership.id, token=mod_token,
+        self.api.get("/groupmembers/%i" % membership.id, token=mod_token,
                      status_code=200)
-        self.api.get("/groupusermembers/%i" % membership.id, token=mem_token,
+        self.api.get("/groupmembers/%i" % membership.id, token=mem_token,
                      status_code=200)
 
         # Additionally, owners of the membership can delete it.
         # Ensure that both mod and member can delete
-        self.api.delete("/groupusermembers/%i" % membership.id,
+        self.api.delete("/groupmembers/%i" % membership.id,
                         token=mod_token,
                         headers={'If-Match': membership._etag},
                         status_code=204)
 
         # Recreate
-        membership = self.new_group_user_member(user_id=member.id,
-                                                group_id=group.id)
+        membership = self.new_group_member(user_id=member.id,
+                                           group_id=group.id)
 
-        self.api.delete("/groupusermembers/%i" % membership.id,
+        self.api.delete("/groupmembers/%i" % membership.id,
                         token=mem_token,
                         headers={'If-Match': membership._etag},
                         status_code=204)

@@ -277,7 +277,7 @@ class GroupAddress(Base):
         "an address here, all mails sent to that address will be forwarded "
         "to all members and forwards of the associated group.",
         'fields': {
-            'address': "E-Mail address for the group",
+            'email': "E-Mail address for the group",
         }
     }
     __expose__ = True
@@ -290,7 +290,7 @@ class GroupAddress(Base):
     # Only way to allow moderators to create addresses
     __registered_methods__ = ['POST']
 
-    address = Column(Unicode(100), unique=True, nullable=False)
+    email = Column(Unicode(100), unique=True, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
@@ -318,7 +318,7 @@ class GroupForward(Base):
         "to this address The group will NOT receive messages sent to this "
         "address, see /groupaddress for this.",
         'fields': {
-            'address': "E-Mail address to which mails will be forwarded"
+            'email': "E-Mail address to which mails will be forwarded"
         }
     }
     __expose__ = True
@@ -329,7 +329,7 @@ class GroupForward(Base):
 
     __registered_methods__ = ['POST']
 
-    address = Column(Unicode(100), unique=True, nullable=False)
+    email = Column(Unicode(100), unique=True, nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
