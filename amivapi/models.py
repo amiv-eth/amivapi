@@ -329,7 +329,7 @@ class GroupForward(Base):
 
     __registered_methods__ = ['POST']
 
-    email = Column(Unicode(100), unique=True, nullable=False)
+    email = Column(Unicode(100), nullable=False)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 

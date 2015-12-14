@@ -140,29 +140,6 @@ def on_groupmember_inserted(items):
         add_user(i['group_id'], i['user_id'])
 
 
-def on_groupmember_replaced(item, original):
-    """ Hook to replace a user in a group in the forward filesystem when a
-    GroupMember object is replaced using PUT
-
-    :param item: new GroupMember object
-    :param original: old GroupMember object, which is being deleted
-    """
-    remove_user(original['group_id'], original['user_id'])
-    add_user(item['group_id'], item['user_id'])
-
-
-def on_groupmember_updated(updates, original):
-    """ Hook to update an entry in a forward file in the filesystem when a
-    GroupMember object is PATCHed
-
-    :param updates: dict containing changes to GroupMember
-    :param original: dict of original object
-    """
-    new_item = original.copy()
-    new_item.update(updates)
-    on_groupmember_replaced(new_item, original)
-
-
 def on_groupmember_deleted(item):
     """ Hook to remove the entries in the forward files in the filesystem when
     a GroupMember is DELETEd
@@ -174,12 +151,12 @@ def on_groupmember_deleted(item):
 
 #
 #
-# Hooks for changes to groupaddresses
+# Hooks for changes to groupforwards
 #
 #
 
 
-def on_groupaddressmember_inserted(items):
+def on_groupforward_inserted(items):
     """ Hook to add an entry to a forward file in the filesystem when a
     GroupAddressMember object is created using POST
 
@@ -189,7 +166,7 @@ def on_groupaddressmember_inserted(items):
         add_address_to_lists(i['group_id'], i['email'])
 
 
-def on_groupaddressmember_replaced(item, original):
+def on_groupforward_replaced(item, original):
     """ Hook to replace an entry in forward files in the filesystem when a
     GroupAddressMember object is replaced using PUT
 
@@ -200,7 +177,7 @@ def on_groupaddressmember_replaced(item, original):
     add_address_to_lists(item['group_id'], item['email'])
 
 
-def on_groupaddressmember_updated(updates, original):
+def on_groupforward_updated(updates, original):
     """ Hook to update an entry in forward files in the filesystem when a
     GroupAddressMember object is changed using PATCH
 
@@ -209,10 +186,10 @@ def on_groupaddressmember_updated(updates, original):
     """
     new_item = original.copy()
     new_item.update(updates)
-    on_groupaddressmember_replaced(new_item, original)
+    on_groupforward_replaced(new_item, original)
 
 
-def on_groupaddressmember_deleted(item):
+def on_groupforward_deleted(item):
     """ Hook to remove an entry in forward files in the filesystem when a
     GroupAddressMember object is DELETEd
 
