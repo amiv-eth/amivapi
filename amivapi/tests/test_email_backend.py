@@ -8,7 +8,7 @@ from os.path import exists
 from amivapi.tests import util
 
 
-class ForwardBackendTest(util.WebTestNoAuth):
+class EmailBackendTest(util.WebTestNoAuth):
 
     def _get_path(self, group_address):
         return "%s/.forward+%s" % (self.app.config['FORWARD_DIR'],
@@ -22,7 +22,7 @@ class ForwardBackendTest(util.WebTestNoAuth):
 
         return (set(file_lines) == set(content_lines))
 
-    def test_file_creation(self):
+    def test_member_and_forwards(self):
         """ Test that new email addresses are added and removed correctly from
         all associated forwards
 
@@ -31,9 +31,14 @@ class ForwardBackendTest(util.WebTestNoAuth):
         which manage the forwards
         """
         group = self.new_group()
-        address_1 = self.new_group_address(group_id=group.id)
-        address_2 = self.new_group_address(group_id=group.id)
-
+        address_1 = self.api.post("/groupaddresses",
+                                  data={'group_id': group.id,
+                                        'email': "some@thing.de"},
+                                  status_code=201).json
+        address_2 = self.api.post("/groupaddresses",
+                                  data={'group_id': group.id,
+                                        'email': "someother@thing.de"},
+                                  status_code=201).json
         # Test adding a user
         user = self.new_user(email=u"test@no.no")
         guser = self.api.post("/groupmembers", data=dict(
@@ -41,8 +46,8 @@ class ForwardBackendTest(util.WebTestNoAuth):
 
         # Verify address is added to both forwards
         mail_list = [user.email]
-        self.assertTrue(self._is_content(address_1.email, mail_list))
-        self.assertTrue(self._is_content(address_2.email, mail_list))
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
 
         # Test adding a forward
         forward = self.api.post("/groupforwards", data={
@@ -51,8 +56,32 @@ class ForwardBackendTest(util.WebTestNoAuth):
         }).json
 
         mail_list.append(forward['email'])
-        self.assertTrue(self._is_content(address_1.email, mail_list))
-        self.assertTrue(self._is_content(address_2.email, mail_list))
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
+
+        # Patch forward
+        new_forward = self.api.patch("/groupforwards/%i" % forward['id'],
+                                     data={'email': "newmail@new.new"},
+                                     status_code=200,
+                                     headers={'If-Match': forward['_etag']}
+                                     ).json
+
+        mail_list.remove(forward['email'])
+        mail_list.append(new_forward['email'])
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
+        # Put forward
+        newer_forward = self.api.put("/groupforwards/%i" % new_forward['id'],
+                                     data={'group_id': group.id,
+                                           'email': "othernewmail@new.new"},
+                                     status_code=200,
+                                     headers={'If-Match': new_forward['_etag']}
+                                     ).json
+
+        mail_list.remove(new_forward['email'])
+        mail_list.append(newer_forward['email'])
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
 
         # Delete membership
         self.api.delete("/groupmembers/%i" % guser['id'],
@@ -60,24 +89,87 @@ class ForwardBackendTest(util.WebTestNoAuth):
                         status_code=204)
 
         mail_list.remove(user.email)
-        self.assertTrue(self._is_content(address_1.email, mail_list))
-        self.assertTrue(self._is_content(address_2.email, mail_list))
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
 
-        # Delete membership
-        self.api.delete("/groupforwards/%i" % forward['id'],
-                        headers={"If-Match": forward['_etag']},
+        # Delete Forward
+        self.api.delete("/groupforwards/%i" % newer_forward['id'],
+                        headers={"If-Match": newer_forward['_etag']},
                         status_code=204)
 
-        mail_list.remove(forward['email'])
-        self.assertTrue(self._is_content(address_1.email, mail_list))
-        self.assertTrue(self._is_content(address_2.email, mail_list))
+        mail_list.remove(newer_forward['email'])
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
 
-        for forward in [address_1, address_2]:
-            self.api.delete('/groupaddresses/%s' % forward.id,
-                            headers={"If-Match": forward._etag})
+        for address in [address_1, address_2]:
+            self.api.delete('/groupaddresses/%s' % address['id'],
+                            headers={"If-Match": address['_etag']})
 
-            path = self._get_path(forward.email)
+            path = self._get_path(address['email'])
             self.assertFalse(exists(path))
+
+    def test_addresses(self):
+        """ Test that addresses can be added correctly at any time """
+        group = self.new_group()
+
+        # Address 1 is added before any users or forwards join the group
+        address_1 = self.api.post("/groupaddresses",
+                                  data={'group_id': group.id,
+                                        'email': "some@thing.de"},
+                                  status_code=201).json
+        # Add a user and forward
+        user = self.new_user(email=u"test@no.no")
+        self.api.post("/groupmembers", data=dict(
+            user_id=user.id, group_id=group.id)).json
+
+        forward = self.api.post("/groupforwards", data={
+            'email': u"verteiler@no.no",
+            'group_id': group.id
+        }).json
+
+        mail_list = [user.email, forward['email']]
+
+        # Check that they are added correctly
+        self.assertTrue(self._is_content(address_1['email'], mail_list))
+
+        # Create new address
+        address_2 = self.api.post("/groupaddresses",
+                                  data={'group_id': group.id,
+                                        'email': "someother@thing.de"},
+                                  status_code=201).json
+
+        # Assert that this file is created with all addresses
+        self.assertTrue(self._is_content(address_2['email'], mail_list))
+
+        # Rename first address
+        address_3 = self.api.patch("/groupaddresses/%i" % address_1['id'],
+                                   data={'email': "newname@thing.de"},
+                                   status_code=201,
+                                   headers={'If-Match': address_1['_etag']}
+                                   ).json
+
+        # Assert old file is gone and new file has addresses
+        self.assertFalse(exists(self._get_path(address_1['email'])))
+        self.assertTrue(self._is_content(address_3['email'], mail_list))
+
+        # Replace first address
+        address_4 = self.api.put("/groupaddresses/%i" % address_1['id'],
+                                 data={'email': "newername@thing.de"},
+                                 status_code=201,
+                                 headers={'If-Match': address_3['_etag']}
+                                 ).json
+
+        # Assert old file is gone and new file has addresses
+        self.assertFalse(exists(self._get_path(address_1['email'])))
+        self.assertTrue(self._is_content(address_4['email'], mail_list))
+
+        # Remove address
+        self.api.delete("/groupaddresses/%i" % address_1['id'],
+                        status_code=204,
+                        headers={'If-Match': address_4['_etag']}
+                        ).json
+
+        self.assertFalse(exists(self._get_path(address_4['email'])))
 
     def test_unique_combination(self):
         """ Test that u can add two different users, but not the same user
@@ -133,6 +225,7 @@ class ForwardBackendTest(util.WebTestNoAuth):
         # Addresses
         address_1 = "lala@lu.lo"
         address_2 = "lolo@la.li"
+        address_3 = "lulu@le.la"
 
         self.api.post("/groupaddresses",
                       data=dict(email=address_1, group_id=group_1.id),
@@ -148,4 +241,8 @@ class ForwardBackendTest(util.WebTestNoAuth):
         # other address, same group -> ok
         self.api.post("/groupaddresses",
                       data=dict(email=address_2, group_id=group_1.id),
+                      status_code=201)
+        # another address, other group -> ok
+        self.api.post("/groupaddresses",
+                      data=dict(email=address_3, group_id=group_2.id),
                       status_code=201)
