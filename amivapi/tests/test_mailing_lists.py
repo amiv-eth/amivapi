@@ -144,7 +144,7 @@ class EmailBackendTest(util.WebTestNoAuth):
         # Rename first address
         address_3 = self.api.patch("/groupaddresses/%i" % address_1['id'],
                                    data={'email': "newname@thing.de"},
-                                   status_code=201,
+                                   status_code=200,
                                    headers={'If-Match': address_1['_etag']}
                                    ).json
 
@@ -154,8 +154,9 @@ class EmailBackendTest(util.WebTestNoAuth):
 
         # Replace first address
         address_4 = self.api.put("/groupaddresses/%i" % address_1['id'],
-                                 data={'email': "newername@thing.de"},
-                                 status_code=201,
+                                 data={'email': "newername@thing.de",
+                                       'group_id': group.id},
+                                 status_code=200,
                                  headers={'If-Match': address_3['_etag']}
                                  ).json
 
@@ -167,7 +168,7 @@ class EmailBackendTest(util.WebTestNoAuth):
         self.api.delete("/groupaddresses/%i" % address_1['id'],
                         status_code=204,
                         headers={'If-Match': address_4['_etag']}
-                        ).json
+                        )
 
         self.assertFalse(exists(self._get_path(address_4['email'])))
 

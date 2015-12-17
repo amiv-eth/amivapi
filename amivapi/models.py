@@ -306,10 +306,8 @@ class GroupMember(Base):
 
     __registered_methods__ = ['POST']
 
-    user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=False)
-    group_id = Column(
-        Integer, ForeignKey("groups.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
 
 
 class GroupForward(Base):

@@ -155,7 +155,8 @@ def get_domain():
     # /groupaddresses
     domain['groupaddresses']['schema']['group_id'].update({
         'only_groups_you_moderate': True,
-        'unique_combination': ['groupaddresses', 'email']
+        'unique_combination': ['groupaddresses', 'email'],
+        'not_patchable': True,
     })
     domain['groupaddresses']['schema']['email'].update({
         'regex': EMAIL_REGEX,
@@ -164,7 +165,8 @@ def get_domain():
     # /groupforwards
     domain['groupforwards']['schema']['group_id'].update({
         'only_groups_you_moderate': True,
-        'unique_combination': ['groupforwards', 'email']
+        'unique_combination': ['groupforwards', 'email'],
+        'not_patchable': True,
     })
     domain['groupforwards']['schema']['email'].update({
         'regex': EMAIL_REGEX,

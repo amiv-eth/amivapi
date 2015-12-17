@@ -31,7 +31,7 @@ from amivapi import (
     authentication,
     authorization,
     media,
-    forwards,
+    mailing_lists,
     validation,
     ldap,
     documentation,
@@ -129,15 +129,18 @@ def create_app(disable_auth=False, **kwargs):
 
     # email-management
     # Addresses
-    app.on_deleted_item_groupaddresses += forwards.on_groupaddress_deleted
+    app.on_inserted_groupaddresses += mailing_lists.create_files
+    app.on_replaced_groupaddresses += mailing_lists.update_file
+    app.on_updated_groupaddresses += mailing_lists.update_file
+    app.on_deleted_item_groupaddresses += mailing_lists.delete_file
     # Members - can not be updated or replaced
-    app.on_inserted_groupmembers += forwards.on_groupmember_inserted
-    app.on_deleted_item_groupmembers += forwards.on_groupmember_deleted
+    app.on_inserted_groupmembers += mailing_lists.add_user_email
+    app.on_deleted_item_groupmembers += mailing_lists.remove_user_email
     # Forwards
-    app.on_inserted_groupforwards += forwards.on_groupforward_inserted
-    app.on_replaced_groupforwards += forwards.on_groupforward_replaced
-    app.on_updated_groupforwards += forwards.on_groupforward_updated
-    app.on_deleted_item_groupforwards += forwards.on_groupforward_deleted
+    app.on_inserted_groupforwards += mailing_lists.add_forward_email
+    app.on_replaced_groupforwards += mailing_lists.replace_forward_email
+    app.on_updated_groupforwards += mailing_lists.update_forward_email
+    app.on_deleted_item_groupforwards += mailing_lists.remove_forward_email
 
     # EVENTSIGNUPS
     # Hooks to move 'email' to '_unregistered_email' after db access
