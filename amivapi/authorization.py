@@ -14,7 +14,6 @@ admin role for the endpoint, otherwise to False
 from flask import current_app as app
 from flask import abort, request, g
 
-from eve.methods.common import payload
 from eve.utils import config, debug_error_message
 
 from amivapi import models, utils
@@ -259,22 +258,6 @@ def pre_patch_permission_filter(resource, request, lookup):
         apply_lookup_owner_filters(lookup, resource)
 
 
-def update_permission_filter(resource, updates, original):
-    """ This filter ensures, that an owner can not change the owner
-    of his objects
-    See also the documentation of pre_patch_permission_filter() for more info
-
-    :param resource: requested resource
-    :param updates: Changes to be made as a dict
-    :param original: Original object
-    """
-    if g.authorized_without_ownership:
-        return
-
-    data = original.copy()
-    data.update(updates)
-
-
 def pre_delete_permission_filter(resource, request, lookup):
     """ Hook to apply authorization to DELETE requests, works the same as the
     filter for GET
@@ -331,28 +314,3 @@ def pre_users_get(request, lookup):
     projection = request.args.get('projection')
     if projection and 'password' in projection:
         abort(403, description='Bad projection field: password')
-
-
-def pre_users_patch(request, lookup):
-    """ Hook for the /users resource to prevent people from changing fields
-    which are imported via LDAP
-
-    :param request: The request object
-    :param lookup: The lookup dict(unused)
-    """
-    if g.resource_admin:
-        return
-
-    disallowed_fields = ['username', 'firstname', 'lastname', 'birthday',
-                         'legi', 'nethz', 'department', 'phone',
-                         'ldapAddress', 'gender', 'membership']
-
-    data = payload()
-
-    for f in disallowed_fields:
-        if f in data:
-            app.logger.debug("Rejecting patch due to insufficent priviledges"
-                             + "to change " + f)
-            abort(403, description=(
-                'You are not allowed to change your ' + f
-            ))

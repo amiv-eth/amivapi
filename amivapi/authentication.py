@@ -24,6 +24,7 @@ from flask import Blueprint, abort, g
 from eve.methods.common import payload
 from eve.auth import TokenAuth
 from eve.methods.post import post_internal
+from eve.methods.patch import patch_internal
 from eve.render import send_response
 from eve.utils import debug_error_message, config
 
@@ -163,21 +164,21 @@ def process_login():
 
             # Create or update user
             if has_user_nethz:
-                user = app.data.driver.session.query(models.User).filter_by(
-                    nethz=p_data['user'])
+                # Get user
+                user = app.data.find_one('users', None, nethz=p_data['user'])
 
                 # Membership status will only be upgraded automatically
                 # If current Membership is not none ignore the ldap result
-                if user.one().membership is not None:
+                if user['membership'] is not None:
                     ldap_data.pop('membership')
 
-                user.update(ldap_data)
+                # First element of respoinse is data
+                patch_internal('users',
+                               ldap_data,
+                               skip_validation=True,
+                               id=user['id'])[0]
 
-                app.data.driver.session.commit()
-
-                user_id = user.one().id
-
-                return send_response('sessions', _token_response(user_id))
+                return send_response('sessions', _token_response(user['id']))
             else:
                 # Create new user
                 # Set Mail now

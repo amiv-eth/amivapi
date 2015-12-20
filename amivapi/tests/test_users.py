@@ -91,3 +91,81 @@ class UserResourceTest(util.WebTestNoAuth):
 
         data['email'] = 'test@example.com'
         self.api.post("/users", data=data, status_code=201)
+
+    def test_password_change(self):
+        """ Test if a user can change his password """
+
+        user = self.new_user()
+        session = self.new_session(user_id=user.id)
+
+        # Nobody can enter this password in his browser,
+        # it must be very secure!
+        new_pw = u"my_new_pw_9123580:öpäß'+ `&%$§\"!)(\\\xff\x10\xa0"
+
+        self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
+                       data={"password": new_pw},
+                       status_code=200)
+
+        data = {
+            "user": user.email,
+            "password": new_pw
+        }
+        self.api.post("/sessions", data=data, status_code=201)
+
+    def test_rfid_change(self):
+        """ Test if a user can change his rfid number """
+
+        user = self.new_user()
+        session = self.new_session(user_id=user.id)
+
+        self.api.patch("/users/%i" % user.id, token=session.token,
+                       headers={"If-Match": user._etag},
+                       data={"rfid": "100000"},
+                       status_code=200)
+
+
+class UserItemPermissions(util.WebTest):
+    def test_not_patchable_unless_admin(self):
+        """ Assert that a user can not change the following values, but an
+        an admin can
+        """
+        user = self.new_user(gender='female', department='itet')
+        user_token = self.new_session(user_id=user.id).token
+        user_etag = user._etag  # This way we can overwrite it later easily
+        # admin
+        admin = self.new_user()
+        admin_token = self.new_session(user_id=admin.id).token
+        admin_group = self.new_group(
+            allow_self_enrollment=False,
+            permissions={
+                'users': {'PATCH': True}
+            })
+        self.new_group_member(user_id=admin.id,
+                              group_id=admin_group.id)
+
+        bad_changes = [
+            {"firstname": "new_name"},
+            {"lastname": "new_name"},
+            {"legi": "10000000"},
+            {"nethz": "coolkid"},
+            {"department": "mavt"},
+            {"phone": "177"},
+            {"gender": "male"},
+            {"membership": "none"},
+        ]
+
+        def try_patching(data, token, etag, status_code):
+            return self.api.patch("/users/%i" % user.id, token=token,
+                                  headers={"If-Match": etag},
+                                  data=data,
+                                  status_code=status_code).json
+
+        # The user can change none of those fields
+        for bad_data in bad_changes:
+            try_patching(bad_data, user_token, user_etag, 422)
+
+        # The admin can
+        for data in bad_changes:
+            user_etag = try_patching(
+                data, admin_token, user_etag, 200)['_etag']

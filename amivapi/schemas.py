@@ -57,6 +57,11 @@ def get_domain():
         {'regex': EMAIL_REGEX})
 
     # /users
+    # Not patchable fields
+    for field in ['firstname', 'lastname', 'legi', 'nethz', 'department',
+                  'phone', 'gender', 'membership']:
+        domain['users']['schema'][field].update(
+            {'not_patchable_unless_admin': True})
 
     # Hide passwords
     domain['users']['datasource']['projection']['password'] = 0
@@ -66,10 +71,10 @@ def get_domain():
         'allowed': ['male', 'female']
     })
     domain['users']['schema']['department'].update({
-        'allowed': ['itet', 'mavt']
+        'allowed': ['itet', 'mavt'],
     })
     domain['users']['schema']['nethz'].update({
-        'empty': False
+        'empty': False,
     })
 
     # Make it possible to retrive a user with his nethz (/users/nethz)

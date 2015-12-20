@@ -113,7 +113,6 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_PUT += authorization.pre_put_permission_filter
     app.on_pre_DELETE += authorization.pre_delete_permission_filter
     app.on_pre_PATCH += authorization.pre_patch_permission_filter
-    app.on_update += authorization.update_permission_filter
     app.on_pre_GET_groups += authorization.group_visibility_filter
 
     # Hooks for anonymous users
@@ -125,7 +124,6 @@ def create_app(disable_auth=False, **kwargs):
 
     # users
     app.on_pre_GET_users += authorization.pre_users_get
-    app.on_pre_PATCH_users += authorization.pre_users_patch
 
     # email-management
     # Addresses

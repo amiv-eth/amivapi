@@ -153,17 +153,30 @@ class ValidatorAMIV(ValidatorSQL):
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
-    def _validate_not_patchable(self, not_patchable, field, value):
+    def _validate_not_patchable(self, enabled, field, value):
         """ Custom Validator to inhibit patching of the field
 
         e.g. eventsignups, userid: required for post, but can not be patched
 
-        :param not_patchable: Boolean, should be true
+        :param enabled: Boolean, should be true
         :param field: field name.
         :param value: field value.
         """
-        if not_patchable and (request_method() == 'PATCH'):
+        if enabled and (request_method() == 'PATCH'):
             self._error(field, "this field can not be changed with PATCH")
+
+    def _validate_not_patchable_unless_admin(self, enabled, field, value):
+        """ Custom Validator to inhibit patching of the field
+
+        e.g. eventsignups, userid: required for post, but can not be patched
+
+        :param enabled: Boolean, should be true
+        :param field: field name.
+        :param value: field value.
+        """
+        if enabled and (request_method() == 'PATCH') and not g.resource_admin:
+            self._error(field, "this field can not be changed with PATCH "
+                        "unless you have admin rights.")
 
     def _validate_unique_combination(self, unique_combination, field, value):
         """ Custom validation if some fields are only unique in combination
