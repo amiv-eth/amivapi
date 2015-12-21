@@ -30,9 +30,6 @@ class AuthentificationTest(util.WebTest):
 
         self.assertEqual(r['user_id'], user.id)
 
-        from pprint import pprint
-        pprint(r)
-
     def test_bad_nethz(self):
         """
         user may not be None or empty
