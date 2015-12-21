@@ -16,7 +16,7 @@ from flask import abort, request, g
 
 from eve.utils import config, debug_error_message
 
-from amivapi import models, utils
+from amivapi import utils
 
 
 def common_authorization(resource, method):
@@ -68,7 +68,7 @@ def common_authorization(resource, method):
               access is not checked. For examples how to do that see the hooks
               below
     """
-    resource_class = utils.get_class_for_resource(models, resource)
+    resource_class = utils.get_class_for_resource(resource)
 
     # Allow if authentication is disabled
     if not app.auth:
@@ -148,7 +148,7 @@ def _create_lookup_owner_filter(resource):
     :param resource: Resource name(used to find the model)
     :returns: Dict with or conditions
     """
-    resource_class = utils.get_class_for_resource(models, resource)
+    resource_class = utils.get_class_for_resource(resource)
 
     if not hasattr(resource_class, '__owner__'):
         abort(403)

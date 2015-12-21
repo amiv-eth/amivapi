@@ -13,8 +13,8 @@ from flask import current_app as app
 from eve.utils import config
 from flask import Config
 
+from amivapi import models
 from amivapi.settings import ROOT_DIR
-from amivapi.models import Group, GroupMember
 
 
 def get_config():
@@ -33,7 +33,7 @@ def get_config():
     return config
 
 
-def get_class_for_resource(models, resource):
+def get_class_for_resource(resource):
     """ Utility function to get SQL Alchemy model associated with a resource
 
     :param resource: Name of a resource
@@ -139,8 +139,8 @@ def check_group_permission(user_id, resource, method):
         """
 
     db = app.data.driver.session
-    query = db.query(Group.permissions).filter(
-        Group.members.any(GroupMember.user_id == user_id))
+    query = db.query(models.Group.permissions).filter(
+        models.Group.members.any(models.GroupMember.user_id == user_id))
 
     # All entries are dictionaries
     # If any dicitionary contains the permission it is good.

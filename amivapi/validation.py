@@ -13,17 +13,15 @@
 import json
 import jsonschema
 
-from flask import request, g, current_app as app
+from flask import g, current_app as app
 from werkzeug.datastructures import FileStorage
 from imghdr import what
 
 from eve_sqlalchemy.validation import ValidatorSQL
-from eve.methods.common import get_document
 from eve.validation import SchemaError
 from eve.utils import request_method
 
-from amivapi.models import Group
-from amivapi.utils import get_owner
+from amivapi.utils import get_owner, get_class_for_resource
 
 from datetime import datetime
 
@@ -103,19 +101,15 @@ class ValidatorAMIV(ValidatorSQL):
             # At this point we have valid JSON, check for event now.
             # If PATCH, then event_id will not be provided, we have to find it
             if request_method() == 'PATCH':
-                lookup = request.view_args
+                lookup = {'id': self._original_document['event_id']}
             elif ('event_id' in self.document.keys()):
-                lookup = {'_id': self.document['event_id']}
+                lookup = {'id': self.document['event_id']}
             else:
-                self._error(field, "Cannot evaluate additional field " +
+                self._error(field, "Cannot evaluate additional fields " +
                                    "without event_id")
-                lookup = None
+                return
 
-            # Use Eve method get_document to avoid accessing the db manually
-            if lookup is not None:
-                event = get_document('events', False, **lookup)
-            else:
-                event = None
+            event = app.data.find_one('events', None, **lookup)
 
             # Load schema, we can use this without caution because only valid
             # json schemas can be written to the database
@@ -184,46 +178,34 @@ class ValidatorAMIV(ValidatorSQL):
         e.g. user with id 1 can have several eventsignups for different events,
         but only 1 eventsignup for event with id 42
 
-        unique_combination should be a list: The first item in the list is the
-        resource. This is not pretty but necessary to make the validator work
-        for different resources
+        unique_combination should be a list of other fields
 
         Note: Make sure that other fields actually exists (setting them to
         required etc)
 
-        :param unique_combination: list of fields, first entry must be target
-                                   resource
+        :param unique_combination: list of fields
         :param field: field name.
         :param value: field value.
         """
-        # Step one: Remove resource from list
-        resource = unique_combination[0]
-        lookup = {field: value}  # First field
-        for key in unique_combination[1:]:
-            lookup[key] = self.document.get(key)  # all fields in combination
+        lookup = {field: value}  # self
+        for other_field in unique_combination:
+            lookup[other_field] = self.document.get(other_field)
 
-        # ! At the moment unique_combination is not used with patchable fields
-        # ! If this changes this should help prevent errors, but testing will
-        # ! be required
         # If we are patching the issue is more complicated, some fields might
         # have to be checked but are not part of the document because they will
         # not be patched. We have to load them from the database
         patch = (request_method() == 'PATCH')
         if patch:
-            original = get_document(resource, False, **request.view_args)
-            for key in unique_combination[1:]:
+            original = self._original_document
+            for key in unique_combination:
                 if key not in self.document.keys():
                     lookup[key] = original[key]
 
         # Now check database
-        # if the method is not post and the document is not the original,
-        # there exists another instance
-        data = get_document(resource, False, **lookup)
-        if data and ((request_method() == 'POST') or
-                     not (data['id'] == int(request.view_args['_id']))):
+        if app.data.find_one(self.resource, None, **lookup) is not None:
             self._error(field, "value already exists in the database in " +
                         "combination with values for: %s" %
-                        unique_combination[1:])
+                        unique_combination)
 
     def _validate_signup_requirements(self, signup_possible, field, value):
         """ Validate if signup requirements are met
@@ -245,8 +227,7 @@ class ValidatorAMIV(ValidatorSQL):
         :param value: field value.
         """
         if signup_possible:
-            lookup = {'_id': value}
-            event = get_document('events', False, **lookup)
+            event = app.data.find_one('events', None, id=value)
 
             if event:
                 if (event['spots'] == -1):
@@ -315,16 +296,17 @@ class ValidatorAMIV(ValidatorSQL):
         if enabled:
             # Get moderator id
             group_id = self.document.get('group_id', None)
-            group = get_document("groups", False, id=group_id)
+            group = app.data.find_one("groups", None, id=group_id)
+
+            # If the group doesnt exist we dont have to do anything,
+            # The 'type' validator will generate an error anyway
             if group is not None:
                 moderator_id = group["moderator_id"]
-            else:
-                moderator_id = None
 
-            if not(g.resource_admin or (g.logged_in_user == value) or
-                   (g.logged_in_user == moderator_id)):
-                self._error(field, "You can only enroll yourself. (%s: "
-                            "%s is yours)." % (field, g.logged_in_user))
+                if not(g.resource_admin or (g.logged_in_user == value) or
+                       (g.logged_in_user == moderator_id)):
+                    self._error(field, "You can only enroll yourself. (%s: "
+                                "%s is yours)." % (field, g.logged_in_user))
 
     def _validate_self_enrollment_must_be_allowed(self, enabled, field, value):
         """ Validation for a group_id field in useraddressmembers
@@ -338,7 +320,7 @@ class ValidatorAMIV(ValidatorSQL):
         """
         if enabled:
             # Get moderator id
-            group = get_document("groups", False, id=value)
+            group = app.data.find_one("groups", None, id=value)
 
             # If the group doesnt exist we dont have to do anything,
             # The 'type' validator will generate an error anyway
@@ -365,7 +347,7 @@ class ValidatorAMIV(ValidatorSQL):
         if enabled:
             # Get event
             event_id = self.document.get('event_id', None)
-            event = get_document("events", False, id=event_id)
+            event = app.data.find_one("events", None, id=event_id)
 
             # If the event doesnt exist we dont have to do anything,
             # The 'type' validator will generate an error anyway
@@ -390,7 +372,7 @@ class ValidatorAMIV(ValidatorSQL):
         """
         if enabled:
             # Get moderator id
-            group = get_document("groups", False, id=value)
+            group = app.data.find_one("groups", None, id=value)
 
             # If the group doesnt exist we dont have to do anything,
             # The 'type' validator will generate an error anyway
@@ -398,7 +380,8 @@ class ValidatorAMIV(ValidatorSQL):
                 if not g.resource_admin:
                     moderator_id = group["moderator_id"]
                     if not(g.logged_in_user == moderator_id):
-                        owners = get_owner(Group, value)
+                        owners = get_owner(get_class_for_resource("groups"),
+                                           value)
                         if g.logged_in_user in owners:
                             self._error(field, "you are not the moderator of"
                                         "this group.")

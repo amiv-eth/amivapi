@@ -127,15 +127,15 @@ def get_domain():
     # schema extensions including custom validation
     domain['eventsignups']['schema']['event_id'].update({
         'not_patchable': True,
-        'unique_combination': ['eventsignups', 'user_id', 'email'],
+        'unique_combination': ['user_id', 'email'],
         'signup_requirements': True})
     domain['eventsignups']['schema']['user_id'].update({
         'not_patchable': True,
-        'unique_combination': ['eventsignups', 'event_id'],
+        'unique_combination': ['event_id'],
         'only_self_enrollment_for_event': True})
     domain['eventsignups']['schema']['email'].update({
         'not_patchable': True,
-        'unique_combination': ['eventsignups', 'event_id'],
+        'unique_combination': ['event_id'],
         'only_anonymous': True,
         'email_signup_must_be_allowed': True})
 
@@ -160,31 +160,31 @@ def get_domain():
     # /groupaddresses
     domain['groupaddresses']['schema']['group_id'].update({
         'only_groups_you_moderate': True,
-        'unique_combination': ['groupaddresses', 'email'],
+        'unique_combination': ['email'],
         'not_patchable': True,
     })
     domain['groupaddresses']['schema']['email'].update({
         'regex': EMAIL_REGEX,
-        'unique_combination': ['groupaddresses', 'group_id']})
+        'unique_combination': ['group_id']})
 
     # /groupforwards
     domain['groupforwards']['schema']['group_id'].update({
         'only_groups_you_moderate': True,
-        'unique_combination': ['groupforwards', 'email'],
+        'unique_combination': ['email'],
         'not_patchable': True,
     })
     domain['groupforwards']['schema']['email'].update({
         'regex': EMAIL_REGEX,
-        'unique_combination': ['groupforwards', 'group_id']})
+        'unique_combination': ['group_id']})
 
     # /groupmembers
 
     domain['groupmembers']['schema']['user_id'].update({
         'only_self_enrollment_for_group': True,
-        'unique_combination': ['groupmembers', 'group_id']})
+        'unique_combination': ['group_id']})
     domain['groupmembers']['schema']['group_id'].update({
         'self_enrollment_must_be_allowed': True,
-        'unique_combination': ['groupmembers', 'user_id']})
+        'unique_combination': ['user_id']})
 
     # Membership is not transferable -> remove PUT and PATCH
     domain['groupmembers']['item_methods'] = ['GET', 'DELETE']
