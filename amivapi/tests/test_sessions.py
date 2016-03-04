@@ -7,12 +7,15 @@ from amivapi.tests import util
 
 
 class AuthentificationTest(util.WebTest):
+    """Various tests for aquiring a session."""
+
     def test_create_session(self):
-        """ Test to obtain a login token """
+        """Test to obtain a login token."""
         password = u"some-really-secure-password"
         nethz = u"somenethz"
 
-        user = self.new_user(nethz=nethz, password=password)
+        user = self.new_user(nethz=nethz, password=password,
+                             membership="regular")
 
         # Login with mail
         r = self.api.post("/sessions", data={
@@ -30,9 +33,28 @@ class AuthentificationTest(util.WebTest):
 
         self.assertEqual(r['user_id'], user.id)
 
-    def test_bad_nethz(self):
+    def test_no_member(self):
+        """Test that only members can log in.
+
+        It can happen that someone who was a member until recently is still in
+        the database. Obviously this ex-member should not be able to log in.
         """
-        user may not be None or empty
+        password = u"some-really-secure-password"
+        nethz = u"somenethz"
+
+        self.new_user(nethz=nethz, password=password,
+                      membership=None)
+
+        # Expect 401 - unauthorized
+        self.api.post("/sessions", data={
+            'user': nethz,
+            'password': password,
+        }, status_code=401)
+
+    def test_bad_nethz(self):
+        """Test bad username.
+
+        May not be None or empty
         """
         password = u"some-really-secure-password"
         self.new_user(nethz=u"abc", password=password)
@@ -48,9 +70,7 @@ class AuthentificationTest(util.WebTest):
         }, status_code=422)
 
     def test_bad_pass(self):
-        """
-        password can not be None.
-        """
+        """Test if empty password is correctly rejected."""
         user = u"abc"
         password = u"some-really-secure-password"
         self.new_user(nethz=user, password=password)
@@ -61,7 +81,7 @@ class AuthentificationTest(util.WebTest):
         }, status_code=422)
 
     def test_wrong_password(self):
-        """ Test to login with a wrong password """
+        """Test to login with a wrong password."""
         user = self.new_user(password=u"something")
 
         self.api.post("/sessions", data={
@@ -70,7 +90,7 @@ class AuthentificationTest(util.WebTest):
         }, status_code=401)
 
     def test_delete_session(self):
-        """ Test to logout """
+        """Test to logout."""
         password = u"awesome-password"
         user = self.new_user(password=password)
 
@@ -86,34 +106,33 @@ class AuthentificationTest(util.WebTest):
         self.api.get("/sessions", token=session.token, status_code=401)
 
     def test_invalid_mail(self):
-        """ Try to login with an unknown username """
+        """Try to login with an unknown username."""
         self.new_user(email=u"user1@amiv", password=u"user1")
 
         self.api.post("/sessions", data={'user': u"user2@amiv",
                                          'password': u"user1"}, status_code=401)
 
     def test_no_email(self):
-        """ Try to login without username """
+        """Try to login without username."""
         self.new_user(email="user1@amiv")
 
         self.api.post("/sessions", data={'password': u'mypw'}, status_code=422)
 
     def test_no_password(self):
-        """ Try to login without password """
+        """Try to login without password."""
         self.new_user(email=u"user1@amiv")
 
         self.api.post("/sessions", data={'user': u'user1@amiv'},
                       status_code=422)
 
     def test_invalid_token(self):
-        """ Try to do a request using invalid token """
+        """Try to do a request using invalid token."""
         self.new_session()
 
         self.api.get("/users", token=u"xxx", status_code=401)
 
     def test_root(self):
-        """ Test if nethz "root" can be used to log in as root user """
-
+        """Test if nethz "root" can be used to log in as root user."""
         # Per default the password is "root"
         r = self.api.post("/sessions", data={
             'user': 'root',

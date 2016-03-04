@@ -93,9 +93,8 @@ class UserResourceTest(util.WebTestNoAuth):
         self.api.post("/users", data=data, status_code=201)
 
     def test_password_change(self):
-        """ Test if a user can change his password """
-
-        user = self.new_user()
+        """ Test if a member can change his password """
+        user = self.new_user(membership="regular")
         session = self.new_session(user_id=user.id)
 
         # Nobody can enter this password in his browser,

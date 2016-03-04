@@ -35,12 +35,17 @@ from amivapi import models
 
 
 class TokenAuth(TokenAuth):
-    """ We could have used eve's allowed_roles parameter, but that does not
-    support roles on endpoint level, but only on resource level"""
+    """Custom TokenAuth.
+
+    We could have used eve's allowed_roles parameter, but that does not
+    support roles on endpoint level, but only on resource level
+    """
+
     def check_auth(self, token, allowed_roles, resource, method):
-        """ This is the authentication function called by eve. It will parse
-        the send token and determine if it is from a valid user or a know
-        apikey.
+        """The authentication function called by eve.
+
+        It will parse the send token and determine if it is from a valid user
+        or a known apikey.
 
         You should not call this function directly. Use the functions in
         authorization.py instead(have a look at common_authorization()).
@@ -58,7 +63,6 @@ class TokenAuth(TokenAuth):
 
         :returns: True if token or apikey was valid, aborts with 401 if not
         """
-
         # Handle apikeys
         if token in config.APIKEYS:
             g.logged_in_user = -1
@@ -109,7 +113,8 @@ def _token_response(user_id):
 
 @authentication.route('/sessions', methods=['POST'])
 def process_login():
-    """ Login
+    """Custom endpoint for POST to /sessions.
+
     A POST to /sessions exspects nethz and password. If they are correct a
     token is created and used to register a session in the database, which is
     sent back to the user.
@@ -147,23 +152,29 @@ def process_login():
     if not v.validate(p_data):
         abort(422, description=str(v.errors))
 
-    error = ""
-
     # PHASE 1: LDAP
     # If LDAP is enabled, try to authenticate the user
     # If this is successful, create/update user data
-    if config.ENABLE_LDAP:  # LDAP?
+    # Do not send any response. Although this leads to some db requests
+    # later, this helps to clearly seperate LDAP and login.
+    if config.ENABLE_LDAP:
+        app.logger.debug("LDAP authentication enabled. Trying to authenticate "
+                         "'%s'..." % p_data['user'])
+
         ldap_data = app.ldap_connector.check_user(p_data['user'],
                                                   p_data['password'])
 
         if ldap_data is not None:  # ldap success
-            # Query user by nethz field
+            app.logger.debug("LDAP authentication successful. "
+                             "Updating database...")
+            # Query db for user by nethz field
             has_user_nethz = app.data.driver.session.query(exists().where(
                 models.User.nethz == p_data['user']
             )).scalar()
 
             # Create or update user
             if has_user_nethz:
+                app.logger.debug("User already in database. Updating...")
                 # Get user
                 user = app.data.find_one('users', None, nethz=p_data['user'])
 
@@ -176,30 +187,26 @@ def process_login():
                 patch_internal('users',
                                ldap_data,
                                skip_validation=True,
-                               id=user['id'])[0]
-
-                return send_response('sessions', _token_response(user['id']))
+                               id=user['id'])
+                app.logger.debug("User '%s' was updated." % p_data['user'])
             else:
-                # Create new user
+                app.logger.debug("User not in database. Creating...")
+
                 # Set Mail now
                 ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
 
-                new_user = post_internal('users',
-                                         ldap_data,
-                                         skip_validation=True
-                                         )[0]  # first element is the data
+                post_internal('users',
+                              ldap_data,
+                              skip_validation=True)
 
-                user_id = new_user['id']
-
-                return send_response('sessions', _token_response(user_id))
+                app.logger.debug("User '%s' was created." % p_data['user'])
 
         else:
-            error += "LDAP authentication failed, "  # Provide additional info
+            app.logger.debug("LDAP authentication failed.")
     else:
-        error += "LDAP authentication deactivated; "  # Provide additional info
+        app.logger.debug("LDAP authentication deactivated.")
 
     # PHASE 2: database
-    # If LDAP fails or is not accessible, try to find user in database
     # Query user by nethz or email now
 
     # Complicated query, does the following: if user specified by nethz exists
@@ -216,28 +223,32 @@ def process_login():
         user = None  # Neither found by nethz nor email
 
     if user:
-        if user.verify_password(p_data['password']):
-            # Sucessful login with db, send response
+        app.logger.debug("User found in db.")
+        if user.membership == "none":
+            status = "Login failed. Membership is None!"
+            app.logger.debug(status)
+            abort(401, description=status)
+        elif user.verify_password(p_data['password']):
+            app.logger.debug("Login successful.")
             return send_response('sessions', _token_response(user.id))
         else:
-            error += "Login with db failed: Password does not match!"
-            app.logger.debug(error)
-            abort(401, description=debug_error_message(error))
+            status = "Login failed: Password does not match!"
+            app.logger.debug(status)
+            abort(401, description=debug_error_message(status))
 
     # PHASE 2B: root user shortcut
     # if nethz is root, try to auth the root user
     if p_data['user'] == 'root':
         root = app.data.driver.session.query(models.User).filter_by(id=0).one()
         if root.verify_password(p_data['password']):
-            # Sucessful login with db as root, send response
+            app.logger.debug("Login as root successful.")
             return send_response('sessions', _token_response(0))
 
     # PHASE 3: Abort if everything else fails
     # LDAP is unsuccessful (deactivated/wrong credentials) and user not found
-    error += "Login with db failed: User not found!"
-
-    app.logger.debug(error)
-    abort(401, description=debug_error_message(error))
+    status = "Login with db failed: User not found!"
+    app.logger.debug(status)
+    abort(401, description=debug_error_message(status))
 
 
 #
@@ -248,13 +259,12 @@ def process_login():
 
 
 def set_author_on_insert(resource, items):
-    """ Hook to set the _author field for all new objects """
+    """Hook to set the _author field for all new objects."""
     _author = getattr(g, 'logged_in_user', -1)
     for i in items:
         i['_author'] = _author
 
 
 def set_author_on_replace(resource, item, original):
-    """ Hook to set the _author field when a new object is inserted
-    during a PUT request """
+    """Hook to set the _author field for all replaced objects."""
     set_author_on_insert(resource, [item])
