@@ -186,7 +186,7 @@ class User(Base):
             'GET': "Authorization is required for most of the fields"
         }}
     __expose__ = True
-    __projected_fields__ = ['groups']
+    __projected_fields__ = ['groupmemberships']
 
     __owner__ = ['id']
     __owner_methods__ = ['GET', 'PATCH']
