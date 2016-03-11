@@ -139,9 +139,6 @@ def get_domain():
         'only_anonymous': True,
         'email_signup_must_be_allowed': True})
 
-    # Since the data relation is not evaluated for posting, we need to remove
-    # it from the schema TODO: EXPLAIN BETTER
-    del(domain['eventsignups']['schema']['email']['data_relation'])
     # Remove _email_unreg and _token from the schema since they are only
     # for internal use and should not be visible
     del(domain['eventsignups']['schema']['_email_unreg'])
