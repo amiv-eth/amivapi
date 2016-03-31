@@ -34,10 +34,14 @@ class AuthentificationTest(util.WebTest):
         self.assertEqual(r['user_id'], user.id)
 
     def test_no_member(self):
-        """Test that only members can log in.
+        """Test that non members can log in too.
 
-        It can happen that someone who was a member until recently is still in
-        the database. Obviously this ex-member should not be able to log in.
+        Other ETH students which aren't members of our organisation sometimes
+        visit the same lectures as our students and we want to share the
+        relevant documents with them. Therefore they also need to be able to
+        log in.
+
+        Everyone that can be authenticated by ldap will be in the database.
         """
         password = u"some-really-secure-password"
         nethz = u"somenethz"
@@ -49,7 +53,7 @@ class AuthentificationTest(util.WebTest):
         self.api.post("/sessions", data={
             'user': nethz,
             'password': password,
-        }, status_code=401)
+        }, status_code=201)
 
     def test_bad_nethz(self):
         """Test bad username.
