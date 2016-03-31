@@ -2,6 +2,39 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""Integration Tests for LDAP.
+
+The API can connect to ETH LDAP to process login and update user data.
+
+Since we don't have access to test accounts for LDAP you need to specify
+valid ETH credentials in the environment variables.
+
+There set them first:
+
+Bash:
+> export ldap_test_nethz="YOUR_NETHZ"
+> export ldap_test_pass="YOUR_PASSWORD"
+
+Windows PowerShell:
+> $env:ldap_test_nethz="YOUR_NETHZ_HERE"
+> $env:ldap_test_pass="YOUR_PASSWORD"
+
+Next make sure the config.cfg contains:
+
+ENABLE_LDAP = False
+LDAP_USER = 'YOUR_LDAP_ACCOUNT'
+LDAP_PASS = 'YOUR_LDAP_ACCOUNT_PASSWORD'
+
+(you can use manage.py for this of course)
+
+Then run the test with
+
+> nosetests -s amivapi/tests/test_ldap_integration.py
+
+You need the -s flag to get the full printout. You will see the imported data
+and have to verify yourself if this is correct.
+"""
+
 
 from amivapi.tests import util
 from amivapi import models
@@ -15,14 +48,20 @@ from copy import copy
 
 
 class LdapIntegrationTest(util.WebTest):
-    def setUp(self, *args, **kwargs):  # __init__(self, *args, **kwargs):
+    """Tests for LDAP connection."""
+
+    def setUp(self, *args, **kwargs):
+        """Extended setUp.
+
+        Load environment variables and test general ldap connection.
+        """
         super(LdapIntegrationTest, self).setUp(*args, **kwargs)
         self.nethz = getenv('ldap_test_nethz', "")
         self.password = getenv('ldap_test_pass', "")
         if not(self.nethz and self.password):
             self.app.logger.debug("You need to specify 'ldap_test_nethz' and "
-                                  + "'ldap_test_pass' in the environment "
-                                  + "variables!")
+                                  "'ldap_test_pass' in the environment "
+                                  "variables!")
 
         with self.app.app_context():
             try:
@@ -30,15 +69,15 @@ class LdapIntegrationTest(util.WebTest):
                 self.app.ldap_connector.check_user("bla", "blorg")
             except Exception as e:
                 self.app.logger.debug("The LDAP query failed. Make sure that "
-                                      + "you are in the eth network or have "
-                                      + "VPN enabled to find the servers.")
+                                      "you are in the eth network or have "
+                                      "VPN enabled to find the servers.")
                 self.app.logger.debug("Exception message below:")
                 self.app.logger.debug(e)
 
     def test_ldap_auth(self):
-        """
+        """Test auth via LDAP.
+
         Login with real credentials to test LDAP
-        Has to be called with -nnethz -ppassword
         """
         # Make sure that user with nethz name does not exist in db
         self.assertFalse(
@@ -100,7 +139,24 @@ class LdapIntegrationTest(util.WebTest):
                 continue  # Exclude meta fields
             print("%s: %s" % (key, getattr(user, key)))
 
+    def test_password_not_stored(self):
+        """Test that passwords are not stored.
+
+        If login is handled by ldap there is no reason we should store the
+        password.
+        """
+        # Log in
+        user = self.api.post("/sessions", data={
+            'user': self.nethz,
+            'password': self.password,
+        }, status_code=201).json
+
+        # Check database
+        user = self.db.query(models.User).filter_by(nethz=self.nethz).one()
+        self.assertIsNone(user.password)
+
     def test_cron_sync(self):
+        """Test ldap sync for cronjob."""
         # Assert that only 2 users are in the db (root and anonymous)
         self.assertTrue(self.db.query(models.User).count() == 2)
 

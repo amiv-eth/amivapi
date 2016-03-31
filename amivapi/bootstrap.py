@@ -106,6 +106,7 @@ def create_app(disable_auth=False, **kwargs):
     # authentication
     app.on_insert += authentication.set_author_on_insert
     app.on_replace += authentication.set_author_on_replace
+    app.on_insert_sessions += authentication.process_login
 
     # authorization
     app.on_pre_GET += authorization.pre_get_permission_filter

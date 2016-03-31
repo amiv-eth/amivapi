@@ -87,8 +87,26 @@ def get_domain():
 
     # /sessions
 
-    # POST will be handled by custom endpoint
-    domain['sessions']['resource_methods'] = ['GET']
+    domain['sessions']['schema']['user'] = {
+        'type': 'string',
+        'required': True,
+        'nullable': False,
+        'empty': False
+    }
+    domain['sessions']['schema']['password'] = {
+        'type': 'string',
+        'required': True,
+        'nullable': False,
+        'empty': False
+    }
+    domain['sessions']['schema']['user_id'].update({
+        'readonly': True,
+        'required': False,
+    })
+    domain['sessions']['schema']['token'].update({
+        'readonly': True,
+        'required': False
+    })
 
     # /events
 
