@@ -6,6 +6,7 @@
 from itertools import count
 
 from amivapi.tests import util
+from amivapi.group_permissions import create_group_permissions_jsonschema
 
 from jsonschema import Draft4Validator
 
@@ -19,7 +20,9 @@ class GroupPermissionTest(util.WebTest):
 
         # Will raise an exception if the schema is broken
         Draft4Validator.check_schema(
-            self.app.config['GROUP_PERMISSIONS_JSONSCHEMA']
+            create_group_permissions_jsonschema(
+                self.app.config['DOMAIN'].keys()
+            )
         )
 
     def test_validator_input(self):

@@ -87,15 +87,6 @@ def create_app(disable_auth=False, **kwargs):
     app.register_blueprint(authentication.authentication)
     app.register_blueprint(media.download)
 
-    # Now create the schema to validate endpoint permissions
-    # Todo: Domain is maybe not the right key since it does not contain
-    # custom routes
-    app.config["GROUP_PERMISSIONS_JSONSCHEMA"] = (
-        group_permissions.create_group_permissions_jsonschema(
-            config["DOMAIN"].keys()
-        )
-    )
-
     #
     # Event hooks
     #

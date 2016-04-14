@@ -22,6 +22,7 @@ from eve.validation import SchemaError
 from eve.utils import request_method
 
 from amivapi.utils import get_owner, get_class_for_resource
+from amivapi.group_permissions import create_group_permissions_jsonschema
 
 from datetime import datetime
 
@@ -401,7 +402,8 @@ class ValidatorAMIV(ValidatorSQL):
         :param field: field name.
         :param value: field value.
         """
-        schema = app.config["GROUP_PERMISSIONS_JSONSCHEMA"]
+        schema = create_group_permissions_jsonschema(
+            app.config['DOMAIN'].keys())
 
         try:
             jsonschema.validate(value, schema)
