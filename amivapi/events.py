@@ -34,10 +34,9 @@ from eve.validation import SchemaError
 
 from amivapi.authorization import common_authorization
 from amivapi import models, utils
-from amivapi.db_utils import Base
 
 
-class Event(Base):
+class Event(utils.Base):
     """Event model."""
 
     __description__ = {
@@ -100,7 +99,7 @@ class Event(Base):
                            cascade="all")
 
 
-class EventSignup(Base):
+class EventSignup(utils.Base):
     """Model for a signup."""
 
     __description__ = {

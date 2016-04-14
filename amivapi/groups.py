@@ -30,8 +30,10 @@ from amivapi.utils import (
     EMAIL_REGEX,
     make_domain,
     register_domain,
-    register_validator)
-from amivapi.db_utils import Base, JSONText
+    register_validator,
+    Base,
+    JSONText
+)
 from amivapi.models import User
 
 

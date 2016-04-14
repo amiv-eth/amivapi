@@ -20,7 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, validates
 
 from amivapi.settings import PASSWORD_CONTEXT
-from amivapi.db_utils import Base, JSONText
+from amivapi.utils import Base
 
 
 class User(Base):
