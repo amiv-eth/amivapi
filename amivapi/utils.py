@@ -18,7 +18,6 @@ from eve.utils import config
 from eve_sqlalchemy.decorators import registerSchema
 
 from amivapi.settings import ROOT_DIR
-from amivapi import models
 
 
 def get_config():
@@ -44,13 +43,9 @@ def get_class_for_resource(resource):
     :returns: SQLAlchemy model associated with the resource from models.py
     """
     if resource in config.DOMAIN:
-        resource_def = config.DOMAIN[resource]
-        return getattr(models, resource_def['datasource']['source'])
-
-    if hasattr(models, resource.capitalize()):
-        return getattr(models, resource.capitalize())
-
-    return None
+        return config.DOMAIN[resource]['sql_model']
+    else:
+        return None
 
 
 def token_generator(size=6):
@@ -131,33 +126,6 @@ def mail(sender, to, subject, text):
         print("SMTP error trying to send mails: %s" % e)
 
 
-def check_group_permission(user_id, resource, method):
-    """Check group permissions of user.
-
-    This function checks wether the user is permitted to access
-    the given resource with the given method based on the groups
-    he is in.
-
-    :param user_id: the id of the user to check
-    :param resource: the requested resource
-    :param method: the used method
-
-    :returns: Boolean, True if permitted, False otherwise
-    """
-    db = app.data.driver.session
-    query = db.query(models.Group.permissions).filter(
-        models.Group.members.any(models.GroupMember.user_id == user_id))
-
-    # All entries are dictionaries
-    # If any dicitionary contains the permission it is good.
-    for row in query:
-        if (row.permissions and
-                (row.permissions.get(resource, {}).get(method, False))):
-            return True
-
-    return False
-
-
 EMAIL_REGEX = '^.+@.+$'
 
 
@@ -188,6 +156,9 @@ def make_domain(model):
     domain[tbl_name]['public_item_methods'] = model.__public_methods__
     domain[tbl_name]['registered_methods'] = model.__registered_methods__
     domain[tbl_name]['owner_methods'] = model.__owner_methods__
+
+    # SQLAlchemy model (needed for owner evaluation)
+    domain[tbl_name]['sql_model'] = model
 
     # For documentation
     domain[tbl_name]['description'] = model.__description__
