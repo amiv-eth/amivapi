@@ -23,16 +23,13 @@ from flask import current_app as app
 from flask import abort, g
 
 from eve.auth import TokenAuth
-from eve.methods.post import post_internal
-from eve.methods.patch import patch_internal
 from eve.utils import debug_error_message, config
 
 from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi.users import User
-
-from .endpoints import Session
+from amivapi import models
+from amivapi.ldap import ldap_connector
 
 
 class TokenAuth(TokenAuth):
@@ -129,90 +126,48 @@ def process_login(items):
         items (list): List of items as passed by EVE to post hooks.
     """
     for item in items:  # TODO (Alex): Batch POST doesnt really make sense
-        # PHASE 1: LDAP
+        user = item['user']
+        password = item['password']
+        # LDAP
         # If LDAP is enabled, try to authenticate the user
-        # If this is successful, create/update user data
-        # Do not send any response. Although this leads to some db requests
-        # later, this helps to clearly seperate LDAP and login.
-        if config.ENABLE_LDAP:
-            app.logger.debug("LDAP authentication enabled. Trying "
-                             "to authenticate '%s'..." % item['user'])
+        # If this is successful, create/update user data and return token
+        if (config.ENABLE_LDAP and
+                ldap_connector.authenticate_user(user, password)):
+            # Success, sync user and get token
+            updated = ldap_connector.sync_one(user)
+            _prepare_token(item, updated['id'])
+            app.logger.info(
+                "User '%s' was authenticated with LDAP" % user)
+            return
 
-            ldap_data = app.ldap_connector.check_user(item['user'],
-                                                      item['password'])
-
-            if ldap_data is not None:  # ldap success
-                app.logger.debug("LDAP authentication successful. "
-                                 "Checking database...")
-                # Query db for user by nethz field
-                has_user_nethz = app.data.driver.session.query(exists().where(
-                    User.nethz == item['user']
-                )).scalar()
-
-                # Create or update user
-                if has_user_nethz:
-                    app.logger.debug("User already in database. Updating...")
-                    # Get user
-                    user = app.data.find_one('users', None, nethz=item['user'])
-
-                    # Membership status will only be upgraded automatically
-                    # If current Membership is not none ignore the ldap result
-                    if user['membership'] is not None:
-                        del ldap_data['membership']
-
-                    # First element of response tuple is data
-                    user = patch_internal('users',
-                                          ldap_data,
-                                          skip_validation=True,
-                                          id=user['id'])[0]
-                    app.logger.debug("User '%s' was updated." % item['user'])
-                else:
-                    app.logger.debug("User not in database. Creating...")
-
-                    # Set Mail now
-                    ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
-
-                    # First element of response tuple is data
-                    user = post_internal('users',
-                                         ldap_data,
-                                         skip_validation=True)[0]
-
-                    app.logger.debug("User '%s' was created." % item['user'])
-
-                # Success, get token
-                _prepare_token(item, user['id'])
-                return
-            else:
-                app.logger.debug("LDAP authentication failed.")
-        else:
-            app.logger.debug("LDAP authentication deactivated.")
-
-        # PHASE 2: database
+        # Database
         # Query user by nethz or email now
 
         # Complicated query, does the following: if user specified by nethz
         # exists, take result. if not check by email
         if (app.data.driver.session.query(exists().where(
-                User.nethz == item['user'])).scalar()):
-            user = app.data.driver.session.query(User).filter_by(
-                nethz=item['user']).one()
+                models.User.nethz == user)).scalar()):
+            user_data = app.data.driver.session.query(models.User).filter_by(
+                nethz=user).one()
         elif (app.data.driver.session.query(exists().where(
-                User.email == item['user'])).scalar()):
-            user = app.data.driver.session.query(User).filter_by(
-                email=item['user']).one()
-        elif item['user'] == 'root':
+                models.User.email == user)).scalar()):
+            user_data = app.data.driver.session.query(models.User).filter_by(
+                email=user).one()
+        elif user == 'root':
             app.logger.debug("Using root user.")
-            user = app.data.driver.session.query(User).filter_by(
+            user_data = app.data.driver.session.query(models.User).filter_by(
                 id=0).one()  # Using one() because root has to exists
         else:
-            user = None  # Neither found by nethz nor email
+            user_data = None  # Neither found by nethz nor email
 
-        if user:
+        if user_data:
             app.logger.debug("User found in db.")
-            if user.verify_password(item['password']):
+            if user_data.verify_password(password):
                 app.logger.debug("Login successful.")
                 # Success
-                _prepare_token(item, user.id)
+                _prepare_token(item, user_data.id)
+                app.logger.info(
+                    "User '%s' was authenticated with the db." % user)
                 return
             else:
                 status = "Login failed: Password does not match!"
@@ -221,17 +176,12 @@ def process_login(items):
 
         # PHASE 3: Abort if everything else fails
         # LDAP is unsuccessful (deactivated/wrong credentials) + user not found
-        status = "Login with db failed: User not found!"
-        app.logger.debug(status)
+        status = "User '%s' could not be authenticated." % user
+        app.logger.info(status)
         abort(401, description=debug_error_message(status))
 
 
-#
-#
 # Hooks to add _author field to all database inserts
-#
-#
-
 
 def set_author_on_insert(resource, items):
     """Hook to set the _author field for all new objects."""
