@@ -38,7 +38,7 @@ and have to verify yourself if this is correct.
 
 from amivapi.tests import util
 from amivapi import models
-from amivapi.ldap import ldap_synchronize
+from amivapi.ldap import ldap_connector
 
 from sqlalchemy import exists
 
@@ -66,7 +66,7 @@ class LdapIntegrationTest(util.WebTest):
         with self.app.app_context():
             try:
                 # Search for something random to see if the connection works
-                self.app.ldap_connector.check_user("bla", "blorg")
+                ldap_connector.authenticate_user("bla", "blorg")
             except Exception as e:
                 self.app.logger.debug("The LDAP query failed. Make sure that "
                                       "you are in the eth network or have "
@@ -157,19 +157,17 @@ class LdapIntegrationTest(util.WebTest):
 
     def test_cron_sync(self):
         """Test ldap sync for cronjob."""
-        # Assert that only 2 users are in the db (root and anonymous)
-        self.assertTrue(self.db.query(models.User).count() == 2)
+        # Save number of users in db (should be root and anonymous)
+        n_previous = self.db.query(models.User).count()
 
         # Do the ldap sync
-        res = ldap_synchronize(self.app.config['LDAP_USER'],
-                               self.app.config['LDAP_PASS'],
-                               self.db,
-                               self.app.config['LDAP_MEMBER_OU_LIST'])
+        with self.app.test_request_context():
+            res = ldap_connector.sync_all()
 
-        # Check that some users actually were imported:
-        self.assertTrue(res[0] > 0)
+        # Assert some users actually were imported:
+        self.assertTrue(res[0] > n_previous)
 
-        # Check if no user was updated
+        # Assert no user was updated
         self.assertTrue(res[1] == 0)
 
         # Check that the users are now actually in the db
@@ -186,10 +184,8 @@ class LdapIntegrationTest(util.WebTest):
         self.db.commit()
 
         # sync again
-        res = ldap_synchronize(self.app.config['LDAP_USER'],
-                               self.app.config['LDAP_PASS'],
-                               self.db,
-                               self.app.config['LDAP_MEMBER_OU_LIST'])
+        with self.app.test_request_context():
+            res = ldap_connector.sync_all()
 
         # No imports, one update:
         self.assertTrue(res[0] == 0)
