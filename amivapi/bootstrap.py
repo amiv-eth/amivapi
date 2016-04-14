@@ -3,9 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-"""
-Starting point for the API
-"""
+"""Starting point for the API."""
 
 from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.orm import Session
@@ -29,14 +27,15 @@ from amivapi import (
     events,
     auth,
     media,
-    groups,
-    ldap,
+    mailing_lists,
+    validation,
     documentation,
     utils,
     joboffers,
     purchases,
     studydocs
 )
+from amivapi.ldap import ldap_connector
 
 from amivapi.utils import get_config
 
@@ -79,8 +78,7 @@ def create_app(disable_auth=False, **kwargs):
 
     # Create LDAP connector
     if config['ENABLE_LDAP']:
-        app.ldap_connector = ldap.LdapConnector(config['LDAP_USER'],
-                                                config['LDAP_PASS'])
+        ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
@@ -106,7 +104,7 @@ def create_app(disable_auth=False, **kwargs):
 
 
 def init_database(connection, config):
-    """Create tables and fill with initial anonymous and root user
+    """Create tables and fill with initial anonymous and root user.
 
     Throws sqlalchemy.exc.OperationalError(sqlite) or
     sqlalchemy.exc.ProgrammingError(mysql) if tables already exist
@@ -154,7 +152,8 @@ def init_database(connection, config):
 
 
 def clear_database(engine):
-    """ Clears all the tables from the database
+    """Clear all the tables from the database.
+
     To do this first all ForeignKey constraints are removed,
     then all tables are dropped.
 
@@ -163,7 +162,6 @@ def clear_database(engine):
 
     :param engine: SQLalchemy engine to use
     """
-
     conn = engine.connect()
 
     # the transaction only applies if the DB supports
