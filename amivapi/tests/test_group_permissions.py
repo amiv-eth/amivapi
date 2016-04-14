@@ -6,7 +6,7 @@
 from itertools import count
 
 from amivapi.tests import util
-from amivapi.group_permissions import create_group_permissions_jsonschema
+from amivapi.groups import create_group_permissions_jsonschema
 
 from jsonschema import Draft4Validator
 
@@ -17,13 +17,11 @@ class GroupPermissionTest(util.WebTest):
         Test to verify that the validator correctly aborts
         if the jsonschema is not valid
         """
-
-        # Will raise an exception if the schema is broken
-        Draft4Validator.check_schema(
-            create_group_permissions_jsonschema(
-                self.app.config['DOMAIN'].keys()
+        with self.app.app_context():
+            # Will raise an exception if the schema is broken
+            Draft4Validator.check_schema(
+                create_group_permissions_jsonschema()
             )
-        )
 
     def test_validator_input(self):
         """

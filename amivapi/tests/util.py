@@ -18,6 +18,7 @@ from flask.wrappers import Response
 from amivapi import bootstrap, models, tests
 from amivapi.utils import token_generator
 from amivapi.events import Event, EventSignup
+from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
 
 
 def find_by_pair(dicts, key, value):
@@ -194,7 +195,7 @@ class WebTest(unittest.TestCase):
         data.update(**kwargs)
         return data
 
-    @create_object(models.Group)
+    @create_object(Group)
     def new_group(self, **kwargs):
         """ Create a forward """
         data = {
@@ -206,20 +207,20 @@ class WebTest(unittest.TestCase):
         data.update(kwargs)
         return data
 
-    @create_object(models.GroupAddress)
+    @create_object(GroupAddress)
     def new_group_address(self, **kwargs):
         """ Add a forward address. At least supply the group_id """
         kwargs.setdefault('email',
                           u"adress-%i@example.com" % self.next_count())
         return kwargs
 
-    @create_object(models.GroupMember)
+    @create_object(GroupMember)
     def new_group_member(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
         kwargs.setdefault('user_id', 0)
         return kwargs
 
-    @create_object(models.GroupForward)
+    @create_object(GroupForward)
     def new_group_forward(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
         kwargs.setdefault('email',

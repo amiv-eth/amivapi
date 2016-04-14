@@ -16,7 +16,7 @@ from flask import abort, request, g
 
 from eve.utils import config, debug_error_message
 
-from amivapi import utils
+from amivapi.groups import check_group_permission
 
 
 def common_authorization(resource, method):
@@ -105,7 +105,7 @@ def common_authorization(resource, method):
         return True
 
     # User is in a group with admin rights for this method-> allow
-    if utils.check_group_permission(g.logged_in_user, resource, method):
+    if check_group_permission(g.logged_in_user, resource, method):
             app.logger.debug("Access granted to %s %s "
                              "for user %i"
                              % (method, resource, g.logged_in_user))

@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 from amivapi.tests import util
-from amivapi import models, events
+from amivapi import models, events, groups
 
 
 class DeletionTests(util.WebTestNoAuth):
@@ -16,11 +16,11 @@ class DeletionTests(util.WebTestNoAuth):
 
         self.api.delete("/users/%i" % user.id,
                         headers={'If-Match': user._etag}, status_code=204)
-        groupmember_count = self.db.query(models.GroupMember).count()
+        groupmember_count = self.db.query(groups.GroupMember).count()
         self.assertEquals(groupmember_count, 0)
         # We want the groupmember-entry to be deleted but not the group
         # itself
-        group_count = self.db.query(models.Group).count()
+        group_count = self.db.query(groups.Group).count()
         self.assertEquals(group_count, 1)
 
     def test_delete_group_to_groupmember_and_forwards(self):
@@ -31,13 +31,13 @@ class DeletionTests(util.WebTestNoAuth):
 
         self.api.delete("/groups/%i" % group.id,
                         headers={'If-Match': group._etag}, status_code=204)
-        group_count = self.db.query(models.Group).count()
+        group_count = self.db.query(groups.Group).count()
         self.assertEquals(group_count, 0)
         # groupmember and forwardaddress entries should now be deleted
-        groupmember_count = self.db.query(models.GroupMember).count()
+        groupmember_count = self.db.query(groups.GroupMember).count()
         self.assertEquals(groupmember_count, 0)
         forward_count = (
-            self.db.query(models.GroupAddress).count())
+            self.db.query(groups.GroupAddress).count())
         self.assertEquals(forward_count, 0)
 
     def test_delete_event_to_signup(self):

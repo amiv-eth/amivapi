@@ -31,11 +31,10 @@ from amivapi import (
     authentication,
     authorization,
     media,
-    mailing_lists,
+    groups,
     validation,
     ldap,
     documentation,
-    group_permissions
 )
 
 from amivapi.utils import get_config
@@ -105,33 +104,12 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_PATCH += authorization.pre_patch_permission_filter
     app.on_pre_GET_groups += authorization.group_visibility_filter
 
-    # Hooks for anonymous users
-    app.on_insert_eventsignups += events.signups_confirm_anonymous
-
-    app.on_update += events.pre_update_confirmation
-    app.on_delete_item += events.pre_delete_confirmation
-    app.on_replace += events.pre_replace_confirmation
-
     # users
     app.on_pre_GET_users += authorization.pre_users_get
 
-    # email-management
-    # Addresses
-    app.on_inserted_groupaddresses += mailing_lists.create_files
-    app.on_replaced_groupaddresses += mailing_lists.update_file
-    app.on_updated_groupaddresses += mailing_lists.update_file
-    app.on_deleted_item_groupaddresses += mailing_lists.delete_file
-    # Members - can not be updated or replaced
-    app.on_inserted_groupmembers += mailing_lists.add_user_email
-    app.on_deleted_item_groupmembers += mailing_lists.remove_user_email
-    # Forwards
-    app.on_inserted_groupforwards += mailing_lists.add_forward_email
-    app.on_replaced_groupforwards += mailing_lists.replace_forward_email
-    app.on_updated_groupforwards += mailing_lists.update_forward_email
-    app.on_deleted_item_groupforwards += mailing_lists.remove_forward_email
-
     # Init modules
     events.init_app(app)
+    groups.init_app(app)
 
     return app
 

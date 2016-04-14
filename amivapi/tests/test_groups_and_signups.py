@@ -269,6 +269,9 @@ class GroupTest(util.WebTest):
             'group_id': group_id + 1},  # Nonexisting group
             token=token, status_code=422).json
 
+        from pprint import pprint
+        pprint(error_3)
+
         # The errors must have the same message
         self.assertEquals(error_3['_issues']['group_id'],
                           u"value '%i' must exist in resource 'groups', field"
