@@ -36,9 +36,6 @@ from amivapi.authorization import common_authorization
 from amivapi import models, utils
 from amivapi.db_utils import Base
 
-eventdomain = {}
-"""Collect event related domains."""
-
 
 class Event(Base):
     """Event model."""
@@ -138,69 +135,76 @@ class EventSignup(Base):
 confirmprint = Blueprint('confirm', __name__)
 documentation = {}
 
-# Create and update schemas
-# Has to happen after both class definitions or the relationship in events
-# cannot be evaluated (needed in make_domain)
 
-eventdomain.update(utils.make_domain(Event))
-eventdomain.update(utils.make_domain(EventSignup))
+def make_eventdomain():
+    """Create domain.
 
-# additional validation
-eventdomain['events']['schema']['additional_fields'].update({
-    'type': 'json_schema'})
-eventdomain['events']['schema']['price'].update({'min': 0})
-eventdomain['events']['schema']['spots'].update({
-    'min': -1,
-    'if_this_then': ['time_register_start', 'time_register_end']})
-eventdomain['events']['schema']['time_register_end'].update({
-    'dependencies': ['time_register_start'],
-    'later_than': 'time_register_start'})
-eventdomain['events']['schema']['time_end'].update({
-    'dependencies': ['time_start'],
-    'later_than': 'time_start'})
+    This is a function so it can be called after models in all modules have
+    been defined.
+    """
+    eventdomain = {}
 
-# time_end for /events requires time_start
-eventdomain['events']['schema']['time_end'].update({
-    'dependencies': ['time_start']
-})
+    eventdomain.update(utils.make_domain(Event))
+    eventdomain.update(utils.make_domain(EventSignup))
 
-# event images
-eventdomain['events']['schema'].update({
-    'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
-    'img_banner': {'type': 'media', 'filetype': ['png', 'jpeg']},
-    'img_poster': {'type': 'media', 'filetype': ['png', 'jpeg']},
-    'img_infoscreen': {'type': 'media', 'filetype': ['png', 'jpeg']}
-})
+    # additional validation
+    eventdomain['events']['schema']['additional_fields'].update({
+        'type': 'json_schema'})
+    eventdomain['events']['schema']['price'].update({'min': 0})
+    eventdomain['events']['schema']['spots'].update({
+        'min': -1,
+        'if_this_then': ['time_register_start', 'time_register_end']})
+    eventdomain['events']['schema']['time_register_end'].update({
+        'dependencies': ['time_register_start'],
+        'later_than': 'time_register_start'})
+    eventdomain['events']['schema']['time_end'].update({
+        'dependencies': ['time_start'],
+        'later_than': 'time_start'})
 
-# POST done by custom endpoint
-eventdomain['eventsignups']['resource_methods'] = ['GET']
+    # time_end for /events requires time_start
+    eventdomain['events']['schema']['time_end'].update({
+        'dependencies': ['time_start']
+    })
 
-# schema extensions including custom validation
-eventdomain['eventsignups']['schema']['event_id'].update({
-    'not_patchable': True,
-    'unique_combination': ['user_id', 'email'],
-    'signup_requirements': True})
-eventdomain['eventsignups']['schema']['user_id'].update({
-    'not_patchable': True,
-    'unique_combination': ['event_id'],
-    'only_self_enrollment_for_event': True})
-eventdomain['eventsignups']['schema']['email'].update({
-    'not_patchable': True,
-    'unique_combination': ['event_id'],
-    'only_anonymous': True,
-    'email_signup_must_be_allowed': True,
-    'regex': utils.EMAIL_REGEX})
+    # event images
+    eventdomain['events']['schema'].update({
+        'img_thumbnail': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_banner': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_poster': {'type': 'media', 'filetype': ['png', 'jpeg']},
+        'img_infoscreen': {'type': 'media', 'filetype': ['png', 'jpeg']}
+    })
 
-# Since the data relation is not evaluated for posting, we need to remove
-# it from the schema TODO: EXPLAIN BETTER
-del(eventdomain['eventsignups']['schema']['email']['data_relation'])
-# Remove _email_unreg and _token from the schema since they are only
-# for internal use and should not be visible
-del(eventdomain['eventsignups']['schema']['_email_unreg'])
-del(eventdomain['eventsignups']['schema']['_token'])
+    # POST done by custom endpoint
+    eventdomain['eventsignups']['resource_methods'] = ['GET']
 
-eventdomain['eventsignups']['schema']['additional_fields'].update({
-    'type': 'json_event_field'})
+    # schema extensions including custom validation
+    eventdomain['eventsignups']['schema']['event_id'].update({
+        'not_patchable': True,
+        'unique_combination': ['user_id', 'email'],
+        'signup_requirements': True})
+    eventdomain['eventsignups']['schema']['user_id'].update({
+        'not_patchable': True,
+        'unique_combination': ['event_id'],
+        'only_self_enrollment_for_event': True})
+    eventdomain['eventsignups']['schema']['email'].update({
+        'not_patchable': True,
+        'unique_combination': ['event_id'],
+        'only_anonymous': True,
+        'email_signup_must_be_allowed': True,
+        'regex': utils.EMAIL_REGEX})
+
+    # Since the data relation is not evaluated for posting, we need to remove
+    # it from the schema TODO: EXPLAIN BETTER
+    del(eventdomain['eventsignups']['schema']['email']['data_relation'])
+    # Remove _email_unreg and _token from the schema since they are only
+    # for internal use and should not be visible
+    del(eventdomain['eventsignups']['schema']['_email_unreg'])
+    del(eventdomain['eventsignups']['schema']['_token'])
+
+    eventdomain['eventsignups']['schema']['additional_fields'].update({
+        'type': 'json_event_field'})
+
+    return eventdomain
 
 
 class EventValidator(object):
@@ -682,7 +686,7 @@ def remove_token_inserted(items):
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
-    utils.register_domain(app, eventdomain)
+    utils.register_domain(app, make_eventdomain())
     utils.register_validator(app, EventValidator)
 
     app.register_blueprint(confirmprint)
