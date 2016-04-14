@@ -32,9 +32,9 @@ from amivapi import (
     authorization,
     media,
     groups,
-    validation,
     ldap,
     documentation,
+    utils
 )
 
 from amivapi.utils import get_config
@@ -57,12 +57,12 @@ def create_app(disable_auth=False, **kwargs):
     if disable_auth:
         app = Eve(settings=config,
                   data=SQL,
-                  validator=validation.ValidatorAMIV,
+                  validator=utils.ValidatorAMIV,
                   media=media.FileSystemStorage)
     else:
         app = Eve(settings=config,
                   data=SQL,
-                  validator=validation.ValidatorAMIV,
+                  validator=utils.ValidatorAMIV,
                   auth=authentication.TokenAuth,
                   media=media.FileSystemStorage)
 

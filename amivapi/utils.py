@@ -11,11 +11,11 @@ import smtplib
 from email.mime.text import MIMEText
 from copy import deepcopy
 
-from flask import current_app as app
-from flask import Config
+from flask import Config, g, current_app as app
 
-from eve.utils import config
+from eve.utils import config, request_method
 from eve_sqlalchemy.decorators import registerSchema
+from eve_sqlalchemy.validation import ValidatorSQL
 
 from amivapi.settings import ROOT_DIR
 
@@ -208,3 +208,70 @@ def register_validator(app, validator_class):
     app.validator = type("Adopted_%s" % validator_class.__name__,
                          (validator_class, app.validator),
                          {})
+
+
+class ValidatorAMIV(ValidatorSQL):
+    """Validator subclass adding more validation for special fields."""
+
+    def _validate_not_patchable(self, enabled, field, value):
+        """Custom Validator to inhibit patching of the field.
+
+        e.g. eventsignups, userid: required for post, but can not be patched
+
+        Args:
+            enabled (bool): Boolean, should be true
+            field (string): field name.
+            value: field value.
+        """
+        if enabled and (request_method() == 'PATCH'):
+            self._error(field, "this field can not be changed with PATCH")
+
+    def _validate_not_patchable_unless_admin(self, enabled, field, value):
+        """Inhibit patching of the field.
+
+        e.g. eventsignups, userid: required for post, but can not be patched
+
+        Args:
+            enabled (bool): Boolean, should be true
+            field (string): field name.
+            value: field value.
+        """
+        if enabled and (request_method() == 'PATCH') and not g.resource_admin:
+            self._error(field, "this field can not be changed with PATCH "
+                        "unless you have admin rights.")
+
+    def _validate_unique_combination(self, unique_combination, field, value):
+        """Validate that a combination of fields is unique.
+
+        e.g. user with id 1 can have several eventsignups for different events,
+        but only 1 eventsignup for event with id 42
+
+        unique_combination should be a list of other fields
+
+        Note: Make sure that other fields actually exists (setting them to
+        required etc)
+
+        Args:
+            unique_combination (list): combination fields
+            field (string): field name.
+            value: field value.
+        """
+        lookup = {field: value}  # self
+        for other_field in unique_combination:
+            lookup[other_field] = self.document.get(other_field)
+
+        # If we are patching the issue is more complicated, some fields might
+        # have to be checked but are not part of the document because they will
+        # not be patched. We have to load them from the database
+        patch = (request_method() == 'PATCH')
+        if patch:
+            original = self._original_document
+            for key in unique_combination:
+                if key not in self.document.keys():
+                    lookup[key] = original[key]
+
+        # Now check database
+        if app.data.find_one(self.resource, None, **lookup) is not None:
+            self._error(field, "value already exists in the database in " +
+                        "combination with values for: %s" %
+                        unique_combination)
