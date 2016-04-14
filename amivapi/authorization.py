@@ -68,7 +68,7 @@ def common_authorization(resource, method):
               access is not checked. For examples how to do that see the hooks
               below
     """
-    resource_class = utils.get_class_for_resource(resource)
+    resource_domain = app.config['DOMAIN'][resource]
 
     # Allow if authentication is disabled
     if not app.auth:
@@ -80,8 +80,8 @@ def common_authorization(resource, method):
     # authentication has not been performed yet automatically. If the user
     # has set a token, check that now to generate g.logged_in_user. If he has
     # no token, set user ID to -1
-    if (not hasattr(g, 'logged_in_user')
-            and not app.auth.authorized([], resource, method)):
+    if (not hasattr(g, 'logged_in_user') and
+            not app.auth.authorized([], resource, method)):
         g.logged_in_user = -1
 
     g.resource_admin = True
@@ -114,7 +114,7 @@ def common_authorization(resource, method):
     g.resource_admin = False
 
     # Method is public -> allow
-    if method in resource_class.__public_methods__:
+    if method in resource_domain['public_methods']:
         return True
 
     if g.logged_in_user == -1:
@@ -124,14 +124,14 @@ def common_authorization(resource, method):
 
     # Endpoint is open to registered users -> allow
     # Anonymous users won't arrive here as they have already been
-    if method in resource_class.__registered_methods__:
+    if method in resource_domain['registered_methods']:
         app.logger.debug("Access granted to %s %s for registered user %i"
                          % (method, resource, g.logged_in_user))
         return True
 
     # Endpoint is open to object owners -> allow, but inform caller to
     # perform more checks
-    if request.method in resource_class.__owner_methods__:
+    if request.method in resource_domain['owner_methods']:
         return False
 
     # No permission, abort
@@ -145,16 +145,16 @@ def _create_lookup_owner_filter(resource):
     """ This function creates the filter
 
     :param lookup: The lookup to manipulate
-    :param resource: Resource name(used to find the model)
+    :param resource: Resource name(used to get owner)
     :returns: Dict with or conditions
     """
-    resource_class = utils.get_class_for_resource(resource)
+    resource_domain = app.config['DOMAIN'][resource]
 
-    if not hasattr(resource_class, '__owner__'):
+    if 'owner' not in resource_domain:
         abort(403)
 
     # [:] copies the list (and looks like a weird chest with a buttoned shirt
-    fields = resource_class.__owner__[:]
+    fields = resource_domain['owner'][:]
 
     conditions = []
 

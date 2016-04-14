@@ -26,7 +26,7 @@ from flask import g
 
 from amivapi import (
     models,
-    confirm,
+    events,
     schemas,
     authentication,
     authorization,
@@ -83,7 +83,6 @@ def create_app(disable_auth=False, **kwargs):
 
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
-    app.register_blueprint(confirm.confirmprint)
     app.register_blueprint(authentication.authentication)
     app.register_blueprint(media.download)
 
@@ -107,11 +106,11 @@ def create_app(disable_auth=False, **kwargs):
     app.on_pre_GET_groups += authorization.group_visibility_filter
 
     # Hooks for anonymous users
-    app.on_insert_eventsignups += confirm.signups_confirm_anonymous
+    app.on_insert_eventsignups += events.signups_confirm_anonymous
 
-    app.on_update += confirm.pre_update_confirmation
-    app.on_delete_item += confirm.pre_delete_confirmation
-    app.on_replace += confirm.pre_replace_confirmation
+    app.on_update += events.pre_update_confirmation
+    app.on_delete_item += events.pre_delete_confirmation
+    app.on_replace += events.pre_replace_confirmation
 
     # users
     app.on_pre_GET_users += authorization.pre_users_get
@@ -131,26 +130,8 @@ def create_app(disable_auth=False, **kwargs):
     app.on_updated_groupforwards += mailing_lists.update_forward_email
     app.on_deleted_item_groupforwards += mailing_lists.remove_forward_email
 
-    # EVENTSIGNUPS
-    # Hooks to move 'email' to '_unregistered_email' after db access
-    app.on_insert_eventsignups += confirm.replace_email_insert
-    app.on_update_eventsignups += confirm.replace_email_update
-    app.on_replace_eventsignups += confirm.replace_email_replace
-
-    # Hooks to move '_unregistered_email' to 'email' after db access
-    app.on_inserted_eventsignups += confirm.replace_email_inserted
-    app.on_fetched_item_eventsignups += confirm.replace_email_fetched_item
-    app.on_fetched_resource_eventsignups += (confirm
-                                             .replace_email_fetched_resource)
-    app.on_replaced_eventsignups += confirm.replace_email_replaced
-    app.on_updated_eventsignups += confirm.replace_email_updated
-
-    # Hooks to remove tokens from output
-    app.on_inserted_eventsignups += confirm.remove_token_inserted
-    app.on_fetched_item_eventsignups += confirm.remove_token_fetched_item
-    app.on_fetched_resource_eventsignups += (confirm
-                                             .remove_token_fetched_resource)
-    app.on_replaced_eventsignups += confirm.remove_token_replaced
+    # Init modules
+    events.init_app(app)
 
     return app
 

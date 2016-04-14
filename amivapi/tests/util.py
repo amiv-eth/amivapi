@@ -17,6 +17,7 @@ from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
 from amivapi.utils import token_generator
+from amivapi.events import Event, EventSignup
 
 
 def find_by_pair(dicts, key, value):
@@ -235,7 +236,7 @@ class WebTest(unittest.TestCase):
 
         return kwargs
 
-    @create_object(models.Event)
+    @create_object(Event)
     def new_event(self, **kwargs):
         """ Create a new event """
         data = {
@@ -248,7 +249,7 @@ class WebTest(unittest.TestCase):
         data.update(kwargs)
         return data
 
-    @create_object(models.EventSignup)
+    @create_object(EventSignup)
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
         if 'user_id' not in kwargs:

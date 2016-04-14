@@ -9,6 +9,7 @@ from base64 import urlsafe_b64encode
 from os import urandom
 import smtplib
 from email.mime.text import MIMEText
+from copy import deepcopy
 
 from flask import current_app as app
 from flask import Config
@@ -181,8 +182,12 @@ def make_domain(model):
                 {field: 1}
             )
 
-    domain[tbl_name]['public_methods'] = (model.__public_methods__)
-    domain[tbl_name]['public_item_methods'] = (model.__public_methods__)
+    # Add owner and method permissions to domain
+    domain[tbl_name]['owner'] = model.__owner__
+    domain[tbl_name]['public_methods'] = model.__public_methods__
+    domain[tbl_name]['public_item_methods'] = model.__public_methods__
+    domain[tbl_name]['registered_methods'] = model.__registered_methods__
+    domain[tbl_name]['owner_methods'] = model.__owner_methods__
 
     # For documentation
     domain[tbl_name]['description'] = model.__description__
@@ -194,3 +199,41 @@ def make_domain(model):
     domain[tbl_name]['schema'].pop('id')
 
     return domain
+
+
+def register_domain(app, domain):
+    """Add all resources in a domain to the app.
+
+    The domain has to be deep-copied first because eve will modify it
+    (since it heavily relies on setdefault()), which can cause problems
+    especially in test environments, since the defaults don't get properly
+    erase sometimes.
+
+    TODO: Make tests better maybe so this is no problem anymore?
+
+    Args:
+        app (Eve object): The app to extend
+        domain (dict): The domain to be added to the app, will not be changed
+    """
+    domain_copy = deepcopy(domain)
+
+    for resource, settings in domain_copy.items():
+        app.register_resource(resource, settings)
+
+
+def register_validator(app, validator_class):
+    """Extend the validator of the app.
+
+    This creates a new validator class with both the new and old validato
+    classes as parents and replaces the old validator class with the result.
+    Since the validator has new parents it is called 'Adopted' ;)
+
+    Using type with three arguments does just this.
+
+    Args:
+        app (Eve object): The app to extend
+        validator_class: The class to add to the validaot
+    """
+    app.validator = type("Adopted_%s" % validator_class.__name__,
+                         (validator_class, app.validator),
+                         {})
