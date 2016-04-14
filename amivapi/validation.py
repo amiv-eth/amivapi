@@ -11,8 +11,6 @@
 """
 
 from flask import g, current_app as app
-from werkzeug.datastructures import FileStorage
-from imghdr import what
 
 from eve_sqlalchemy.validation import ValidatorSQL
 from eve.utils import request_method
@@ -21,34 +19,6 @@ from eve.utils import request_method
 class ValidatorAMIV(ValidatorSQL):
     """ A Validator subclass adding more validation for special fields
     """
-
-    def _validate_type_media(self, field, value):
-        """ Enables validation for `media` data type.
-
-        :param field: field name.
-        :param value: field value.
-        .. versionadded:: 0.3
-        """
-        if not isinstance(value, FileStorage):
-            self._error(field, "file was expected, got '%s' instead." % value)
-
-    def _validate_filetype(self, filetype, field, value):
-        """ Validates filetype. Can validate images and pdfs
-
-        Pdf: Check if first 4 characters are '%PDF' because that marks
-        a PDF
-        Image: Use imghdr library function what()
-
-        Cannot validate others formats.
-
-        :param filetype: List of filetypes, e.g. ['pdf', 'png']
-        :param field: field name.
-        :param value: field value.
-        """
-        if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
-               (what(value) in filetype)):
-            self._error(field, "filetype not supported, has to be one of: " +
-                        " %s" % str(filetype))
 
     def _validate_not_patchable(self, enabled, field, value):
         """ Custom Validator to inhibit patching of the field

@@ -83,7 +83,6 @@ def create_app(disable_auth=False, **kwargs):
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
     app.register_blueprint(authentication.authentication)
-    app.register_blueprint(media.download)
 
     #
     # Event hooks
@@ -110,6 +109,7 @@ def create_app(disable_auth=False, **kwargs):
     # Init modules
     events.init_app(app)
     groups.init_app(app)
+    media.init_app(app)
 
     return app
 
