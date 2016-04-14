@@ -687,6 +687,13 @@ def init_app(app):
 
     app.register_blueprint(confirmprint)
 
+    # Hooks for anonymous users
+    app.on_insert_eventsignups += signups_confirm_anonymous
+
+    app.on_update += pre_update_confirmation
+    app.on_delete_item += pre_delete_confirmation
+    app.on_replace += pre_replace_confirmation
+
     # Hooks to move 'email' to '_unregistered_email' after db access
     app.on_insert_eventsignups += replace_email_insert
     app.on_update_eventsignups += replace_email_update
