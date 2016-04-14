@@ -3,10 +3,10 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-from eve_sqlalchemy.decorators import registerSchema
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi import models
+from amivapi.utils import make_domain, EMAIL_REGEX
 
 
 def get_domain():
@@ -17,40 +17,13 @@ def get_domain():
         if not isinstance(model, DeclarativeMeta):
             continue
 
-        tbl_name = model.__tablename__
-
-        registerSchema(tbl_name)(model)
-        domain.update(model._eve_schema)
-
-        for field in model.__projected_fields__:
-            domain[tbl_name]['datasource']['projection'].update(
-                {field: 1}
-            )
-            if not('embedded_fields' in domain[tbl_name]):
-                domain[tbl_name]['embedded_fields'] = {}
-            for field in model.__embedded_fields__:
-                domain[tbl_name]['embedded_fields'].update(
-                    {field: 1}
-                )
-
-        domain[tbl_name]['public_methods'] = (model.__public_methods__)
-        domain[tbl_name]['public_item_methods'] = (model.__public_methods__)
-
-        # For documentation
-        domain[tbl_name]['description'] = model.__description__
-
-        # Users should not provide _author fields
-        domain[tbl_name]['schema']['_author'].update({'readonly': True})
-
-        # Remove id field (eve will provide id)
-        domain[tbl_name]['schema'].pop('id')
+        domain.update(make_domain(model))
 
     # Now some modifications are required for each resource:
 
     # general email fields
 
     # Only accept email addresses for email fields
-    EMAIL_REGEX = '^.+@.+$'
     domain['users']['schema']['email'].update(
         {'regex': EMAIL_REGEX})
     domain['eventsignups']['schema']['email'].update(
