@@ -35,7 +35,8 @@ from amivapi import (
     documentation,
     utils,
     joboffers,
-    purchases
+    purchases,
+    studydocs
 )
 
 from amivapi.utils import get_config
@@ -97,6 +98,7 @@ def create_app(disable_auth=False, **kwargs):
     groups.init_app(app)
     joboffers.init_app(app)
     purchases.init_app(app)
+    studydocs.init_app(app)
     media.init_app(app)
 
     return app

@@ -5,14 +5,14 @@
 
 from amivapi.utils import make_domain, EMAIL_REGEX
 
-from models import User, File, StudyDocument
+from models import User
 
 
 def get_domain():
     domain = {}
 
     # generate from models
-    for model in [User, File, StudyDocument]:
+    for model in [User]:
         domain.update(make_domain(model))
 
     # Now some modifications are required for each resource:
@@ -53,13 +53,6 @@ def get_domain():
     })
 
     # /files
-
-    # No Patching for files
-    domain['files']['item_methods'] = ['GET', 'PUT', 'DELETE']
-    domain['files']['schema'].update({
-        'data': {'type': 'media', 'required': True}
-    })
-
     # Add entry for storage so auth can find it
 
     domain['storage'] = {

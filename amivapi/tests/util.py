@@ -21,6 +21,7 @@ from amivapi.auth import Session
 from amivapi.events import Event, EventSignup
 from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
 from amivapi.joboffers import JobOffer
+from amivapi.studydocs import StudyDocument, File
 
 
 def find_by_pair(dicts, key, value):
@@ -268,13 +269,13 @@ class WebTest(unittest.TestCase):
         kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())
         return kwargs
 
-    @create_object(models.StudyDocument)
+    @create_object(StudyDocument)
     def new_studydocument(self, **kwargs):
         """ Create a new study document """
         kwargs.setdefault('name', u"Example Exam %i" % self.next_count())
         return kwargs
 
-    @create_object(models.File)
+    @create_object(File)
     def new_file(self, **kwargs):
         """ Create a new file, needs study_doc_id """
         if 'data' not in kwargs:
