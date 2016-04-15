@@ -34,7 +34,8 @@ from amivapi import (
     ldap,
     documentation,
     utils,
-    joboffers
+    joboffers,
+    purchases
 )
 
 from amivapi.utils import get_config
@@ -95,6 +96,7 @@ def create_app(disable_auth=False, **kwargs):
     events.init_app(app)
     groups.init_app(app)
     joboffers.init_app(app)
+    purchases.init_app(app)
     media.init_app(app)
 
     return app

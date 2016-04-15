@@ -131,25 +131,3 @@ class StudyDocument(Base):
     # relationships
     files = relationship("File", backref="study_doc",
                          cascade="all")
-
-
-class Purchase(Base):
-    __description__ = {
-        'general': "A beer machine or kaffi machine transaction. Users should"
-        " be able to get beer or kaffi, if their last timestamp is older than"
-        " one day and they are AMIV members. This resource is used to log"
-        " their purchases.",
-        'fields': {
-            'slot': "Slot in the machine which was purchased(different items,"
-            " which may have different prices)."
-        }
-    }
-    __expose__ = True
-
-    __owner__ = ['user_id']
-    __owner_methods__ = ['GET']
-
-    user_id = Column(Integer, ForeignKey('users.id'))
-    timestamp = Column(DateTime)
-    type = Column(Enum("beer", "kaffi"))
-    slot = Column(Integer)
