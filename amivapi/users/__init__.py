@@ -2,28 +2,25 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-
+"""User module."""
 
 from sqlalchemy import (
     Column,
     Unicode,
-    UnicodeText,
-    Text,
     CHAR,
     String,
-    Integer,
-    ForeignKey,
-    DateTime,
     Enum,
     Boolean
 )
 from sqlalchemy.orm import relationship, validates
 
 from amivapi.settings import PASSWORD_CONTEXT
-from amivapi.utils import Base
+from amivapi.utils import Base, make_domain, register_domain, EMAIL_REGEX
 
 
 class User(Base):
+    """User model."""
+
     __description__ = {
         'general': "In general, the user data will be generated from "
         "LDAP-Data. However, one might change the RFID-Number or the "
@@ -71,9 +68,58 @@ class User(Base):
         return PASSWORD_CONTEXT.encrypt(plaintext)
 
     def verify_password(self, plaintext):
+        """Hash password everytime it changes."""
         is_valid = PASSWORD_CONTEXT.verify(plaintext, self.password)
         if is_valid and PASSWORD_CONTEXT.needs_update(self.password):
             # rehash password
             self.password = plaintext
 
         return is_valid
+
+
+def make_userdomain():
+    """Create domain.
+
+    This is a function so it can be called after models in all modules have
+    been defined.
+    """
+    userdomain = make_domain(User)
+
+    userdomain['users']['schema']['email'].update(
+        {'regex': EMAIL_REGEX})
+
+    # /users
+    # Not patchable fields
+    for field in ['firstname', 'lastname', 'legi', 'nethz', 'department',
+                  'phone', 'gender', 'membership']:
+        userdomain['users']['schema'][field].update(
+            {'not_patchable_unless_admin': True})
+
+    # Hide passwords
+    userdomain['users']['datasource']['projection']['password'] = 0
+
+    # TODO: enums of sqlalchemy should directly be caught by the validator
+    userdomain['users']['schema']['gender'].update({
+        'allowed': ['male', 'female']
+    })
+    userdomain['users']['schema']['department'].update({
+        'allowed': ['itet', 'mavt'],
+    })
+    userdomain['users']['schema']['nethz'].update({
+        'empty': False,
+    })
+
+    # Make it possible to retrive a user with his nethz (/users/nethz)
+    userdomain['users'].update({
+        'additional_lookup': {
+            'url': 'regex(".*[\w].*")',
+            'field': 'nethz',
+        }
+    })
+
+    return userdomain
+
+
+def init_app(app):
+    """Register resources and blueprints, add hooks and validation."""
+    register_domain(app, make_userdomain())

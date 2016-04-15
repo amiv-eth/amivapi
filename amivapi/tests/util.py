@@ -15,8 +15,9 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 
-from amivapi import bootstrap, models, tests
+from amivapi import bootstrap, tests
 from amivapi.utils import token_generator
+from amivapi.users import User
 from amivapi.auth import Session
 from amivapi.events import Event, EventSignup
 from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
@@ -183,7 +184,7 @@ class WebTest(unittest.TestCase):
             return decorated
         return decorate
 
-    @create_object(models.User)
+    @create_object(User)
     def new_user(self, **kwargs):
         firstname, gender = random.choice([
             (u"John", "male"), (u"Jane", "female")

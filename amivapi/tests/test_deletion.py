@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 from amivapi.tests import util
-from amivapi import models, events, groups
+from amivapi import users, events, groups
 
 
 class DeletionTests(util.WebTestNoAuth):
@@ -59,7 +59,7 @@ class DeletionTests(util.WebTestNoAuth):
                         headers={'If-Match': user._etag},
                         status_code=204)
         # We have with ids -1 and 0 2 users left after our user got deleted
-        self.assert_count(models.User, 2)
+        self.assert_count(users.User, 2)
         self.assert_count(events.EventSignup, 0)
         # the Event shold still exist
         self.assert_count(events.Event, 1)

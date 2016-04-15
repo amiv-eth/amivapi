@@ -30,7 +30,7 @@ from eve.utils import debug_error_message, config
 from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi import models
+from amivapi.users import User
 
 from .endpoints import Session
 
@@ -146,7 +146,7 @@ def process_login(items):
                                  "Checking database...")
                 # Query db for user by nethz field
                 has_user_nethz = app.data.driver.session.query(exists().where(
-                    models.User.nethz == item['user']
+                    User.nethz == item['user']
                 )).scalar()
 
                 # Create or update user
@@ -193,16 +193,16 @@ def process_login(items):
         # Complicated query, does the following: if user specified by nethz
         # exists, take result. if not check by email
         if (app.data.driver.session.query(exists().where(
-                models.User.nethz == item['user'])).scalar()):
-            user = app.data.driver.session.query(models.User).filter_by(
+                User.nethz == item['user'])).scalar()):
+            user = app.data.driver.session.query(User).filter_by(
                 nethz=item['user']).one()
         elif (app.data.driver.session.query(exists().where(
-                models.User.email == item['user'])).scalar()):
-            user = app.data.driver.session.query(models.User).filter_by(
+                User.email == item['user'])).scalar()):
+            user = app.data.driver.session.query(User).filter_by(
                 email=item['user']).one()
         elif item['user'] == 'root':
             app.logger.debug("Using root user.")
-            user = app.data.driver.session.query(models.User).filter_by(
+            user = app.data.driver.session.query(User).filter_by(
                 id=0).one()  # Using one() because root has to exists
         else:
             user = None  # Neither found by nethz nor email

@@ -14,7 +14,9 @@ from eve.render import send_response
 from eve.methods.common import payload
 
 from amivapi.auth.authorization import common_authorization
-from amivapi import models, utils
+from amivapi import utils
+
+from .endpoints import EventSignup
 
 confirmprint = Blueprint('confirm', __name__)
 
@@ -144,7 +146,7 @@ def execute_confirmed_action(token):
     :returns: 201 in eve-response-format, without confirmed data
     """
     db = current_app.data.driver.session
-    signup = db.query(models.EventSignup).filter_by(_token=token).first()
+    signup = db.query(EventSignup).filter_by(_token=token).first()
     doc = signup
     if doc is None:
         abort(404, description=(
@@ -198,11 +200,14 @@ def token_authorization(resource, original):
     checks if a request to an item-endpoint is authorized by the correct Token
     in the header
     Will abort if Token is incorrect.
+
+    TODO: This function is not tested at all.
+
     :param resourse: the resource of the item as a string
     :param original: The original data of the item which is requested
     """
     token = request.headers.get('Token')
-    model = utils.get_class_for_resource(models, resource)
+    model = utils.get_class_for_resource(resource)
     is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
     if is_owner:
         print("Access to %s/%d granted for owner %d without token" % (

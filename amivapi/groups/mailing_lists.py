@@ -15,7 +15,7 @@ from flask import abort
 
 from eve.utils import config
 
-from amivapi.models import User
+from amivapi.users import User
 
 from .endpoints import GroupMember, GroupAddress, GroupForward
 

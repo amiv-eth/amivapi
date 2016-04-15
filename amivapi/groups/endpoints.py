@@ -21,7 +21,7 @@ from amivapi.utils import (
     Base,
     JSONText
 )
-from amivapi.models import User
+from amivapi.users import User
 
 
 class Group(Base):

@@ -5,8 +5,9 @@
 
 import datetime as dt
 
-from amivapi import models, settings
+from amivapi import settings
 from amivapi.tests import util
+from amivapi.users import User
 
 
 class UserResourceTest(util.WebTestNoAuth):
@@ -23,7 +24,7 @@ class UserResourceTest(util.WebTestNoAuth):
         api_user = next(u for u in users.json['_items'] if u['email']
                         == user.email)
 
-        for col in models.User.__table__.c:
+        for col in User.__table__.c:
             if col.key == 'password':
                 continue
             self.assertIn(col.key, api_user)
@@ -62,7 +63,7 @@ class UserResourceTest(util.WebTestNoAuth):
                           data=crippled_data,
                           status_code=422)
 
-            user_count = self.db.query(models.User).count()
+            user_count = self.db.query(User).count()
             self.assertEquals(user_count, 2)
 
         user = self.api.post("/users", data=data, status_code=201)
@@ -76,7 +77,7 @@ class UserResourceTest(util.WebTestNoAuth):
         for key in data:
             self.assertEquals(retrived_user[key], data[key])
 
-        user_count = self.db.query(models.User).count()
+        user_count = self.db.query(User).count()
         self.assertEquals(user_count, 3)
 
     def test_user_invalid_mail(self):

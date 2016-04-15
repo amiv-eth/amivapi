@@ -25,7 +25,7 @@ from flask.ext.bootstrap import Bootstrap
 from flask import g
 
 from amivapi import (
-    models,
+    users,
     events,
     schemas,
     auth,
@@ -70,8 +70,8 @@ def create_app(disable_auth=False, **kwargs):
 
     # Bind SQLAlchemy
     db = app.data.driver
-    models.Base.metadata.bind = db.engine
-    db.Model = models.Base
+    utils.Base.metadata.bind = db.engine
+    db.Model = utils.Base
 
     Bootstrap(app)
     with app.app_context():
@@ -92,7 +92,8 @@ def create_app(disable_auth=False, **kwargs):
     # the database
     #
 
-    # Init modules, important: Auth has to come first
+    # Init modules, important: Users, than Auth have to come first
+    users.init_app(app)
     auth.init_app(app)
     events.init_app(app)
     groups.init_app(app)
@@ -118,13 +119,13 @@ def init_database(connection, config):
         connection.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
 
     try:
-        models.Base.metadata.create_all(connection, checkfirst=False)
+        utils.Base.metadata.create_all(connection, checkfirst=False)
     except (OperationalError, ProgrammingError):
         print("Creating tables failed. Make sure the database does not exist" +
               " already!")
         raise
 
-    root_user = models.User(
+    root_user = users.User(
         id=0,
         _author=None,
         _etag='d34db33f',  # We need some etag, not important what it is
@@ -135,7 +136,7 @@ def init_database(connection, config):
         email=config['ROOT_MAIL'],
         membership="none"
     )
-    anonymous_user = models.User(
+    anonymous_user = users.User(
         id=-1,
         _author=root_user.id,
         _etag='4l3x15F4G',
