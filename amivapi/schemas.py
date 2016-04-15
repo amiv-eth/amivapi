@@ -5,14 +5,14 @@
 
 from amivapi.utils import make_domain, EMAIL_REGEX
 
-from models import User, Session, File, StudyDocument, JobOffer, Purchase
+from models import User, File, StudyDocument, JobOffer, Purchase
 
 
 def get_domain():
     domain = {}
 
     # generate from models
-    for model in [User, Session, File, StudyDocument, JobOffer, Purchase]:
+    for model in [User, File, StudyDocument, JobOffer, Purchase]:
         domain.update(make_domain(model))
 
     # Now some modifications are required for each resource:
@@ -50,29 +50,6 @@ def get_domain():
             'url': 'regex(".*[\w].*")',
             'field': 'nethz',
         }
-    })
-
-    # /sessions
-
-    domain['sessions']['schema']['user'] = {
-        'type': 'string',
-        'required': True,
-        'nullable': False,
-        'empty': False
-    }
-    domain['sessions']['schema']['password'] = {
-        'type': 'string',
-        'required': True,
-        'nullable': False,
-        'empty': False
-    }
-    domain['sessions']['schema']['user_id'].update({
-        'readonly': True,
-        'required': False,
-    })
-    domain['sessions']['schema']['token'].update({
-        'readonly': True,
-        'required': False
     })
 
     # /files

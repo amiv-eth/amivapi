@@ -6,7 +6,8 @@
 from datetime import datetime
 
 from amivapi.tests import util
-from amivapi import models, cron
+from amivapi.auth import Session
+from amivapi import cron
 
 
 class CronTest(util.WebTestNoAuth):
@@ -16,7 +17,7 @@ class CronTest(util.WebTestNoAuth):
 
         cron.delete_expired_sessions(self.db, self.app.config)
 
-        sessions = self.db.query(models.Session).all()
+        sessions = self.db.query(Session).all()
         self.assertEquals(len(sessions), 1)
 
     def test_cron_run(self):

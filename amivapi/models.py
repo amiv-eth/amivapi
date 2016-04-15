@@ -79,30 +79,6 @@ class User(Base):
         return is_valid
 
 
-class Session(Base):
-    __description__ = {
-        'general': "A session is used to authenticate a user after he "
-        " provided login data. To acquire a session use POST, which will "
-        " give you a token to use as the user field of HTTP basic auth "
-        " header with an empty password. POST requires user and password "
-        " fields.",
-        'methods': {
-            'POST': "Login and aquire a login token. Post the fields "
-            "'user' and 'password', the response will contain the token."
-        }
-    }
-    __expose__ = True
-    __projected_fields__ = ['user']
-
-    __public_methods__ = ['POST']
-    __owner__ = ['user_id']
-    __owner_methods__ = ['GET', 'DELETE']
-
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    token = Column(Text)
-
-    # user = relationship("User", foreign_keys=user_id, backref="sessions")
-
 
 class File(Base):
     """This is a file that belongs to a study document.

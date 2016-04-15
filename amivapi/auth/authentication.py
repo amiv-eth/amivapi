@@ -20,7 +20,7 @@ from base64 import b64encode
 from datetime import datetime
 
 from flask import current_app as app
-from flask import Blueprint, abort, g
+from flask import abort, g
 
 from eve.auth import TokenAuth
 from eve.methods.post import post_internal
@@ -31,6 +31,8 @@ from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
 from amivapi import models
+
+from .endpoints import Session
 
 
 class TokenAuth(TokenAuth):
@@ -71,8 +73,8 @@ class TokenAuth(TokenAuth):
         dbsession = app.data.driver.session
 
         try:
-            sess = dbsession.query(models.Session).filter(
-                models.Session.token == token).one()
+            sess = dbsession.query(Session).filter(
+                Session.token == token).one()
         except NoResultFound:
             error = ("Access denied for %s %s: unknown token %s"
                      % (method, resource, token))
@@ -87,15 +89,12 @@ class TokenAuth(TokenAuth):
         return True
 
 
-authentication = Blueprint('authentication', __name__)
-
-
 def _prepare_token(item, user_id):
     # Everything is alright, create token for user
     token = b64encode(urandom(256)).decode('utf_8')
 
     # Make sure token is unique
-    while app.data.driver.session.query(models.Session).filter_by(
+    while app.data.driver.session.query(Session).filter_by(
             token=token).count() != 0:
         token = b64encode(urandom(256)).decode('utf_8')
 

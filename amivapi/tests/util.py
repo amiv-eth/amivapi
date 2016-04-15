@@ -17,6 +17,7 @@ from flask.wrappers import Response
 
 from amivapi import bootstrap, models, tests
 from amivapi.utils import token_generator
+from amivapi.auth import Session
 from amivapi.events import Event, EventSignup
 from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
 
@@ -227,7 +228,7 @@ class WebTest(unittest.TestCase):
                           u"forward-%i@example.com" % self.next_count())
         return kwargs
 
-    @create_object(models.Session)
+    @create_object(Session)
     def new_session(self, **kwargs):
         """ Create a new session, default is root session """
         kwargs.setdefault('user_id', 0)
