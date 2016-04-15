@@ -438,7 +438,7 @@ class EventSignup(Base):
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    email = Column(CHAR(100), ForeignKey("users.email"))
+    email = Column(CHAR(100))
     additional_fields = Column(Text)
 
     """for unregistered users"""
