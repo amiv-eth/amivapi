@@ -28,8 +28,7 @@ from amivapi import (
     models,
     events,
     schemas,
-    authentication,
-    authorization,
+    auth,
     media,
     groups,
     ldap,
@@ -63,7 +62,7 @@ def create_app(disable_auth=False, **kwargs):
         app = Eve(settings=config,
                   data=SQL,
                   validator=utils.ValidatorAMIV,
-                  auth=authentication.TokenAuth,
+                  auth=auth.authentication.TokenAuth,
                   media=media.FileSystemStorage)
 
     # Bind SQLAlchemy
@@ -82,7 +81,6 @@ def create_app(disable_auth=False, **kwargs):
 
     # Generate and expose docs via eve-docs extension
     app.register_blueprint(eve_docs, url_prefix="/docs")
-    app.register_blueprint(authentication.authentication)
 
     #
     # Event hooks
@@ -91,22 +89,8 @@ def create_app(disable_auth=False, **kwargs):
     # the database
     #
 
-    # authentication
-    app.on_insert += authentication.set_author_on_insert
-    app.on_replace += authentication.set_author_on_replace
-
-    # authorization
-    app.on_pre_GET += authorization.pre_get_permission_filter
-    app.on_pre_POST += authorization.pre_post_permission_filter
-    app.on_pre_PUT += authorization.pre_put_permission_filter
-    app.on_pre_DELETE += authorization.pre_delete_permission_filter
-    app.on_pre_PATCH += authorization.pre_patch_permission_filter
-    app.on_pre_GET_groups += authorization.group_visibility_filter
-
-    # users
-    app.on_pre_GET_users += authorization.pre_users_get
-
-    # Init modules
+    # Init modules, important: Auth has to come first
+    auth.init_app(app)
     events.init_app(app)
     groups.init_app(app)
     media.init_app(app)

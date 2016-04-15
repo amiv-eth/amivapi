@@ -3,10 +3,10 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-from amivapi.events import documentation as confirm_documentation
+from amivapi.events.email_confirmations import documentation
 
 
 def get_blueprint_doc():
     ret = {}
-    ret.update(confirm_documentation)
+    ret.update(documentation)
     return ret

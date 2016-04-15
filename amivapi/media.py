@@ -18,7 +18,7 @@ from imghdr import what
 from werkzeug import secure_filename, FileStorage
 from flask import abort, Blueprint, send_from_directory, current_app as app
 
-from amivapi.authorization import common_authorization
+from amivapi.auth.authorization import common_authorization
 from amivapi.utils import register_validator
 
 
