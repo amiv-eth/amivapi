@@ -19,7 +19,7 @@ from werkzeug import secure_filename, FileStorage
 from flask import abort, Blueprint, send_from_directory, current_app as app
 
 from amivapi.auth.authorization import common_authorization
-from amivapi.utils import register_validator
+from amivapi.utils import register_validator, register_domain
 
 
 class ExtFile(FileIO):
@@ -173,8 +173,23 @@ def download_file(filename):
     return send_from_directory(app.config['STORAGE_DIR'], filename)
 
 
+storagedomain = {
+    'storage': {
+        'resource_methods': ['GET'],
+        'item_methods': ['GET'],
+        'public_methods': [],
+        'public_item_methods': [],
+        'registered_methods': ['GET'],
+        'description': {
+            'general': 'Endpoint to download files, get the URLs via /files'
+        }
+    }
+}
+
+
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_validator(app, MediaValidator)
+    register_domain(app, storagedomain)
 
     app.register_blueprint(download)

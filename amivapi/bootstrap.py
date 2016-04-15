@@ -27,7 +27,6 @@ from flask import g
 from amivapi import (
     users,
     events,
-    schemas,
     auth,
     media,
     groups,
@@ -52,7 +51,8 @@ def create_app(disable_auth=False, **kwargs):
     :returns: eve.Eve object, the app object
     """
     config = get_config()
-    config['DOMAIN'] = schemas.get_domain()
+    # Domain is empty at first, modules will add resources later
+    config['DOMAIN'] = {}
     config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     config.update(kwargs)
 
