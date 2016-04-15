@@ -133,23 +133,6 @@ class StudyDocument(Base):
                          cascade="all")
 
 
-class JobOffer(Base):
-    __expose__ = True
-
-    __public_methods__ = ['GET']
-
-    company = Column(Unicode(30))
-
-    logo = Column(CHAR(100))  # This will be modified in schemas.py!
-    pdf = Column(CHAR(100))  # This will be modified in schemas.py!
-    time_end = Column(DateTime)
-
-    title_de = Column(UnicodeText)
-    title_en = Column(UnicodeText)
-    description_de = Column(UnicodeText)
-    description_en = Column(UnicodeText)
-
-
 class Purchase(Base):
     __description__ = {
         'general': "A beer machine or kaffi machine transaction. Users should"

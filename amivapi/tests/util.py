@@ -20,6 +20,7 @@ from amivapi.utils import token_generator
 from amivapi.auth import Session
 from amivapi.events import Event, EventSignup
 from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
+from amivapi.joboffers import JobOffer
 
 
 def find_by_pair(dicts, key, value):
@@ -261,7 +262,7 @@ class WebTest(unittest.TestCase):
             kwargs['_token'] = token_generator(size=20)
         return kwargs
 
-    @create_object(models.JobOffer)
+    @create_object(JobOffer)
     def new_joboffer(self, **kwargs):
         """ Create a new job offer """
         kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())

@@ -5,14 +5,14 @@
 
 from amivapi.utils import make_domain, EMAIL_REGEX
 
-from models import User, File, StudyDocument, JobOffer, Purchase
+from models import User, File, StudyDocument, Purchase
 
 
 def get_domain():
     domain = {}
 
     # generate from models
-    for model in [User, File, StudyDocument, JobOffer, Purchase]:
+    for model in [User, File, StudyDocument, Purchase]:
         domain.update(make_domain(model))
 
     # Now some modifications are required for each resource:
@@ -58,13 +58,6 @@ def get_domain():
     domain['files']['item_methods'] = ['GET', 'PUT', 'DELETE']
     domain['files']['schema'].update({
         'data': {'type': 'media', 'required': True}
-    })
-
-    # /joboffers
-
-    domain['joboffers']['schema'].update({
-        'logo': {'type': 'media', 'filetype': ['png', 'jpeg']},
-        'pdf': {'type': 'media', 'filetype': ['pdf']},
     })
 
     # Add entry for storage so auth can find it
