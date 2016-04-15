@@ -14,7 +14,7 @@ from flask import current_app
 
 from amivapi.utils import register_domain, register_validator
 
-from .settings import (
+from .endpoints import (
     make_groupdomain,
     Group, GroupMember,
     GroupAddress,

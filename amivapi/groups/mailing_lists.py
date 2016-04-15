@@ -17,7 +17,7 @@ from eve.utils import config
 
 from amivapi.models import User
 
-from .settings import GroupMember, GroupAddress, GroupForward
+from .endpoints import GroupMember, GroupAddress, GroupForward
 
 
 def _get_filename(email):
