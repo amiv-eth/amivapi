@@ -4,8 +4,9 @@
 #          you to buy us beer if we meet and you like the software.
 
 """
-This file provides token based authentication (identification of users). A
-user can POST the /sessions resource to obtain a token.
+This file provides token based authentication (identification of users).
+
+A user can POST the /sessions resource to obtain a token.
 
 When a user sends his token with a request the g.logged_in_user global variable
 will be set.
@@ -21,11 +22,9 @@ from datetime import datetime
 from flask import current_app as app
 from flask import Blueprint, abort, g
 
-from eve.methods.common import payload
 from eve.auth import TokenAuth
 from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
-from eve.render import send_response
 from eve.utils import debug_error_message, config
 
 from sqlalchemy import exists
@@ -91,7 +90,7 @@ class TokenAuth(TokenAuth):
 authentication = Blueprint('authentication', __name__)
 
 
-def _token_response(user_id):
+def _prepare_token(item, user_id):
     # Everything is alright, create token for user
     token = b64encode(urandom(256)).decode('utf_8')
 
@@ -100,155 +99,132 @@ def _token_response(user_id):
             token=token).count() != 0:
         token = b64encode(urandom(256)).decode('utf_8')
 
-    response = post_internal(
-        'sessions',
-        {
-            'user_id': user_id,
-            'token': token
-        }
-    )
+    # Remove user and password from document
+    del item['user']
+    del item['password']
 
-    return response
+    # Add token and user_id
+    item['user_id'] = user_id
+    item['token'] = token
 
 
-@authentication.route('/sessions', methods=['POST'])
-def process_login():
-    """Custom endpoint for POST to /sessions.
+# Hook
 
-    A POST to /sessions exspects nethz and password. If they are correct a
-    token is created and used to register a session in the database, which is
-    sent back to the user.
+def process_login(items):
+    """Hook to add token on POST to /sessions.
 
-    Instead of nethz email is also accepted.
+    Attempts login via LDAP if enabled first, then login via database.
 
-    First of all we will try to authenticate the user with LDAP (if enabled).
-    If this succeeds we update or create (if not yet in db) the user data
+    Root login is possible if 'user' is 'root' (instead of nethz or mail).
+    This shortcut is hardcoded.
 
-    If LDAP auth fails and the user is in the db, we will compare the received
-    pw with the pw in the db.
+    TODO (ALEX): make root user shortcut a setting maybe.
 
-    :returns: Flask.Response object
+    If the login is successful, the fields "user" and "password" are removed
+    and the fields "user_id" and "token" are added, which will be stored in the
+    db.
+
+    If the login is unsuccessful, abort(401)
+
+    Args:
+        items (list): List of items as passed by EVE to post hooks.
     """
-    p_data = payload()
+    for item in items:  # TODO (Alex): Batch POST doesnt really make sense
+        # PHASE 1: LDAP
+        # If LDAP is enabled, try to authenticate the user
+        # If this is successful, create/update user data
+        # Do not send any response. Although this leads to some db requests
+        # later, this helps to clearly seperate LDAP and login.
+        if config.ENABLE_LDAP:
+            app.logger.debug("LDAP authentication enabled. Trying "
+                             "to authenticate '%s'..." % item['user'])
 
-    schema = {
-        'user': {
-            'type': 'string',
-            'required': True,
-            'nullable': False,
-            'empty': False,
-        },
-        'password': {
-            'type': 'string',
-            'required': True,
-            'nullable': False
-        }
-    }
+            ldap_data = app.ldap_connector.check_user(item['user'],
+                                                      item['password'])
 
-    # Create new validator for this schema
-    v = app.validator(schema)
+            if ldap_data is not None:  # ldap success
+                app.logger.debug("LDAP authentication successful. "
+                                 "Checking database...")
+                # Query db for user by nethz field
+                has_user_nethz = app.data.driver.session.query(exists().where(
+                    models.User.nethz == item['user']
+                )).scalar()
 
-    # And use it
-    if not v.validate(p_data):
-        abort(422, description=str(v.errors))
+                # Create or update user
+                if has_user_nethz:
+                    app.logger.debug("User already in database. Updating...")
+                    # Get user
+                    user = app.data.find_one('users', None, nethz=item['user'])
 
-    # PHASE 1: LDAP
-    # If LDAP is enabled, try to authenticate the user
-    # If this is successful, create/update user data
-    # Do not send any response. Although this leads to some db requests
-    # later, this helps to clearly seperate LDAP and login.
-    if config.ENABLE_LDAP:
-        app.logger.debug("LDAP authentication enabled. Trying to authenticate "
-                         "'%s'..." % p_data['user'])
+                    # Membership status will only be upgraded automatically
+                    # If current Membership is not none ignore the ldap result
+                    if user['membership'] is not None:
+                        del ldap_data['membership']
 
-        ldap_data = app.ldap_connector.check_user(p_data['user'],
-                                                  p_data['password'])
+                    # First element of response tuple is data
+                    user = patch_internal('users',
+                                          ldap_data,
+                                          skip_validation=True,
+                                          id=user['id'])[0]
+                    app.logger.debug("User '%s' was updated." % item['user'])
+                else:
+                    app.logger.debug("User not in database. Creating...")
 
-        if ldap_data is not None:  # ldap success
-            app.logger.debug("LDAP authentication successful. "
-                             "Updating database...")
-            # Query db for user by nethz field
-            has_user_nethz = app.data.driver.session.query(exists().where(
-                models.User.nethz == p_data['user']
-            )).scalar()
+                    # Set Mail now
+                    ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
 
-            # Create or update user
-            if has_user_nethz:
-                app.logger.debug("User already in database. Updating...")
-                # Get user
-                user = app.data.find_one('users', None, nethz=p_data['user'])
+                    # First element of response tuple is data
+                    user = post_internal('users',
+                                         ldap_data,
+                                         skip_validation=True)[0]
 
-                # Membership status will only be upgraded automatically
-                # If current Membership is not none ignore the ldap result
-                if user['membership'] is not None:
-                    ldap_data.pop('membership')
+                    app.logger.debug("User '%s' was created." % item['user'])
 
-                # First element of respoinse is data
-                patch_internal('users',
-                               ldap_data,
-                               skip_validation=True,
-                               id=user['id'])
-                app.logger.debug("User '%s' was updated." % p_data['user'])
+                # Success, get token
+                _prepare_token(item, user['id'])
+                return
             else:
-                app.logger.debug("User not in database. Creating...")
-
-                # Set Mail now
-                ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
-
-                post_internal('users',
-                              ldap_data,
-                              skip_validation=True)
-
-                app.logger.debug("User '%s' was created." % p_data['user'])
-
+                app.logger.debug("LDAP authentication failed.")
         else:
-            app.logger.debug("LDAP authentication failed.")
-    else:
-        app.logger.debug("LDAP authentication deactivated.")
+            app.logger.debug("LDAP authentication deactivated.")
 
-    # PHASE 2: database
-    # Query user by nethz or email now
+        # PHASE 2: database
+        # Query user by nethz or email now
 
-    # Complicated query, does the following: if user specified by nethz exists
-    # import this way if not check by email
-    if (app.data.driver.session.query(exists().where(
-            models.User.nethz == p_data['user'])).scalar()):
-        user = app.data.driver.session.query(models.User).filter_by(
-            nethz=p_data['user']).one()
-    elif (app.data.driver.session.query(exists().where(
-            models.User.email == p_data['user'])).scalar()):
-        user = app.data.driver.session.query(models.User).filter_by(
-            email=p_data['user']).one()
-    else:
-        user = None  # Neither found by nethz nor email
-
-    if user:
-        app.logger.debug("User found in db.")
-        if user.membership == "none":
-            status = "Login failed. Membership is None!"
-            app.logger.debug(status)
-            abort(401, description=status)
-        elif user.verify_password(p_data['password']):
-            app.logger.debug("Login successful.")
-            return send_response('sessions', _token_response(user.id))
+        # Complicated query, does the following: if user specified by nethz
+        # exists, take result. if not check by email
+        if (app.data.driver.session.query(exists().where(
+                models.User.nethz == item['user'])).scalar()):
+            user = app.data.driver.session.query(models.User).filter_by(
+                nethz=item['user']).one()
+        elif (app.data.driver.session.query(exists().where(
+                models.User.email == item['user'])).scalar()):
+            user = app.data.driver.session.query(models.User).filter_by(
+                email=item['user']).one()
+        elif item['user'] == 'root':
+            app.logger.debug("Using root user.")
+            user = app.data.driver.session.query(models.User).filter_by(
+                id=0).one()  # Using one() because root has to exists
         else:
-            status = "Login failed: Password does not match!"
-            app.logger.debug(status)
-            abort(401, description=debug_error_message(status))
+            user = None  # Neither found by nethz nor email
 
-    # PHASE 2B: root user shortcut
-    # if nethz is root, try to auth the root user
-    if p_data['user'] == 'root':
-        root = app.data.driver.session.query(models.User).filter_by(id=0).one()
-        if root.verify_password(p_data['password']):
-            app.logger.debug("Login as root successful.")
-            return send_response('sessions', _token_response(0))
+        if user:
+            app.logger.debug("User found in db.")
+            if user.verify_password(item['password']):
+                app.logger.debug("Login successful.")
+                # Success
+                _prepare_token(item, user.id)
+                return
+            else:
+                status = "Login failed: Password does not match!"
+                app.logger.debug(status)
+                abort(401, description=debug_error_message(status))
 
-    # PHASE 3: Abort if everything else fails
-    # LDAP is unsuccessful (deactivated/wrong credentials) and user not found
-    status = "Login with db failed: User not found!"
-    app.logger.debug(status)
-    abort(401, description=debug_error_message(status))
+        # PHASE 3: Abort if everything else fails
+        # LDAP is unsuccessful (deactivated/wrong credentials) + user not found
+        status = "Login with db failed: User not found!"
+        app.logger.debug(status)
+        abort(401, description=debug_error_message(status))
 
 
 #
