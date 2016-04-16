@@ -9,20 +9,17 @@ import unittest
 from base64 import b64encode
 from datetime import datetime, timedelta
 import os
+from tempfile import mkdtemp
 
 from flask.testing import FlaskClient
 from flask.wrappers import Response
+from flask.ext.pymongo import MongoClient
 
 from eve.methods.post import post_internal
 
-from amivapi import bootstrap, tests, utils
+from amivapi import bootstrap, utils
+from amivapi.tests import test_config
 from amivapi.utils import token_generator
-from amivapi.users import User
-from amivapi.auth import Session
-from amivapi.events import Event, EventSignup
-from amivapi.groups import Group, GroupAddress, GroupMember, GroupForward
-from amivapi.joboffers import JobOffer
-from amivapi.studydocs import StudyDocument, File
 
 
 def find_by_pair(dicts, key, value):
@@ -124,32 +121,40 @@ class WebTest(unittest.TestCase):
 
         config = utils.get_config()
 
+        # create temporary directories
+        test_config['STORAGE_DIR'] = mkdtemp(prefix='amivapi_storage')
+        test_config['FORWARD_DIR'] = mkdtemp(prefix='amivapi_forwards')
+
         # connect to Mongo
         self.connection = MongoClient(config['MONGO_HOST'],
                                       config['MONGO_PORT'])
         # if accidentally there already exists a test-database, delete it
-        self.connection.drop_database(tests.test_config['MONGO_DBTEST'])
+        self.connection.drop_database(test_config['MONGO_DBTEST'])
 
         # create eve app
         self.app = bootstrap.create_app(disable_auth=self.disable_auth,
-                                        **tests.test_config)
+                                        **test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
 
         # connect to testing database
-        self.db = self.connection[tests.test_config['MONGO_DBTEST']]
+        self.db = self.connection[test_config['MONGO_DBTEST']]
 
         # create test client
         self.api = self.app.test_client()
 
     def tearDown(self):
         # delete testing database
-        self.connection.drop_database(tests.test_config['MONGO_DBTEST'])
+        self.connection.drop_database(test_config['MONGO_DBTEST'])
         # close database connection
         self.connection.close()
 
         # delete all uploaded files
         self.file_cleanup()
+
+        # remove temporary folders
+        os.rmdir(test_config['STORAGE_DIR'])
+        os.rmdir(test_config['FORWARD_DIR'])
 
 
     def file_cleanup(self):
