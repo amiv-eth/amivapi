@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+  #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # license: AGPL, see LICENSE for details. In addition we strongly encourage
@@ -24,8 +24,8 @@ from flask.ext.script import (
     prompt_pass,
 )
 
-from amivapi import settings, schemas
-from amivapi.models import User
+from amivapi import settings
+from amivapi.users import User
 from amivapi.utils import get_config
 from amivapi.bootstrap import init_database, clear_database
 from amivapi.ldap import ldap_synchronize
