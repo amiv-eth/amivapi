@@ -15,7 +15,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from amivapi.models import Session
+from amivapi.auth import Session
 from amivapi.utils import get_config
 
 from amivapi.ldap import ldap_synchronize

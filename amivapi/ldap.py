@@ -14,7 +14,7 @@ import re
 
 from flask import current_app as app
 from eve.utils import document_etag
-from amivapi.models import User
+from amivapi.users import User
 from sqlalchemy import exc
 
 from nethz import ldap

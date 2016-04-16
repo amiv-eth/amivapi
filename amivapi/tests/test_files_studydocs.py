@@ -6,7 +6,7 @@
 from io import BytesIO  # Simulate a file
 from amivapi.tests import util
 from os.path import dirname, extsep, exists, join
-from amivapi import models
+from amivapi.studydocs import File
 
 
 class FileTest(util.WebTestNoAuth):
@@ -132,14 +132,14 @@ class FileTest(util.WebTestNoAuth):
         studyid = studydoc.id
         self.new_file(study_doc_id=studyid)
 
-        len = self.db.query(models.File).count()
+        len = self.db.query(File).count()
         self.assertTrue(len == 1)
 
         h = {"If-Match": studydoc._etag}
         self.api.delete("/studydocuments/%i" % studyid, headers=h,
                         status_code=204)
 
-        len = self.db.query(models.File).count()
+        len = self.db.query(File).count()
         self.assertTrue(len == 0)
 
     def test_filetype(self):

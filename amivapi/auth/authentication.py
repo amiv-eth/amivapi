@@ -20,7 +20,7 @@ from base64 import b64encode
 from datetime import datetime
 
 from flask import current_app as app
-from flask import Blueprint, abort, g
+from flask import abort, g
 
 from eve.auth import TokenAuth
 from eve.methods.post import post_internal
@@ -30,7 +30,9 @@ from eve.utils import debug_error_message, config
 from sqlalchemy import exists
 from sqlalchemy.orm.exc import NoResultFound
 
-from amivapi import models
+from amivapi.users import User
+
+from .endpoints import Session
 
 
 class TokenAuth(TokenAuth):
@@ -71,8 +73,8 @@ class TokenAuth(TokenAuth):
         dbsession = app.data.driver.session
 
         try:
-            sess = dbsession.query(models.Session).filter(
-                models.Session.token == token).one()
+            sess = dbsession.query(Session).filter(
+                Session.token == token).one()
         except NoResultFound:
             error = ("Access denied for %s %s: unknown token %s"
                      % (method, resource, token))
@@ -87,15 +89,12 @@ class TokenAuth(TokenAuth):
         return True
 
 
-authentication = Blueprint('authentication', __name__)
-
-
 def _prepare_token(item, user_id):
     # Everything is alright, create token for user
     token = b64encode(urandom(256)).decode('utf_8')
 
     # Make sure token is unique
-    while app.data.driver.session.query(models.Session).filter_by(
+    while app.data.driver.session.query(Session).filter_by(
             token=token).count() != 0:
         token = b64encode(urandom(256)).decode('utf_8')
 
@@ -147,7 +146,7 @@ def process_login(items):
                                  "Checking database...")
                 # Query db for user by nethz field
                 has_user_nethz = app.data.driver.session.query(exists().where(
-                    models.User.nethz == item['user']
+                    User.nethz == item['user']
                 )).scalar()
 
                 # Create or update user
@@ -194,16 +193,16 @@ def process_login(items):
         # Complicated query, does the following: if user specified by nethz
         # exists, take result. if not check by email
         if (app.data.driver.session.query(exists().where(
-                models.User.nethz == item['user'])).scalar()):
-            user = app.data.driver.session.query(models.User).filter_by(
+                User.nethz == item['user'])).scalar()):
+            user = app.data.driver.session.query(User).filter_by(
                 nethz=item['user']).one()
         elif (app.data.driver.session.query(exists().where(
-                models.User.email == item['user'])).scalar()):
-            user = app.data.driver.session.query(models.User).filter_by(
+                User.email == item['user'])).scalar()):
+            user = app.data.driver.session.query(User).filter_by(
                 email=item['user']).one()
         elif item['user'] == 'root':
             app.logger.debug("Using root user.")
-            user = app.data.driver.session.query(models.User).filter_by(
+            user = app.data.driver.session.query(User).filter_by(
                 id=0).one()  # Using one() because root has to exists
         else:
             user = None  # Neither found by nethz nor email

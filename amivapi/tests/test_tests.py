@@ -3,7 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-from amivapi import models
+from amivapi.auth import Session
 from amivapi.tests import util
 
 
@@ -19,14 +19,14 @@ class IsolationTest(util.WebTestNoAuth):
         # Check that there is no previous data
         self.assertFalse(self.db.identity_map)
 
-        session = models.Session(user_id=0,
-                                 token="test",
-                                 _author=0)
+        session = Session(user_id=0,
+                          token="test",
+                          _author=0)
         self.db.add(session)
         self.db.flush()
 
         # The data is added to the database
-        sessions = self.db.query(models.Session).all()
+        sessions = self.db.query(Session).all()
         self.assertEquals(len(sessions), 1)
         self.assertEquals(sessions[0], session)
 
@@ -44,7 +44,7 @@ class IsolationTest(util.WebTestNoAuth):
         """No data from test_a has survived."""
         # The session is empty again, and the user has not been persisted.
         self.assertFalse(self.db.identity_map)
-        sessions = self.db.query(models.Session).all()
+        sessions = self.db.query(Session).all()
         self.assertEquals(len(sessions), 0)
 
         # The API also does not return users anymore

@@ -7,7 +7,8 @@
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 from amivapi.tests import util
-from amivapi import models
+from amivapi.users import User
+from amivapi import utils
 
 
 class ModelValidationTest(util.WebTestNoAuth):
@@ -18,7 +19,7 @@ class ModelValidationTest(util.WebTestNoAuth):
         user ids """
 
         # Loop over all models
-        for model in models.Base._decl_class_registry.values():
+        for model in utils.Base._decl_class_registry.values():
             # Skip Base class
             if not isinstance(model, DeclarativeMeta):
                 continue
@@ -53,7 +54,7 @@ class ModelValidationTest(util.WebTestNoAuth):
                                              % (field, owner, str(model)))
 
                 # If we are at User and the field is id we are done
-                if cls == models.User and path[-1] == 'id':
+                if cls == User and path[-1] == 'id':
                     continue
 
                 # The field can also be a foreign key to User.id, so check that

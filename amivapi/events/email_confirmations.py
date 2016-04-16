@@ -2,22 +2,29 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""Email confirmation logic.
 
-from flask import current_app as app
+Needed when external users want to sign up for public events.
+"""
+from flask import current_app
 from flask import Blueprint, request, abort, g
+
 from eve.methods.post import post
 from eve.render import send_response
 from eve.methods.common import payload
-from eve.utils import config
-from amivapi.authorization import common_authorization
-from amivapi import models, utils
+
+from amivapi.auth.authorization import common_authorization
+from amivapi import utils
+
+from .endpoints import EventSignup
 
 confirmprint = Blueprint('confirm', __name__)
-documentation = {}
 
 
 def send_confirmmail(resource, token, email):
-    """For the development-Version, we do not actually send emails but print
+    """Send mail. Not implemented.
+
+    For the development-Version, we do not actually send emails but print
     the token. For testing, you will find the token in the database or copy it
     from the command-line
     :param resource: The resource of the current request as a string
@@ -29,7 +36,8 @@ def send_confirmmail(resource, token, email):
 
 
 def confirm_actions(resource, email, items):
-    """
+    """Create unique token needed for confirmation.
+
     This method will generate a random token and append it to items.
     For 'eventsignups', the email will be swapped to the key '_email_unreg'.
     An email will be send to the user for confirmation.
@@ -48,7 +56,9 @@ def confirm_actions(resource, email, items):
 
 
 def change_status(response):
-    """This function changes the catched response of a post. Eve returns 201
+    """Change status to "accepted" for actions that need confirmation.
+
+    This function changes the caught. response of a post. Eve returns 201
     because the data got just deleted out of the payload and the empty payload
     got handled correct, but we need to return 202 and a hint to confirm the
     email-address
@@ -60,13 +70,15 @@ def change_status(response):
         Send 202 Accepted"""
         response[0].update({'_issue': 'Please check your email and POST the '
                            'token to /confirms to process your request',
-                            config.STATUS: 202})
+                            current_app.config['STATUS']: 202})
         return response[0], None, None, 202
     return response
 
 
 def route_post(resource, lookup, anonymous=True):
-    """This method mappes the request to the corresponding eve-functions or
+    """Post endpoint to be able to change status.
+
+    This method maps the request to the corresponding eve-functions or
     implements own functions.
     Similar to eve.endpoint
     :param resource: the resource where the request comes from
@@ -82,7 +94,7 @@ def route_post(resource, lookup, anonymous=True):
     return send_response(resource, response)
 
 
-documentation['eventsignups'] = {
+documentation = {'eventsignups': {
     'general': "Signing up to an event is possible in two cases: Either you "
     "are a registered user ot you are not registered, but the event is "
     "public and you have an email-address.",
@@ -98,12 +110,13 @@ documentation['eventsignups'] = {
         'user_id': "If you are not registered, set this to -1"
     },
     'schema': 'eventsignups'
-}
+}}
 
 
 @confirmprint.route('/eventsignups', methods=['POST'])
 def handle_eventsignups():
     """These are custom api-endpoints from the confirmprint Blueprint.
+
     We don't want eve to handle POST to /eventsignups because we need to
     change the status of the response
     :returns: eve-response with (if POST was correct) changed status-code
@@ -115,7 +128,8 @@ def handle_eventsignups():
 
 @confirmprint.route('/confirmations', methods=['POST'])
 def on_post_token():
-    """This is the endpoint, where confirmation-tokens need to get posted to.
+    """Confirmation token endpoint.
+
     :returns: 201 if token correct
     """
     data = payload()
@@ -123,14 +137,16 @@ def on_post_token():
 
 
 def execute_confirmed_action(token):
-    """from a given token, this function will search for a stored action in
+    """Do whatever needed confirmation.
+
+    from a given token, this function will search for a stored action in
     Confirms and send it to eve's post_internal
     PATCH and PUT are not implemented yet
     :param token: the Token which was send to an email-address for confirmation
     :returns: 201 in eve-response-format, without confirmed data
     """
-    db = app.data.driver.session
-    signup = db.query(models.EventSignup).filter_by(_token=token).first()
+    db = current_app.data.driver.session
+    signup = db.query(EventSignup).filter_by(_token=token).first()
     doc = signup
     if doc is None:
         abort(404, description=(
@@ -146,13 +162,8 @@ def execute_confirmed_action(token):
     return send_response(resource, response)
 
 
-""" Hooks to catch actions which should be confirmed """
-
-
 def signups_confirm_anonymous(items):
-    """
-    hook to confirm external signups
-    """
+    """Hook to confirm external signups."""
     for doc in items:
         if doc['user_id'] == -1:
             doc['_confirmed'] = False
@@ -162,33 +173,41 @@ def signups_confirm_anonymous(items):
 
 
 def needs_confirmation(resource, doc):
-    return (resource == 'eventsignups'
-            and doc.get('_email_unreg') is not None)
+    """Check if confirmation is needed."""
+    return (resource == 'eventsignups' and
+            doc.get('_email_unreg') is not None)
 
 
 def pre_delete_confirmation(resource, original):
+    """Hook to check if confirmation is needed."""
     if needs_confirmation(resource, original):
         token_authorization(resource, original)
 
 
 def pre_update_confirmation(resource, updates, original):
+    """Hook to check if confirmation is needed."""
     pre_delete_confirmation(resource, original)
 
 
 def pre_replace_confirmation(resource, document, original):
+    """Hook to check if confirmation is needed."""
     pre_delete_confirmation(resource, original)
 
 
 def token_authorization(resource, original):
-    """
+    """Check confirmation token.
+
     checks if a request to an item-endpoint is authorized by the correct Token
     in the header
     Will abort if Token is incorrect.
+
+    TODO: This function is not tested at all.
+
     :param resourse: the resource of the item as a string
     :param original: The original data of the item which is requested
     """
     token = request.headers.get('Token')
-    model = utils.get_class_for_resource(models, resource)
+    model = utils.get_class_for_resource(resource)
     is_owner = g.logged_in_user in utils.get_owner(model, original['id'])
     if is_owner:
         print("Access to %s/%d granted for owner %d without token" % (
@@ -214,77 +233,67 @@ def _replace(item, old_key, new_key):
 
 # Hooks for input
 def replace_email_insert(items):
-    """ List of inserted items"""
+    """List of inserted items."""
     for item in items:
         _replace(item, 'email', '_email_unreg')
 
 
 def replace_email_replace(item, original):
-    """ one item
-    """
+    """One item."""
     _replace(item, 'email', '_email_unreg')
 
 
 def replace_email_update(updates, original):
-    """ one item """
+    """One item."""
     _replace(updates, 'email', '_email_unreg')
 
 
 # Hooks for output
 def replace_email_fetched_item(response):
-    """ The response will contain exactly one item
-    """
+    """The response will contain exactly one item."""
     _replace(response, '_email_unreg', 'email')
 
 
 def replace_email_fetched_resource(response):
-    """ The response will be a dict, the list of items is in '_items'
-    """
+    """The response will be a dict, the list of items is in '_items'."""
     for item in response['_items']:
         _replace(item, '_email_unreg', 'email')
 
 
 def replace_email_replaced(item, original):
-    """ The response will be a dict, the list of items is in '_items'
-    """
+    """The response will be a dict, the list of items is in '_items'."""
     _replace(item, '_email_unreg', 'email')
 
 
 def replace_email_inserted(items):
-    """ Contains a list of inserted items
-    """
+    """List of inserted items."""
     for item in items:
         _replace(item, '_email_unreg', 'email')
 
 
 def replace_email_updated(updates, original):
-    """ Contains one updated item
-    """
+    """One updated item."""
     _replace(updates, '_email_unreg', 'email')
 
 
 # Hooks to remove '_token' from output after db access
 def remove_token_fetched_item(response):
-    """ The response will contain exactly one item
-    """
+    """The response will contain exactly one item."""
     del(response['_token'])
 
 
 def remove_token_fetched_resource(response):
-    """ The response will be a dict, the list of items is in '_items'
-    """
+    """Response will be a dict, the list of items is in '_items'."""
     for item in response['_items']:
         item.pop('_token', None)
 
 
 def remove_token_replaced(item, original):
-    """ The response will be a dict, the list of items is in '_items'
-    """
+    """Response will be a dict, the list of items is in '_items'."""
     item.pop('_token', None)
 
 
 def remove_token_inserted(items):
-    """ Contains a list of inserted items
-    """
+    """List of inserted items."""
     for item in items:
         item.pop('_token', None)

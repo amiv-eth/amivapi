@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 from amivapi.tests import util
-from amivapi.models import Group
+from amivapi.groups import Group
 
 
 class IndirectAnyTest(util.WebTest):

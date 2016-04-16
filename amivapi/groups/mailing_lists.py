@@ -2,6 +2,11 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""Api group resources.
+
+Contains groups, groupmemberships, groupaddresses and forwards as well as
+group permission and mailinglist functions.
+"""
 
 from os import remove, rename
 
@@ -10,11 +15,13 @@ from flask import abort
 
 from eve.utils import config
 
-from amivapi.models import User, GroupAddress, GroupForward, GroupMember
+from amivapi.users import User
+
+from .endpoints import GroupMember, GroupAddress, GroupForward
 
 
 def _get_filename(email):
-    """ Generates the filename for a mailinglist for itet mail forwarding
+    """Generate the filename for a mailinglist for itet mail forwarding.
 
     :param email: adress of the mailinglist
     :returns: path of forward file
@@ -23,7 +30,7 @@ def _get_filename(email):
 
 
 def _add_email(group_id, email):
-    """ Adds an address to the mailinglist file
+    """Add an address to the mailinglist file.
 
     :param group_id: id of Group object(which addresses are forwarded)
     :param email: address to forward to to add(where to forward)
@@ -38,12 +45,12 @@ def _add_email(group_id, email):
                 f.write(email + '\n')
         except IOError as e:
             app.logger.error(str(e) + "Can not open forward file! "
-                             + "Please check permissions!")
+                             "Please check permissions!")
             abort(500)
 
 
 def _remove_email(group_id, email):
-    """ Removes an address from a mailinglist file
+    """Remove an address from a mailinglist file.
 
     :param group_id: id of Group object
     :param email: Address to forward to to remove
@@ -60,13 +67,13 @@ def _remove_email(group_id, email):
             with open(path, 'w') as f:
                 f.write(''.join(lines))
         except IOError as e:
-            app.logger.error(str(e) + "Can not remove forward " + email
-                             + " from " + path + "! It seems the forward"
-                             + " database is inconsistent!")
+            app.logger.error(str(e) + "Can not remove forward " + email +
+                             " from " + path + "! It seems the forward"
+                             " database is inconsistent!")
 
 
 def add_user(group_id, user_id):
-    """ Add a user to all GroupAddresses of a group in the filesystem
+    """Add a user to all GroupAddresses of a group in the filesystem.
 
     :param group_id: id of the group object
     :param user_id: id of the user to add
@@ -78,7 +85,7 @@ def add_user(group_id, user_id):
 
 
 def remove_user(group_id, user_id):
-    """ Remove a user from a group in the filesystem
+    """Remove a user from a group in the filesystem.
 
     :param group_id: id of the group object
     :param user_id: id of the user to remove
@@ -89,15 +96,13 @@ def remove_user(group_id, user_id):
     _remove_email(group_id, user.email)
 
 
-#
-#
 # Hooks for groupaddresses, all methods needed
-#
-#
 
 
 def create_files(items):
-    """ Hook to add all users in group to a file for the address, necessary
+    """Create mailinglist files.
+
+    Hook to add all users in group to a file for the address, necessary
     when the address is added to an existing group to get it up to date
     """
     session = app.data.driver.session
@@ -117,7 +122,7 @@ def create_files(items):
 
 
 def delete_file(item):
-    """ Hook to delete a the mailinglist file when the address is removed
+    """Hook to delete a the mailinglist file when the address is removed.
 
     :param item: address which is being deleted
     """
@@ -126,14 +131,14 @@ def delete_file(item):
     try:
         remove(path)
     except OSError as e:
-        app.logger.error(str(e) + "Can not remove forward "
-                         + item['email'] + "! It seems the forward "
+        app.logger.error(str(e) + "Can not remove forward " +
+                         item['email'] + "! It seems the forward "
                          "database is inconsistent!")
         pass
 
 
 def update_file(updates, original):
-    """ Rename the file to the new address """
+    """Rename the file to the new address."""
     if 'email' in updates:
         old_path = _get_filename(original['email'])
         new_path = _get_filename(updates['email'])
@@ -141,21 +146,18 @@ def update_file(updates, original):
         try:
             rename(old_path, new_path)
         except OSError as e:
-            app.logger.error(str(e) + "Can not rename file "
-                             + original['email'] + "to " + updates['email'] +
+            app.logger.error(str(e) + "Can not rename file " +
+                             original['email'] + "to " + updates['email'] +
                              "! It seems the forward database is " +
                              "inconsistent!")
 
 
-#
-#
 # Hooks for groupmembers, only POST and DELETE needed
-#
-#
-
 
 def add_user_email(items):
-    """ Hook to add a user to a forward in the filesystem when a ForwardUser
+    """Add user to list.
+
+    Hook to add a user to a forward in the filesystem when a ForwardUser
     object is created
 
     :param items: GroupMember objects
@@ -165,7 +167,9 @@ def add_user_email(items):
 
 
 def remove_user_email(item):
-    """ Hook to remove the entries in the forward files in the filesystem when
+    """Remove user from list.
+
+    Hook to remove the entries in the forward files in the filesystem when
     a GroupMember is DELETEd
 
     :param item: dict of the GroupMember which is deleted
@@ -173,15 +177,13 @@ def remove_user_email(item):
     remove_user(item['group_id'], item['user_id'])
 
 
-#
-#
 # Hooks for groupforwards, all methods needed
-#
-#
 
 
 def add_forward_email(items):
-    """ Hook to add an entry to a forward file in the filesystem when a
+    """Add mail to list.
+
+    Hook to add an entry to a forward file in the filesystem when a
     GroupAddressMember object is created using POST
 
     :param items: List of new GroupAddressMember objects
@@ -191,7 +193,9 @@ def add_forward_email(items):
 
 
 def replace_forward_email(item, original):
-    """ Hook to replace an entry in forward files in the filesystem when a
+    """Replace mail in list.
+
+    Hook to replace an entry in forward files in the filesystem when a
     GroupAddressMember object is replaced using PUT
 
     :param item: New GroupAddressMember object to be registered
@@ -202,7 +206,9 @@ def replace_forward_email(item, original):
 
 
 def update_forward_email(updates, original):
-    """ Hook to update an entry in forward files in the filesystem when a
+    """Update mail in list.
+
+    Hook to update an entry in forward files in the filesystem when a
     GroupAddressMember object is changed using PATCH
 
     :param updates: dict of updates to GroupAddressMember object
@@ -214,7 +220,9 @@ def update_forward_email(updates, original):
 
 
 def remove_forward_email(item):
-    """ Hook to remove an entry in forward files in the filesystem when a
+    """Delete mail from list.
+
+    Hook to remove an entry in forward files in the filesystem when a
     GroupAddressMember object is DELETEd
 
     :param item: The GroupAddressMember object which is being deleted
