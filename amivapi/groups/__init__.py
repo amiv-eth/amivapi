@@ -15,10 +15,7 @@ from flask import current_app
 from amivapi.utils import register_domain, register_validator
 
 from .endpoints import (
-    groupdomain,
-    Group, GroupMember,
-    GroupAddress,
-    GroupForward
+    groupdomain
 )
 from .validation import GroupValidator, create_group_permissions_jsonschema
 from . import mailing_lists as mail
