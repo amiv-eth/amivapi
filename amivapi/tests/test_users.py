@@ -150,7 +150,6 @@ class UserItemPermissions(util.WebTest):
             {"legi": "10000000"},
             {"nethz": "coolkid"},
             {"department": "mavt"},
-            {"phone": "177"},
             {"gender": "male"},
             {"membership": "none"},
         ]
