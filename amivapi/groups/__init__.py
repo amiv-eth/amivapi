@@ -15,7 +15,7 @@ from flask import current_app
 from amivapi.utils import register_domain, register_validator
 
 from .endpoints import (
-    make_groupdomain,
+    groupdomain,
     Group, GroupMember,
     GroupAddress,
     GroupForward
@@ -53,7 +53,7 @@ def check_group_permission(user_id, resource, method):
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
-    register_domain(app, make_groupdomain())
+    register_domain(app, groupdomain)
     register_validator(app, GroupValidator)
 
     # email-management
