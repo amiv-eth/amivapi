@@ -15,7 +15,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship, validates
 
 from amivapi.settings import PASSWORD_CONTEXT
-from amivapi.utils import Base, make_domain, register_domain, EMAIL_REGEX
+from amivapi.utils import Base, register_domain, EMAIL_REGEX
 
 
 class User(Base):
@@ -65,10 +65,13 @@ class User(Base):
 
         The salt is regenerated each time a new password is set.
         """
-        return PASSWORD_CONTEXT.encrypt(plaintext)
+        if plaintext is None:
+            return None
+        else:
+            return PASSWORD_CONTEXT.encrypt(plaintext)
 
     def verify_password(self, plaintext):
-        """Hash password everytime it changes."""
+        """Check password."""
         is_valid = PASSWORD_CONTEXT.verify(plaintext, self.password)
         if is_valid and PASSWORD_CONTEXT.needs_update(self.password):
             # rehash password
@@ -77,49 +80,155 @@ class User(Base):
         return is_valid
 
 
-def make_userdomain():
-    """Create domain.
+userdomain = {
+    'users': {
+        'description': {'general': 'In general, the user data will be '
+                        'generated from LDAP-Data. However, one might change '
+                        'the RFID-Number or the membership-status. '
+                        'Extraordinary members may not have a LDAP-Account '
+                        'and can therefore access all given fields.',
+                        'methods': {'GET': 'Authorization is required for '
+                                    'most of the fields'}},
 
-    This is a function so it can be called after models in all modules have
-    been defined.
-    """
-    userdomain = make_domain(User)
+        'additional_lookup': {'field': 'nethz',
+                              'url': 'regex(".*[\\w].*")'},
 
-    userdomain['users']['schema']['email'].update(
-        {'regex': EMAIL_REGEX})
+        'datasource': {'source': 'User',
+                       'projection': {
+                           '_author': 1,
+                           'department': 1,
+                           'email': 1,
+                           'eventsignups': 0,
+                           'firstname': 1,
+                           'gender': 1,
+                           'groupmemberships': 1,
+                           'id': 1,
+                           'lastname': 1,
+                           'legi': 1,
+                           'membership': 1,
+                           'nethz': 1,
+                           'password': 0,
+                           'phone': 1,
+                           'rfid': 1,
+                           'send_newsletter': 1,
+                           'sessions': 0}
+                       },
+        'item_lookup': True,
+        'item_lookup_field': '_id',
+        'item_url': 'regex("[0-9]+")',
 
-    # /users
-    # Not patchable fields
-    for field in ['firstname', 'lastname', 'legi', 'nethz', 'department',
-                  'phone', 'gender', 'membership']:
-        userdomain['users']['schema'][field].update(
-            {'not_patchable_unless_admin': True})
+        'resource_methods': ['GET', 'POST'],
+        'public_item_methods': [],
+        'public_methods': [],
 
-    # Hide passwords
-    userdomain['users']['datasource']['projection']['password'] = 0
+        'registered_methods': [],
 
-    # TODO: enums of sqlalchemy should directly be caught by the validator
-    userdomain['users']['schema']['gender'].update({
-        'allowed': ['male', 'female']
-    })
-    userdomain['users']['schema']['department'].update({
-        'allowed': ['itet', 'mavt'],
-    })
-    userdomain['users']['schema']['nethz'].update({
-        'empty': False,
-    })
+        'owner': ['id'],
+        'owner_methods': ['GET', 'PATCH'],
 
-    # Make it possible to retrive a user with his nethz (/users/nethz)
-    userdomain['users'].update({
-        'additional_lookup': {
-            'url': 'regex(".*[\w].*")',
-            'field': 'nethz',
-        }
-    })
+        'schema': {
+            'nethz': {
+                'type': 'string',
+                'empty': False,
+                'nullable': True,
+                'maxlength': 30,
+                'not_patchable_unless_admin': True,
+                'unique': True,
+                'default': None},  # Do multiple none values work?
+            'firstname': {
+                'type': 'string',
+                'maxlength': 50,
+                'empty': False,
+                'nullable': False,
+                'not_patchable_unless_admin': True,
+                'required': True},
+            'lastname': {
+                'type': 'string',
+                'maxlength': 50,
+                'empty': False,
+                'nullable': False,
+                'not_patchable_unless_admin': True,
+                'required': True},
+            'membership': {
+                'allowed': ["none", "regular", "extraordinary", "honorary"],
+                'maxlength': 13,
+                'not_patchable_unless_admin': True,
+                'required': True,
+                'type': 'string',
+                'unique': False},
 
-    return userdomain
+            # Values only imported by ldap
+            'legi': {
+                'maxlength': 8,
+                'not_patchable_unless_admin': True,
+                'nullable': True,
+                'required': False,
+                'type': 'string',
+                'unique': True},
+            'department': {
+                'type': 'string',
+                'allowed': ['itet', 'mavt'],
+                'not_patchable_unless_admin': True,
+                'nullable': True},
+            'gender': {
+                'type': 'string',
+                'allowed': ['male', 'female'],
+                'maxlength': 6,
+                'not_patchable_unless_admin': True,
+                'required': True,
+                'unique': False},
+
+            # Fields the user can modify himself
+            'password': {
+                'type': 'string',
+                'maxlength': 100,
+                'empty': False,
+                'nullable': True,
+                'default': None},
+            'email': {
+                'type': 'string',
+                'maxlength': 100,
+                'regex': EMAIL_REGEX,
+                'required': True,
+                'unique': True},
+            'rfid': {
+                'type': 'string',
+                'maxlength': 6,
+                'empty': False,
+                'nullable': True,
+                'unique': True},
+            'phone': {
+                'type': 'string',
+                'maxlength': 20,
+                'empty': False,
+                'nullable': True},
+            'send_newsletter': {
+                'type': 'boolean',
+                'nullable': True},
+
+            # Relationships
+            'eventsignups': {
+                'data_relation': {'embeddable': True,
+                                  'resource': 'eventsignups'},
+                'type': 'objectid',
+                'readonly': True},
+            'groupmemberships': {
+                'data_relation': {'embeddable': True,
+                                  'resource': 'groupmembers'},
+                'type': 'objectid',
+                'readonly': True},
+            'sessions': {
+                'data_relation': {'embeddable': True,
+                                  'resource': 'sessions'},
+                'type': 'objectid',
+                'readonly': True}
+        },
+
+        'sql_model': User
+    }
+}
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
-    register_domain(app, make_userdomain())
+    register_domain(app, userdomain)
