@@ -11,7 +11,7 @@ logic needed for signup of non members to events.
 
 from amivapi.utils import register_domain
 
-from .endpoints import make_studydocdomain, StudyDocument, File
+from .endpoints import make_studydocdomain
 
 
 def init_app(app):
