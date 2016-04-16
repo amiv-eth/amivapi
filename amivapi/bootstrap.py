@@ -5,34 +5,22 @@
 
 """Starting point for the API."""
 
-from sqlalchemy.exc import OperationalError, ProgrammingError
-from sqlalchemy.orm import Session
-from sqlalchemy.engine import reflection
-from sqlalchemy.schema import (
-    MetaData,
-    Table,
-    DropTable,
-    ForeignKeyConstraint,
-    DropConstraint,
-)
-
 from eve import Eve
-from eve_sqlalchemy import SQL  # , ValidatorSQL
-from eve_docs import eve_docs
+#from eve_docs import eve_docs
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
 from amivapi import (
-    users,
-    events,
-    auth,
-    media,
-    mailing_lists,
-    validation,
-    documentation,
+    #users,
+    #events,
+    #auth,
+    #media,
+    #groups,
+    #ldap,
+    #documentation,
     utils,
-    joboffers,
-    purchases,
+    #joboffers,
+    #purchases,
     studydocs
 )
 from amivapi.ldap import ldap_connector
@@ -40,7 +28,7 @@ from amivapi.ldap import ldap_connector
 from amivapi.utils import get_config
 
 
-def create_app(disable_auth=False, **kwargs):
+def create_app(disable_auth=True, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
@@ -52,14 +40,13 @@ def create_app(disable_auth=False, **kwargs):
     config = get_config()
     # Domain is empty at first, modules will add resources later
     config['DOMAIN'] = {}
-    config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    #config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     config.update(kwargs)
 
     if disable_auth:
         app = Eve(settings=config,
-                  data=SQL,
-                  validator=utils.ValidatorAMIV,
-                  media=media.FileSystemStorage)
+                  validator=utils.ValidatorAMIV)
+                  #media=media.FileSystemStorage)
     else:
         app = Eve(settings=config,
                   data=SQL,
@@ -67,21 +54,21 @@ def create_app(disable_auth=False, **kwargs):
                   auth=auth.authentication.TokenAuth,
                   media=media.FileSystemStorage)
 
-    # Bind SQLAlchemy
+    # Bind Mongo
     db = app.data.driver
-    utils.Base.metadata.bind = db.engine
-    db.Model = utils.Base
+    #utils.Base.metadata.bind = db.engine
+    #db.Model = utils.Base
 
     Bootstrap(app)
-    with app.app_context():
-        g.db = db.session
+    #with app.app_context():
+    #    g.db = db.session
 
     # Create LDAP connector
     if config['ENABLE_LDAP']:
         ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
-    app.register_blueprint(eve_docs, url_prefix="/docs")
+    #app.register_blueprint(eve_docs, url_prefix="/docs")
 
     #
     # Event hooks
@@ -90,15 +77,14 @@ def create_app(disable_auth=False, **kwargs):
     # the database
     #
 
-    # Init modules, important: Users, than Auth have to come first
-    users.init_app(app)
-    auth.init_app(app)
-    events.init_app(app)
-    groups.init_app(app)
-    joboffers.init_app(app)
-    purchases.init_app(app)
+    #users.init_app(app)
+    #auth.init_app(app)
+    #events.init_app(app)
+    #groups.init_app(app)
+    #joboffers.init_app(app)
+    #purchases.init_app(app)
     studydocs.init_app(app)
-    media.init_app(app)
+    #media.init_app(app)
 
     return app
 
