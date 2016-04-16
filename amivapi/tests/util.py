@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 import os
 
 import eve_sqlalchemy
+
+from eve.methods.post import post_internal
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
@@ -168,23 +170,24 @@ class WebTest(unittest.TestCase):
         self._count += 1
         return self._count
 
-    def create_object(model):
+    def create_object(resource):
         def decorate(func):
             def decorated(self, **kwargs):
                 kwargs.setdefault('_etag', "initial_etag")
                 kwargs.setdefault('_author', -1)
 
                 kwargs = func(self, **kwargs)
-                obj = model(**kwargs)
 
-                self.db.add(obj)
-                self.db.flush()
+		post_internal(resource, kwargs, skip_validation=True)
+
+                #self.db.add(obj)
+                #self.db.flush()
                 return obj
 
             return decorated
         return decorate
 
-    @create_object(User)
+    @create_object('user')
     def new_user(self, **kwargs):
         firstname, gender = random.choice([
             (u"John", "male"), (u"Jane", "female")
@@ -199,7 +202,7 @@ class WebTest(unittest.TestCase):
         data.update(**kwargs)
         return data
 
-    @create_object(Group)
+    @create_object('groups')
     def new_group(self, **kwargs):
         """ Create a forward """
         data = {
@@ -211,27 +214,27 @@ class WebTest(unittest.TestCase):
         data.update(kwargs)
         return data
 
-    @create_object(GroupAddress)
+    @create_object('groupaddresses')
     def new_group_address(self, **kwargs):
         """ Add a forward address. At least supply the group_id """
         kwargs.setdefault('email',
                           u"adress-%i@example.com" % self.next_count())
         return kwargs
 
-    @create_object(GroupMember)
+    @create_object('groupmembers')
     def new_group_member(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
         kwargs.setdefault('user_id', 0)
         return kwargs
 
-    @create_object(GroupForward)
+    @create_object('groupforwards')
     def new_group_forward(self, **kwargs):
         """ Add a user to a group. At least supply the group_id """
         kwargs.setdefault('email',
                           u"forward-%i@example.com" % self.next_count())
         return kwargs
 
-    @create_object(Session)
+    @create_object('sessions')
     def new_session(self, **kwargs):
         """ Create a new session, default is root session """
         kwargs.setdefault('user_id', 0)
@@ -241,7 +244,7 @@ class WebTest(unittest.TestCase):
 
         return kwargs
 
-    @create_object(Event)
+    @create_object('events')
     def new_event(self, **kwargs):
         """ Create a new event """
         data = {
@@ -254,7 +257,7 @@ class WebTest(unittest.TestCase):
         data.update(kwargs)
         return data
 
-    @create_object(EventSignup)
+    @create_object('eventsignups')
     def new_signup(self, **kwargs):
         """ Create a signup, needs at least the event_id """
         if 'user_id' not in kwargs:
@@ -264,19 +267,19 @@ class WebTest(unittest.TestCase):
             kwargs['_token'] = token_generator(size=20)
         return kwargs
 
-    @create_object(JobOffer)
+    @create_object('joboffers')
     def new_joboffer(self, **kwargs):
         """ Create a new job offer """
         kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())
         return kwargs
 
-    @create_object(StudyDocument)
+    @create_object('studydocuments')
     def new_studydocument(self, **kwargs):
         """ Create a new study document """
         kwargs.setdefault('name', u"Example Exam %i" % self.next_count())
         return kwargs
 
-    @create_object(File)
+    @create_object('files')
     def new_file(self, **kwargs):
         """ Create a new file, needs study_doc_id """
         if 'data' not in kwargs:
