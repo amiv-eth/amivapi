@@ -10,12 +10,10 @@ from base64 import b64encode
 from datetime import datetime, timedelta
 import os
 
-import eve_sqlalchemy
-from flask.ext.sqlalchemy import SQLAlchemy
 from flask.testing import FlaskClient
 from flask.wrappers import Response
 
-from amivapi import bootstrap, tests
+from amivapi import bootstrap, tests, utils
 from amivapi.utils import token_generator
 from amivapi.users import User
 from amivapi.auth import Session
@@ -106,38 +104,51 @@ class TestResponse(Response):
 
 
 class WebTest(unittest.TestCase):
-    """Base test class for tests against the full WSGI stack."""
+    """Base test class for tests against the full WSGI stack.
+
+    Inspired by eve standard testing class.
+    """
 
     disable_auth = False
 
     def setUp(self):
+        """Set up the testing client and database connection.
+
+        self.api will be a flask TestClient to make requests
+        self.db will be a MongoDB database
+        """
+
         super(WebTest, self).setUp()
 
-        transaction = tests.connection.begin()
-        self.addCleanup(transaction.rollback)
+        config = utils.get_config()
 
-        # Monkey-patch the session used by Eve to join the global transaction
-        eve_sqlalchemy.db = SQLAlchemy(
-            session_options={'bind': tests.connection})
-        eve_sqlalchemy.SQL.driver = eve_sqlalchemy.db
+        # connect to Mongo
+        self.connection = MongoClient(config['MONGO_HOST'],
+                                      config['MONGO_PORT'])
+        # if accidentally there already exists a test-database, delete it
+        self.connection.drop_database(tests.test_config['MONGO_DBTEST'])
 
+        # create eve app
         self.app = bootstrap.create_app(disable_auth=self.disable_auth,
                                         **tests.test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
 
-        self.db = self.app.data.driver.session
-        self.addCleanup(self.db.remove)
+        # connect to testing database
+        self.db = self.connection[tests.test_config['MONGO_DBTEST']]
 
-        # Prevent Eve/Flask-SQLAlchemy from removing or commiting the session,
-        # which would break our base transaction
-        self.db.commit = self.db.flush
-        self.db.remove = self.db.flush
-
+        # create test client
         self.api = self.app.test_client()
 
-        # Delete all files after testing
-        self.addCleanup(self.file_cleanup)
+    def tearDown(self):
+        # delete testing database
+        self.connection.drop_database(tests.test_config['MONGO_DBTEST'])
+        # close database connection
+        self.connection.close()
+
+        # delete all uploaded files
+        self.file_cleanup()
+
 
     def file_cleanup(self):
         for f in os.listdir(self.app.config['STORAGE_DIR']):
@@ -290,4 +301,6 @@ class WebTest(unittest.TestCase):
 
 
 class WebTestNoAuth(WebTest):
+    """WebTest without authentification."""
+
     disable_auth = True
