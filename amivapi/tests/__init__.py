@@ -11,15 +11,18 @@ from os import unlink, rmdir
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import make_url
 
+
+
+
 from amivapi import bootstrap, utils
 
 
-engine = None
-connection = None
+#engine = None
+#connection = None
 
 # Config overwrites
 test_config = {
-    'SQLALCHEMY_DATABASE_URI': '',
+    'MONGO_DBTEST': 'test_amivapi',
     'STORAGE_DIR': '',
     'FORWARD_DIR': '',
     'ROOT_MAIL': 'nobody@example.com',
@@ -29,10 +32,9 @@ test_config = {
     'DEBUG': False
 }
 
-
 def setup():
-    global engine, connection
-    warnings.filterwarnings('error', module=r'^sqlalchemy')
+    #global engine, connection
+    #warnings.filterwarnings('error', module=r'^sqlalchemy')
 
     config = utils.get_config()
     db_uri = config['SQLALCHEMY_DATABASE_URI']
@@ -54,6 +56,8 @@ def setup():
 
     db_url = make_url(db_uri)
     engine = create_engine(db_url)
+
+
 
     # Connect and create the test database
     connection = engine.connect()
