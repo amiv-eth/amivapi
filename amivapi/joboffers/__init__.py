@@ -6,33 +6,9 @@
 
 Since there are no hooks or anything everything is just in here.
 """
-from sqlalchemy import (
-    Column,
-    Unicode,
-    CHAR,
-    DateTime,
-    UnicodeText)
 
 from amivapi.utils import make_domain
-from amivapi.utils import Base, register_domain
-
-class JobOffer(Base):
-    __expose__ = True
-
-    __public_methods__ = ['GET']
-
-    company = Column(Unicode(30))
-
-    logo = Column(CHAR(100))  # This will be modified in schemas.py!
-    pdf = Column(CHAR(100))  # This will be modified in schemas.py!
-    time_end = Column(DateTime)
-
-    title_de = Column(UnicodeText)
-    title_en = Column(UnicodeText)
-    description_de = Column(UnicodeText)
-    description_en = Column(UnicodeText)
-
-
+from amivapi.utils import register_domain
 
 
 
@@ -82,6 +58,5 @@ jobdomain = {'joboffers': {'datasource': {'projection': {'_author': 1,
                       'title_de': {'nullable': True,
                                    'type': 'string'},
                       'title_en': {'nullable': True,
-                                   'type': 'string'}},
-           'sql_model': JobOffer}}
+                                   'type': 'string'}}}}
 
