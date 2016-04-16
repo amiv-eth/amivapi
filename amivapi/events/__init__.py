@@ -10,14 +10,14 @@ logic needed for signup of non members to events.
 
 from amivapi.utils import register_domain, register_validator
 
-from .endpoints import make_eventdomain, Event, EventSignup
+from .endpoints import eventdomain, Event, EventSignup
 from .validation import EventValidator
 from . import email_confirmations as mail
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
-    register_domain(app, make_eventdomain())
+    register_domain(app, eventdomain)
     register_validator(app, EventValidator)
 
     app.register_blueprint(mail.confirmprint)
