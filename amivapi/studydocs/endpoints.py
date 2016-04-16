@@ -17,10 +17,7 @@ from sqlalchemy import (
     Enum)
 from sqlalchemy.orm import relationship
 
-from amivapi.utils import Base, make_domain
-
-import json
-from pprint import pprint
+from amivapi.utils import Base
 
 
 class StudyDocument(Base):
