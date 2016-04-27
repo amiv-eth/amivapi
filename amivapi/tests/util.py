@@ -2,6 +2,7 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""General testing utilities."""
 
 import json
 import random
@@ -18,12 +19,24 @@ from flask.ext.pymongo import MongoClient
 from eve.methods.post import post_internal
 
 from amivapi import bootstrap, utils
-from amivapi.tests import test_config
 from amivapi.utils import token_generator
+
+# Test Config overwrites
+test_config = {
+    'MONGO_DBNAME': 'test_amivapi',
+    'STORAGE_DIR': '',
+    'FORWARD_DIR': '',
+    'ROOT_MAIL': 'nobody@example.com',
+    'SMTP_SERVER': '',
+    'APIKEYS': {},
+    'TESTING': True,
+    'DEBUG': False
+}
 
 
 def find_by_pair(dicts, key, value):
-    """ Finds an entry in a list of dicts, which has a pair key => value
+    """Find an entry in a list of dicts, which has a pair key => value.
+
     If there is not exactly one result returns None
 
     This is useful to find an entry in the result of a get query
@@ -43,7 +56,8 @@ def find_by_pair(dicts, key, value):
 
 
 def is_file_content(path, content):
-    """
+    """Check file content.
+
     Returns true if the file at path exists and has the content in the
     second parameter
     """
@@ -63,7 +77,12 @@ class TestClient(FlaskClient):
     Requests are enforced to be JSON (data and content type).
     Responses can be checked against an expected status code.
     """
+
     def open(self, *args, **kwargs):
+        """Modified request.
+
+        Adds token and headers and asserts status code.
+        """
         expected_code = kwargs.pop('status_code', None)
 
         if 'token' in kwargs:
@@ -77,9 +96,9 @@ class TestClient(FlaskClient):
 
             kwargs.pop('token', None)
 
-        if (not(("headers" in kwargs)
-                and ("content-type" in kwargs['headers']))
-                and ("data" in kwargs)):
+        if (not(("headers" in kwargs) and
+                ("content-type" in kwargs['headers'])) and
+                ("data" in kwargs)):
             kwargs['data'] = json.dumps(kwargs['data'])
             kwargs['content_type'] = "application/json"
 
@@ -97,8 +116,10 @@ class TestClient(FlaskClient):
 
 class TestResponse(Response):
     """Custom response to ease JSON handling."""
+
     @property
     def json(self):
+        """Return data in JSON."""
         return json.loads(self.data.decode())
 
 
@@ -116,7 +137,6 @@ class WebTest(unittest.TestCase):
         self.api will be a flask TestClient to make requests
         self.db will be a MongoDB database
         """
-
         super(WebTest, self).setUp()
 
         config = utils.get_config()
@@ -128,8 +148,6 @@ class WebTest(unittest.TestCase):
         # connect to Mongo
         self.connection = MongoClient(config['MONGO_HOST'],
                                       config['MONGO_PORT'])
-        # if accidentally there already exists a test-database, delete it
-        self.connection.drop_database(test_config['MONGO_DBTEST'])
 
         # create eve app
         self.app = bootstrap.create_app(disable_auth=self.disable_auth,
@@ -137,15 +155,19 @@ class WebTest(unittest.TestCase):
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
 
-        # connect to testing database
-        self.db = self.connection[test_config['MONGO_DBTEST']]
+        # connect to testing database and create user
+        self.db = self.connection[test_config['MONGO_DBNAME']]
+
+        # Assert that database is empty before starting tests.
+        assert not self.db.collection_names(), "The database already exists!"
 
         # create test client
         self.api = self.app.test_client()
 
     def tearDown(self):
+        """Tear down after testing."""
         # delete testing database
-        self.connection.drop_database(test_config['MONGO_DBTEST'])
+        self.connection.drop_database(test_config['MONGO_DBNAME'])
         # close database connection
         self.connection.close()
 
@@ -156,8 +178,8 @@ class WebTest(unittest.TestCase):
         os.rmdir(test_config['STORAGE_DIR'])
         os.rmdir(test_config['FORWARD_DIR'])
 
-
     def file_cleanup(self):
+        """Remove all remaining files."""
         for f in os.listdir(self.app.config['STORAGE_DIR']):
             try:
                 os.remove(os.path.join(self.app.config['STORAGE_DIR'], f))
@@ -176,17 +198,8 @@ class WebTest(unittest.TestCase):
             except Exception as e:
                 print(e)
 
-    def assert_count(self, model, count):
-        model_count = self.db.query(model).count()
-        self.assertEquals(count, model_count)
-
-    _count = 0
-
-    def next_count(self):
-        self._count += 1
-        return self._count
-
     def create_object(resource):
+        """Decorator for easy object adding."""
         def decorate(func):
             def decorated(self, **kwargs):
                 kwargs.setdefault('_etag', "initial_etag")
@@ -194,17 +207,21 @@ class WebTest(unittest.TestCase):
 
                 kwargs = func(self, **kwargs)
 
-		post_internal(resource, kwargs, skip_validation=True)
+                with self.app.test_request_context():
+                    obj = post_internal(resource,
+                                        kwargs,
+                                        skip_validation=True)[0]
 
-                #self.db.add(obj)
-                #self.db.flush()
+                # self.db.add(obj)
+                # self.db.flush()
                 return obj
 
             return decorated
         return decorate
 
-    @create_object('user')
+    @create_object('users')
     def new_user(self, **kwargs):
+        """Create user."""
         firstname, gender = random.choice([
             (u"John", "male"), (u"Jane", "female")
         ])
@@ -220,7 +237,7 @@ class WebTest(unittest.TestCase):
 
     @create_object('groups')
     def new_group(self, **kwargs):
-        """ Create a forward """
+        """Create group."""
         data = {
             'name': u"test-group-%i" % self.next_count(),
             'moderator_id': 0,
@@ -232,27 +249,27 @@ class WebTest(unittest.TestCase):
 
     @create_object('groupaddresses')
     def new_group_address(self, **kwargs):
-        """ Add a forward address. At least supply the group_id """
+        """Create group address. At least supply the group_id."""
         kwargs.setdefault('email',
                           u"adress-%i@example.com" % self.next_count())
         return kwargs
 
     @create_object('groupmembers')
     def new_group_member(self, **kwargs):
-        """ Add a user to a group. At least supply the group_id """
+        """Add a user to a group. At least supply the group_id."""
         kwargs.setdefault('user_id', 0)
         return kwargs
 
     @create_object('groupforwards')
     def new_group_forward(self, **kwargs):
-        """ Add a user to a group. At least supply the group_id """
+        """Add a user to a group. At least supply the group_id."""
         kwargs.setdefault('email',
                           u"forward-%i@example.com" % self.next_count())
         return kwargs
 
     @create_object('sessions')
     def new_session(self, **kwargs):
-        """ Create a new session, default is root session """
+        """Create a new session, default is root session."""
         kwargs.setdefault('user_id', 0)
 
         with self.app.app_context():
@@ -262,7 +279,7 @@ class WebTest(unittest.TestCase):
 
     @create_object('events')
     def new_event(self, **kwargs):
-        """ Create a new event """
+        """Create a new event."""
         data = {
             'allow_email_signup': random.choice([True, False]),
             'spots': random.randint(0, 100),
@@ -275,7 +292,7 @@ class WebTest(unittest.TestCase):
 
     @create_object('eventsignups')
     def new_signup(self, **kwargs):
-        """ Create a signup, needs at least the event_id """
+        """Create a signup, needs at least the event_id."""
         if 'user_id' not in kwargs:
             count = self.next_count()
             kwargs['user_id'] = -1
@@ -285,19 +302,19 @@ class WebTest(unittest.TestCase):
 
     @create_object('joboffers')
     def new_joboffer(self, **kwargs):
-        """ Create a new job offer """
+        """Create a new job offer."""
         kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())
         return kwargs
 
     @create_object('studydocuments')
     def new_studydocument(self, **kwargs):
-        """ Create a new study document """
+        """Create a new study document."""
         kwargs.setdefault('name', u"Example Exam %i" % self.next_count())
         return kwargs
 
     @create_object('files')
     def new_file(self, **kwargs):
-        """ Create a new file, needs study_doc_id """
+        """Create a new file, needs study_doc_id."""
         if 'data' not in kwargs:
             filename = 'default_file_%i.txt' % self.next_count()
             with open(os.path.join(self.app.config['STORAGE_DIR'], filename),
