@@ -4,81 +4,11 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
-from sqlalchemy import (
-    Column,
-    Unicode,
-    CHAR,
-    String,
-    Enum,
-    Boolean
-)
-from sqlalchemy.orm import relationship, validates
+from flask import current_app
 
-from amivapi.settings import PASSWORD_CONTEXT
-from amivapi.utils import Base, register_domain, EMAIL_REGEX
+from eve.methods.patch import patch_internal
 
-
-class User(Base):
-    """User model."""
-
-    __description__ = {
-        'general': "In general, the user data will be generated from "
-        "LDAP-Data. However, one might change the RFID-Number or the "
-        "membership-status. Extraordinary members may not have a LDAP-Account "
-        "and can therefore access all given fields.",
-        'methods': {
-            'GET': "Authorization is required for most of the fields"
-        }}
-    __expose__ = True
-    __projected_fields__ = ['groupmemberships']
-
-    __owner__ = ['id']
-    __owner_methods__ = ['GET', 'PATCH']
-
-    password = Column(CHAR(100))  # base64 encoded hash data
-    firstname = Column(Unicode(50), nullable=False)
-    lastname = Column(Unicode(50), nullable=False)
-    legi = Column(CHAR(8), unique=True)
-    rfid = Column(CHAR(6), unique=True)
-    nethz = Column(String(30), unique=True)
-    department = Column(Enum("itet", "mavt", "other"))
-    phone = Column(String(20))
-    gender = Column(Enum("male", "female"), nullable=False)
-    email = Column(CHAR(100), nullable=False, unique=True)
-    membership = Column(Enum("none", "regular", "extraordinary", "honorary"),
-                        nullable=False, default="none", server_default="none")
-    send_newsletter = Column(Boolean, default=True)
-
-    # relationships
-    groupmemberships = relationship("GroupMember",
-                                    foreign_keys="GroupMember.user_id",
-                                    backref="user", cascade="all")
-    sessions = relationship("Session", foreign_keys="Session.user_id",
-                            backref="user", cascade="all")
-    eventsignups = relationship("EventSignup",
-                                foreign_keys="EventSignup.user_id",
-                                backref="user", cascade="all")
-
-    @validates("password")
-    def update_password(self, key, plaintext):
-        """Transparently encodes the plaintext password as a salted hash.
-
-        The salt is regenerated each time a new password is set.
-        """
-        if plaintext is None:
-            return None
-        else:
-            return PASSWORD_CONTEXT.encrypt(plaintext)
-
-    def verify_password(self, plaintext):
-        """Check password."""
-        is_valid = PASSWORD_CONTEXT.verify(plaintext, self.password)
-        if is_valid and PASSWORD_CONTEXT.needs_update(self.password):
-            # rehash password
-            self.password = plaintext
-
-        return is_valid
-
+from amivapi.utils import register_domain, EMAIL_REGEX
 
 userdomain = {
     'users': {
@@ -93,38 +23,13 @@ userdomain = {
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 
-        'datasource': {'source': 'User',
-                       'projection': {
-                           '_author': 1,
-                           'department': 1,
-                           'email': 1,
-                           'eventsignups': 0,
-                           'firstname': 1,
-                           'gender': 1,
-                           'groupmemberships': 1,
-                           'id': 1,
-                           'lastname': 1,
-                           'legi': 1,
-                           'membership': 1,
-                           'nethz': 1,
-                           'password': 0,
-                           'phone': 1,
-                           'rfid': 1,
-                           'send_newsletter': 1,
-                           'sessions': 0}
-                       },
-        'item_lookup': True,
-        'item_lookup_field': '_id',
-        'item_url': 'regex("[0-9]+")',
+        'datasource': {'projection': {'password': 0}},
 
         'resource_methods': ['GET', 'POST'],
-        'public_item_methods': [],
-        'public_methods': [],
+        'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        'registered_methods': [],
-
-        'owner': ['id'],
-        'owner_methods': ['GET', 'PATCH'],
+        # 'owner': ['id'],
+        # 'owner_methods': ['GET', 'PATCH'],
 
         'schema': {
             'nethz': {
@@ -205,30 +110,86 @@ userdomain = {
             'send_newsletter': {
                 'type': 'boolean',
                 'nullable': True},
-
-            # Relationships
-            'eventsignups': {
-                'data_relation': {'embeddable': True,
-                                  'resource': 'eventsignups'},
-                'type': 'objectid',
-                'readonly': True},
-            'groupmemberships': {
-                'data_relation': {'embeddable': True,
-                                  'resource': 'groupmembers'},
-                'type': 'objectid',
-                'readonly': True},
-            'sessions': {
-                'data_relation': {'embeddable': True,
-                                  'resource': 'sessions'},
-                'type': 'objectid',
-                'readonly': True}
-        },
-
-        'sql_model': User
+        }
     }
 }
+
+
+def verify_password(user, plaintext):
+    """Check password of user, rehash if necessary.
+
+    It is possible that the password is None, e.g. if the user is authenticated
+    via LDAP. In this case default to "not verified".
+
+    Args:
+        user (dict): the user in question.
+        plaintext (string): password to check
+
+    Returns:
+        bool: True if password matches. False if it doesn't or if there is no
+            password set and/or provided.
+    """
+    password_context = current_app.config['PASSWORD_CONTEXT']
+
+    if (plaintext is None) or (user['password'] is None):
+        return False
+
+    is_valid = password_context.verify(plaintext, user['password'])
+
+    if is_valid and password_context.needs_update(user['password']):
+        # rehash password
+        update = {'password': password_context.encrypt(plaintext)}
+        patch_internal("users", payload=update, _id=user['_id'])
+    return is_valid
+
+
+def _hash_password(user):
+    """Helper function to hash password.
+
+    If password key doesn't exist or if value is None do nothing.
+
+    If exists replace plaintext with hashed value.
+
+    Args:
+        user (dict): dict of user data.
+    """
+    password_context = current_app.config['PASSWORD_CONTEXT']
+
+    if user.get('password', None) is not None:
+        user['password'] = password_context.encrypt(user['password'])
+
+
+def hash_on_insert(items):
+    """Hook for user insert.
+
+    Hash the password if it is not None.
+    (When logging in via LDAP the password should not be stored and therefore
+    it can be none.)
+
+    Args:
+        items (list): List of new items as passed by the on_insert event.
+    """
+    for user in items:
+        _hash_password(user)
+
+
+def hash_on_update(updates, original):
+    """Hook for user update or replace.
+
+    Hash the password if it is not None.
+    (When logging in via LDAP the password should not be stored and therefore
+    it can be none.)
+
+    Args:
+        items (list): List of new items as passed by the on_insert event.
+    """
+    _hash_password(updates)
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
+
+    app.on_insert_users += hash_on_insert
+    app.on_update_users += hash_on_update
+    app.on_replace_user += hash_on_update
