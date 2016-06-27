@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
-#
+# 
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
 """Starting point for the API."""
 
 from eve import Eve
-#from eve_docs import eve_docs
+# from eve_docs import eve_docs
 from flask.ext.bootstrap import Bootstrap
 from flask import g
 
 from amivapi import (
-    #users,
-    #events,
-    #auth,
-    #media,
-    #groups,
-    #ldap,
-    #documentation,
+    users,
+    # events,
+    auth,
+    # media,
+    # groups,
+    # ldap,
+    # documentation,
     utils,
-    #joboffers,
-    #purchases,
+    # joboffers,
+    # purchases,
     studydocs
 )
 from amivapi.ldap import ldap_connector
@@ -40,27 +40,26 @@ def create_app(disable_auth=True, **kwargs):
     config = get_config()
     # Domain is empty at first, modules will add resources later
     config['DOMAIN'] = {}
-    #config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     config.update(kwargs)
 
     if disable_auth:
         app = Eve(settings=config,
                   validator=utils.ValidatorAMIV)
-                  #media=media.FileSystemStorage)
+                  # media=media.FileSystemStorage)
     else:
         app = Eve(settings=config,
-                  data=SQL,
                   validator=utils.ValidatorAMIV,
-                  auth=auth.authentication.TokenAuth,
-                  media=media.FileSystemStorage)
+                  auth=auth.authentication.TokenAuth)
+                  # media=media.FileSystemStorage
 
     # Bind Mongo
     db = app.data.driver
-    #utils.Base.metadata.bind = db.engine
-    #db.Model = utils.Base
+    # utils.Base.metadata.bind = db.engine
+    # db.Model = utils.Base
 
     Bootstrap(app)
-    #with app.app_context():
+    # with app.app_context():
     #    g.db = db.session
 
     # Create LDAP connector
@@ -68,23 +67,23 @@ def create_app(disable_auth=True, **kwargs):
         ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
-    #app.register_blueprint(eve_docs, url_prefix="/docs")
+    # app.register_blueprint(eve_docs, url_prefix="/docs")
 
-    #
+    # 
     # Event hooks
-    #
+    # 
     # security note: hooks which are run before auth hooks should never change
     # the database
-    #
+    # 
 
-    #users.init_app(app)
-    #auth.init_app(app)
-    #events.init_app(app)
-    #groups.init_app(app)
-    #joboffers.init_app(app)
-    #purchases.init_app(app)
+    users.init_app(app)
+    auth.init_app(app)
+    # events.init_app(app)
+    # groups.init_app(app)
+    # joboffers.init_app(app)
+    # purchases.init_app(app)
     studydocs.init_app(app)
-    #media.init_app(app)
+    # media.init_app(app)
 
     return app
 
