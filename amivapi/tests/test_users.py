@@ -2,147 +2,231 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""Tests for user module.
 
-import datetime as dt
+Includes item and field permissions as well as password hashing.
+"""
 
-from amivapi import settings
+
 from amivapi.tests import util
-from amivapi.users import User
+from amivapi.users import verify_password
+
+from passlib.context import CryptContext
 
 
-class UserResourceTest(util.WebTestNoAuth):
+class UserTest(util.WebTestNoAuth):
+    """Basic tests for user resource."""
 
-    def test_users_collection(self):
-        # Only root and anonymous to start with
-        no_users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(no_users.json['_items']), 2)
-
-        user = self.new_user()
-        users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(users.json['_items']), 3)
-
-        api_user = next(u for u in users.json['_items'] if u['email']
-                        == user.email)
-
-        for col in User.__table__.c:
-            if col.key == 'password':
-                continue
-            self.assertIn(col.key, api_user)
-
-            model_value = getattr(user, col.key)
-            if isinstance(model_value, dt.datetime):
-                model_value = model_value.strftime(settings.DATE_FORMAT)
-
-            self.assertEquals(model_value, api_user[col.key])
-
-        single_user = self.api.get("/users/%i" % api_user['id'],
-                                   status_code=200)
-        self.assertEquals(api_user.keys(), single_user.json.keys())
-        for key, value in api_user.items():
-            if key == "_links":
-                # By definition, the links are quite different for collections
-                # and items
-                continue
-            self.assertEquals(value, single_user.json[key])
-
-    def test_create_user(self):
-        # POSTing to /users with missing required fields yields an error, and
-        # no document is created
-        data = {
-            'firstname': "John",
-            'lastname': "Doe",
-            'email': "john-doe@example.net",
-            'gender': "male",
-            'membership': "none",
+    def test_methods(self):
+        """Test that all basic methods work."""
+        post_data = {
+            'firstname': 'T',
+            'lastname': 'Estuser',
+            'gender': 'female',
+            'membership': 'regular',
+            'email': 'test@user.amiv'
         }
-        for key in ["firstname", "lastname", "email", "gender",
-                    "membership"]:
-            crippled_data = data.copy()
-            crippled_data.pop(key)
-            self.api.post("/users",
-                          data=crippled_data,
-                          status_code=422)
 
-            user_count = self.db.query(User).count()
-            self.assertEquals(user_count, 2)
+        user = self.api.post("/users", data=post_data, status_code=201).json
 
-        user = self.api.post("/users", data=data, status_code=201)
-        userid = user.json['id']
+        # Try get
+        self.api.get("/users", status_code=200)
+        self.api.get("/users/%s" % user['_id'], status_code=200)
 
-        users = self.api.get("/users", status_code=200)
-        self.assertEquals(len(users.json['_items']), 3)
-
-        retrived_user = next(u for u in users.json['_items'] if u['id']
-                             == userid)
-        for key in data:
-            self.assertEquals(retrived_user[key], data[key])
-
-        user_count = self.db.query(User).count()
-        self.assertEquals(user_count, 3)
-
-    def test_user_invalid_mail(self):
-        data = {
-            'firstname': "John",
-            'lastname': "Doe",
-            'email': "youdontgetmail",
-            'gender': "male",
-            'membership': "none",
+        # Patch something
+        patch_data = {
+            'email': 'newemail@shinymail.com'
         }
-        self.api.post("/users", data=data, status_code=422)
 
-        data['email'] = 'test@example.com'
-        self.api.post("/users", data=data, status_code=201)
-
-    def test_password_change(self):
-        """ Test if a member can change his password """
-        user = self.new_user(membership="regular")
-        session = self.new_session(user_id=user.id)
-
-        # Nobody can enter this password in his browser,
-        # it must be very secure!
-        new_pw = u"my_new_pw_9123580:öpäß'+ `&%$§\"!)(\\\xff\x10\xa0"
-
-        self.api.patch("/users/%i" % user.id, token=session.token,
-                       headers={"If-Match": user._etag},
-                       data={"password": new_pw},
-                       status_code=200)
-
-        data = {
-            "user": user.email,
-            "password": new_pw
+        # Add etag
+        headers = {
+            'If-Match': user['_etag']
         }
-        self.api.post("/sessions", data=data, status_code=201)
 
-    def test_rfid_change(self):
-        """ Test if a user can change his rfid number """
+        user = self.api.patch("/users/%s" % user['_id'],
+                              data=patch_data, headers=headers,
+                              status_code=200).json
 
-        user = self.new_user()
-        session = self.new_session(user_id=user.id)
+        # Update etag
+        headers = {
+            'If-Match': user['_etag']
+        }
 
-        self.api.patch("/users/%i" % user.id, token=session.token,
-                       headers={"If-Match": user._etag},
-                       data={"rfid": "100000"},
-                       status_code=200)
+        # Remove
+        self.api.delete("/users/%s" % user['_id'], headers=headers,
+                        status_code=204)
 
+    def test_nethz_lookup(self):
+        """Test that a user can be accessed with nethz name."""
+        nethz = "testnethz"
 
-class UserItemPermissions(util.WebTest):
-    def test_not_patchable_unless_admin(self):
-        """ Assert that a user can not change the following values, but an
-        an admin can
+        self.new_user(nethz=nethz)
+
+        self.api.get("/users/%s" % nethz, status_code=200)
+
+    def test_root_and_anonymous(self):
+        """Test that root and anonymous user are in the db.
+
+        TODO: Implement.
         """
-        user = self.new_user(gender='female', department='itet')
-        user_token = self.new_session(user_id=user.id).token
-        user_etag = user._etag  # This way we can overwrite it later easily
+        pass
+
+
+class PasswordHashing(util.WebTestNoAuth):
+    """Tests password hashing.
+
+    TODO(ALEX): Restructure this, test both the hash hook indepentently and
+    if it was integrated correctly.
+    """
+
+    def test_hidden_password(self):
+        """Assert that password hash can not be retrieved."""
+        user_id = self.new_user(password="somepw")['_id']
+
+        # Normal get
+        r = self.api.get("/users/%s" % user_id, status_code=200).json
+
+        assert 'password' not in r.keys()
+
+        # Try to force projection
+        # This should return a 403 error because we are trying to set a
+        # forbidden projection
+        self.api.get(u'/users/%s?projection={"password": 1}' % user_id,
+                     status_code=403).json
+
+    def _was_hashed(self, plaintext, user_id):
+        """Check that saved password exists, is not empty and not plaintext.
+
+        Since there is no way to access the pw from outside this will take
+        the user id and fetch the user from the database.
+
+        Args:
+            plaintext (str): The password in plaintext.
+            user_id (str): The user.
+
+        Returns:
+            bool: True if password was not stored and not as plaintext.
+                False otherwise.
+        """
+        user = self.db["users"].find_one(_id=user_id)
+
+        return user['password'] not in [None, "", plaintext]
+
+    def test_hash(self):
+        """Assert passwort is hashed when created or updated."""
+        password = "supersecret"
+
+        post_data = {
+            'firstname': 'T',
+            'lastname': 'Estuser',
+            'gender': 'female',
+            'membership': 'regular',
+            'email': 'test@user.amiv',
+            'password': password
+        }
+
+        user = self.api.post("/users", data=post_data, status_code=201).json
+
+        self.assertTrue(self._was_hashed(password, user['_id']))
+
+        new_password = "evenmoresecret"
+        patch_data = {'password': new_password}
+
+        headers = {'If-Match': user['_etag']}
+        user = self.api.patch("/users/%s" % user['_id'],
+                              headers=headers, data=patch_data,
+                              status_code=200).json
+
+        self.assertTrue(self._was_hashed(new_password, user['_id']))
+
+    def test_rehash(self):
+        """Assert passwort is rehashed if the cryptcontext is changed."""
+        # Modify context (see settings.py for original context)
+        self.app.config['PASSWORD_CONTEXT'] = CryptContext(
+            schemes=["pbkdf2_sha256"],
+            pbkdf2_sha256__default_rounds=10 ** 2,
+            pbkdf2_sha256__vary_rounds=0.1,
+            pbkdf2_sha256__min_rounds=8 * 10 ** 1,
+        )
+
+        # Create user
+
+        password = "supersecret"
+
+        post_data = {
+            'firstname': 'T',
+            'lastname': 'Estuser',
+            'gender': 'female',
+            'membership': 'regular',
+            'email': 'test@user.amiv',
+            'password': password
+        }
+
+        user = self.api.post("/users", data=post_data, status_code=201).json
+
+        # Get from db to include password
+        db = self.db['users']
+        uid = user['_id']
+
+        user = db.find_one(_id=uid)
+
+        # Call verify, nothing changes
+        old_pw = user['password']
+
+        # Verify password needs test request context
+        with self.app.test_request_context():
+            self.assertTrue(verify_password(user, password))
+
+        user = db.find_one(_id=uid)
+        self.assertEqual(user['password'], old_pw)
+
+        # Update context
+        self.app.config['PASSWORD_CONTEXT'] = CryptContext(
+            schemes=["pbkdf2_sha256"],
+            pbkdf2_sha256__default_rounds=10 ** 6,
+            pbkdf2_sha256__vary_rounds=0.1,
+            pbkdf2_sha256__min_rounds=8 * 10 ** 4,
+        )
+
+        # Call verify, password should still work
+        with self.app.test_request_context():
+            self.assertTrue(verify_password(user, password))
+
+        # Assert pw was rehashed
+        user = db.find_one(_id=uid)
+        self.assertNotEqual(user['password'], old_pw)
+
+
+class UserFieldPermissions(util.WebTest):
+    """Test field permissions.
+
+    Some fields can be changed by the user, some only by admins.
+    """
+
+    def test_change_by_user(self):
+        """User can change password, email. and rfid."""
+        pass
+
+    def test_not_patchable_unless_admin(self):
+        """Admin can change everything."""
+        return  # TODO: NEEDS GROUPS/Some admin functionality
+        user = self.new_user(gender='female', department='itet',
+                             nethz='user', password="userpass")
+        user_token = self.new_session(
+            nethz='user', password="userpass")['token']
+        user_etag = user['_etag']  # This way we can overwrite it later easily
         # admin
-        admin = self.new_user()
-        admin_token = self.new_session(user_id=admin.id).token
+        admin = self.new_user(nethz='admin', password="adminpass")
+        admin_token = self.new_session(
+            nethz='admin', password="adminpass")['token']
+
         admin_group = self.new_group(
             allow_self_enrollment=False,
             permissions={
                 'users': {'PATCH': True}
             })
-        self.new_group_member(user_id=admin.id,
-                              group_id=admin_group.id)
+        self.new_group_member(user_id=admin['id'],
+                              group_id=admin_group['id'])
 
         bad_changes = [
             {"firstname": "new_name"},
@@ -155,7 +239,7 @@ class UserItemPermissions(util.WebTest):
         ]
 
         def try_patching(data, token, etag, status_code):
-            return self.api.patch("/users/%i" % user.id, token=token,
+            return self.api.patch("/users/%i" % user['id'], token=token,
                                   headers={"If-Match": etag},
                                   data=data,
                                   status_code=status_code).json
