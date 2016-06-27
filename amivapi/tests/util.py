@@ -11,6 +11,7 @@ from base64 import b64encode
 from datetime import datetime, timedelta
 import os
 from tempfile import mkdtemp
+from itertools import count
 
 from flask.testing import FlaskClient
 from flask.wrappers import Response
@@ -198,6 +199,8 @@ class WebTest(unittest.TestCase):
             except Exception as e:
                 print(e)
 
+    counter = count()
+
     def create_object(resource):
         """Decorator for easy object adding."""
         def decorate(func):
@@ -229,7 +232,7 @@ class WebTest(unittest.TestCase):
         data = {
             'firstname': firstname,
             'lastname': u"Doe",
-            'email': u"testuser-%i@example.com" % self.next_count(),
+            'email': u"testuser-%i@example.com" % self.counter.next(),
             'gender': gender,
         }
         data.update(**kwargs)
@@ -239,7 +242,7 @@ class WebTest(unittest.TestCase):
     def new_group(self, **kwargs):
         """Create group."""
         data = {
-            'name': u"test-group-%i" % self.next_count(),
+            'name': u"test-group-%i" % self.counter.next(),
             'moderator_id': 0,
             'allow_self_enrollment': random.choice([True, False]),
             'has_zoidberg_share': random.choice([True, False]),
@@ -251,7 +254,7 @@ class WebTest(unittest.TestCase):
     def new_group_address(self, **kwargs):
         """Create group address. At least supply the group_id."""
         kwargs.setdefault('email',
-                          u"adress-%i@example.com" % self.next_count())
+                          u"adress-%i@example.com" % self.counter.next())
         return kwargs
 
     @create_object('groupmembers')
@@ -264,7 +267,7 @@ class WebTest(unittest.TestCase):
     def new_group_forward(self, **kwargs):
         """Add a user to a group. At least supply the group_id."""
         kwargs.setdefault('email',
-                          u"forward-%i@example.com" % self.next_count())
+                          u"forward-%i@example.com" % self.counter.next())
         return kwargs
 
     @create_object('sessions')
@@ -294,7 +297,7 @@ class WebTest(unittest.TestCase):
     def new_signup(self, **kwargs):
         """Create a signup, needs at least the event_id."""
         if 'user_id' not in kwargs:
-            count = self.next_count()
+            count = self.counter.next()
             kwargs['user_id'] = -1
             kwargs['_email_unreg'] = u"signupper-%i@example.com" % count
             kwargs['_token'] = token_generator(size=20)
@@ -303,20 +306,20 @@ class WebTest(unittest.TestCase):
     @create_object('joboffers')
     def new_joboffer(self, **kwargs):
         """Create a new job offer."""
-        kwargs.setdefault('company', u"ACME Inc. %i" % self.next_count())
+        kwargs.setdefault('company', u"ACME Inc. %i" % self.counter.next())
         return kwargs
 
     @create_object('studydocuments')
     def new_studydocument(self, **kwargs):
         """Create a new study document."""
-        kwargs.setdefault('name', u"Example Exam %i" % self.next_count())
+        kwargs.setdefault('name', u"Example Exam %i" % self.counter.next())
         return kwargs
 
     @create_object('files')
     def new_file(self, **kwargs):
         """Create a new file, needs study_doc_id."""
         if 'data' not in kwargs:
-            filename = 'default_file_%i.txt' % self.next_count()
+            filename = 'default_file_%i.txt' % self.counter.next()
             with open(os.path.join(self.app.config['STORAGE_DIR'], filename),
                       'wb') as f:
                 f.write("Some example content.")

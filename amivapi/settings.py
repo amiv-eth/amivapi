@@ -37,7 +37,7 @@ TESTING = False
 # Flask-SQLALchemy
 
 # Eve
-ID_FIELD = "id"
+# ID_FIELD = "id"  # This seems to cause some problems. TODO(ALEX): investigate
 AUTH_FIELD = "_author"
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 BANDWIDTH_SAVER = False
