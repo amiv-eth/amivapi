@@ -20,9 +20,11 @@ from flask.ext.script import (
     prompt_pass,
 )
 
+from eve.methods.post import post_internal
+
 from amivapi import settings
 from amivapi.utils import get_config
-from amivapi.bootstrap import init_database, clear_database
+from amivapi.bootstrap import init_database, clear_database, create_app
 
 manager = Manager(Flask("amivapi"))
 # This must be the same as in amivapi.utils.get_config
@@ -46,6 +48,40 @@ def save_config(name, **config):
         for key, value in sorted(config.items()):
             if key not in dir(settings) or value != getattr(settings, key):
                 f.write("%s = %r\n" % (key.upper(), value))
+
+
+#
+# Database Initialization (create root user)
+#
+
+@manager.command
+def initdb(app=None):
+    """Create root user."""
+    # use app to load config and set up database for us
+    if app is None:
+        app = create_app()
+
+    root_data = {
+        "_id": 0,
+        "_etag": 'd34db33f',  # We need some etag, not important what it is
+        "password": u"root",
+        "firstname": u"Lord",
+        "lastname": "Root",
+        "gender": "male",
+        "email": app.config['ROOT_MAIL'],
+        "membership": "none"
+    }
+
+    # We need an app_contet for the app to set up a db connection
+    # And a request context for post_internal.
+    # Since the request_context includes the app_context we use this
+    with app.test_request_context():
+        if app.data.driver.db['users'].find_one(_id=root_data['_id']) is None:
+            post_internal("users", payl=root_data, skip_validation=True)
+            print("Root user added successfully!")
+        else:
+            print("Root user already in db, aborting.")
+
 #
 # API Key management
 #
