@@ -22,6 +22,8 @@ from eve.methods.post import post_internal
 from amivapi import bootstrap, utils
 from amivapi.utils import token_generator
 
+from mongo_manage import initdb
+
 # Test Config overwrites
 test_config = {
     'MONGO_DBNAME': 'test_amivapi',
@@ -161,6 +163,9 @@ class WebTest(unittest.TestCase):
 
         # Assert that database is empty before starting tests.
         assert not self.db.collection_names(), "The database already exists!"
+
+        # init database
+        initdb(self.app)
 
         # create test client
         self.api = self.app.test_client()
