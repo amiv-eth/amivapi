@@ -137,8 +137,8 @@ def verify_password(user, plaintext):
     is_valid = password_context.verify(plaintext, user['password'])
 
     if is_valid and password_context.needs_update(user['password']):
-        # rehash password
-        update = {'password': password_context.encrypt(plaintext)}
+        # update password - hook will handle hashing
+        update = {'password': plaintext}
         patch_internal("users", payload=update, _id=user['_id'])
     return is_valid
 
