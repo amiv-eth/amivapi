@@ -7,6 +7,7 @@
 Includes item and field permissions as well as password hashing.
 """
 
+from bson import ObjectId
 
 from amivapi.tests import util
 from amivapi.users import hash_on_insert, hash_on_update, verify_password
@@ -68,9 +69,16 @@ class UserTest(util.WebTestNoAuth):
     def test_root_user_is_in_db(self):
         """Test if root user is in the db.
 
-        TODO(Alex): Implement
+        Since objectid strings are 24 characters long, the root user id
+        string is just 24 zeros
         """
-        pass
+        root_id = 24 * "0"
+
+        query = self.db['users'].find_one({'_id': ObjectId(root_id)})
+        self.assertTrue(query is not None)
+
+        # Also test that eve can access it without error
+        self.api.get("/users/" + root_id, status_code=200)
 
 
 class PasswordHashing(util.WebTestNoAuth):
@@ -114,9 +122,9 @@ class PasswordHashing(util.WebTestNoAuth):
         self.pw_1 = "some_pw"
         self.pw_2 = "other_pw"
 
-    def assertHashed(self, plaintext, hashed_password):
+    def assertVerify(self, plaintext, hashed_password):
         """Assert the hash matches the password."""
-        assert pbkdf2_sha256.verify(plaintext, hashed_password)
+        self.assertTrue(pbkdf2_sha256.verify(plaintext, hashed_password))
 
     def test_hidden_password(self):
         """Assert that password hash can not be retrieved."""
@@ -125,7 +133,7 @@ class PasswordHashing(util.WebTestNoAuth):
         # Normal get
         r = self.api.get("/users/%s" % user_id, status_code=200).json
 
-        assert 'password' not in r.keys()
+        self.assertNotIn('password', r.keys())
 
         # Try to force projection
         # This should return a 403 error because we are trying to set a
@@ -151,8 +159,8 @@ class PasswordHashing(util.WebTestNoAuth):
             hash_on_insert(items)
 
             # Check hashed
-            self.assertHashed(self.pw_1, items[0]['password'])
-            self.assertHashed(self.pw_2, items[1]['password'])
+            self.assertVerify(self.pw_1, items[0]['password'])
+            self.assertVerify(self.pw_2, items[1]['password'])
 
     def test_hash_on_update(self):
         """Test hash on update. Works like test for hash on insert."""
@@ -164,7 +172,7 @@ class PasswordHashing(util.WebTestNoAuth):
             hash_on_update(data, None)
 
             # Check hash
-            self.assertHashed(self.pw_1, data['password'])
+            self.assertVerify(self.pw_1, data['password'])
 
     def test_verify_hash(self):
         """Test verify hash.
@@ -197,17 +205,33 @@ class PasswordHashing(util.WebTestNoAuth):
         with self.app.test_request_context():
             db = self.db['users']
 
+            weak_hash = self.weak_context.encrypt(self.pw_1)
+
             # Add a user with to db. use password hashed with weak context
-            user = db.insert({
-                'password': self.weak_context.encrypt(self.pw_1)
+            user_id = db.insert({
+                'password': weak_hash
             })
 
-            print(user)
+            user = db.find_one({'_id': ObjectId(user_id)})
 
             # Set context to "strong" context
             self.app.config['PASSWORD_CONTEXT'] = self.strong_context
 
-    def assertHashedInDb(self, user_id, plaintext):
+            # Verify password, should be true
+            self.assertTrue(verify_password(user, self.pw_1))
+
+            # The verify_password should now have rehashed the password
+
+            # Get new user data
+            user = db.find_one({'_id': ObjectId(user_id)})
+
+            # Password hash has changed
+            self.assertNotEqual(user['password'], weak_hash)
+
+            # Password is still valid
+            self.assertVerify(self.pw_1, user['password'])
+
+    def assertVerifyDB(self, user_id, plaintext):
         """Check that the stored password was hashed correctly.
 
         Shorthand to query db and compare.
@@ -219,9 +243,12 @@ class PasswordHashing(util.WebTestNoAuth):
         Returns:
             bool: True if hashed correctly.
         """
-        user = self.db["users"].find_one(_id=user_id)
+        from pprint import pprint
+        pprint([item for item in self.db.users.find({}, {'_id': 1})])
 
-        assert pbkdf2_sha256.verify(plaintext, user['password'])
+        user = self.db["users"].find_one({'_id': ObjectId(user_id)})
+
+        self.assertTrue(pbkdf2_sha256.verify(plaintext, user['password']))
 
     def test_hash_hooks(self):
         """Test hash hooks.
@@ -240,7 +267,7 @@ class PasswordHashing(util.WebTestNoAuth):
 
         user = self.api.post("/users", data=post_data, status_code=201).json
 
-        self.assertHashedInDb(user['_id'], self.pw_1)
+        self.assertVerifyDB(user['_id'], self.pw_1)
 
         patch_data = {'password': self.pw_2}
 
@@ -249,7 +276,7 @@ class PasswordHashing(util.WebTestNoAuth):
                               headers=headers, data=patch_data,
                               status_code=200).json
 
-        self.assertHashedInDb(user['_id'], self.pw_2)
+        self.assertVerifyDB(user['_id'], self.pw_2)
 
     def test_hash_update_on_login(self):
         """Test that passwords are rehashed when needed on login.

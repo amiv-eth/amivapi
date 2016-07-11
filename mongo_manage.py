@@ -11,6 +11,8 @@ from os.path import abspath, dirname, join, exists, expanduser
 from pprint import pprint
 from base64 import b64encode
 
+from bson.objectid import ObjectId
+
 from flask import Flask
 from flask.ext.script import (
     Manager,
@@ -56,13 +58,21 @@ def save_config(name, **config):
 
 @manager.command
 def initdb(app=None):
-    """Create root user."""
+    """Create root user with id 000000000000000000000000(24 zeros).
+
+    Note regarding the id: mongo is happy with any kind of id so we could use
+    a string like "root", but eve can only handle actual ObjectIds, so we have
+    to use one or eve returns links it cannot access ("/users/root")
+
+    We can create objectids from string and since they are always 24
+    characters long we just use 24 zeros.
+    """
     # use app to load config and set up database for us
     if app is None:
         app = create_app()
 
     root_data = {
-        "_id": 0,
+        "_id": ObjectId(24 * "0"),
         "_etag": 'd34db33f',  # We need some etag, not important what it is
         "password": u"root",
         "firstname": u"Lord",
@@ -77,7 +87,7 @@ def initdb(app=None):
     # Since the request_context includes the app_context we use this
     with app.test_request_context():
         if app.data.driver.db['users'].find_one(_id=root_data['_id']) is None:
-            post_internal("users", payl=root_data, skip_validation=True)
+            print(post_internal("users", payl=root_data, skip_validation=True))
             print("Root user added successfully!")
         else:
             print("Root user already in db, aborting.")
