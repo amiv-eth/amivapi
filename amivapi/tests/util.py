@@ -12,16 +12,15 @@ from datetime import datetime, timedelta
 import os
 from tempfile import mkdtemp
 from itertools import count
+from pymongo import MongoClient
 
 from flask.testing import FlaskClient
 from flask.wrappers import Response
-from flask.ext.pymongo import MongoClient
 
 from eve.methods.post import post_internal
 
 from amivapi import bootstrap, utils
 from amivapi.utils import token_generator
-
 from mongo_manage import initdb
 
 # Test Config overwrites
