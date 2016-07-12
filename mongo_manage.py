@@ -86,7 +86,8 @@ def initdb(app=None):
     # And a request context for post_internal.
     # Since the request_context includes the app_context we use this
     with app.test_request_context():
-        if app.data.driver.db['users'].find_one(_id=root_data['_id']) is None:
+        collection = app.data.driver.db['users']
+        if collection.find_one({'_id': root_data['_id']}) is None:
             print(post_internal("users", payl=root_data, skip_validation=True))
             print("Root user added successfully!")
         else:
