@@ -14,6 +14,8 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
+from bson import ObjectId
+
 
 # Custom
 ROOT_DIR = abspath(join(dirname(__file__), ".."))
@@ -53,6 +55,11 @@ RETURN_MEDIA_AS_BASE64_STRING = False
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
 
 SESSION_TIMEOUT = timedelta(days=365)
+
+# The ObjectId the root user will have
+# There are always 24 character strings. So it will be just 24 zeros
+ROOT_ID = ObjectId(24 * "0")
+
 
 # Text for automatically sent mails
 

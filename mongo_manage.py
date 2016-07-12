@@ -72,7 +72,7 @@ def initdb(app=None):
         app = create_app()
 
     root_data = {
-        "_id": ObjectId(24 * "0"),
+        "_id": app.config['ROOT_ID'],
         "_etag": 'd34db33f',  # We need some etag, not important what it is
         "password": u"root",
         "firstname": u"Lord",
