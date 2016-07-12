@@ -50,8 +50,8 @@ def create_app(disable_auth=True, **kwargs):
                   # media=media.FileSystemStorage)
     else:
         app = Eve(settings=config,
-                  validator=utils.ValidatorAMIV,
-                  auth=auth.authentication.TokenAuth)
+                  validator=utils.ValidatorAMIV)
+                  #auth=auth.authentication.TokenAuth
                   # media=media.FileSystemStorage
 
     # Bind Mongo
@@ -79,7 +79,7 @@ def create_app(disable_auth=True, **kwargs):
     # 
 
     users.init_app(app)
-    auth.init_app(app)
+    # auth.init_app(app)
     # events.init_app(app)
     # groups.init_app(app)
     # joboffers.init_app(app)

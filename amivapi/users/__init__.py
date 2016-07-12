@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
-from flask import current_app
+from flask import current_app, abort
 
 from eve.methods.patch import patch_internal
 
@@ -186,10 +186,23 @@ def hash_on_update(updates, original):
     _hash_password(updates)
 
 
+def prevent_projection(request, lookup):
+    """Prevent extraction of password hashes.
+
+    args:
+        request: The request object
+        lookup (dict): The lookup dict(unused)
+    """
+    projection = request.args.get('projection')
+    if projection and 'password' in projection:
+        abort(403, description='Bad projection field: password')
+
+
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
 
+    app.on_pre_GET_users += prevent_projection
     app.on_insert_users += hash_on_insert
     app.on_update_users += hash_on_update
     app.on_replace_user += hash_on_update
