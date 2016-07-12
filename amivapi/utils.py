@@ -10,15 +10,10 @@ from os import urandom
 import smtplib
 from email.mime.text import MIMEText
 from copy import deepcopy
-import datetime as dt
-import json
 
+from flask import Config, request, g, current_app as app
 
-from flask import Config, g, current_app as app
-
-from eve.utils import config, request_method
-#from eve_sqlalchemy.decorators import registerSchema
-#from eve_sqlalchemy.validation import ValidatorSQL
+from eve.utils import config
 from eve.io.mongo import Validator
 
 from amivapi.settings import ROOT_DIR
@@ -146,7 +141,7 @@ class ValidatorAMIV(Validator):
             field (string): field name.
             value: field value.
         """
-        if enabled and (request_method() == 'PATCH'):
+        if enabled and (request.method == 'PATCH'):
             self._error(field, "this field can not be changed with PATCH")
 
     def _validate_not_patchable_unless_admin(self, enabled, field, value):
@@ -159,7 +154,7 @@ class ValidatorAMIV(Validator):
             field (string): field name.
             value: field value.
         """
-        if enabled and (request_method() == 'PATCH') and not g.resource_admin:
+        if enabled and (request.method == 'PATCH') and not g.resource_admin:
             self._error(field, "this field can not be changed with PATCH "
                         "unless you have admin rights.")
 
@@ -186,7 +181,7 @@ class ValidatorAMIV(Validator):
         # If we are patching the issue is more complicated, some fields might
         # have to be checked but are not part of the document because they will
         # not be patched. We have to load them from the database
-        patch = (request_method() == 'PATCH')
+        patch = (request.method == 'PATCH')
         if patch:
             original = self._original_document
             for key in unique_combination:
@@ -198,49 +193,6 @@ class ValidatorAMIV(Validator):
             self._error(field, "value already exists in the database in " +
                         "combination with values for: %s" %
                         unique_combination)
-
-
-def make_domain(model):
-    """Make Eve domain for a model.
-
-    Uses Eve-SQLAlchemies registerSchema and adds a little bit of our own.
-    """
-    tbl_name = model.__tablename__
-
-    registerSchema(tbl_name)(model)
-    domain = model._eve_schema
-
-    for field in model.__projected_fields__:
-        domain[tbl_name]['datasource']['projection'].update(
-            {field: 1}
-        )
-        if not('embedded_fields' in domain[tbl_name]):
-            domain[tbl_name]['embedded_fields'] = {}
-        for field in model.__embedded_fields__:
-            domain[tbl_name]['embedded_fields'].update(
-                {field: 1}
-            )
-
-    # Add owner and method permissions to domain
-    domain[tbl_name]['owner'] = model.__owner__
-    domain[tbl_name]['public_methods'] = model.__public_methods__
-    domain[tbl_name]['public_item_methods'] = model.__public_methods__
-    domain[tbl_name]['registered_methods'] = model.__registered_methods__
-    domain[tbl_name]['owner_methods'] = model.__owner_methods__
-
-    # SQLAlchemy model (needed for owner evaluation)
-    domain[tbl_name]['sql_model'] = model
-
-    # For documentation
-    domain[tbl_name]['description'] = model.__description__
-
-    # Users should not provide _author fields
-    domain[tbl_name]['schema']['_author'].update({'readonly': True})
-
-    # Remove id field (eve will provide id)
-    domain[tbl_name]['schema'].pop('id')
-
-    return domain
 
 
 def register_domain(app, domain):
@@ -279,7 +231,3 @@ def register_validator(app, validator_class):
     app.validator = type("Adopted_%s" % validator_class.__name__,
                          (validator_class, app.validator),
                          {})
-
-
-
-# db utils
