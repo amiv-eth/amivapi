@@ -88,7 +88,7 @@ def initdb(app=None):
     with app.test_request_context():
         collection = app.data.driver.db['users']
         if collection.find_one({'_id': root_data['_id']}) is None:
-            print(post_internal("users", payl=root_data, skip_validation=True))
+            post_internal("users", payl=root_data, skip_validation=True)
             print("Root user added successfully!")
         else:
             print("Root user already in db, aborting.")
