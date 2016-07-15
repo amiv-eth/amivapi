@@ -11,7 +11,6 @@ from os.path import abspath, dirname, join, exists, expanduser
 from pprint import pprint
 from base64 import b64encode
 
-from bson.objectid import ObjectId
 
 from flask import Flask
 from flask.ext.script import (
@@ -26,7 +25,7 @@ from eve.methods.post import post_internal
 
 from amivapi import settings
 from amivapi.utils import get_config
-from amivapi.bootstrap import init_database, clear_database, create_app
+from amivapi.bootstrap import create_app
 
 manager = Manager(Flask("amivapi"))
 # This must be the same as in amivapi.utils.get_config
