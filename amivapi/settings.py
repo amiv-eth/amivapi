@@ -40,12 +40,13 @@ TESTING = False
 
 # Eve
 # ID_FIELD = "id"  # This seems to cause some problems. TODO(ALEX): investigate
-AUTH_FIELD = "_author"
+# AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
-PUBLIC_METHODS = ['GET']  # This is the only way to make / public
+# TODO: Not needed anymore, remove soon
+# PUBLIC_METHODS = ['GET']  # This is the only way to make / public
 XML = False
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
