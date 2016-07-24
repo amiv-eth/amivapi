@@ -76,7 +76,8 @@ def is_file_content(path, content):
 class TestClient(FlaskClient):
     """Custom test client with additional request/response checks.
 
-    Requests are enforced to be JSON (data and content type).
+    Auth header will be added if token is provided.
+    Data is sent as json if nothing else is specified.
     Responses can be checked against an expected status code.
     """
 
@@ -85,27 +86,34 @@ class TestClient(FlaskClient):
 
         Adds token and headers and asserts status code.
         """
-        expected_code = kwargs.pop('status_code', None)
+        # We are definetly going to add some headers
+        if 'headers' not in kwargs:
+            kwargs['headers'] = {}
 
-        if 'token' in kwargs:
-            if 'headers' not in kwargs:
-                kwargs['headers'] = {}
+        # Add token
+        token = kwargs.pop('token', None)
 
+        if token:
             kwargs['headers'].update({
-                'Authorization': 'Basic ' + b64encode(
-                    kwargs['token'].encode('utf_8') + b':').decode('utf_8')
+                # We support a auth header of the form "Token <thetoken>"
+                'Authorization': 'Token ' + token
             })
 
-            kwargs.pop('token', None)
-
-        if (not(("headers" in kwargs) and
-                ("content-type" in kwargs['headers'])) and
+        # Add content-type: json header if nothing else is provided
+        if (not("content-type" in kwargs['headers']) and
                 ("data" in kwargs)):
+            # Parse data
             kwargs['data'] = json.dumps(kwargs['data'])
+            # Set header
             kwargs['content_type'] = "application/json"
 
+        # get the actual response and assert status
+        expected_code = kwargs.pop('status_code', None)
+
         response = super(TestClient, self).open(*args, **kwargs)
+
         status_code = response.status_code
+
         if (expected_code is not None and expected_code != status_code):
             raise AssertionError(
                 "Expected a status code of %i, but got %i instead\n"
@@ -210,7 +218,7 @@ class WebTest(unittest.TestCase):
         def decorate(func):
             def decorated(self, **kwargs):
                 kwargs.setdefault('_etag', "initial_etag")
-                kwargs.setdefault('_author', -1)
+                # kwargs.setdefault('_author', -1)
 
                 kwargs = func(self, **kwargs)
 
