@@ -10,7 +10,8 @@ Includes item and field permissions as well as password hashing.
 from bson import ObjectId
 
 from amivapi.tests import util
-from amivapi.users import hash_on_insert, hash_on_update, verify_password
+from amivapi.users.security import (
+    hash_on_insert, hash_on_update, verify_password)
 
 from passlib.context import CryptContext
 from passlib.hash import pbkdf2_sha256
