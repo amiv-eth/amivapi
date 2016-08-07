@@ -27,7 +27,6 @@
 
     # Why always g.get('something') instead g['something']?
     # If auth is disabled (e.g. for some tests) the values wont be in g!
-    # You could also use `try...except`
 
 
 **How to use**
@@ -35,6 +34,8 @@
 1. Subclass `AmivTokenAuth`
 2. implement only the methods `create_user_lookup_filter` and
    `has_write_permission` depending on your resource.
+   Note: You shouldn't care about admin permissions. Those methods will only be
+   called for non-admins!
 3.  Use your auth class in your resource settings. Done!
 4. Tip: You can still use all Eve settings like 'public_methods' and
    'public_item_methods'!
@@ -75,7 +76,7 @@ class AmivTokenAuth(BasicAuth):
     def has_write_permission(self, user_id, item):
         """Check if *user* is allowed to PATCH or DELETE *item*.
 
-        Define this function for your resource.
+        Implement this function for your resource.
 
         Args:
             user (str): The id of the user that wants to access the item
@@ -89,7 +90,7 @@ class AmivTokenAuth(BasicAuth):
     def create_user_lookup_filter(self, user_id):
         """Create a filter for item lookup in GET, PATCH and DELETE.
 
-        Define this function for your resource.
+        Implement this function for your resource.
 
         Args:
             user_id (str): The id of the user
