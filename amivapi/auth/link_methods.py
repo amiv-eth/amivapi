@@ -17,10 +17,12 @@ from eve.auth import resource_auth
 
 from .auth import AmivTokenAuth
 
+# Low level: Get methods
+
 READ_METHODS = ['GET', 'HEAD', 'OPTIONS']
 
 
-def _item_link_methods(resource, item):
+def _get_item_methods(resource, item):
     is_admin = g.get('resource_admin')
     user = g.get('current_user')  # TODO: post_internal_problem
     res = current_app.config['DOMAIN'][resource]
@@ -29,14 +31,14 @@ def _item_link_methods(resource, item):
     methods = READ_METHODS + res['public_item_methods']
 
     # Admins have access to all methods. Otherwise check per item.
-    if is_admin or (user and auth.has_write_permission(user, item)):
+    if is_admin or auth.has_write_permission(user, item):
         methods += res['item_methods']
 
     # Remove duplicates before returning
     return list(set(methods))
 
 
-def _resource_link_methods(resource):
+def _get_resource_methods(resource):
     res = current_app.config['DOMAIN'][resource]
 
     # all returned items are readable. public methods always available
@@ -54,52 +56,67 @@ def _home_link_methods():
     return READ_METHODS
 
 
+def _add_methods_to_item_links(resource, item):
+    links = item['_links']
+
+    # self
+    links['self']['methods'] = _get_item_methods(resource, item)
+
+    # parent, i.e. home -> only read methods (optional)
+    if 'parent' in links:
+        links['parent']['methods'] = _home_link_methods()
+
+    # collection -> resource (optional)
+    if 'collection' in links:
+        links['collection']['methods'] = _get_resource_methods(resource)
+
+
+def _add_methods_to_resource_links(resource, response):
+    links = response['_links']
+
+    # 'parent' (home)
+    links['parent']['methods'] = _home_link_methods()
+
+    # Same links for self and all pagination links
+    res_links = _get_resource_methods(resource)
+    for link in 'self', 'prev', 'next', 'last':
+        if link in links:
+            links[link]['methods'] = res_links
+
+
 def add_permitted_methods_after_update(resource, item):
     """Add permitted methods to "_links" part of item."""
     # Only continue for AmivTokenAuth subclass
     if isinstance(resource_auth(resource), AmivTokenAuth):
-        # Eve only includes link to 'self'
-        item['_links']['self']['methods'] = _item_link_methods(resource, item)
+        _add_methods_to_item_links(resource, item)
 
 
 def add_permitted_methods_after_insert(resource, items):
     """Need the same links as update, but input is a list of items."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         for item in items:
-            item['_links']['self']['methods'] = \
-                _item_link_methods(resource, item)
+            _add_methods_to_item_links(resource, item)
 
 
 def add_permitted_methods_after_fetch_item(resource, item):
     """Basically like insert and update, but there is more link info."""
     # Only continue for AmivTokenAuth subclass
     if isinstance(resource_auth(resource), AmivTokenAuth):
-        links = item['_links']
-        # self
-        links['self']['methods'] = _item_link_methods(resource, item)
-
-        # parent, i.e. home -> only read methods
-        links['parent']['methods'] = _home_link_methods()
-
-        # collection -> resource
-        links['collection']['methods'] = _resource_link_methods(resource)
+        _add_methods_to_item_links(resource, item)
 
 
 def add_permitted_methods_after_fetch_resource(resource, response):
     """Resource links in response and list of items with 'self' links."""
     # Only continue for AmivTokenAuth subclass
     if isinstance(resource_auth(resource), AmivTokenAuth):
+        print(response)
+
         # Item links
         for item in response['_items']:
-            item['_links']['self']['methods'] = \
-                _item_link_methods(resource, item)
+            _add_methods_to_item_links(resource, item)
 
         # Resource links
-        links = response['_links']
-        # 'parent' (home)
-        links['parent']['methods'] = _home_link_methods()
-        # 'self', the collection
-        links['self']['methods'] = _resource_link_methods(resource)
+        _add_methods_to_resource_links(resource, response)
 
 
 def add_permitted_methods_for_home(resource, request, response):
@@ -113,15 +130,18 @@ def add_permitted_methods_for_home(resource, request, response):
         data = json.loads(response.get_data())
 
         try:
-            for res_link in data['_links']['child']:
-                res_name = res_link['title']  # title equals resource
-                # Only AmivAuth
-                if isinstance(resource_auth(res_name), AmivTokenAuth):
-                    res_link['methods'] = _resource_link_methods(res_name)
+            links = data['_links']['child']
         except KeyError:
             # Other endpoints like `schemaendpoint` might end u here, but don't
             # have the same 'link' layout as home, so we can just ignore them
             pass
+        else:
+            # Add links for home
+            for res_link in links:
+                res_name = res_link['title']  # title equals resource
+                # Only AmivAuth
+                if isinstance(resource_auth(res_name), AmivTokenAuth):
+                    res_link['methods'] = _get_resource_methods(res_name)
 
-        # Overwrite response data with modified version
-        response.set_data(json.dumps(data))
+            # Overwrite response data with modified version
+            response.set_data(json.dumps(data))
