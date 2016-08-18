@@ -9,7 +9,7 @@ Includes item and field permissions as well as password hashing.
 
 from bson import ObjectId
 
-from amivapi.tests import util
+from amivapi.tests import utils
 from amivapi.users.security import (
     hash_on_insert, hash_on_update, verify_password)
 
@@ -17,7 +17,7 @@ from passlib.context import CryptContext
 from passlib.hash import pbkdf2_sha256
 
 
-class UserTest(util.WebTestNoAuth):
+class UserTest(utils.WebTestNoAuth):
     """Basic tests for user resource."""
 
     def test_methods(self):
@@ -82,7 +82,7 @@ class UserTest(util.WebTestNoAuth):
         self.api.get("/users/" + root_id, status_code=200)
 
 
-class PasswordHashing(util.WebTestNoAuth):
+class PasswordHashing(utils.WebTestNoAuth):
     """Tests password hashing.
 
     TODO(Alex): Test rehash on login as soon as auth works.
@@ -287,7 +287,7 @@ class PasswordHashing(util.WebTestNoAuth):
         pass
 
 
-class UserFieldPermissions(util.WebTest):
+class UserFieldPermissions(utils.WebTest):
     """Test field permissions.
 
     Some fields can be changed by the user, some only by admins.
