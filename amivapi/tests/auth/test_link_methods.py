@@ -20,7 +20,7 @@ import json
 from flask import g, Response
 from eve.auth import BasicAuth
 
-from amivapi.tests.util import WebTest
+from amivapi.tests.utils import WebTest
 from amivapi.auth import AmivTokenAuth
 from amivapi.auth.link_methods import (
     _add_methods_to_item_links,

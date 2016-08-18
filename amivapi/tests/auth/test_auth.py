@@ -19,10 +19,10 @@ from amivapi.auth import (
     abort_if_not_public,
     authenticate,
 )
-from amivapi.tests import util
+from amivapi.tests import utils
 
 
-class AmivTokenAuthTest(util.WebTest):
+class AmivTokenAuthTest(utils.WebTest):
     """Tests for `AmivTokenAuth` default methods."""
 
     def test_amiv_token_auth_authorized(self):
@@ -65,7 +65,7 @@ class FakeAuth(AmivTokenAuth):
         return user_id == item['_id']
 
 
-class AuthFunctionTest(util.WebTest):
+class AuthFunctionTest(utils.WebTest):
     """Unittests for the auth functions."""
 
     # Setup and Helper
