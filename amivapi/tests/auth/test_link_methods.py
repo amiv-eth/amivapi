@@ -14,14 +14,10 @@ Note on link setup. The links in eve are a little inconsistent
 """
 
 from copy import deepcopy
-from contextlib import contextmanager
 import json
 
-from flask import g, Response
-from eve.auth import BasicAuth
+from flask import Response
 
-from amivapi.tests.utils import WebTest
-from amivapi.auth import AmivTokenAuth
 from amivapi.auth.link_methods import (
     _add_methods_to_item_links,
     _add_methods_to_resource_links,
@@ -31,68 +27,19 @@ from amivapi.auth.link_methods import (
     add_permitted_methods_after_fetch_resource,
     add_permitted_methods_for_home
 )
+from .fake_auth import FakeAuthTest
 
 
-class FakeAuth(AmivTokenAuth):
-    """Testing auth class that makes it easy to check results."""
-
-    def create_user_lookup_filter(self, user_id):
-        """Simple lookup."""
-        return {'_id': user_id}
-
-    def has_write_permission(self, user_id, item):
-        """Return true if _id field equals user."""
-        return user_id == item['_id']
-
-
-class LinkTest(WebTest):
+class LinkTest(FakeAuthTest):
     """Tests for links to permitted methods."""
 
-    # Sets to compare allowed link methods
+    # Lists to compare allowed link methods
+
     home_methods = ['GET', 'HEAD', 'OPTIONS']
     public_resource_methods = ['GET', 'HEAD', 'OPTIONS', 'POST']
     admin_resource_methods = ['GET', 'HEAD', 'OPTIONS', 'POST', 'DELETE']
     public_item_methods = ['GET', 'HEAD', 'OPTIONS', 'PATCH']
     admin_item_methods = ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE']
-
-    def setUp(self):
-        """Setup with fake resources that have only auth.
-
-        - AmivTokenAuth subclass for the resource 'fake'.
-        - A 'BasicAuth' (from Eve) subclass for 'fake_no_amiv'
-        - No auth at all for 'fake_nothing'
-
-        """
-        super(LinkTest, self).setUp()
-
-        self.app.config['DOMAIN']['fake'] = {
-            'authentication': FakeAuth,
-            # some different methods for public and not public
-            'resource_methods': ['GET', 'POST', 'DELETE'],
-            'public_methods': ['GET', 'POST'],
-            'item_methods': ['GET', 'PATCH', 'DELETE'],
-            'public_item_methods': ['GET', 'PATCH']
-        }
-
-        self.app.config['DOMAIN']['fake_no_amiv'] = {
-            'authentication': BasicAuth}
-
-        self.app.config['DOMAIN']['fake_nothing'] = {
-            'authentication': None}
-
-    @contextmanager
-    def _init_context(self, **g_updates):
-        """Create an app context and fill g with values."""
-        with self.app.app_context():
-            # Defaults - no admins and nothing
-            g.current_token = g.current_session = g.current_user = None
-            g.resource_admin = g.resource_admin_readonly = False
-
-            # Update g
-            for key, value in g_updates.items():
-                setattr(g, key, value)
-
-            yield
 
     # Assert all possible item links get correct methods in every context
 
