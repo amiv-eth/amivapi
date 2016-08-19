@@ -337,7 +337,7 @@ class LinkTest(WebTest):
                 response = Response(response_data)
                 add_permitted_methods_for_home(None, None, response)
 
-                modified_data = response.get_data()
+                modified_data = response.get_data().decode('utf-8')
                 modified_links = json.loads(modified_data)['_links']['child']
 
                 self.assertItemsEqual(modified_links[0]['methods'], test[1])

@@ -264,6 +264,8 @@ class AuthFunctionTest(utils.WebTest):
             self.assertIsNone(g.current_token)
 
         token = "ThisIsATokenYeahItIsTheContentDoesntReallyMatter"
+        # Encoding dance for py 2/3 compatibility
+        b64token = b64encode((token + ":").encode('utf-8')).decode('utf-8')
 
         # All header variations
         for header in (
@@ -272,7 +274,7 @@ class AuthFunctionTest(utils.WebTest):
                 "Token " + token,
                 "bearer " + token,
                 "Bearer " + token,
-                "Basic " + b64encode(token + ":")):
+                "Basic " + b64token):
 
             with self.app.test_request_context(
                     headers={'Authorization': header}):

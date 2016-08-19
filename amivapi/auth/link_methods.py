@@ -127,7 +127,8 @@ def add_permitted_methods_for_home(resource, request, response):
     """
     if resource is None:
         # Retrieve data (json as string) for request and parse
-        data = json.loads(response.get_data())
+        # Decode to be compatible with python 2 (str) and 3 (binary)
+        data = json.loads(response.get_data().decode('utf-8'))
 
         try:
             links = data['_links']['child']

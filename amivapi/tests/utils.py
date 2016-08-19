@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """General testing utilities."""
 
+import sys
 import json
 import random
 import unittest
@@ -149,6 +150,11 @@ class WebTest(unittest.TestCase):
         """
         super(WebTest, self).setUp()
 
+        # In 3.2, assertItemsEqual was replaced by assertCountEqual
+        # Make assertItemsEqual work in tests for py3 as well
+        if sys.version_info >= (3, 2):
+            self.assertItemsEqual = self.assertCountEqual
+
         config = utils.get_config()
 
         # create temporary directories
@@ -244,7 +250,7 @@ class WebTest(unittest.TestCase):
         data = {
             'firstname': firstname,
             'lastname': u"Doe",
-            'email': u"testuser-%i@example.com" % self.counter.next(),
+            'email': u"testuser-%i@example.com" % next(self.counter),
             'gender': gender,
         }
         data.update(**kwargs)
@@ -254,7 +260,7 @@ class WebTest(unittest.TestCase):
     def new_group(self, **kwargs):
         """Create group."""
         data = {
-            'name': u"test-group-%i" % self.counter.next(),
+            'name': u"test-group-%i" % next(self.counter),
             'moderator_id': 0,
             'allow_self_enrollment': random.choice([True, False]),
             'has_zoidberg_share': random.choice([True, False]),
@@ -266,7 +272,7 @@ class WebTest(unittest.TestCase):
     def new_group_address(self, **kwargs):
         """Create group address. At least supply the group_id."""
         kwargs.setdefault('email',
-                          u"adress-%i@example.com" % self.counter.next())
+                          u"adress-%i@example.com" % next(self.counter))
         return kwargs
 
     @create_object('groupmembers')
@@ -279,7 +285,7 @@ class WebTest(unittest.TestCase):
     def new_group_forward(self, **kwargs):
         """Add a user to a group. At least supply the group_id."""
         kwargs.setdefault('email',
-                          u"forward-%i@example.com" % self.counter.next())
+                          u"forward-%i@example.com" % next(self.counter))
         return kwargs
 
     @create_object('sessions')
@@ -309,7 +315,7 @@ class WebTest(unittest.TestCase):
     def new_signup(self, **kwargs):
         """Create a signup, needs at least the event_id."""
         if 'user_id' not in kwargs:
-            count = self.counter.next()
+            count = next(self.counter)
             kwargs['user_id'] = -1
             kwargs['_email_unreg'] = u"signupper-%i@example.com" % count
             kwargs['_token'] = token_generator(size=20)
@@ -318,20 +324,20 @@ class WebTest(unittest.TestCase):
     @create_object('joboffers')
     def new_joboffer(self, **kwargs):
         """Create a new job offer."""
-        kwargs.setdefault('company', u"ACME Inc. %i" % self.counter.next())
+        kwargs.setdefault('company', u"ACME Inc. %i" % next(self.counter))
         return kwargs
 
     @create_object('studydocuments')
     def new_studydocument(self, **kwargs):
         """Create a new study document."""
-        kwargs.setdefault('name', u"Example Exam %i" % self.counter.next())
+        kwargs.setdefault('name', u"Example Exam %i" % next(self.counter))
         return kwargs
 
     @create_object('files')
     def new_file(self, **kwargs):
         """Create a new file, needs study_doc_id."""
         if 'data' not in kwargs:
-            filename = 'default_file_%i.txt' % self.counter.next()
+            filename = 'default_file_%i.txt' % next(self.counter)
             with open(os.path.join(self.app.config['STORAGE_DIR'], filename),
                       'wb') as f:
                 f.write("Some example content.")
