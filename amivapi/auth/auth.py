@@ -45,6 +45,28 @@ Take a look at `users.security` for an example.
 **Don't want all this?**
 
 Simply use a auth class that is *not* a subclass of AmivTokenAuth.
+
+**How it works**
+
+We are using Eve's hooks to add authentiation.
+All methods go through the following methods:
+
+- `AmivTokenAuth.authorized` (only if the methods is not public!)
+- `authenticate`
+- `abort_if_not_public`
+
+For resource endpoints, nothing else happens.
+Item endpoints have more logic:
+
+- GET
+
+  - `add_lookup_filter`
+  - `AmivTokenAuth.create_user_lookup_filter`
+
+- PATCH and DELETE
+
+  - `check_write_permission`
+  - `AmivTokenAuth.has_write_permission`
 """
 
 from datetime import datetime as dt
