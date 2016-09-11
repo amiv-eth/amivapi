@@ -6,8 +6,8 @@
 
 from amivapi.utils import register_domain
 
-from .model import userdomain, prevent_projection
-from .security import hash_on_insert, hash_on_update
+from .model import userdomain
+from .security import hash_on_insert, hash_on_update, prevent_projection
 
 
 def init_app(app):
