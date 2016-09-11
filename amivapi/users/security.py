@@ -7,7 +7,7 @@
 
 from bson import ObjectId
 
-from flask import current_app
+from flask import current_app, abort, g
 from eve.methods.patch import patch_internal
 
 from amivapi.auth import AmivTokenAuth
@@ -42,7 +42,7 @@ class UserAuth(AmivTokenAuth):
         Returns:
             bool: True if user has permission to change the item, False if not.
         """
-        return item['_id'] == user_id
+        return str(item['_id']) == user_id
 
     def create_user_lookup_filter(self, user_id):
         """Create a filter for item lookup.
@@ -74,14 +74,32 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(resource, response):
-    """Hide everything but id, nethz and name from others on get requests.
+def hide_fields(items):
+    """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
 
+    Nobody can see passwords.
+
     Do nothing if auth is disabled.
+
+    Args:
+        items (list): list of user data to be returned.
     """
-    pass
+    if current_app.auth:
+        for item in items:
+            # Always remove password
+            item.pop('password', None)
+
+            # Rest only for non self and non admins
+            if not (g.get('resource_admin') or
+                    g.get('resource_admin_readonly') or
+                    g.current_user == item['_id']):
+                for key in item.keys():
+                    if key[0] != u'_' or key not in (u'firstname',
+                                                     u'lastname',
+                                                     u'nethz'):
+                        item.pop(key)
 
 
 # Password hashing and verification
@@ -156,3 +174,15 @@ def hash_on_update(updates, original):
         items (list): List of new items as passed by the on_insert event.
     """
     _hash_password(updates)
+
+
+def prevent_projection(request, lookup):
+    """Prevent extraction of password hashes.
+
+    args:
+        request: The request object
+        lookup (dict): The lookup dict(unused)
+    """
+    projection = request.args.get('projection')
+    if projection and 'password' in projection:
+        abort(403, description='Bad projection field: password')
