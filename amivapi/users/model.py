@@ -4,8 +4,6 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
-from flask import abort
-
 from amivapi.utils import EMAIL_REGEX
 
 from .security import UserAuth
@@ -112,15 +110,3 @@ userdomain = {
         }
     }
 }
-
-
-def prevent_projection(request, lookup):
-    """Prevent extraction of password hashes.
-
-    args:
-        request: The request object
-        lookup (dict): The lookup dict(unused)
-    """
-    projection = request.args.get('projection')
-    if projection and 'password' in projection:
-        abort(403, description='Bad projection field: password')
