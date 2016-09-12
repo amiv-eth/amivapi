@@ -33,7 +33,7 @@ test_config = {
     'SMTP_SERVER': '',
     'APIKEYS': {},
     'TESTING': True,
-    'DEBUG': False
+    'DEBUG': True   # This makes eve's error messages more helpful
 }
 
 
@@ -252,6 +252,7 @@ class WebTest(unittest.TestCase):
             'lastname': u"Doe",
             'email': u"testuser-%i@example.com" % next(self.counter),
             'gender': gender,
+            'membership': u"none"
         }
         data.update(**kwargs)
         return data
@@ -344,6 +345,30 @@ class WebTest(unittest.TestCase):
 
             kwargs['data'] = filename
         return kwargs
+
+    # Shortcuts to get a token
+
+    def get_user_token(self, user_id):
+        """Create session for a user and return a token.
+
+        Args:
+            user_id (str): user_id as string.
+
+        Returns:
+            str: Token that can be used to authenticate user.
+        """
+        token = "test_token_" + str(next(self.counter))
+        self.db['sessions'].insert({u'user_id': user_id,
+                                    u'token': token})
+        return token
+
+    def get_root_token(self):
+        """Create session for root user and return token.
+
+        Returns:
+            str: Token for the root user
+        """
+        return self.get_user_token(24 * "0")
 
 
 class WebTestNoAuth(WebTest):

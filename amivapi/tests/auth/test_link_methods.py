@@ -16,18 +16,20 @@ Note on link setup. The links in eve are a little inconsistent
 from copy import deepcopy
 import json
 
-from flask import Response
+from flask import Response, g
 
 from amivapi.auth.link_methods import (
-    _add_methods_to_item_links,
-    _add_methods_to_resource_links,
+    add_methods_to_item_links,
+    add_methods_to_resource_links,
     add_permitted_methods_after_update,
     add_permitted_methods_after_insert,
     add_permitted_methods_after_fetch_item,
     add_permitted_methods_after_fetch_resource,
-    add_permitted_methods_for_home
+    add_permitted_methods_for_home,
+    _get_data as get_response_data
 )
 from .fake_auth import FakeAuthTest
+from amivapi.tests.utils import WebTest
 
 
 class LinkTest(FakeAuthTest):
@@ -61,7 +63,7 @@ class LinkTest(FakeAuthTest):
             }
 
             # Call and assert results
-            _add_methods_to_item_links('fake', data_self)
+            add_methods_to_item_links('fake', data_self)
 
             self.assertItemsEqual(data_self['_links']['self']['methods'],
                                   methods_self)
@@ -75,7 +77,7 @@ class LinkTest(FakeAuthTest):
             }
 
             # Call and assert results
-            _add_methods_to_item_links('fake', data_all)
+            add_methods_to_item_links('fake', data_all)
 
             self.assertItemsEqual(data_all['_links']['self']['methods'],
                                   methods_self)
@@ -126,7 +128,7 @@ class LinkTest(FakeAuthTest):
                            'parent': {}}
             }
 
-            _add_methods_to_resource_links('fake', no_pagination)
+            add_methods_to_resource_links('fake', no_pagination)
 
             self.assertItemsEqual(no_pagination['_links']['self']['methods'],
                                   resource_methods)
@@ -141,7 +143,7 @@ class LinkTest(FakeAuthTest):
                            'last': {}}
             }
 
-            _add_methods_to_resource_links('fake', with_pagination)
+            add_methods_to_resource_links('fake', with_pagination)
 
             for link in 'self', 'prev', 'next', 'last':
                 self.assertItemsEqual(
@@ -219,26 +221,6 @@ class LinkTest(FakeAuthTest):
             for item in data['_items']:
                 self.assertMethodsAdded(item)
 
-    def test_add_permitted_methods_after_update(self):
-        """Test update hook."""
-        data_template = {
-            '_id': 'something',
-            '_links': {
-                'self': {},
-            }
-        }
-
-        data = deepcopy(data_template)
-
-        with self.app.app_context():
-            # Nothing without amiv auth
-            for res in ['fake_nothing', 'fake_no_amiv']:
-                add_permitted_methods_after_update(res, data)
-                self.assertEqual(data, data_template)
-
-            add_permitted_methods_after_update('fake', data)
-            self.assertMethodsAdded(data)
-
     def test_add_permitted_methods_after_insert(self):
         """Test insert.
 
@@ -262,6 +244,28 @@ class LinkTest(FakeAuthTest):
             for item in data:
                 self.assertMethodsAdded(item)
 
+    def test_add_permitted_methods_after_update(self):
+        """Test update hook."""
+        data = {
+            '_id': 'something',
+            '_links': {
+                'self': {},
+            }
+        }
+
+        response = Response(json.dumps(data))
+
+        with self.app.app_context():
+            # Nothing without amiv auth
+            for resource in ['fake_nothing', 'fake_no_amiv']:
+                add_permitted_methods_after_update(resource, None, response)
+                response_data = get_response_data(response)
+                self.assertEqual(response_data, data)
+
+            add_permitted_methods_after_update('fake', None, response)
+            response_data = get_response_data(response)
+            self.assertMethodsAdded(response_data)
+
     # Test home endpoint links
 
     def test_link_methods_read_home(self):
@@ -277,18 +281,215 @@ class LinkTest(FakeAuthTest):
             {'title': "fake_nothing"},
         ]}})
 
-        # test = (context_variables, expected_test_methods)
-        for test in [({}, self.public_resource_methods),
-                     ({'resource_admin': True}, self.admin_resource_methods)]:
-            with self._init_context(**test[0]):
-                response = Response(response_data)
-                add_permitted_methods_for_home(None, None, response)
+        with self.app.test_request_context():
+            # Nothing without amiv auth
+            response = Response(response_data)
+            add_permitted_methods_for_home(None, None, response)
 
-                modified_data = response.get_data().decode('utf-8')
-                modified_links = json.loads(modified_data)['_links']['child']
+            modified_links = get_response_data(response)['_links']['child']
 
-                self.assertItemsEqual(modified_links[0]['methods'], test[1])
+            # Nothing for not AmivAuth (second and third element in list)
+            self.assertNotIn('methods', modified_links[1])
+            self.assertNotIn('methods', modified_links[2])
 
-                # Nothing for not AmivAuth
-                self.assertNotIn('methods', modified_links[1])
-                self.assertNotIn('methods', modified_links[2])
+            # Test as normal user
+            response = Response(response_data)
+            add_permitted_methods_for_home(None, None, response)
+            modified_links = get_response_data(response)['_links']['child']
+            # Fake amiv auth is first element in list
+            self.assertItemsEqual(modified_links[0]['methods'],
+                                  self.public_resource_methods)
+
+            # Test as admin
+            g.resource_admin = True
+            response = Response(response_data)
+            add_permitted_methods_for_home(None, None, response)
+            modified_links = get_response_data(response)['_links']['child']
+            self.assertItemsEqual(modified_links[0]['methods'],
+                                  self.admin_resource_methods)
+
+
+class LinkIntegrationTest(WebTest):
+    """Test if everything works well with Eve.
+
+    Not using any fake auth classes here, we will just look at the users
+    resource and home endpoint to check the results.
+    """
+
+    def setUp(self):
+        """Create two test users on setup."""
+        super(LinkIntegrationTest, self).setUp()
+
+        self.user = self.new_user(membership='regular')
+        self.other_user = self.new_user(membership='regular')
+
+        self.user_id = str(self.user['_id'])
+        self.other_user_id = str(self.other_user['_id'])
+
+        self.user_token = self.get_user_token(str(self.user['_id']))
+        self.root_token = self.get_root_token()
+
+    def get_user_methods(self, response):
+        """Helper to filter GET to home to get methods for user res."""
+        for links in response.json['_links']['child']:
+            if links['title'] == 'users':
+                return links['methods']
+
+    def test_home_public(self):
+        """Test GET on home for public user."""
+        response = self.api.get("/", status_code=200)
+        self.assertItemsEqual(self.get_user_methods(response),
+                              ['OPTIONS'])
+
+    def test_home_registered(self):
+        """Test GET on home for a registered user."""
+        response = self.api.get("/", token=self.user_token, status_code=200)
+        self.assertItemsEqual(self.get_user_methods(response),
+                              ['OPTIONS', 'GET', 'HEAD'])
+
+    def test_home_admin(self):
+        """Test GET on home for an admin."""
+        response = self.api.get("/", token=self.root_token, status_code=200)
+        self.assertItemsEqual(self.get_user_methods(response),
+                              ['OPTIONS', 'GET', 'HEAD', 'POST'])
+
+    def test_resource_registered(self):
+        """Test GET on resource for a registered user."""
+        response = self.api.get("/users",
+                                token=self.user_token,
+                                status_code=200).json
+
+        # Parent = /, self = /users
+        for link in 'parent', 'self':
+            methods = response['_links'][link]['methods']
+            self.assertItemsEqual(methods, ['GET', 'HEAD', 'OPTIONS'])
+
+        for item in response['_items']:
+            # Only self
+            methods = item['_links']['self']['methods']
+
+            if item['_id'] == self.user_id:
+                self.assertItemsEqual(methods, ['GET', 'HEAD', 'OPTIONS',
+                                                'PATCH', 'DELETE'])
+            else:
+                self.assertItemsEqual(methods, ['GET', 'HEAD', 'OPTIONS'])
+
+    def test_resource_admin(self):
+        """Test GET on resource for a registered user."""
+        response = self.api.get("/users",
+                                token=self.root_token,
+                                status_code=200).json
+
+        home_methods = response['_links']['parent']['methods']
+        self.assertItemsEqual(home_methods, ['GET', 'HEAD', 'OPTIONS'])
+
+        resource_methods = response['_links']['self']['methods']
+        self.assertItemsEqual(resource_methods,
+                              ['GET', 'HEAD', 'OPTIONS', 'POST'])
+
+        for item in response['_items']:
+            # Only self
+            methods = item['_links']['self']['methods']
+            self.assertItemsEqual(methods, ['GET', 'HEAD', 'OPTIONS',
+                                            'PATCH', 'DELETE'])
+
+    def _get_methods(self, response, link):
+        return response.json['_links'][link]['methods']
+
+    def test_item_registered_privileged(self):
+        """Test GET on item for user with permissions."""
+        response = self.api.get("/users/" + self.user_id,
+                                token=self.user_token,
+                                status_code=200)
+
+        # Home = parent
+        self.assertItemsEqual(self._get_methods(response, 'parent'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+        # Resource = collection
+        self.assertItemsEqual(self._get_methods(response, 'collection'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+
+        # Item = self
+        self.assertItemsEqual(self._get_methods(response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
+
+    def test_item_registered_unprivileged(self):
+        """Test GET on item for user with permissions."""
+        response = self.api.get("/users/" + self.other_user_id,
+                                token=self.user_token,
+                                status_code=200)
+
+        # Home = parent
+        self.assertItemsEqual(self._get_methods(response, 'parent'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+        # Resource = collection
+        self.assertItemsEqual(self._get_methods(response, 'collection'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+
+        # Item = self
+        self.assertItemsEqual(self._get_methods(response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+
+    def test_item_admin(self):
+        """Test GET on item for user with permissions."""
+        response = self.api.get("/users/" + self.other_user_id,
+                                token=self.root_token,
+                                status_code=200)
+
+        # Home = parent
+        self.assertItemsEqual(self._get_methods(response, 'parent'),
+                              ['GET', 'HEAD', 'OPTIONS'])
+        # Resource = collection
+        self.assertItemsEqual(self._get_methods(response, 'collection'),
+                              ['GET', 'HEAD', 'OPTIONS', 'POST'])
+
+        # Item = self
+        self.assertItemsEqual(self._get_methods(response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
+
+    def test_post(self):
+        """Test POST on users. Only available for admin."""
+        data = {
+            'firstname': 'Pablo',
+            'lastname': 'Pablone',
+            'membership': 'regular',
+            'email': 'pablo@pablomail.com',
+            'gender': 'male',
+        }
+
+        response = self.api.post("/users",
+                                 data=data,
+                                 token=self.root_token,
+                                 status_code=201)
+
+        self.assertItemsEqual(self._get_methods(response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
+
+    def test_patch(self):
+        """Test PATCH by normal user and admin."""
+        user = self.new_user(email="original@amiv.ch")
+        user_id = str(user['_id'])
+
+        updates = {'email': 'new@amiv.ch'}
+        headers = {'If-Match': user['_etag']}
+
+        user_response = self.api.patch("/users/" + user_id,
+                                       data=updates,
+                                       headers=headers,
+                                       token=self.get_user_token(user_id),
+                                       status_code=200)
+
+        self.assertItemsEqual(self._get_methods(user_response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
+
+        updates = {'email': 'new2@amiv.ch'}
+        headers = {'If-Match': user_response.json['_etag']}
+
+        admin_response = self.api.patch("/users/" + user_id,
+                                        data=updates,
+                                        headers=headers,
+                                        token=self.root_token,
+                                        status_code=200)
+
+        self.assertItemsEqual(self._get_methods(admin_response, 'self'),
+                              ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
