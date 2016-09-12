@@ -53,6 +53,7 @@ All methods go through the following methods:
 
 - `AmivTokenAuth.authorized` (only if the methods is not public!)
 - `authenticate`
+- `check_if_admin`
 - `abort_if_not_public`
 
 For resource endpoints, nothing else happens.
@@ -126,7 +127,7 @@ class AmivTokenAuth(BasicAuth):
 
 # Hooks begin here
 
-def authenticate(*args, **kwargs):
+def authenticate(*args):
     """Authenticate user.
 
     This is not part of the auth class because we want authentication for
@@ -138,24 +139,18 @@ def authenticate(*args, **kwargs):
     - "Authorization: Token <token>"
     - "Authorization: Bearer <token>"
 
-    Then look for sessions and user and check if root.
-
-    Set the variables:
+    Then look for sessions and user and set the variables:
 
     - `g.current_token` (str): Token of current request, None if not provided.
     - `g.current_session` (dict): The current session, None if not found.
     - `g.current_user` (str): The id of the currently logged in user, None if
       not found.
 
-    - `g.resouce_admin` (bool): True if user can see and change anything
-    - `g.resource_admin_readonly` (bool): True if user can see anything
-
     Note: `current_token` & `current_session` are set to provide the info to
     other parts of the API if necessary (e.g. to check for API keys)
     """
     # Set defaults
     g.current_token = g.current_session = g.current_user = None
-    g.resource_admin = g.resource_admin_readonly = False
 
     # Get token
     token = getattr(request.authorization, 'username', None)
@@ -187,17 +182,30 @@ def authenticate(*args, **kwargs):
             g.current_session = session
             g.current_user = session['user_id']
 
-            # Check if root
-            if g.current_user == str(current_app.config['ROOT_ID']):
-                g.resource_admin = True
 
-    # Idea to give other modules the possibility to check auth
-    # e.g. groups or api keys
-    # Call a signal the other modules can subscribe to
-    # Can use either blinker (from flask) or Events (from eve)
-    # No need to pass arguments or collect return values (just use g object)
-    # e.g. Events:
-    # current_app.after_authentication()
+def check_if_admin(resource, *args):
+    """Check if the current user is admin for the current resource.
+
+    This is basically the second, resource specific part of authentication,
+    separated from `authenticate` only because it needs to be called multiple
+    times for the home endpoint.
+
+    Set the variables:
+
+    - `g.resouce_admin` (bool): True if user can see and change anything
+    - `g.resource_admin_readonly` (bool): True if user can see anything
+
+    Then notify the auth callback with the current resoure.
+    """
+    # Set defaults
+    g.resource_admin = g.resource_admin_readonly = False
+
+    # Check if root
+    if g.get('current_user') == str(current_app.config['ROOT_ID']):
+        g.resource_admin = True
+
+    # Notify callback
+    current_app.after_auth(resource)
 
 
 def abort_if_not_public(*args, **kwargs):

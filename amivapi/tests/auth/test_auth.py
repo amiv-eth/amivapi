@@ -16,6 +16,7 @@ from amivapi.auth import (
     check_write_permission,
     abort_if_not_public,
     authenticate,
+    check_if_admin
 )
 from amivapi.tests.utils import WebTest
 from .fake_auth import FakeAuthTest
@@ -187,10 +188,10 @@ class AuthFunctionTest(FakeAuthTest):
                     getattr(g, item)
 
             authenticate()
-
-            # Now they are set
             for item in expect_none:
                 self.assertIsNone(getattr(g, item))
+
+            check_if_admin('someresource')
             for item in expect_false:
                 self.assertFalse(getattr(g, item))
 
@@ -275,16 +276,26 @@ class AuthFunctionTest(FakeAuthTest):
                 self.assertGreater(g.current_session['_updated'],
                                    session['_updated'])
 
-    def test_admin_rights_for_root_in_authentication(self):
+    def test_admin_rights_for_root(self):
         """Test that login with root sets `g.resource_admin` to True."""
-        root_token = 'somethingsomethingsecurity'
         root_id = str(self.app.config['ROOT_ID'])
+        with self._init_context(current_user=root_id):
+            check_if_admin('some_resource')
+            self.assertTrue(g.resource_admin)
 
-        # Put in session
-        self.db['sessions'].insert({u'user_id': root_id, u'token': root_token})
+    def test_auth_hook(self):
+        """Assert that a auth hook is called and can set admin."""
+        def test_hook(resource):
+            if resource == "admin_resource":
+                g.resource_admin = True
+            else:
+                g.resource_admin = False
 
-        with self.app.test_request_context(
-                headers={'Authorization': root_token}):
-            authenticate()
-            self.assertEqual(g.current_user, root_id)
+        self.app.after_auth += test_hook
+
+        with self.app.app_context():
+            check_if_admin('something')
+            self.assertFalse(g.resource_admin)
+
+            check_if_admin('admin_resource')
             self.assertTrue(g.resource_admin)
