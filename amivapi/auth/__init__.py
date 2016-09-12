@@ -11,6 +11,7 @@ from .sessions import sessiondomain, process_login
 from .auth import (
     AmivTokenAuth,
     authenticate,
+    check_if_admin,
     abort_if_not_public,
     add_lookup_filter,
     check_write_permission
@@ -40,6 +41,7 @@ def init_app(app):
 
         # Authentication and public method checking for all methods
         event += authenticate
+        event += check_if_admin
         event += abort_if_not_public
 
         # Lookup filter für GET, PATCH, DELETE
