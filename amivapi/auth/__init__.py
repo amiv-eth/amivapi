@@ -54,7 +54,7 @@ def init_app(app):
 
     # Add allowed methods
     app.on_inserted += add_permitted_methods_after_insert
-    app.on_updated += add_permitted_methods_after_update
     app.on_fetched_item += add_permitted_methods_after_fetch_item
     app.on_fetched_resource += add_permitted_methods_after_fetch_resource
     app.on_post_GET += add_permitted_methods_for_home
+    app.on_post_PATCH += add_permitted_methods_after_update
