@@ -44,7 +44,7 @@ def init_app(app):
         event += check_if_admin
         event += abort_if_not_public
 
-        # Lookup filter für GET, PATCH, DELETE
+        # Lookup filter for GET, PATCH, DELETE
         if method != 'POST':
             event += add_lookup_filter
 
