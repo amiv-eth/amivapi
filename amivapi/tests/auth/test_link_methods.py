@@ -274,39 +274,43 @@ class LinkTest(FakeAuthTest):
         We have no dedicated hook here, instead a generic post GET hook will
         parse and modify the flask response.
         """
+        # Copy the fake resource so we can use the second one as admin resource
+        self.app.config['DOMAIN']['fake_2'] = self.app.config['DOMAIN']['fake']
+
         # Prepare fake response
-        response_data = json.dumps({'_links': {'child': [
+        response_data = {'_links': {'child': [
             {'title': "fake"},
+            {'title': "fake_2"},
             {'title': "fake_no_amiv"},
             {'title': "fake_nothing"},
-        ]}})
+        ]}}
+
+        response = Response(json.dumps(response_data))
+
+        # Add a hook that set resource admin for second resource
+        # In reality a group or something would do this.
+        def admin_hook(resource):
+            if resource == "fake_2":
+                g.resource_admin = True
+
+        self.app.after_auth += admin_hook
 
         with self.app.test_request_context():
-            # Nothing without amiv auth
-            response = Response(response_data)
             add_permitted_methods_for_home(None, None, response)
 
-            modified_links = get_response_data(response)['_links']['child']
+            links = get_response_data(response)['_links']['child']
 
-            # Nothing for not AmivAuth (second and third element in list)
-            self.assertNotIn('methods', modified_links[1])
-            self.assertNotIn('methods', modified_links[2])
-
-            # Test as normal user
-            response = Response(response_data)
-            add_permitted_methods_for_home(None, None, response)
-            modified_links = get_response_data(response)['_links']['child']
-            # Fake amiv auth is first element in list
-            self.assertItemsEqual(modified_links[0]['methods'],
+            # No admin, public methods
+            self.assertItemsEqual(links[0]['methods'],
                                   self.public_resource_methods)
 
-            # Test as admin
-            g.resource_admin = True
-            response = Response(response_data)
-            add_permitted_methods_for_home(None, None, response)
-            modified_links = get_response_data(response)['_links']['child']
-            self.assertItemsEqual(modified_links[0]['methods'],
+            # Admin
+            self.assertItemsEqual(links[1]['methods'],
                                   self.admin_resource_methods)
+
+            # Nothing if not AmivAuth (second and third element in list)
+            self.assertNotIn('methods', links[2])
+            self.assertNotIn('methods', links[3])
 
 
 class LinkIntegrationTest(WebTest):

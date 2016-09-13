@@ -15,7 +15,7 @@ from flask import current_app, g
 
 from eve.auth import resource_auth
 
-from .auth import AmivTokenAuth, authenticate
+from .auth import AmivTokenAuth, authenticate, check_if_admin
 
 
 def _get_item_methods(resource, item):
@@ -169,8 +169,6 @@ def add_permitted_methods_for_home(resource, request, response):
         # authentication manually
         authenticate()
 
-        # Retrieve data (json as string) for request and parse
-        # Decode to be compatible with python 2 (str) and 3 (binary)
         data = _get_data(response)
 
         try:
@@ -185,7 +183,8 @@ def add_permitted_methods_for_home(resource, request, response):
                 res_name = res_link['title']  # title equals resource
                 # Only AmivAuth
                 if isinstance(resource_auth(res_name), AmivTokenAuth):
+                    # Call resource part of auth manually, too
+                    check_if_admin(res_name)
                     res_link['methods'] = _get_resource_methods(res_name)
 
-            # Overwrite response data with modified version
             _set_data(response, data)
