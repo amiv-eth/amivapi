@@ -5,14 +5,12 @@
 
 """Functions adding permitted methods to '_links' part of response.
 
-TODO: Multiple pages!
+Links are only added for resources using AmivTokenAuth.
 """
-
 
 import json
 
 from flask import current_app, g
-
 from eve.auth import resource_auth
 
 from .auth import AmivTokenAuth, authenticate, check_if_admin
@@ -103,22 +101,20 @@ def add_methods_to_resource_links(resource, response):
 
 
 def add_permitted_methods_after_insert(resource, items):
-    """Need the same links as update, but input is a list of items."""
+    """Add link methods with an on_inserted hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         for item in items:
             add_methods_to_item_links(resource, item)
 
 
 def add_permitted_methods_after_fetch_item(resource, item):
-    """Basically like insert and update, but there is more link info."""
-    # Only continue for AmivTokenAuth subclass
+    """Add link methods with an on_fetched_item hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         add_methods_to_item_links(resource, item)
 
 
 def add_permitted_methods_after_fetch_resource(resource, response):
-    """Resource links in response and list of items with 'self' links."""
-    # Only continue for AmivTokenAuth subclass
+    """Add link methods with an on_fetched_resource hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         print(response)
 
@@ -133,7 +129,7 @@ def add_permitted_methods_after_fetch_resource(resource, response):
 def _get_data(response):
     """Get response data as dict.
 
-    Encoding/Decoding necessary for compatibility with python 2 and 3.
+    Encoding/Decoding necessary for compatibility with both python 2 and 3.
     """
     return json.loads(response.get_data().decode('utf-8'))
 
@@ -144,12 +140,10 @@ def _set_data(response, data):
 
 
 def add_permitted_methods_after_update(resource, request, response):
-    """Add permitted methods to "_links" part of item.
+    """Add link methods with an on_post_PATCH hook.
 
-    This needs to be used as a `on_post_PATCH` hook, since the update hooks
-    do not contain the links (unline fetch and insert)
+    The on_updated hook doesn't work since it doesn't include the links.
     """
-    # Only continue for AmivTokenAuth subclass
     if isinstance(resource_auth(resource), AmivTokenAuth):
         item_data = _get_data(response)
 
@@ -159,14 +153,13 @@ def add_permitted_methods_after_update(resource, request, response):
 
 
 def add_permitted_methods_for_home(resource, request, response):
-    """Add methods for GET to "/".
+    """Add link methods to home endpoint with an on_post_GET hook.
 
-    This one is special. We can only get this request with the general GET
-    hook, which Eve will call with `resource=None` for the home endpoint.
+    The home endpoint doesn't call any database hooks and no on_pre_GET hook.
+    Therefore authentication needs to be done manually so we can check
+    permissions.
     """
     if resource is None:
-        # The home endpoint has no hooks before it. We need to call
-        # authentication manually
         authenticate()
 
         data = _get_data(response)
@@ -181,9 +174,7 @@ def add_permitted_methods_for_home(resource, request, response):
             # Add links for home
             for res_link in links:
                 res_name = res_link['title']  # title equals resource
-                # Only AmivAuth
                 if isinstance(resource_auth(res_name), AmivTokenAuth):
-                    # Call resource part of auth manually, too
                     check_if_admin(res_name)
                     res_link['methods'] = _get_resource_methods(res_name)
 
