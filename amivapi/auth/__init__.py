@@ -28,13 +28,12 @@ from .link_methods import (
 def init_app(app):
     """Register sessions resource, add auth and hooks."""
     # Auth
-    app.auth = AmivTokenAuth()  # Important that its an instance for "/"
+    app.auth = AmivTokenAuth()
 
     # Sessions
     register_domain(app, sessiondomain)
     app.on_insert_sessions += process_login
 
-    # Hooks
     # on_pre_METHOD, triggered right after auth by Eve
     for method in ['GET', 'POST', 'PATCH', 'DELETE']:
         event = getattr(app, 'on_pre_' + method)
@@ -48,7 +47,6 @@ def init_app(app):
         if method != 'POST':
             event += add_lookup_filter
 
-    # on_action hooks
     # Check write permission for PATCH and DELETE
     app.on_update += (lambda resource, updates, original:
                       check_write_permission(resource, original))
