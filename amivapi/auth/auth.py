@@ -25,8 +25,11 @@
     if g.get('resource_admin_readonly'):
         print('Can look at anything, but not necessarily change something.')
 
-    # Why always g.get('something') instead g['something']?
-    # If auth is disabled (e.g. for some tests) the values wont be in g!
+    # Add additinonal authentication with a new hook
+    def my_auth_hook(resource):
+        # You could set g.reosurce_admin or g.resource_admin_readonly here
+        pass
+    app.after_auth += my_auth_hook
 
 
 **How to use**
@@ -36,15 +39,12 @@
    `has_write_permission` depending on your resource.
    Note: You shouldn't care about admin permissions. Those methods will only be
    called for non-admins!
-3.  Use your auth class in your resource settings. Done!
+3. Use your auth class in your resource settings. Done!
 4. Tip: You can still use all Eve settings like 'public_methods' and
    'public_item_methods'!
 
 Take a look at `users.security` for an example.
 
-**Don't want all this?**
-
-Simply use a auth class that is *not* a subclass of AmivTokenAuth.
 
 **How it works**
 
@@ -57,7 +57,7 @@ All methods go through the following methods:
 - `abort_if_not_public`
 
 For resource endpoints, nothing else happens.
-Item endpoints have more logic:
+Item endpoints:
 
 - GET
 
@@ -97,7 +97,7 @@ class AmivTokenAuth(BasicAuth):
         return True
 
     def has_write_permission(self, user_id, item):
-        """Check if *user* is allowed to PATCH or DELETE *item*.
+        """Check if the user is allowed to PATCH or DELETE the item.
 
         Implement this function for your resource.
 
@@ -139,15 +139,12 @@ def authenticate(*args):
     - "Authorization: Token <token>"
     - "Authorization: Bearer <token>"
 
-    Then look for sessions and user and set the variables:
+    After token parsing, look for sessions and user and set the variables:
 
     - `g.current_token` (str): Token of current request, None if not provided.
     - `g.current_session` (dict): The current session, None if not found.
     - `g.current_user` (str): The id of the currently logged in user, None if
       not found.
-
-    Note: `current_token` & `current_session` are set to provide the info to
-    other parts of the API if necessary (e.g. to check for API keys)
     """
     # Set defaults
     g.current_token = g.current_session = g.current_user = None
@@ -208,7 +205,7 @@ def check_if_admin(resource, *args):
     current_app.after_auth(resource)
 
 
-def abort_if_not_public(*args, **kwargs):
+def abort_if_not_public(*args):
     """Abort if the resource is not public and there is no user/admin.
 
     Active if `g.auth_required` is set, i. e. the method is not public.
@@ -219,7 +216,9 @@ def abort_if_not_public(*args, **kwargs):
     if g.get('auth_required') and not (g.current_user or
                                        g.resource_admin or
                                        g.resource_admin_readonly):
-        current_app.logger.debug("Access denied.")  # TODO(Alex): Improve this
+        current_app.logger.debug(
+            "Access denied: "
+            "Action is not public and user can't be authenticated.")
         abort(401)
 
 
@@ -244,12 +243,14 @@ def add_lookup_filter(resource, request, lookup):
 def check_write_permission(resource, item):
     """Check if the user is allowed to PATCH or DELETE the item.
 
-    `resouce_admin`s can write everything.
+    Only `resouce_admin`s can write everything.
     """
     if not g.resource_admin:
         auth = resource_auth(resource)
 
         if isinstance(auth, AmivTokenAuth) and \
                 not auth.has_write_permission(g.current_user, item):
-            current_app.logger.debug("Access denied.")  # TODO(Alex): Improve
+            current_app.logger.debug(
+                "Access denied: "
+                "The current user has no permission to write.")
             abort(403)
