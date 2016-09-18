@@ -116,8 +116,6 @@ def add_permitted_methods_after_fetch_item(resource, item):
 def add_permitted_methods_after_fetch_resource(resource, response):
     """Add link methods with an on_fetched_resource hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
-        print(response)
-
         # Item links
         for item in response['_items']:
             add_methods_to_item_links(resource, item)
