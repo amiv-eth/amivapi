@@ -235,7 +235,7 @@ def add_lookup_filter(resource, request, lookup):
             extra_lookup = auth.create_user_lookup_filter(g.current_user)
 
             if extra_lookup:
-                # Add the additional lookup with an `and` condition
+                # Add the additional lookup with an `$and` condition
                 # or extend existing `$and`s
                 lookup.setdefault('$and', []).append(extra_lookup)
 
