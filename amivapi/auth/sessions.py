@@ -4,6 +4,30 @@
 #          you to buy us beer if we meet and you like the software.
 """Sessions endpoint."""
 
+from os import urandom
+from base64 import b64encode
+from bson import ObjectId
+
+from flask import abort, current_app as app
+from eve.methods.post import post_internal
+from eve.methods.patch import patch_internal
+from eve.utils import debug_error_message, config
+
+from .auth import AmivTokenAuth
+
+
+class SessionAuth(AmivTokenAuth):
+    """Simple auth for session."""
+
+    def has_write_permission(self, user_id, item):
+        """Allow users to modify only their own sessions."""
+        return user_id == item['user_id']
+
+    def create_user_lookup_filter(self, user_id):
+        """Allow users to only see their own sessions."""
+        return {'user_id': user_id}
+
+
 sessiondomain = {
     'sessions': {
         'description': {
@@ -16,6 +40,13 @@ sessiondomain = {
                 'POST': "Login and aquire a login token. Post the fields "
                 "'user' and 'password', the response will contain the token."}
         },
+
+        'authentication': SessionAuth,
+        'public_methods': ['POST'],
+        'public_item_methods': [],
+        'resource_methods': ['GET', 'POST', 'DELETE'],
+        'item_methods': ['GET', 'DELETE'],
+
         'schema': {
             'user': {
                 'type': 'string',
@@ -27,18 +58,16 @@ sessiondomain = {
                 'required': True,
                 'nullable': False,
                 'empty': False},
-            'user_id': {'readonly': True},
-            'token': {'readonly': True}
+            'user_id': {'type': 'objectid',
+                        'readonly': True},
+            'token': {'type': 'string',
+                      'readonly': True}
         },
-        'public_methods': ['POST'],
-        'owner': ['user_id'],
-        'owner_methods': ['GET', 'DELETE']
     }
 }
 
 
 # Login Hook
-
 
 def process_login(items):
     """Hook to add token on POST to /sessions.
@@ -65,9 +94,6 @@ def process_login(items):
         # If this is successful, create/update user data
         # Do not send any response. Although this leads to some db requests
         # later, this helps to clearly seperate LDAP and login.
-        print("first\n")
-        print(item)
-
         if config.ENABLE_LDAP:
             app.logger.debug("LDAP authentication enabled. Trying "
                              "to authenticate '%s'..." % item['user'])
@@ -122,18 +148,26 @@ def process_login(items):
 
         # Query user by nethz or email. Since they cannot be the same and
         # both have to be unique we ca safely use find_one()
-        print("\n\nsecond\n")
-        print(item)
-        lookup = {'$or': [{'nethz': item['user']}, {'email': item['user']}]}
-        user = app.data.find_one("users", None, **lookup)
+        users = app.data.driver.db['users']
+
+        lookup = {'$or': [{'nethz': item['user']},
+                          {'email': item['user']}]}
+        try:
+            objectid = ObjectId(item['user'])
+            lookup['$or'].append({'_id': objectid})
+        except:
+            # input can't be used as ObjectId -> no need to look for it
+            pass
+
+        user = users.find_one(lookup)
 
         if user is not None:
             app.logger.debug("User found in db.")
             if verify_password(user, item['password']):
                 # Success
-                _prepare_token(item, user['id'])
                 app.logger.debug(
                     "Login for user '%s' successful." % item['user'])
+                _prepare_token(item, user['_id'])
                 return
             else:
                 status = "Login failed: Password does not match!"
@@ -145,13 +179,57 @@ def process_login(items):
         # will be no collision this way
         if item['user'] == 'root':
             app.logger.debug("Trying to log in as root.")
-            root = app.data.find_one("users", None, id=0)
+            root = users.find_one({'_id': app.config['ROOT_ID']})
             if root is not None and verify_password(root, item['password']):
-                _prepare_token(item, user['id'])
                 app.logger.debug("Login as root successful.")
+                _prepare_token(item, app.config['ROOT_ID'])
                 return
 
-        #Abort if everything else fails
+        # Abort if everything else fails
         status = "Login with db failed: User not found!"
         app.logger.debug(status)
         abort(401, description=debug_error_message(status))
+
+
+def _prepare_token(item, user_id):
+    token = b64encode(urandom(256)).decode('utf_8')
+
+    # Make sure token is unique
+    while app.data.find_one("sessions", None, token=token) is not None:
+        token = b64encode(urandom(256)).decode('utf_8')
+
+    # Remove user and password from document
+    del item['user']
+    del item['password']
+
+    # Add token (str) and user_id (ObejctId)
+    item['user_id'] = user_id
+    item['token'] = token
+
+
+def verify_password(user, plaintext):
+    """Check password of user, rehash if necessary.
+
+    It is possible that the password is None, e.g. if the user is authenticated
+    via LDAP. In this case default to "not verified".
+
+    Args:
+        user (dict): the user in question.
+        plaintext (string): password to check
+
+    Returns:
+        bool: True if password matches. False if it doesn't or if there is no
+            password set and/or provided.
+    """
+    password_context = app.config['PASSWORD_CONTEXT']
+
+    if (plaintext is None) or (user['password'] is None):
+        return False
+
+    is_valid = password_context.verify(plaintext, user['password'])
+
+    if is_valid and password_context.needs_update(user['password']):
+        # update password - hook will handle hashing
+        update = {'password': plaintext}
+        patch_internal("users", payload=update, _id=user['_id'])
+    return is_valid
