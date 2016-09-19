@@ -2,11 +2,12 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+"""Tests for session."""
 
-from amivapi.tests import util
+from amivapi.tests.utils import WebTest
 
 
-class AuthentificationTest(util.WebTest):
+class AuthentificationTest(WebTest):
     """Various tests for aquiring a session."""
 
     def test_create_session(self):
@@ -18,20 +19,20 @@ class AuthentificationTest(util.WebTest):
                              membership="regular")
 
         # Login with mail
-        r = self.api.post("/sessions", data={
-            'user': user.email,
-            'password': password,
-        }, status_code=201).json
+        response = self.api.post("/sessions",
+                                 data={'user': user['email'],
+                                       'password': password},
+                                 status_code=201).json
 
-        self.assertEqual(r['user_id'], user.id)
+        self.assertEqual(response['user_id'], str(user['_id']))
 
         # Login with nethz
         r = self.api.post("/sessions", data={
-            'user': user.nethz,
+            'user': user['nethz'],
             'password': password,
         }, status_code=201).json
 
-        self.assertEqual(r['user_id'], user.id)
+        self.assertEqual(r['user_id'], str(user['_id']))
 
     def test_no_member(self):
         """Test that non members can log in too.
@@ -54,6 +55,62 @@ class AuthentificationTest(util.WebTest):
             'user': nethz,
             'password': password,
         }, status_code=201)
+
+    def test_get_session(self):
+        """Assert a user can see his sessions, but not others sessions."""
+        user = self.new_user(password=u"something")
+        session_1 = self.new_session(user=str(user['_id']),
+                                     password=u"something")
+        session_2 = self.new_session(user=str(user['_id']),
+                                     password=u"something")
+
+        other_user = self.new_user(password=u"something_else")
+        other_session = self.new_session(user=str(other_user['_id']),
+                                         password=u"something_else")
+
+        token = session_1['token']
+        self.api.get("/sessions/%s" % session_1['_id'],
+                     token=token,
+                     status_code=200)
+        self.api.get("/sessions/%s" % session_2['_id'],
+                     token=token,
+                     status_code=200)
+        self.api.get("/sessions/%s" % other_session['_id'],
+                     token=token,
+                     status_code=404)
+
+        all_sessions = self.api.get("sessions", token=token, status_code=200)
+        print(all_sessions.json)
+        print("DONE")
+        ids = [item['_id'] for item in all_sessions.json['_items']]
+
+        self.assertItemsEqual(ids,
+                              [str(session_1['_id']), str(session_2['_id'])])
+        self.assertNotIn(other_session['_id'],
+                         ids)
+
+    def test_wrong_password(self):
+        """Test to login with a wrong password."""
+        user = self.new_user(password=u"something")
+
+        self.api.post("/sessions", data={
+            'user': user['email'],
+            'password': u"something-else",
+        }, status_code=401)
+
+    def test_delete_session(self):
+        """Test to logout."""
+        password = u"awesome-password"
+        user = self.new_user(password=password)
+
+        session = self.new_session(user=str(user['_id']), password=password)
+        token = session['token']
+
+        self.api.delete("/sessions/%s" % session['_id'], token=token,
+                        headers={'If-Match': session['_etag']}, status_code=204)
+
+        # Check if still logged in
+        self.api.get("/sessions", token=token, status_code=401)
 
     def test_bad_nethz(self):
         """Test bad username.
@@ -84,31 +141,6 @@ class AuthentificationTest(util.WebTest):
             'password': None,
         }, status_code=422)
 
-    def test_wrong_password(self):
-        """Test to login with a wrong password."""
-        user = self.new_user(password=u"something")
-
-        self.api.post("/sessions", data={
-            'user': user.email,
-            'password': u"something-else",
-        }, status_code=401)
-
-    def test_delete_session(self):
-        """Test to logout."""
-        password = u"awesome-password"
-        user = self.new_user(password=password)
-
-        session = self.new_session(user_id=user.id)
-
-        # Check if the user is logged in
-        self.api.get("/sessions", token=session.token, status_code=200)
-
-        self.api.delete("/sessions/%i" % session.id, token=session.token,
-                        headers={'If-Match': session._etag}, status_code=204)
-
-        # Check if still logged in
-        self.api.get("/sessions", token=session.token, status_code=401)
-
     def test_invalid_mail(self):
         """Try to login with an unknown username."""
         self.new_user(email=u"user1@amiv", password=u"user1")
@@ -131,9 +163,7 @@ class AuthentificationTest(util.WebTest):
 
     def test_invalid_token(self):
         """Try to do a request using invalid token."""
-        self.new_session()
-
-        self.api.get("/users", token=u"xxx", status_code=401)
+        self.api.get("/users", token=u"There is no token!", status_code=401)
 
     def test_root(self):
         """Test if nethz "root" can be used to log in as root user."""
@@ -143,4 +173,4 @@ class AuthentificationTest(util.WebTest):
             'password': 'root',
         }, status_code=201)
 
-        self.assertTrue(r.json['user_id'] == 0)  # logged in as root?
+        self.assertTrue(r.json['user_id'] == 24 * "0")  # logged in as root?
