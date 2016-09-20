@@ -13,6 +13,7 @@ from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
 from eve.utils import debug_error_message, config
 
+from amivapi.utils import admin_permissions
 from .auth import AmivTokenAuth
 
 
@@ -231,5 +232,6 @@ def verify_password(user, plaintext):
     if is_valid and password_context.needs_update(user['password']):
         # update password - hook will handle hashing
         update = {'password': plaintext}
-        patch_internal("users", payload=update, _id=user['_id'])
+        with admin_permissions():
+            patch_internal("users", payload=update, _id=user['_id'])
     return is_valid
