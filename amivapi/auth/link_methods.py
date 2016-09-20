@@ -141,8 +141,12 @@ def add_permitted_methods_after_update(resource, request, response):
     """Add link methods with an on_post_PATCH hook.
 
     The on_updated hook doesn't work since it doesn't include the links.
+
+    This hook will also be called for errors which do not contain _links.
+    => Make sure to only add methods for successful patches (status 200 only)
     """
-    if isinstance(resource_auth(resource), AmivTokenAuth):
+    if (response.status_code == 200) and \
+            isinstance(resource_auth(resource), AmivTokenAuth):
         item_data = _get_data(response)
 
         add_methods_to_item_links(resource, item_data)
