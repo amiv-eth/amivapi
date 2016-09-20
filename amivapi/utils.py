@@ -10,13 +10,32 @@ from os import urandom
 import smtplib
 from email.mime.text import MIMEText
 from copy import deepcopy
+from contextlib import contextmanager
 
 from flask import Config, request, g, current_app as app
-
 from eve.utils import config
 from eve.io.mongo import Validator
 
 from amivapi.settings import ROOT_DIR
+
+
+@contextmanager
+def admin_permissions():
+    """Switch to a context with admin rights and restore state afterwards.
+
+    Use as context:
+    >> with admin_rights():
+    >>     do_something()
+    """
+    old_admin = g.get('resource_admin')
+    g.resource_admin = True
+    app.logger.debug("Overwriting g.resource_admin with True.")
+
+    yield
+
+    app.logger.debug("Restoring g.resource_admin.")
+    if old_admin is not None:  # None means it wasn't set before..
+        g.resource_admin = old_admin
 
 
 def get_config():
