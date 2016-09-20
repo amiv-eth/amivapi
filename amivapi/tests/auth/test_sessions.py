@@ -4,6 +4,11 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for session."""
 
+from bson import ObjectId
+from passlib.context import CryptContext
+from passlib.hash import pbkdf2_sha256
+
+from amivapi.auth.sessions import verify_password
 from amivapi.tests.utils import WebTest
 
 
@@ -160,3 +165,105 @@ class AuthentificationTest(WebTest):
         }, status_code=201)
 
         self.assertTrue(r.json['user_id'] == 24 * "0")  # logged in as root?
+
+
+class PasswordVerificationTest(WebTest):
+    """Test if password verfication and rehashing works."""
+
+    def test_verify_hash(self):
+        """Test verify hash.
+
+        Also needs app context to access config.
+        """
+        with self.app.app_context():
+            hashed = self.app.config['PASSWORD_CONTEXT'].encrypt(
+                "some_pw")
+
+            # Correct password
+            self.assertTrue(
+                verify_password({'password': hashed}, "some_pw")
+            )
+
+            # Wrong password
+            self.assertFalse(
+                verify_password({'password': hashed}, "NotThePassword")
+            )
+
+    def _get_weak_hash(self, plaintext):
+        """Create a weaker CryptContext and hash plaintext.
+
+        (Weaker as in weaker then default context)
+        """
+        weak_context = CryptContext(
+            schemes=["pbkdf2_sha256"],
+            pbkdf2_sha256__default_rounds=10 ** 2,
+            pbkdf2_sha256__vary_rounds=0.1,
+            pbkdf2_sha256__min_rounds=8 * 10 ** 1,
+        )
+
+        return weak_context.encrypt(plaintext)
+
+    def assertRehashed(self, user_id, plaintext, old_hash):
+        """Assert that the password was rehased.
+
+        Check
+        - that the password in the database is not the old hash
+        - that the password in the datbase is a correct hash of the password
+
+        Args:
+            user_id (ObjectId): Id of user
+            plaintext (str): Password of user as plaintext
+            old_hash (str): Old hash of passwor
+        """
+        user = self.db['users'].find_one({'_id': user_id})
+
+        self.assertNotEqual(user['password'], old_hash)
+
+        self.assertTrue(pbkdf2_sha256.verify(plaintext, user['password']))
+
+    def test_verify_hash_rehashes_weak_password(self):
+        """Test that verify_password rehashes password.
+
+        This is supposed to happen if the security of the crypt context
+        is increased.
+
+        Needs request context because Eve requires this for "patch_internal"
+        which is used to updated the hash.
+        """
+        with self.app.test_request_context():
+            db = self.db['users']
+            password = "some_pw"
+            weak_hash = self._get_weak_hash(password)
+
+            # Add a user with to db. use password hashed with weak context
+            user_id = db.insert({
+                'password': weak_hash
+            })
+
+            user = db.find_one({'_id': ObjectId(user_id)})
+
+            # Verify password, should be true
+            self.assertTrue(verify_password(user, password))
+
+            self.assertRehashed(user_id, password, weak_hash)
+
+    def test_hash_update_on_login(self):
+        """Test that passwords are rehashed when needed on login."""
+        db = self.db['users']
+        password = "some_pw"
+        weak_hash = self._get_weak_hash(password)
+
+        # Add a user with to db. use password hashed with weak context
+        user_id = db.insert({
+            'password': weak_hash
+        })
+
+        login_data = {
+            'user': str(user_id),
+            'password': password
+        }
+
+        self.api.post("/sessions", data=login_data, status_code=201)
+
+        # Check database
+        self.assertRehashed(user_id, password, weak_hash)

@@ -8,7 +8,6 @@
 from bson import ObjectId
 
 from flask import current_app, abort, g
-from eve.methods.patch import patch_internal
 
 from amivapi.auth import AmivTokenAuth
 
@@ -102,36 +101,7 @@ def hide_fields(items):
                         item.pop(key)
 
 
-# Password hashing and verification
-
-
-def verify_password(user, plaintext):
-    """Check password of user, rehash if necessary.
-
-    It is possible that the password is None, e.g. if the user is authenticated
-    via LDAP. In this case default to "not verified".
-
-    Args:
-        user (dict): the user in question.
-        plaintext (string): password to check
-
-    Returns:
-        bool: True if password matches. False if it doesn't or if there is no
-            password set and/or provided.
-    """
-    password_context = current_app.config['PASSWORD_CONTEXT']
-
-    if (plaintext is None) or (user['password'] is None):
-        return False
-
-    is_valid = password_context.verify(plaintext, user['password'])
-
-    if is_valid and password_context.needs_update(user['password']):
-        # update password - hook will handle hashing
-        update = {'password': plaintext}
-        patch_internal("users", payload=update, _id=user['_id'])
-    return is_valid
-
+# Password hashing
 
 def _hash_password(user):
     """Helper function to hash password.
