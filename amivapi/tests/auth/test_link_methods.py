@@ -266,6 +266,15 @@ class LinkTest(FakeAuthTest):
             response_data = get_response_data(response)
             self.assertMethodsAdded(response_data)
 
+    def test_no_methods_after_patch_error(self):
+        """Test that no methods are added for errors."""
+        data = "somethingsomething error"
+        response = Response(data)
+        response.status_code = 400
+
+        add_permitted_methods_after_update('fale', None, response)
+        self.assertEqual(data, response.get_data())
+
     # Test home endpoint links
 
     def test_link_methods_read_home(self):
@@ -497,3 +506,21 @@ class LinkIntegrationTest(WebTest):
 
         self.assertItemsEqual(self._get_methods(admin_response, 'self'),
                               ['GET', 'HEAD', 'OPTIONS', 'PATCH', 'DELETE'])
+
+    def test_bad_patch(self):
+        """Test unsuccessful patch.
+
+        The patch method uses a post_PATCH hook, witch is executed for errors
+        as well. No link methods can be added then.
+        """
+        user = self.new_user(email="original@amiv.ch")
+        user_id = str(user['_id'])
+
+        bad_updates = {'nethz': "can't be patched"}
+        headers = {'If-Match': user['_etag']}
+
+        self.api.patch("/users/" + user_id,
+                       data=bad_updates,
+                       headers=headers,
+                       token=self.get_user_token(user_id),
+                       status_code=422)
