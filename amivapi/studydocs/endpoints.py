@@ -15,7 +15,6 @@ def make_studydocdomain():
     This is a function so it can be called after models in all modules have
     been defined.
     """
-
     studydocdomain = {
         'studydocuments': {
             'datasource': {
@@ -34,8 +33,11 @@ def make_studydocdomain():
                 'source': 'StudyDocument'},
             'description': {
                 'fields': {
-                    'semester': 'Study-Semester as an Integer starting with first semester Bachelor.'},
-                'general': 'Study-documents are basically all documents that are connected to a course. This resource provides meta-data for the assigned files.'},
+                    'semester': 'Study-Semester as an Integer starting with '
+                    'first semester Bachelor.'},
+                'general': 'Study-documents are basically all documents that '
+                'are connected to a course. This resource provides meta-data '
+                'for the assigned files.'},
             'embedded_fields': {},
             'item_lookup': True,
             'item_lookup_field': '_id',
@@ -89,7 +91,7 @@ def make_studydocdomain():
                     'maxlength': 30,
                     'nullable': True,
                     'type': 'string'}},
-            },#'sql_model': StudyDocument},
+        },  # 'sql_model': StudyDocument},
         'files': {
             'datasource': {
                 'projection': {
@@ -134,10 +136,10 @@ def make_studydocdomain():
                         'resource': 'studydocuments'},
                     'required': True,
                     'type': 'objectid'}},
-            }}#'sql_model': File}}
+        }}  # 'sql_model': File}}
 
-    #studydocdomain.update(make_domain(StudyDocument))
-    #studydocdomain.update(make_domain(File))
+    # studydocdomain.update(make_domain(StudyDocument))
+    # studydocdomain.update(make_domain(File))
 
     # No Patching for files
     studydocdomain['files']['item_methods'] = ['GET', 'PUT', 'DELETE']

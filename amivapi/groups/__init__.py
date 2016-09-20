@@ -17,7 +17,7 @@ from amivapi.utils import register_domain, register_validator
 from .endpoints import (
     groupdomain
 )
-from .validation import GroupValidator, create_group_permissions_jsonschema
+from .validation import GroupValidator
 from . import mailing_lists as mail
 
 
@@ -34,6 +34,9 @@ def check_group_permission(user_id, resource, method):
 
     :returns: Boolean, True if permitted, False otherwise
     """
+    Group = None  # No SQL anymore, placeholder for flake9
+    GroupMember = None
+
     db = current_app.data.driver.session
     query = db.query(Group.permissions).filter(
         Group.members.any(GroupMember.user_id == user_id))
