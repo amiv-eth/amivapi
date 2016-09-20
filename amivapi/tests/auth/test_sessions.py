@@ -89,6 +89,16 @@ class AuthentificationTest(WebTest):
         self.assertNotIn(other_session['_id'],
                          ids)
 
+    def test_no_public_get(self):
+        """Test that there is no public reading of sessions."""
+        # Create a sess
+        user = self.new_user(password=u"something")
+        session = self.new_session(user=str(user['_id']),
+                                   password=u"something")
+
+        self.api.get("/sessions", status_code=401)
+        self.api.get("/sessions/%s" % session['_id'], status_code=401)
+
     def test_wrong_password(self):
         """Test to login with a wrong password."""
         user = self.new_user(password=u"something")
@@ -112,54 +122,30 @@ class AuthentificationTest(WebTest):
         # Check if still logged in
         self.api.get("/sessions", token=token, status_code=401)
 
-    def test_bad_nethz(self):
-        """Test bad username.
-
-        May not be None or empty
-        """
+    def test_bad_data(self):
+        """Make extra sure data has to be correct to get a session."""
         password = u"some-really-secure-password"
-        self.new_user(nethz=u"abc", password=password)
+        user = self.new_user(nethz=u"abc",
+                             email="user@amiv",
+                             password=password)
+        user_id = str(user['_id'])
 
-        self.api.post("/sessions", data={
-            'user': None,
-            'password': password,
-        }, status_code=422)
+        bad_data = [
+            {'user': user_id},
+            {'password': password},
+            {'user': None,
+             'password': password},
+            {'user': '',
+             'password': password},
+            {'user': user_id,
+             'password': None},
+            {'user': "not_user@amiv"}
+        ]
 
-        self.api.post("/sessions", data={
-            'user': '',
-            'password': password,
-        }, status_code=422)
-
-    def test_bad_pass(self):
-        """Test if empty password is correctly rejected."""
-        user = u"abc"
-        password = u"some-really-secure-password"
-        self.new_user(nethz=user, password=password)
-
-        self.api.post("/sessions", data={
-            'user': user,
-            'password': None,
-        }, status_code=422)
-
-    def test_invalid_mail(self):
-        """Try to login with an unknown username."""
-        self.new_user(email=u"user1@amiv", password=u"user1")
-
-        self.api.post("/sessions", data={'user': u"user2@amiv",
-                                         'password': u"user1"}, status_code=401)
-
-    def test_no_email(self):
-        """Try to login without username."""
-        self.new_user(email="user1@amiv")
-
-        self.api.post("/sessions", data={'password': u'mypw'}, status_code=422)
-
-    def test_no_password(self):
-        """Try to login without password."""
-        self.new_user(email=u"user1@amiv")
-
-        self.api.post("/sessions", data={'user': u'user1@amiv'},
-                      status_code=422)
+        for data in bad_data:
+            self.api.post("/sessions",
+                          data=data,
+                          status_code=422)
 
     def test_invalid_token(self):
         """Try to do a request using invalid token."""
