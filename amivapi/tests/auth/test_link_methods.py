@@ -273,7 +273,7 @@ class LinkTest(FakeAuthTest):
         response.status_code = 400
 
         add_permitted_methods_after_update('fale', None, response)
-        self.assertEqual(data, response.get_data())
+        self.assertEqual(data, response.get_data().decode('utf-8'))
 
     # Test home endpoint links
 
