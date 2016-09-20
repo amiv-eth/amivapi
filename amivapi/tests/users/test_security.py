@@ -11,52 +11,13 @@ from bson import ObjectId
 
 from amivapi.tests import utils
 from amivapi.users.security import (
-    hash_on_insert, hash_on_update, verify_password)
+    hash_on_insert, hash_on_update)
 
-from passlib.context import CryptContext
 from passlib.hash import pbkdf2_sha256
 
 
 class PasswordHashing(utils.WebTestNoAuth):
-    """Tests password hashing.
-
-    TODO(Alex): Test rehash on login as soon as auth works.
-    """
-
-    def setUp(self):
-        """Extend setup to provide some crypt contexts.
-
-        A "strong" and a "weak" context.
-
-        N.B. The names "strong" and "weak" don't have any meaning about how
-        secure they really are.
-
-        An the "real" context taken from app settings.
-
-        Also provide two passwords and the corresponding hashes to test every-
-        thing
-        """
-        # Call normal setUp
-        super(PasswordHashing, self).setUp()
-
-        self.strong_context = CryptContext(
-            schemes=["pbkdf2_sha256"],
-            pbkdf2_sha256__default_rounds=10 ** 4,
-            pbkdf2_sha256__vary_rounds=0.1,
-            pbkdf2_sha256__min_rounds=8 * 10 ** 3,
-        )
-
-        self.weak_context = CryptContext(
-            schemes=["pbkdf2_sha256"],
-            pbkdf2_sha256__default_rounds=10 ** 2,
-            pbkdf2_sha256__vary_rounds=0.1,
-            pbkdf2_sha256__min_rounds=8 * 10 ** 1,
-        )
-
-        self.real_context = self.app.config['PASSWORD_CONTEXT']
-
-        self.pw_1 = "some_pw"
-        self.pw_2 = "other_pw"
+    """Tests password hashing."""
 
     def assertVerify(self, plaintext, hashed_password):
         """Assert the hash matches the password."""
@@ -87,85 +48,28 @@ class PasswordHashing(utils.WebTestNoAuth):
         with self.app.app_context():
             # First test hash on insert
             items = [
-                {'password': self.pw_1},
-                {'password': self.pw_2}
+                {'password': "some_pw"},
+                {'password': "other_pw"}
             ]
 
             # Hash passwords in list items
             hash_on_insert(items)
 
             # Check hashed
-            self.assertVerify(self.pw_1, items[0]['password'])
-            self.assertVerify(self.pw_2, items[1]['password'])
+            self.assertVerify("some_pw", items[0]['password'])
+            self.assertVerify("other_pw", items[1]['password'])
 
     def test_hash_on_update(self):
         """Test hash on update. Works like test for hash on insert."""
         with self.app.app_context():
-            data = {'password': self.pw_1}
+            data = {'password': "some_pw"}
 
             # Second param is original data, but the hash function ignores
             # it so we can just set it to None
             hash_on_update(data, None)
 
             # Check hash
-            self.assertVerify(self.pw_1, data['password'])
-
-    def test_verify_hash(self):
-        """Test verify hash.
-
-        Also needs app context to access config.
-        """
-        with self.app.app_context():
-            hashed = self.app.config['PASSWORD_CONTEXT'].encrypt(
-                self.pw_1)
-
-            # Correct password
-            self.assertTrue(
-                verify_password({'password': hashed}, self.pw_1)
-            )
-
-            # Wrong password
-            self.assertFalse(
-                verify_password({'password': hashed}, "NotThePassword")
-            )
-
-    def test_verify_hash_rehashes_weak_password(self):
-        """Test that verify_password rehashes password.
-
-        This is supposed to happen if the security of the crypt context
-        is increased.
-
-        Needs request context because Eve requires this for "patch_internal"
-        which is used to updated the hash.
-        """
-        with self.app.test_request_context():
-            db = self.db['users']
-
-            weak_hash = self.weak_context.encrypt(self.pw_1)
-
-            # Add a user with to db. use password hashed with weak context
-            user_id = db.insert({
-                'password': weak_hash
-            })
-
-            user = db.find_one({'_id': ObjectId(user_id)})
-
-            # Set context to "strong" context
-            self.app.config['PASSWORD_CONTEXT'] = self.strong_context
-
-            # Verify password, should be true
-            self.assertTrue(verify_password(user, self.pw_1))
-
-            # The verify_password should now have rehashed the password
-
-            # Get new user data
-            user = db.find_one({'_id': ObjectId(user_id)})
-
-            # Password hash has changed
-            self.assertNotEqual(user['password'], weak_hash)
-
-            # Password is still valid
-            self.assertVerify(self.pw_1, user['password'])
+            self.assertVerify("some_pw", data['password'])
 
     def assertVerifyDB(self, user_id, plaintext):
         """Check that the stored password was hashed correctly.
@@ -195,28 +99,21 @@ class PasswordHashing(utils.WebTestNoAuth):
             'gender': 'female',
             'membership': 'regular',
             'email': 'test@user.amiv',
-            'password': self.pw_1
+            'password': "some_pw"
         }
 
         user = self.api.post("/users", data=post_data, status_code=201).json
 
-        self.assertVerifyDB(user['_id'], self.pw_1)
+        self.assertVerifyDB(user['_id'], "some_pw")
 
-        patch_data = {'password': self.pw_2}
+        patch_data = {'password': "other_pw"}
 
         headers = {'If-Match': user['_etag']}
         user = self.api.patch("/users/%s" % user['_id'],
                               headers=headers, data=patch_data,
                               status_code=200).json
 
-        self.assertVerifyDB(user['_id'], self.pw_2)
-
-    def test_hash_update_on_login(self):
-        """Test that passwords are rehashed when needed on login.
-
-        TODO(Alex): Implement as soon as auth is working.
-        """
-        pass
+        self.assertVerifyDB(user['_id'], "other_pw")
 
 
 class UserFieldPermissions(utils.WebTest):
