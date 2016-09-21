@@ -80,25 +80,22 @@ def hide_fields(items):
 
     Nobody can see passwords.
 
-    Do nothing if auth is disabled.
-
     Args:
         items (list): list of user data to be returned.
     """
-    if current_app.auth:
-        for item in items:
-            # Always remove password
-            item.pop('password', None)
+    for item in items:
+        # Always remove password
+        item.pop('password', None)
 
-            # Rest only for non self and non admins
-            if not (g.get('resource_admin') or
-                    g.get('resource_admin_readonly') or
-                    g.current_user == item['_id']):
-                for key in item.keys():
-                    if key[0] != u'_' or key not in (u'firstname',
-                                                     u'lastname',
-                                                     u'nethz'):
-                        item.pop(key)
+        # Remove other fields
+        if not (g.get('resource_admin') or
+                g.get('resource_admin_readonly') or
+                g.current_user == item['_id']):
+            for key in item.keys():
+                if key[0] != u'_' or key not in (u'firstname',
+                                                 u'lastname',
+                                                 u'nethz'):
+                    item.pop(key)
 
 
 # Password hashing

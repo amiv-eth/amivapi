@@ -7,11 +7,6 @@
 
 **FAQ**
 
-    # Check if auth is enabled/disabled globally:
-    from flask import current_app
-    if current_app.auth:
-        print("It's on!")
-
     # access authentication data of current user
     from flask import g
     g.get('current_user')       # user_id (str)
@@ -27,7 +22,7 @@
 
     # Add additinonal authentication with a new hook
     def my_auth_hook(resource):
-        # You could set g.reosurce_admin or g.resource_admin_readonly here
+        # You could set g.resource_admin or g.resource_admin_readonly here
         pass
     app.after_auth += my_auth_hook
 
