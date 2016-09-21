@@ -15,9 +15,9 @@ from tempfile import mkdtemp
 from itertools import count
 from pymongo import MongoClient
 
+from flask import g
 from flask.testing import FlaskClient
 from flask.wrappers import Response
-
 from eve.methods.post import post_internal
 
 from amivapi import bootstrap, utils
@@ -140,8 +140,6 @@ class WebTest(unittest.TestCase):
     Inspired by eve standard testing class.
     """
 
-    disable_auth = False
-
     def setUp(self):
         """Set up the testing client and database connection.
 
@@ -166,8 +164,7 @@ class WebTest(unittest.TestCase):
                                       config['MONGO_PORT'])
 
         # create eve app
-        self.app = bootstrap.create_app(disable_auth=self.disable_auth,
-                                        **test_config)
+        self.app = bootstrap.create_app(**test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
 
@@ -374,4 +371,12 @@ class WebTest(unittest.TestCase):
 class WebTestNoAuth(WebTest):
     """WebTest without authentification."""
 
-    disable_auth = True
+    def setUp(self):
+        """Use auth hook to always authenticate as root for every request."""
+        super(WebTestNoAuth, self).setUp()
+
+        def authenticate_root(resource):
+            g.current_user = str(self.app.config['ROOT_ID'])
+            g.resource_admin = True
+
+        self.app.after_auth += authenticate_root

@@ -27,7 +27,7 @@ from amivapi.ldap import ldap_connector
 from amivapi.utils import get_config
 
 
-def create_app(disable_auth=False, **kwargs):
+def create_app(**kwargs):
     """
     Create a new eve app object and initialize everything.
 
@@ -60,8 +60,7 @@ def create_app(disable_auth=False, **kwargs):
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
-    if not disable_auth:
-        auth.init_app(app)
+    auth.init_app(app)
     # events.init_app(app)
     # groups.init_app(app)
     # joboffers.init_app(app)
