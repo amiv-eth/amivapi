@@ -116,15 +116,104 @@ class PasswordHashing(utils.WebTestNoAuth):
         self.assertVerifyDB(user['_id'], "other_pw")
 
 
-class UserFieldPermissions(utils.WebTest):
+class UserFieldsTest(utils.WebTest):
     """Test field permissions.
 
+    Some fields are not visible for everyone.
     Some fields can be changed by the user, some only by admins.
     """
 
+    def create_users(self):
+        """Add users with full data."""
+        self.user = self.new_user(
+            nethz='pablamiv',
+            firstname="Pabla",
+            lastname="AMIV",
+            membership="regular",
+            legi="12345678",
+            gender='female',
+            department='itet',
+            password="userpass",
+            email="pabla@amiv.ch",
+            rfid="123456")
+
+        self.other_user = self.new_user(
+            nethz='pablomiv',
+            firstname="Pablo",
+            lastname="AMIV",
+            membership="regular",
+            legi="87654321",
+            gender='male',
+            department='mavt',
+            password="userpass2",
+            email="pablo@amiv.ch",
+            rfid="654321")
+
+        self.user_token = self.get_user_token(str(self.user['_id']))
+        self.root_token = self.get_root_token()
+
+    BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links',
+                    'nethz', 'firstname', 'lastname']
+    ALL_FIELDS = BASIC_FIELDS + ['membership', 'legi', 'gender',
+                                 'department', 'email', 'rfid']
+
+    def test_read_item(self):
+        """When reading, all fields are visible for user/admin only.
+
+        Other users only see name and nethz. No public get.
+        """
+        self.create_users()
+        self.api.get("/users/" + str(self.user['_id']),
+                     status_code=401)
+
+        def assertFields(user, token, fields):
+            response = self.api.get("/users/" + str(user['_id']),
+                                    token=token,
+                                    status_code=200).json
+            self.assertItemsEqual(response.keys(), fields)
+
+        assertFields(self.other_user, self.user_token, self.BASIC_FIELDS)
+        assertFields(self.other_user, self.root_token, self.ALL_FIELDS)
+        assertFields(self.user, self.user_token, self.ALL_FIELDS)
+        assertFields(self.user, self.root_token, self.ALL_FIELDS)
+
+    def test_read_resource(self):
+        """Same as test_read_item but with GET to resource."""
+        self.create_users()
+        self.api.get("/users", status_code=401)
+
+        def assertFields(token, user_fields, other_user_fields):
+            response = self.api.get("/users",
+                                    token=token, status_code=200).json
+            for item in response['_items']:
+                if item['_id'] == str(self.user['_id']):
+                    self.assertItemsEqual(item.keys(), user_fields)
+                elif item['_id'] == str(self.other_user['_id']):
+                    self.assertItemsEqual(item.keys(), other_user_fields)
+
+        assertFields(self.user_token, self.ALL_FIELDS, self.BASIC_FIELDS)
+        assertFields(self.root_token, self.ALL_FIELDS, self.ALL_FIELDS)
+
     def test_change_by_user(self):
         """User can change password, email. and rfid."""
-        pass
+        user = self.new_user(password="sosecure", email="a@b.c", rfid="123456")
+        token = self.get_user_token(str(user['_id']))
+        etag = user['_etag']
+        user_url = "/users/%s" % user['_id']
+
+        good_changes = [
+            {'password': 'evenmoresecure'},
+            {'email': 'newmail@amiv.ch'},
+            {'rfid': '654321'}
+        ]
+
+        for data in good_changes:
+            response = self.api.patch(user_url,
+                                      data=data,
+                                      token=token,
+                                      headers={'If-Match': etag},
+                                      status_code=200).json
+            etag = response['_etag']
 
     def test_not_patchable_unless_admin(self):
         """Admin can change everything, user not."""

@@ -73,7 +73,7 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(items):
+def hide_fields(response):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -83,6 +83,9 @@ def hide_fields(items):
     Args:
         items (list): list of user data to be returned.
     """
+    # Compatibility with both item and resource hook
+    items = response.get('_items', [response])
+
     for item in items:
         # Always remove password
         item.pop('password', None)
@@ -90,11 +93,10 @@ def hide_fields(items):
         # Remove other fields
         if not (g.get('resource_admin') or
                 g.get('resource_admin_readonly') or
-                g.current_user == item['_id']):
-            for key in item.keys():
-                if key[0] != u'_' or key not in (u'firstname',
-                                                 u'lastname',
-                                                 u'nethz'):
+                g.get('current_user') == str(item['_id'])):
+            for key in list(item):
+                if (key[0] != '_' and
+                        key not in ('firstname', 'lastname', 'nethz')):
                     item.pop(key)
 
 
