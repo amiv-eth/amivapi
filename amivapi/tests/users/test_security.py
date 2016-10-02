@@ -23,21 +23,6 @@ class PasswordHashing(utils.WebTestNoAuth):
         """Assert the hash matches the password."""
         self.assertTrue(pbkdf2_sha256.verify(plaintext, hashed_password))
 
-    def test_hidden_password(self):
-        """Assert that password hash can not be retrieved."""
-        user_id = self.new_user(password="somepw")['_id']
-
-        # Normal get
-        r = self.api.get("/users/%s" % user_id, status_code=200).json
-
-        self.assertNotIn('password', r.keys())
-
-        # Try to force projection
-        # This should return a 403 error because we are trying to set a
-        # forbidden projection
-        self.api.get(u'/users/%s?projection={"password": 1}' % user_id,
-                     status_code=403).json
-
     def test_hash_on_insert(self):
         """Test Hash insert function.
 
@@ -152,6 +137,7 @@ class UserFieldsTest(utils.WebTest):
         self.user_token = self.get_user_token(str(self.user['_id']))
         self.root_token = self.get_root_token()
 
+    # Important: Nobody can see passwords
     BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links',
                     'nethz', 'firstname', 'lastname']
     ALL_FIELDS = BASIC_FIELDS + ['membership', 'legi', 'gender',

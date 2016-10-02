@@ -7,15 +7,13 @@
 from amivapi.utils import register_domain
 
 from .model import userdomain
-from .security import (hash_on_insert, hash_on_update, prevent_projection,
-                       hide_fields)
+from .security import hash_on_insert, hash_on_update, hide_fields
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
 
-    app.on_pre_GET_users += prevent_projection
     app.on_fetched_item_users += hide_fields
     app.on_fetched_resource_users += hide_fields
     app.on_insert_users += hash_on_insert
