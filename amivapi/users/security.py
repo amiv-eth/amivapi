@@ -7,7 +7,7 @@
 
 from bson import ObjectId
 
-from flask import current_app, abort, g
+from flask import current_app, g
 
 from amivapi.auth import AmivTokenAuth
 
@@ -143,15 +143,3 @@ def hash_on_update(updates, original):
         items (list): List of new items as passed by the on_insert event.
     """
     _hash_password(updates)
-
-
-def prevent_projection(request, lookup):
-    """Prevent extraction of password hashes.
-
-    args:
-        request: The request object
-        lookup (dict): The lookup dict(unused)
-    """
-    projection = request.args.get('projection')
-    if projection and 'password' in projection:
-        abort(403, description='Bad projection field: password')

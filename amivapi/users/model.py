@@ -21,8 +21,6 @@ userdomain = {
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 
-        'datasource': {'projection': {'password': 0}},
-
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
