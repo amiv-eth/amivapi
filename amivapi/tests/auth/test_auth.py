@@ -13,7 +13,8 @@ from werkzeug.exceptions import Unauthorized, Forbidden
 from amivapi.auth import (
     AmivTokenAuth,
     add_lookup_filter,
-    check_write_permission,
+    check_item_write_permission,
+    check_resource_write_permission,
     abort_if_not_public,
     authenticate,
     check_if_admin
@@ -47,10 +48,15 @@ class AmivTokenAuthTest(WebTest):
         auth = AmivTokenAuth()
         self.assertIsNone(auth.create_user_lookup_filter(None))
 
-    def test_amiv_token_auth_has_write_permission(self):
+    def test_amiv_token_auth_has_item_write_permission(self):
         """Test default write permission. Should be False."""
         auth = AmivTokenAuth()
-        self.assertFalse(auth.has_write_permission(None, None))
+        self.assertFalse(auth.has_item_write_permission(None, None))
+
+    def test_amiv_token_auth_has_resource_write_permission(self):
+        """Test default write permission. Should be False."""
+        auth = AmivTokenAuth()
+        self.assertFalse(auth.has_resource_write_permission(None))
 
 
 class AuthFunctionTest(FakeAuthTest):
@@ -98,7 +104,7 @@ class AuthFunctionTest(FakeAuthTest):
 
     # Tests for `check_write_permission`
 
-    def test_write_permission_checked_for_amiv_auth(self):
+    def test_item_write_permission_checked_for_amiv_auth(self):
         """Test if write permission is checked correctly."""
         user = "a"
         item_abort = {'_id': 'b'}
@@ -108,17 +114,37 @@ class AuthFunctionTest(FakeAuthTest):
             # using AmivTokenAuth subclass
             # Abort(403) will raise the "Forbidden" exception
             with self.assertRaises(Forbidden):
-                check_write_permission('fake', item_abort)
+                check_item_write_permission('fake', item_abort)
 
             # If the auth class returns true it wont be aborted, no exception
-            check_write_permission('fake', item_pass)
+            check_item_write_permission('fake', item_pass)
 
             # No Exceptions for resources using other auth either
             for resource in ['fake_no_amiv', 'fake_nothing']:
-                check_write_permission(resource, item_abort)
+                check_item_write_permission(resource, item_abort)
+
+    def test_resource_write_permission_checked_for_amiv_auth(self):
+        """Test if write permission is checked correctly."""
+        user = "somethingsomething"
+
+        with self._init_context(current_user=user):
+            # using AmivTokenAuth subclass
+            # Abort(403) will raise the "Forbidden" exception
+            with self.assertRaises(Forbidden):
+                check_resource_write_permission('fake')
+
+            # No Exceptions for resources using other auth
+            for resource in ['fake_no_amiv', 'fake_nothing']:
+                check_resource_write_permission(resource)
+
+            # If the auth class returns true it wont be aborted, no exception
+            g.current_user = 'allowed'
+            check_resource_write_permission('fake')
 
     def test_write_permission_not_checked_for_admin(self):
         """Test that admins can change everything.
+
+        (both items an resources)
 
         But readonly admins can't.
         """
@@ -128,13 +154,16 @@ class AuthFunctionTest(FakeAuthTest):
 
         with self._init_context(resource_admin=True, current_user=user):
             # No exception, admin can write
-            check_write_permission('fake', item)
+            check_resource_write_permission('fake')
+            check_item_write_permission('fake', item)
 
             # Change to readonly admin, now it will abort
             g.resource_admin = False
             g.resource_admin_readonly = True
             with self.assertRaises(Forbidden):
-                check_write_permission('fake', item)
+                check_resource_write_permission('fake')
+            with self.assertRaises(Forbidden):
+                check_item_write_permission('fake', item)
 
     # Tests for `abort_if_not_public`
 
