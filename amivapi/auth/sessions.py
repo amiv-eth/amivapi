@@ -18,9 +18,12 @@ from .auth import AmivTokenAuth
 
 
 class SessionAuth(AmivTokenAuth):
-    """Simple auth for session."""
+    """Simple auth for session.
 
-    def has_write_permission(self, user_id, item):
+    No resource write check needed since POST is public.
+    """
+
+    def has_item_write_permission(self, user_id, item):
         """Allow users to modify only their own sessions."""
         return user_id == item['user_id']
 
