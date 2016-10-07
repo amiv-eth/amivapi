@@ -21,7 +21,7 @@ from flask.wrappers import Response
 from eve.methods.post import post_internal
 
 from amivapi import bootstrap, utils
-from amivapi.utils import token_generator
+from amivapi.utils import token_generator, admin_permissions
 from mongo_manage import initdb
 
 # Test Config overwrites
@@ -226,9 +226,10 @@ class WebTest(unittest.TestCase):
                 kwargs = func(self, **kwargs)
 
                 with self.app.test_request_context():
-                    obj = post_internal(resource,
-                                        kwargs,
-                                        skip_validation=True)[0]
+                    with admin_permissions():
+                        obj = post_internal(resource,
+                                            kwargs,
+                                            skip_validation=True)[0]
 
                 # self.db.add(obj)
                 # self.db.flush()

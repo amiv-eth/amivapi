@@ -17,16 +17,16 @@ from .auth import AmivTokenAuth, authenticate, check_if_admin
 
 
 def _get_item_methods(resource, item):
-    is_admin = g.get('resource_admin')
-    user = g.get('current_user')  # TODO: post_internal_problem
     res = current_app.config['DOMAIN'][resource]
+    user = g.get('current_user')  # TODO: post_internal_problem
     auth = resource_auth(resource)
+    is_admin = g.get('resource_admin')
 
     # If the item is displayed, the read methods are obviously allowed
     methods = ['GET', 'HEAD', 'OPTIONS'] + res['public_item_methods']
 
     # Admins have access to all methods. For non admins check user permission.
-    if is_admin or auth.has_write_permission(user, item):
+    if is_admin or auth.has_item_write_permission(user, item):
         methods += res['item_methods']
 
     # Remove duplicates before returning
@@ -35,20 +35,22 @@ def _get_item_methods(resource, item):
 
 def _get_resource_methods(resource):
     res = current_app.config['DOMAIN'][resource]
+    auth = resource_auth(resource)
+    user = g.get('current_user')
+    is_admin = g.get('resource_admin')
 
     # public methods and OPTIONS are always available
     methods = res['public_methods'] + ['OPTIONS']
     if 'GET' in methods:
         methods += ['HEAD']
 
-    # Unless for items, resources may not have public read access
-    if (g.get('current_user') or
-            g.get('resource_admin_readonly') or
-            g.get('resource_admin')):
+    # resources may not have public read access, but we still can see the
+    # resource on the home endpoint
+    if user or is_admin or g.get('resource_admin_readonly'):
         methods += ['GET', 'HEAD']
 
-    # non public write methods only for resource admins
-    if g.get('resource_admin'):
+    # write methods
+    if is_admin or auth.has_resource_write_permission(user):
         methods += res['resource_methods']
 
     # Remove duplicates

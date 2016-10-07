@@ -30,8 +30,9 @@
 **How to use**
 
 1. Subclass `AmivTokenAuth`
-2. implement only the methods `create_user_lookup_filter` and
-   `has_write_permission` depending on your resource.
+2. implement `create_user_lookup_filter`, `has_item_write_permission` and/or
+   'has_resource_write_permission' if you don't want default behaviour.
+   (Default: Users can't write, no special lookups)
    Note: You shouldn't care about admin permissions. Those methods will only be
    called for non-admins!
 3. Use your auth class in your resource settings. Done!
@@ -74,8 +75,7 @@ from eve.auth import BasicAuth, resource_auth
 class AmivTokenAuth(BasicAuth):
     """Amiv authentication and authorization base class.
 
-    Subclass and implement `has_write_permission` as well as
-    `create_user_lookup_filter`.
+    Subclass and overwrite functions if you don't want default behaviour.
     """
 
     def authorized(self, allowed_roles, resource, method):
@@ -86,15 +86,30 @@ class AmivTokenAuth(BasicAuth):
         We use this by setting `g.auth_required` to inform auth hook to abort
         later if user can't be identified.
 
-        You shouldn't overwrite this when subclassing `AmivTokenAuth`.
+        Do NOT overwrite this when subclassing `AmivTokenAuth`.
         """
         g.auth_required = True
         return True
 
-    def has_write_permission(self, user_id, item):
-        """Check if the user is allowed to PATCH or DELETE the item.
+    def has_resource_write_permission(self, user_id):
+        """Check if the user is alllowed to write to the resource.
 
         Implement this function for your resource.
+        Default behaviour: No user has write permission.
+
+        Args:
+            user_id (str): The if of the user
+
+        Returns:
+            bool: True if user has permission to write, False otherwise.
+        """
+        return False
+
+    def has_item_write_permission(self, user_id, item):
+        """Check if the user is allowed to modify the item.
+
+        Implement this function for your resource.
+        Default behaviour: No user has write permission.
 
         Args:
             user (str): The id of the user that wants to access the item
@@ -109,6 +124,7 @@ class AmivTokenAuth(BasicAuth):
         """Create a filter for item lookup in GET, PATCH and DELETE.
 
         Implement this function for your resource.
+        Default behaviour: No lookup filter.
 
         Args:
             user_id (str): The id of the user
@@ -235,7 +251,23 @@ def add_lookup_filter(resource, request, lookup):
                 lookup.setdefault('$and', []).append(extra_lookup)
 
 
-def check_write_permission(resource, item):
+def check_resource_write_permission(resource, *args):
+    """Check if the user is allowed to POST to (or DELETE) a resource.
+
+    Only `resouce_admin`s can write everything.
+    """
+    if not g.resource_admin:
+        auth = resource_auth(resource)
+
+        if isinstance(auth, AmivTokenAuth) and \
+                not auth.has_resource_write_permission(g.current_user):
+            current_app.logger.debug(
+                "Access denied: "
+                "The current user has no permission to write.")
+            abort(403)
+
+
+def check_item_write_permission(resource, item):
     """Check if the user is allowed to PATCH or DELETE the item.
 
     Only `resouce_admin`s can write everything.
@@ -244,7 +276,7 @@ def check_write_permission(resource, item):
         auth = resource_auth(resource)
 
         if isinstance(auth, AmivTokenAuth) and \
-                not auth.has_write_permission(g.current_user, item):
+                not auth.has_item_write_permission(g.current_user, item):
             current_app.logger.debug(
                 "Access denied: "
                 "The current user has no permission to write.")
