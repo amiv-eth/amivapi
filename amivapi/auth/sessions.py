@@ -9,11 +9,11 @@ from base64 import b64encode
 from bson import ObjectId
 
 from flask import abort, current_app as app
-from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
 from eve.utils import debug_error_message, config
 
 from amivapi.utils import admin_permissions
+from amivapi.ldap import ldap_connector
 from .auth import AmivTokenAuth
 
 
@@ -90,61 +90,21 @@ def process_login(items):
         items (list): List of items as passed by EVE to post hooks.
     """
     for item in items:  # TODO (Alex): Batch POST doesnt really make sense
-        # PHASE 1: LDAP
+        user = item['user']
+        password = item['password']
+        # LDAP
         # If LDAP is enabled, try to authenticate the user
-        # If this is successful, create/update user data
-        # Do not send any response. Although this leads to some db requests
-        # later, this helps to clearly seperate LDAP and login.
-        if config.ENABLE_LDAP:
-            app.logger.debug("LDAP authentication enabled. Trying "
-                             "to authenticate '%s'..." % item['user'])
+        # If this is successful, create/update user data and return token
+        if (config.ENABLE_LDAP and
+                ldap_connector.authenticate_user(user, password)):
+            # Success, sync user and get token
+            updated = ldap_connector.sync_one(user)
+            _prepare_token(item, updated['id'])
+            app.logger.info(
+                "User '%s' was authenticated with LDAP" % user)
+            return
 
-            ldap_data = app.ldap_connector.check_user(item['user'],
-                                                      item['password'])
-
-            if ldap_data is not None:  # ldap success
-                app.logger.debug("LDAP authentication successful. "
-                                 "Checking database...")
-
-                # Query db for user by nethz field
-                user = app.data.find_one('users', None, nethz=item['user'])
-
-                # Create or update user
-                if user is not None:
-                    app.logger.debug("User already in database. Updating...")
-                    # Membership status will only be upgraded automatically
-                    # If current Membership is not none ignore the ldap result
-                    if user['membership'] is not None:
-                        del ldap_data['membership']
-
-                    # First element of response tuple is data
-                    user = patch_internal('users',
-                                          ldap_data,
-                                          skip_validation=True,
-                                          id=user['id'])[0]
-                    app.logger.debug("User '%s' was updated." % item['user'])
-                else:
-                    app.logger.debug("User not in database. Creating...")
-
-                    # Set Mail now
-                    ldap_data['email'] = "%s@ethz.ch" % ldap_data['nethz']
-
-                    # First element of response tuple is data
-                    user = post_internal('users',
-                                         ldap_data,
-                                         skip_validation=True)[0]
-
-                    app.logger.debug("User '%s' was created." % item['user'])
-
-                # Success, get token
-                _prepare_token(item, user['id'])
-                return
-            else:
-                app.logger.debug("LDAP authentication failed.")
-        else:
-            app.logger.debug("LDAP authentication deactivated.")
-
-        # PHASE 2: database
+        # Database
         # Query user by nethz or email now
 
         # Query user by nethz or email. Since they cannot be the same and

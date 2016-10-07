@@ -4,30 +4,33 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-"""
-Actions to be done on a regular basis. The run function should be executed
-once per day
-"""
+"""Actions to be done on a regular basis.
 
-
+The run function should be executed once per day
+"""
 from datetime import datetime
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from flask import current_app
+
 
 from amivapi.auth import Session
-from amivapi.utils import get_config
+from amivapi.bootstrap import create_app
+from amivapi.ldap import ldap_connector
 
-from amivapi.ldap import ldap_synchronize
 
+def delete_expired_sessions():
+    """Delete expired sessions.
 
-def delete_expired_sessions(db, config):
-    """ Delete expired sessions
+    Needs an app context to access current_app,
+    make sure to create one if necessary.
 
-    :param db: The db session
-    :param config: Config dict
+    E.g.
+    >>> with app.app_context():
+    >>>     delete_expired_sessions()
     """
-    timeout = config['SESSION_TIMEOUT']
+    timeout = current_app.config['SESSION_TIMEOUT']
+
+    db = current_app.data.driver.session
 
     query = db.query(Session).filter(
         Session._updated <= datetime.utcnow() - timeout)
@@ -38,27 +41,28 @@ def delete_expired_sessions(db, config):
     db.commit()
 
 
-def run(db, config):
-    """ Run cron tasks
+def run():
+    """Run cron tasks.
 
-    :param db: The db session
-    :param config: The config dict
+    Needs an request context for ldap to post/patch items internally,
+    make sure to create one if necessary using test_request_context().
+    (This will automatically create the app_context for delete_expired_sessions
+    as well)
+
+    E.g.
+    >>> with app.test_request_context():
+    >>>     run()
     """
-    delete_expired_sessions(db, config)
+    # delete_expired_sessions()
 
-    if config['ENABLE_LDAP']:
-        ldap_synchronize(config['LDAP_USER'],
-                         config['LDAP_PASS'],
-                         db,
-                         config['LDAP_MEMBER_OU_LIST'])
+    if current_app.config['ENABLE_LDAP']:
+        ldap_connector.sync_all()
 
 # Run
 
 if __name__ == '__main__':
-    cfg = get_config()
+    # Get an app and run cron with request context.
+    app = create_app()
 
-    engine = create_engine(cfg['SQLALCHEMY_DATABASE_URI'])
-    sessionmak = sessionmaker(bind=engine)
-    session = sessionmak()
-
-    run(session, cfg)
+    with app.test_request_context():
+        run()

@@ -36,18 +36,13 @@ and have to verify yourself if this is correct.
 """
 
 
-from amivapi.tests import util
-from amivapi import models
-from amivapi.ldap import ldap_synchronize
+from amivapi.tests.utils import WebTest
+from amivapi.ldap import ldap_connector
 
-from sqlalchemy import exists
-
-import re
 from os import getenv
-from copy import copy
 
 
-class LdapIntegrationTest(util.WebTest):
+class LdapIntegrationTest(WebTest):
     """Tests for LDAP connection."""
 
     def setUp(self, *args, **kwargs):
@@ -66,7 +61,7 @@ class LdapIntegrationTest(util.WebTest):
         with self.app.app_context():
             try:
                 # Search for something random to see if the connection works
-                self.app.ldap_connector.check_user("bla", "blorg")
+                ldap_connector.authenticate_user("bla", "blorg")
             except Exception as e:
                 self.app.logger.debug("The LDAP query failed. Make sure that "
                                       "you are in the eth network or have "
@@ -74,46 +69,43 @@ class LdapIntegrationTest(util.WebTest):
                 self.app.logger.debug("Exception message below:")
                 self.app.logger.debug(e)
 
+    def _fetch_user(self):
+        return self.db['users'].find_one({'nethz': self.nethz})
+
+    def _update_user(self, updates):
+        return self.db['users'].update({'nethz': self.nethz}, updates)
+
     def test_ldap_auth(self):
         """Test auth via LDAP.
 
         Login with real credentials to test LDAP
         """
         # Make sure that user with nethz name does not exist in db
-        self.assertFalse(
-            self.db.query(exists().where(models.User.nethz == self.nethz))
-            .scalar())
+        self.assertNone(self._fetch_user())
 
+        # Login -> this will trigger ldap
         self.api.post("/sessions", data={
             'user': self.nethz,
             'password': self.password,
         }, status_code=201)  # .json
 
         # Make sure the user exists now
-        self.assertTrue(
-            self.db.query(exists().where(models.User.nethz == self.nethz))
-            .scalar())
+        self.assertNotNone(self._find_by_nethz(self.nethz))
 
-        user = self.db.query(models.User).filter_by(nethz=self.nethz).one()
-        user = copy(user)
-
-        gender = user.gender
+        user = self._find_by_nethz(self.nethz)
+        gender = self._find_by_nethz(self.nethz)['gender']
 
         if gender == u"male":
             new_gender = u"female"
         else:
             new_gender = u"male"
 
-        # Simulate that ldap data has chaned
-        # Change gender and member status
-        # Since from ldap we can only get regular or none as membership, we can
-        # test this with setting it to honorary
-        query = self.db.query(models.User).filter_by(nethz=self.nethz)
-        query.update({'gender': new_gender, 'membership': "honorary"})
-        self.db.commit()
+        # Test if ldap data doesn't equal database
+        # Change gender and membership status
+        self._update_user({'gender': new_gender, 'membership': "honorary"})
 
         # Now the data should be different (duh.)
-        get_1 = self.db.query(models.User).filter_by(nethz=self.nethz).one()
+        get_1 = self._find_by_nethz(self.nethz)
         self.assertNotEqual(get_1.gender, gender)
         self.assertEqual(get_1.membership, "honorary")
 
@@ -125,19 +117,18 @@ class LdapIntegrationTest(util.WebTest):
 
         # Now gender should be the same again
         # But the membership status should not downgraded
-        get_2 = self.db.query(models.User).filter_by(nethz=self.nethz).one()
-        self.assertEqual(get_2.gender, gender)
-        self.assertEqual(get_2.membership, "honorary")
+        get_2 = self._find_by_nethz(self.nethz)
+        self.assertEqual(get_2['gender'], gender)
+        self.assertEqual(get_2['membership'], "honorary")
 
         # Important point: Since we have no "test-dummy", we are working with
         # real data that we can't predict. All the above is only good if the
         # correct data was imported, which has to be checked manually
-        print("\nPlease verify that the imported data is correct:")
-        data = user.__table__.columns._data
-        for key in data.keys():
-            if re.match('^_.+$', key):
-                continue  # Exclude meta fields
-            print("%s: %s" % (key, getattr(user, key)))
+        print("\nPlease verify that the imported data is correct and "
+              "complete:")
+        for key in user:
+            if key[0] != '_':
+                print("%s: %s" % key, user['key'])
 
     def test_password_not_stored(self):
         """Test that passwords are not stored.
@@ -157,19 +148,17 @@ class LdapIntegrationTest(util.WebTest):
 
     def test_cron_sync(self):
         """Test ldap sync for cronjob."""
-        # Assert that only 2 users are in the db (root and anonymous)
-        self.assertTrue(self.db.query(models.User).count() == 2)
+        # Save number of users in db (should be root and anonymous)
+        n_previous = self.db.query(models.User).count()
 
         # Do the ldap sync
-        res = ldap_synchronize(self.app.config['LDAP_USER'],
-                               self.app.config['LDAP_PASS'],
-                               self.db,
-                               self.app.config['LDAP_MEMBER_OU_LIST'])
+        with self.app.test_request_context():
+            res = ldap_connector.sync_all()
 
-        # Check that some users actually were imported:
-        self.assertTrue(res[0] > 0)
+        # Assert some users actually were imported:
+        self.assertTrue(res[0] > n_previous)
 
-        # Check if no user was updated
+        # Assert no user was updated
         self.assertTrue(res[1] == 0)
 
         # Check that the users are now actually in the db
@@ -186,10 +175,8 @@ class LdapIntegrationTest(util.WebTest):
         self.db.commit()
 
         # sync again
-        res = ldap_synchronize(self.app.config['LDAP_USER'],
-                               self.app.config['LDAP_PASS'],
-                               self.db,
-                               self.app.config['LDAP_MEMBER_OU_LIST'])
+        with self.app.test_request_context():
+            res = ldap_connector.sync_all()
 
         # No imports, one update:
         self.assertTrue(res[0] == 0)

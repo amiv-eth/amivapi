@@ -22,6 +22,7 @@ from amivapi import (
     # purchases,
     studydocs
 )
+from amivapi.ldap import ldap_connector
 
 from amivapi.utils import get_config
 
@@ -50,9 +51,8 @@ def create_app(**kwargs):
     # Bootstrap(app)
 
     # Create LDAP connector
-    # if config['ENABLE_LDAP']:
-    #    app.ldap_connector = ldap.LdapConnector(config['LDAP_USER'],
-    #                                            config['LDAP_PASS'])
+    if config['ENABLE_LDAP']:
+        ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
     # app.register_blueprint(eve_docs, url_prefix="/docs")
