@@ -20,9 +20,13 @@ class FakeAuth(AmivTokenAuth):
         """Simple lookup."""
         return {'_id': user_id}
 
-    def has_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id, item):
         """Return true if _id field equals user."""
         return user_id == item['_id']
+
+    def has_resource_write_permission(self, user_id):
+        """Return true if user has id 'allowed'."""
+        return user_id == 'allowed'
 
 
 class FakeAuthTest(WebTest):

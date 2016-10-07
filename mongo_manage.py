@@ -24,7 +24,7 @@ from flask.ext.script import (
 from eve.methods.post import post_internal
 
 from amivapi import settings
-from amivapi.utils import get_config
+from amivapi.utils import get_config, admin_permissions
 from amivapi.bootstrap import create_app
 
 manager = Manager(Flask("amivapi"))
@@ -87,7 +87,8 @@ def initdb(app=None):
     with app.test_request_context():
         collection = app.data.driver.db['users']
         if collection.find_one({'_id': root_data['_id']}) is None:
-            post_internal("users", payl=root_data, skip_validation=True)
+            with admin_permissions():
+                post_internal("users", payl=root_data, skip_validation=True)
             print("Root user added successfully!")
         else:
             print("Root user already in db, aborting.")

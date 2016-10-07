@@ -163,6 +163,11 @@ class LinkTest(FakeAuthTest):
                         {'resource_admin_readonly': True}]:
             self.assertResourceMethods(self.public_resource_methods, **context)
 
+    def test_resource_methods_user_withaccess(self):
+        """All methods for user with name 'allowed' - see fake auth."""
+        self.assertResourceMethods(self.admin_resource_methods,
+                                   current_user='allowed')
+
     def test_resource_methods_admin(self):
         """All methods."""
         self.assertResourceMethods(self.admin_resource_methods,

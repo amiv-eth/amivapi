@@ -14,7 +14,8 @@ from .auth import (
     check_if_admin,
     abort_if_not_public,
     add_lookup_filter,
-    check_write_permission
+    check_resource_write_permission,
+    check_item_write_permission
 )
 from .link_methods import (
     add_permitted_methods_after_update,
@@ -47,10 +48,14 @@ def init_app(app):
         if method != 'POST':
             event += add_lookup_filter
 
-    # Check write permission for PATCH and DELETE
+    # Check resource write permission for POST and DELETE
+    app.on_insert += check_resource_write_permission
+    app.on_delete_resource = check_resource_write_permission
+
+    # Check item write permission for PATCH and DELETE
     app.on_update += (lambda resource, updates, original:
-                      check_write_permission(resource, original))
-    app.on_delete_item += check_write_permission
+                      check_item_write_permission(resource, original))
+    app.on_delete_item += check_item_write_permission
 
     # Add allowed methods
     app.on_inserted += add_permitted_methods_after_insert
