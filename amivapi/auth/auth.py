@@ -52,7 +52,12 @@ All methods go through the following methods:
 - `check_if_admin`
 - `abort_if_not_public`
 
-For resource endpoints, nothing else happens.
+If the request is not public, the following happens next:
+Resource endpoints and POST or Delete:
+
+- `check_resource_write_permission`
+- `AmivTokenAuth.has_resource_write_permission`
+
 Item endpoints:
 
 - GET
@@ -62,8 +67,8 @@ Item endpoints:
 
 - PATCH and DELETE
 
-  - `check_write_permission`
-  - `AmivTokenAuth.has_write_permission`
+  - `check_item_write_permission`
+  - `AmivTokenAuth.has_item_write_permission`
 """
 
 from datetime import datetime as dt
@@ -238,8 +243,10 @@ def add_lookup_filter(resource, request, lookup):
 
     For both `resource_admin` and `resource_admin_readonly` there will be no
     filter.
+    Only if auth is required.
     """
-    if not(g.resource_admin or g.resource_admin_readonly):
+    admin = g.resource_admin or g.resource_admin_readonly
+    if g.get('auth_required') and not admin:
         auth = resource_auth(resource)
 
         if isinstance(auth, AmivTokenAuth):
@@ -255,8 +262,9 @@ def check_resource_write_permission(resource, *args):
     """Check if the user is allowed to POST to (or DELETE) a resource.
 
     Only `resouce_admin`s can write everything.
+    Only if auth is required.
     """
-    if not g.resource_admin:
+    if g.get('auth_required') and not g.resource_admin:
         auth = resource_auth(resource)
 
         if isinstance(auth, AmivTokenAuth) and \
@@ -271,8 +279,9 @@ def check_item_write_permission(resource, item):
     """Check if the user is allowed to PATCH or DELETE the item.
 
     Only `resouce_admin`s can write everything.
+    Only if auth is required.
     """
-    if not g.resource_admin:
+    if g.get('auth_required') and not g.resource_admin:
         auth = resource_auth(resource)
 
         if isinstance(auth, AmivTokenAuth) and \
