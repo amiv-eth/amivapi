@@ -15,6 +15,8 @@ from amivapi.auth import AmivTokenAuth
 class UserAuth(AmivTokenAuth):
     """Provides auth for /users resource.
 
+    This is an example of how to implement the AmivTokenAuth.
+
     Main Goals:
 
     - Registered users can see nethz/name of everyone, full data of themselves
@@ -25,9 +27,12 @@ class UserAuth(AmivTokenAuth):
 
     - Admins, since for them no filters etc are applied
     - Unregistered users, since no methods are public.
+
+    Since only admins can POST, we do not need to implement a custom
+    `has_resource_write_permission` - the default is fine.
     """
 
-    def has_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id, item):
         """Check if *user* is allowed to write *item*.
 
         This includes PATCH and DELETE.
