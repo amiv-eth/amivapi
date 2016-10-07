@@ -344,6 +344,14 @@ class WebTest(unittest.TestCase):
             kwargs['data'] = filename
         return kwargs
 
+    @create_object('purchases')
+    def new_purchase(self, **kwargs):
+        """Create a new purchase"""
+        kwargs.setdefault('user', 0)
+        kwargs.setdefault('timestamp', datetime.utcnow())
+        kwargs.setdefault('product', 'beer')
+        return kwargs
+
     # Shortcuts to get a token
 
     def get_user_token(self, user_id):
