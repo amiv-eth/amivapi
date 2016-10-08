@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for auth functions."""
 
+from bson import ObjectId
 from base64 import b64encode
 from datetime import datetime, timedelta
 
@@ -286,11 +287,11 @@ class AuthFunctionTest(FakeAuthTest):
         # proper ObjectIds
         data = [
             {u'_id': u'a',
-             u'user_id': u'someuser',
+             u'user_id': ObjectId(24 * 'a'),
              u'token': u'sometoken',
              u'_updated': datetime.utcnow() - timedelta(seconds=1)},
             {u'_id': u'b',
-             u'user_id': u'otheruser',
+             u'user_id': ObjectId(24 * 'b'),
              u'token': u'othertoken',
              u'_updated': datetime.utcnow() - timedelta(seconds=1)}
         ]
@@ -303,13 +304,16 @@ class AuthFunctionTest(FakeAuthTest):
                     headers={'Authorization': session['token']}):
                 authenticate()
 
+                # g.current_user shoudl be a string
+                expected_user = str(session['user_id'])
+
                 session_in_db = \
                     self.db['sessions'].find_one({'_id': session['_id']})
                 self.assertEqual(g.current_session, session_in_db)
 
                 for key in '_id', 'user_id', 'token':
                     self.assertEqual(g.current_session[key], session[key])
-                self.assertEqual(g.current_user, session['user_id'])
+                self.assertEqual(g.current_user, expected_user)
 
                 # Normally Eve would deal with timezones for us,
                 # here we have to remove the tzinfo to be able to compare the
