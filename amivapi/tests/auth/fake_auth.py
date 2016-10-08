@@ -45,7 +45,9 @@ class FakeAuthTest(WebTest):
         super(FakeAuthTest, self).setUp()
 
         self.app.config['DOMAIN']['fake'] = {
-            'authentication': FakeAuth,
+            # Its important we use a instance and not the class
+            # So we can compare it in some tests
+            'authentication': FakeAuth(),
             # some different methods for public and not public
             'resource_methods': ['GET', 'POST', 'DELETE'],
             'public_methods': ['GET', 'POST'],
