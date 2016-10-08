@@ -25,7 +25,8 @@ class SessionAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """Allow users to modify only their own sessions."""
-        return user_id == item['user_id']
+        # item['user_id'] is Objectid, convert to str
+        return user_id == str(item['user_id'])
 
     def create_user_lookup_filter(self, user_id):
         """Allow users to only see their own sessions."""
