@@ -120,6 +120,9 @@ class AmivTokenAuth(BasicAuth):
         Args:
             user (str): The id of the user that wants to access the item
             item (dict): The item the user wants to change or delete.
+                Attention! If they are any ObjectIds in here, Eve will not have
+                converted them yet, so be sure to cast them to str if you want
+                to compare them to e.g. g.current_user
 
         Returns:
             bool: True if user has permission to change the item, False if not.
@@ -236,7 +239,7 @@ def authenticate(*args):
 
             # Save user_id and session with updated timestamp in g
             g.current_session = session
-            g.current_user = session['user_id']
+            g.current_user = str(session['user_id'])  # ObjectId to str
 
 
 def check_if_admin(resource, *args):
