@@ -19,7 +19,7 @@ from amivapi import (
     # documentation,
     utils,
     # joboffers,
-    # purchases,
+    purchases,
     studydocs
 )
 from amivapi.ldap import ldap_connector
@@ -63,7 +63,7 @@ def create_app(**kwargs):
     # events.init_app(app)
     # groups.init_app(app)
     # joboffers.init_app(app)
-    # purchases.init_app(app)
+    purchases.init_app(app)
     studydocs.init_app(app)
     # media.init_app(app)
 
