@@ -19,6 +19,12 @@ from amivapi.auth import (
     authenticate,
     check_if_admin
 )
+from amivapi.auth.auth import (
+    only_if_auth_required,
+    not_if_admin,
+    not_if_admin_or_readonly_admin,
+    only_amiv_token_auth
+)
 from amivapi.tests.utils import WebTest
 from .fake_auth import FakeAuthTest
 
@@ -59,24 +65,90 @@ class AmivTokenAuthTest(WebTest):
         self.assertFalse(auth.has_resource_write_permission(None))
 
 
+class DecoratorTest(FakeAuthTest):
+    """Unittests for the decorators that require auth etc."""
+
+    def test_func(self, *args):
+        """Create a small function that remembers if its been called."""
+        self.was_called = True
+        self.call_args = args
+
+    def assertDecorated(self, decorator, context, was_called,
+                        func_args=None, call_args=None):
+        """Test a decorator.
+
+        Use it to decorate the test function, init context and call the
+        decorated function with func_args.
+        Then check was_called and call_args (if needed).
+        """
+        self.was_called = False
+        self.call_args = []
+        if not func_args:
+            func_args = []
+
+        decorated = decorator(self.test_func)
+        with self._init_context(**context):
+            decorated(*func_args)
+            self.assertEqual(was_called, self.was_called)
+            if call_args:
+                self.assertItemsEqual(call_args, self.call_args)
+
+    def test_auth_required_decorator(self):
+        """Call function only if g.get('auth_required')."""
+        dec = only_if_auth_required
+        self.assertDecorated(dec, {}, False)
+        self.assertDecorated(dec, {'auth_required': False}, False)
+        self.assertDecorated(dec, {'auth_required': True}, True)
+
+    def test_not_if_admin(self):
+        """Call function only if g.resource_admin."""
+        dec = not_if_admin
+        self.assertDecorated(dec, {'resource_admin': False}, True)
+        self.assertDecorated(dec, {'resource_admin': True}, False)
+
+    def test_not_if_admin_readonly(self):
+        """Call function only if not admin or readonly admin."""
+        dec = not_if_admin_or_readonly_admin
+        self.assertDecorated(dec,
+                             {'resource_admin': False,
+                              'resource_admin_readonly': False},
+                             True)
+        self.assertDecorated(dec,
+                             {'resource_admin': True,
+                              'resource_admin_readonly': False},
+                             False)
+        self.assertDecorated(dec,
+                             {'resource_admin': False,
+                              'resource_admin_readonly': True},
+                             False)
+        self.assertDecorated(dec,
+                             {'resource_admin': True,
+                              'resource_admin_readonly': True},
+                             False)
+
+    def test_only_amiv_token_auth(self):
+        """Make sure functions is called with auth as arg for AmivTokenAuth."""
+        dec = only_amiv_token_auth
+        auth = self.app.config['DOMAIN']['fake']['authentication']
+        for resource in ['fake_nothing', 'fake_no_amiv']:
+            self.assertDecorated(dec, {}, False, func_args=[resource])
+
+        self.assertDecorated(dec, {}, True,
+                             func_args=['fake'], call_args=[auth, 'fake'])
+
+
 class AuthFunctionTest(FakeAuthTest):
     """Unittests for the auth functions."""
 
     # Tests for add_lookup_filter
 
-    def test_lookup_added_for_amiv_auth(self):
-        """Test if lookup filters are added if using AmivTokenAuth subclass."""
+    def test_lookup_added(self):
+        """Test if lookup filters are added."""
         user = 'does not matter'
         lookup = {}
         expected = {'$and': [{'_id': user}]}
 
-        with self._init_context(current_user=user):
-            # No changes for no auth or not amiv auth
-            for resource in ['fake_no_amiv', 'fake_nothing']:
-                add_lookup_filter(resource, None, lookup)
-                self.assertEqual(lookup, {})
-
-            # Filter added when using fake AmivTokenAuthSubclass
+        with self._init_context(current_user=user, auth_required=True):
             add_lookup_filter('fake', None, lookup)
             self.assertEqual(lookup, expected)
 
@@ -86,32 +158,19 @@ class AuthFunctionTest(FakeAuthTest):
         lookup = {'$and': ['already_here']}
         expected = {'$and': ['already_here', {'_id': user}]}
 
-        with self._init_context(current_user=user):
+        with self._init_context(current_user=user, auth_required=True):
             add_lookup_filter('fake', None, lookup)
             self.assertEqual(lookup, expected)
 
-    def test_lookup_not_added_for_admins(self):
-        """Test that admins can see everything."""
-        lookup = {}
-        for context in [
-                {'resource_admin': True},
-                {'resource_admin_readonly': True},
-                {'resource_admin': True, 'resource_admin_readonly': True}]:
-            with self._init_context(**context):
-                # Call filter for 'fake' resource, lookup should not change
-                add_lookup_filter('fake', None, lookup)
-                self.assertEqual(lookup, {})
-
     # Tests for `check_write_permission`
 
-    def test_item_write_permission_checked_for_amiv_auth(self):
+    def test_item_write_permission(self):
         """Test if write permission is checked correctly."""
         user = "a"
         item_abort = {'_id': 'b'}
         item_pass = {'_id': user}
 
-        with self._init_context(current_user=user):
-            # using AmivTokenAuth subclass
+        with self._init_context(current_user=user, auth_required=True):
             # Abort(403) will raise the "Forbidden" exception
             with self.assertRaises(Forbidden):
                 check_item_write_permission('fake', item_abort)
@@ -119,51 +178,19 @@ class AuthFunctionTest(FakeAuthTest):
             # If the auth class returns true it wont be aborted, no exception
             check_item_write_permission('fake', item_pass)
 
-            # No Exceptions for resources using other auth either
-            for resource in ['fake_no_amiv', 'fake_nothing']:
-                check_item_write_permission(resource, item_abort)
-
-    def test_resource_write_permission_checked_for_amiv_auth(self):
+    def test_resource_write_permission(self):
         """Test if write permission is checked correctly."""
         user = "somethingsomething"
 
-        with self._init_context(current_user=user):
+        with self._init_context(current_user=user, auth_required=True):
             # using AmivTokenAuth subclass
             # Abort(403) will raise the "Forbidden" exception
             with self.assertRaises(Forbidden):
                 check_resource_write_permission('fake')
 
-            # No Exceptions for resources using other auth
-            for resource in ['fake_no_amiv', 'fake_nothing']:
-                check_resource_write_permission(resource)
-
             # If the auth class returns true it wont be aborted, no exception
             g.current_user = 'allowed'
             check_resource_write_permission('fake')
-
-    def test_write_permission_not_checked_for_admin(self):
-        """Test that admins can change everything.
-
-        (both items an resources)
-
-        But readonly admins can't.
-        """
-        # This will lead to abort (see test above)
-        user = "a"
-        item = {'_id': "b"}
-
-        with self._init_context(resource_admin=True, current_user=user):
-            # No exception, admin can write
-            check_resource_write_permission('fake')
-            check_item_write_permission('fake', item)
-
-            # Change to readonly admin, now it will abort
-            g.resource_admin = False
-            g.resource_admin_readonly = True
-            with self.assertRaises(Forbidden):
-                check_resource_write_permission('fake')
-            with self.assertRaises(Forbidden):
-                check_item_write_permission('fake', item)
 
     # Tests for `abort_if_not_public`
 
@@ -171,9 +198,6 @@ class AuthFunctionTest(FakeAuthTest):
         """Test that if g.requires_auth has an effect.
 
         If it is True and no user is there (and no admin) then it will abort.
-
-        We don't need to test different auth classes because only the
-        AmivTokenAuth class will set g.auth_required
         """
         with self._init_context():
             # user is None by default, admin is False
@@ -189,19 +213,9 @@ class AuthFunctionTest(FakeAuthTest):
             with self.assertRaises(Unauthorized):
                 abort_if_not_public()
 
-    def test_no_abort_for_admin(self):
-        """Test that nothing will abort for admins.
-
-        Even without user, things like API keys can provide authentication
-        via resource_admin or resource_admin_readonly. Then it wont abort.
-        """
-        for context in [
-                {'resource_admin': True},
-                {'resource_admin_readonly': True},
-                {'resource_admin': True, 'resource_admin_readonly': True}]:
-            with self._init_context(auth_required=True, **context):
-                # No abort even though user is None
-                abort_if_not_public()
+            # User was found -> no abort
+            g.current_user = "something"
+            abort_if_not_public()
 
     # Tests for authentication
 

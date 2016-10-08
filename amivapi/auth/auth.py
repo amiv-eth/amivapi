@@ -50,7 +50,7 @@ All methods go through the following methods:
 - `AmivTokenAuth.authorized` (only if the methods is not public!)
 - `authenticate`
 - `check_if_admin`
-- `abort_if_not_public`
+- `abort_if_not_public` (Check if abort is needed)
 
 If the request is not public, the following happens next:
 Resource endpoints and POST or Delete:
@@ -72,6 +72,7 @@ Item endpoints:
 """
 
 from datetime import datetime as dt
+from functools import wraps
 
 from flask import current_app, g, request, abort
 from eve.auth import BasicAuth, resource_auth
@@ -139,6 +140,48 @@ class AmivTokenAuth(BasicAuth):
                 Return None or empty dict if no filters should be applied.
         """
         return None
+
+
+# Decorators that will only call a function if auth conditions are met
+
+def only_if_auth_required(func):
+    """Call function only if `g.get('auth_required')`."""
+    @wraps(func)
+    def wrapped(*args):
+        if g.get('auth_required'):
+            func(*args)
+    return wrapped
+
+
+def not_if_admin(func):
+    """Call function only if `g.resource_admin`."""
+    @wraps(func)
+    def wrapped(*args):
+        if not g.resource_admin:
+            func(*args)
+    return wrapped
+
+
+def not_if_admin_or_readonly_admin(func):
+    """Call function if `g.resource_admin` or `g.resource_admin_readonly`."""
+    @wraps(func)
+    def wrapped(*args):
+        if not (g.resource_admin or g.resource_admin_readonly):
+            func(*args)
+    return wrapped
+
+
+def only_amiv_token_auth(func):
+    """Call function only if auth is a subclass of AmivTokenAuth.
+
+    Add auth as first function argument.
+    """
+    @wraps(func)
+    def wrapped(resource, *args):
+        auth = resource_auth(resource)
+        if isinstance(auth, AmivTokenAuth):
+            func(auth, resource, *args)  # Add auth to function arguments
+    return wrapped
 
 
 # Hooks begin here
@@ -221,72 +264,53 @@ def check_if_admin(resource, *args):
     current_app.after_auth(resource)
 
 
+@only_if_auth_required
+@not_if_admin_or_readonly_admin
 def abort_if_not_public(*args):
     """Abort if the resource is not public and there is no user/admin.
 
-    Active if `g.auth_required` is set, i. e. the method is not public.
-
-    Note: we also check for admin because e.g. API-keys can have admin rights
-    without a specific user.
+    If auth is required and we are no admin, check if a user is logged in.
+    If not abort, since the requested resource is not public.
     """
-    if g.get('auth_required') and not (g.current_user or
-                                       g.resource_admin or
-                                       g.resource_admin_readonly):
+    if not g.current_user:
         current_app.logger.debug(
             "Access denied: "
             "Action is not public and user can't be authenticated.")
         abort(401)
 
 
-def add_lookup_filter(resource, request, lookup):
-    """Get and add lookup filter for GET, PATCH and DELETE.
+@only_if_auth_required
+@not_if_admin_or_readonly_admin
+@only_amiv_token_auth
+def add_lookup_filter(auth, resource, request, lookup):
+    """Get and add lookup filter for GET, PATCH and DELETE."""
+    extra_lookup = auth.create_user_lookup_filter(g.current_user)
 
-    For both `resource_admin` and `resource_admin_readonly` there will be no
-    filter.
-    Only if auth is required.
-    """
-    admin = g.resource_admin or g.resource_admin_readonly
-    if g.get('auth_required') and not admin:
-        auth = resource_auth(resource)
-
-        if isinstance(auth, AmivTokenAuth):
-            extra_lookup = auth.create_user_lookup_filter(g.current_user)
-
-            if extra_lookup:
-                # Add the additional lookup with an `$and` condition
-                # or extend existing `$and`s
-                lookup.setdefault('$and', []).append(extra_lookup)
+    if extra_lookup:
+        # Add the additional lookup with an `$and` condition
+        # or extend existing `$and`s
+        lookup.setdefault('$and', []).append(extra_lookup)
 
 
-def check_resource_write_permission(resource, *args):
-    """Check if the user is allowed to POST to (or DELETE) a resource.
-
-    Only `resouce_admin`s can write everything.
-    Only if auth is required.
-    """
-    if g.get('auth_required') and not g.resource_admin:
-        auth = resource_auth(resource)
-
-        if isinstance(auth, AmivTokenAuth) and \
-                not auth.has_resource_write_permission(g.current_user):
-            current_app.logger.debug(
-                "Access denied: "
-                "The current user has no permission to write.")
-            abort(403)
+@only_if_auth_required
+@not_if_admin
+@only_amiv_token_auth
+def check_resource_write_permission(auth, resource, *args):
+    """Check if the user is allowed to POST to (or DELETE) a resource."""
+    if not auth.has_resource_write_permission(g.current_user):
+        current_app.logger.debug(
+            "Access denied: "
+            "The current user has no permission to write.")
+        abort(403)
 
 
-def check_item_write_permission(resource, item):
-    """Check if the user is allowed to PATCH or DELETE the item.
-
-    Only `resouce_admin`s can write everything.
-    Only if auth is required.
-    """
-    if g.get('auth_required') and not g.resource_admin:
-        auth = resource_auth(resource)
-
-        if isinstance(auth, AmivTokenAuth) and \
-                not auth.has_item_write_permission(g.current_user, item):
-            current_app.logger.debug(
-                "Access denied: "
-                "The current user has no permission to write.")
-            abort(403)
+@only_if_auth_required
+@not_if_admin
+@only_amiv_token_auth
+def check_item_write_permission(auth, resource, item):
+    """Check if the user is allowed to PATCH or DELETE the item."""
+    if not auth.has_item_write_permission(g.current_user, item):
+        current_app.logger.debug(
+            "Access denied: "
+            "The current user has no permission to write.")
+        abort(403)
