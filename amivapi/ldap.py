@@ -70,7 +70,7 @@ class LdapConnector():
         return False
 
     def _escape(self, query):
-        ur"""LDAP-style excape symbols for some special characters.
+        r"""LDAP-style excape symbols for some special characters.
 
         From the docs of ldap3:
         If the search filter contains the following characters you must use the
