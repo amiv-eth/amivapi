@@ -14,6 +14,7 @@ import os
 from tempfile import mkdtemp
 from itertools import count
 from pymongo import MongoClient
+from bson import ObjectId
 
 from flask import g
 from flask.testing import FlaskClient
@@ -172,7 +173,9 @@ class WebTest(unittest.TestCase):
         self.db = self.connection[test_config['MONGO_DBNAME']]
 
         # Assert that database is empty before starting tests.
-        assert not self.db.collection_names(), "The database already exists!"
+        self.assertFalse(
+            self.db.collection_names(),
+            "The database already exists!")
 
         # init database
         initdb(self.app)
@@ -346,7 +349,7 @@ class WebTest(unittest.TestCase):
 
     @create_object('purchases')
     def new_purchase(self, **kwargs):
-        """Create a new purchase"""
+        """Create a new purchase."""
         kwargs.setdefault('user', 0)
         kwargs.setdefault('timestamp', datetime.utcnow())
         kwargs.setdefault('product', 'beer')
@@ -364,7 +367,7 @@ class WebTest(unittest.TestCase):
             str: Token that can be used to authenticate user.
         """
         token = "test_token_" + str(next(self.counter))
-        self.db['sessions'].insert({u'user_id': user_id,
+        self.db['sessions'].insert({u'user': ObjectId(user_id),
                                     u'token': token})
         return token
 

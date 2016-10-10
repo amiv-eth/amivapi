@@ -25,19 +25,19 @@ class AuthentificationTest(WebTest):
 
         # Login with mail
         response = self.api.post("/sessions",
-                                 data={'user': user['email'],
+                                 data={'username': user['email'],
                                        'password': password},
                                  status_code=201).json
 
-        self.assertEqual(response['user_id'], str(user['_id']))
+        self.assertEqual(response['user'], str(user['_id']))
 
         # Login with nethz
         r = self.api.post("/sessions", data={
-            'user': user['nethz'],
+            'username': user['nethz'],
             'password': password,
         }, status_code=201).json
 
-        self.assertEqual(r['user_id'], str(user['_id']))
+        self.assertEqual(r['user'], str(user['_id']))
 
     def test_no_member(self):
         """Test that non members can log in too.
@@ -57,20 +57,20 @@ class AuthentificationTest(WebTest):
 
         # Expect 401 - unauthorized
         self.api.post("/sessions", data={
-            'user': nethz,
+            'username': nethz,
             'password': password,
         }, status_code=201)
 
     def test_get_session(self):
         """Assert a user can see his sessions, but not others sessions."""
         user = self.new_user(password=u"something")
-        session_1 = self.new_session(user=str(user['_id']),
+        session_1 = self.new_session(username=str(user['_id']),
                                      password=u"something")
-        session_2 = self.new_session(user=str(user['_id']),
+        session_2 = self.new_session(username=str(user['_id']),
                                      password=u"something")
 
         other_user = self.new_user(password=u"something_else")
-        other_session = self.new_session(user=str(other_user['_id']),
+        other_session = self.new_session(username=str(other_user['_id']),
                                          password=u"something_else")
 
         token = session_1['token']
@@ -85,8 +85,7 @@ class AuthentificationTest(WebTest):
                      status_code=404)
 
         all_sessions = self.api.get("sessions", token=token, status_code=200)
-        print(all_sessions.json)
-        print("DONE")
+
         ids = [item['_id'] for item in all_sessions.json['_items']]
 
         self.assertItemsEqual(ids,
@@ -98,7 +97,7 @@ class AuthentificationTest(WebTest):
         """Test that there is no public reading of sessions."""
         # Create a sess
         user = self.new_user(password=u"something")
-        session = self.new_session(user=str(user['_id']),
+        session = self.new_session(username=str(user['_id']),
                                    password=u"something")
 
         self.api.get("/sessions", status_code=401)
@@ -109,7 +108,7 @@ class AuthentificationTest(WebTest):
         user = self.new_user(password=u"something")
 
         self.api.post("/sessions", data={
-            'user': user['email'],
+            'username': user['email'],
             'password': u"something-else",
         }, status_code=401)
 
@@ -118,7 +117,8 @@ class AuthentificationTest(WebTest):
         password = u"awesome-password"
         user = self.new_user(password=password)
 
-        session = self.new_session(user=str(user['_id']), password=password)
+        session = self.new_session(username=str(user['_id']),
+                                   password=password)
         token = session['token']
 
         self.api.delete("/sessions/%s" % session['_id'], token=token,
@@ -136,15 +136,15 @@ class AuthentificationTest(WebTest):
         user_id = str(user['_id'])
 
         bad_data = [
-            {'user': user_id},
+            {'username': user_id},
             {'password': password},
-            {'user': None,
+            {'username': None,
              'password': password},
-            {'user': '',
+            {'username': '',
              'password': password},
-            {'user': user_id,
+            {'username': user_id,
              'password': None},
-            {'user': "not_user@amiv"}
+            {'username': "not_user@amiv"}
         ]
 
         for data in bad_data:
@@ -160,11 +160,11 @@ class AuthentificationTest(WebTest):
         """Test if nethz "root" can be used to log in as root user."""
         # Per default the password is "root"
         r = self.api.post("/sessions", data={
-            'user': 'root',
+            'username': 'root',
             'password': 'root',
         }, status_code=201)
 
-        self.assertTrue(r.json['user_id'] == 24 * "0")  # logged in as root?
+        self.assertTrue(r.json['user'] == 24 * "0")  # logged in as root?
 
 
 class PasswordVerificationTest(WebTest):
@@ -259,7 +259,7 @@ class PasswordVerificationTest(WebTest):
         })
 
         login_data = {
-            'user': str(user_id),
+            'username': str(user_id),
             'password': password
         }
 
