@@ -25,12 +25,12 @@ class SessionAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """Allow users to modify only their own sessions."""
-        # item['user_id'] is Objectid, convert to str
-        return user_id == str(item['user_id'])
+        # item['user'] is Objectid, convert to str
+        return user_id == str(item['user'])
 
     def create_user_lookup_filter(self, user_id):
         """Allow users to only see their own sessions."""
-        return {'user_id': user_id}
+        return {'user': user_id}
 
 
 sessiondomain = {
@@ -43,7 +43,8 @@ sessiondomain = {
             " fields.",
             'methods': {
                 'POST': "Login and aquire a login token. Post the fields "
-                "'user' and 'password', the response will contain the token."}
+                "'username' and 'password', the response will contain the "
+                "token."}
         },
 
         'authentication': SessionAuth,
@@ -53,7 +54,7 @@ sessiondomain = {
         'item_methods': ['GET', 'DELETE'],
 
         'schema': {
-            'user': {
+            'username': {
                 'type': 'string',
                 'required': True,
                 'nullable': False,
@@ -63,8 +64,13 @@ sessiondomain = {
                 'required': True,
                 'nullable': False,
                 'empty': False},
-            'user_id': {'type': 'objectid',
-                        'readonly': True},
+            'user': {'type': 'objectid',
+                     'data_relation': {
+                         'resource': 'users',
+                         'field': '_id',
+                         'embeddable': True
+                     },
+                     'readonly': True},
             'token': {'type': 'string',
                       'readonly': True}
         },
@@ -94,18 +100,18 @@ def process_login(items):
         items (list): List of items as passed by EVE to post hooks.
     """
     for item in items:  # TODO (Alex): Batch POST doesnt really make sense
-        user = item['user']
+        username = item['username']
         password = item['password']
         # LDAP
         # If LDAP is enabled, try to authenticate the user
         # If this is successful, create/update user data and return token
         if (config.ENABLE_LDAP and
-                ldap_connector.authenticate_user(user, password)):
+                ldap_connector.authenticate_user(username, password)):
             # Success, sync user and get token
-            updated = ldap_connector.sync_one(user)
+            updated = ldap_connector.sync_one(username)
             _prepare_token(item, updated['id'])
             app.logger.info(
-                "User '%s' was authenticated with LDAP" % user)
+                "User '%s' was authenticated with LDAP" % username)
             return
 
         # Database
@@ -115,10 +121,10 @@ def process_login(items):
         # both have to be unique we ca safely use find_one()
         users = app.data.driver.db['users']
 
-        lookup = {'$or': [{'nethz': item['user']},
-                          {'email': item['user']}]}
+        lookup = {'$or': [{'nethz': username},
+                          {'email': username}]}
         try:
-            objectid = ObjectId(item['user'])
+            objectid = ObjectId(username)
             lookup['$or'].append({'_id': objectid})
         except:
             # input can't be used as ObjectId -> no need to look for it
@@ -131,7 +137,7 @@ def process_login(items):
             if verify_password(user, item['password']):
                 # Success
                 app.logger.debug(
-                    "Login for user '%s' successful." % item['user'])
+                    "Login for user '%s' successful." % username)
                 _prepare_token(item, user['_id'])
                 return
             else:
@@ -142,7 +148,7 @@ def process_login(items):
         # root user shortcut: If user is root additionally try login as root.
         # Unless someone as nethz 'root' and the exact root password there
         # will be no collision this way
-        if item['user'] == 'root':
+        if username == 'root':
             app.logger.debug("Trying to log in as root.")
             root = users.find_one({'_id': app.config['ROOT_ID']})
             if root is not None and verify_password(root, item['password']):
@@ -164,11 +170,11 @@ def _prepare_token(item, user_id):
         token = b64encode(urandom(256)).decode('utf_8')
 
     # Remove user and password from document
-    del item['user']
+    del item['username']
     del item['password']
 
     # Add token (str) and user_id (ObejctId)
-    item['user_id'] = user_id
+    item['user'] = user_id
     item['token'] = token
 
 
