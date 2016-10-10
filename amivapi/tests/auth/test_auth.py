@@ -278,7 +278,7 @@ class AuthFunctionTest(FakeAuthTest):
 
         If there is no session, `current_session` and `current_user` will be
         None, otherwise `current_session` will be the data as stored in the db
-        and `current_user` the `user_id` field taken from the session.
+        and `current_user` the `user` field taken from the session.
 
         Also check that if a session is found the timestamp is updated
         """
@@ -287,11 +287,11 @@ class AuthFunctionTest(FakeAuthTest):
         # proper ObjectIds
         data = [
             {u'_id': u'a',
-             u'user_id': ObjectId(24 * 'a'),
+             u'user': ObjectId(24 * 'a'),
              u'token': u'sometoken',
              u'_updated': datetime.utcnow() - timedelta(seconds=1)},
             {u'_id': u'b',
-             u'user_id': ObjectId(24 * 'b'),
+             u'user': ObjectId(24 * 'b'),
              u'token': u'othertoken',
              u'_updated': datetime.utcnow() - timedelta(seconds=1)}
         ]
@@ -305,13 +305,13 @@ class AuthFunctionTest(FakeAuthTest):
                 authenticate()
 
                 # g.current_user shoudl be a string
-                expected_user = str(session['user_id'])
+                expected_user = str(session['user'])
 
                 session_in_db = \
                     self.db['sessions'].find_one({'_id': session['_id']})
                 self.assertEqual(g.current_session, session_in_db)
 
-                for key in '_id', 'user_id', 'token':
+                for key in '_id', 'user', 'token':
                     self.assertEqual(g.current_session[key], session[key])
                 self.assertEqual(g.current_user, expected_user)
 

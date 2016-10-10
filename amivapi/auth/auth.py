@@ -239,7 +239,7 @@ def authenticate(*args):
 
             # Save user_id and session with updated timestamp in g
             g.current_session = session
-            g.current_user = str(session['user_id'])  # ObjectId to str
+            g.current_user = str(session['user'])  # ObjectId to str
 
 
 def check_if_admin(resource, *args):
