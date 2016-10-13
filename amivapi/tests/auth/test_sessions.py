@@ -194,13 +194,13 @@ class PasswordVerificationTest(WebTest):
     def _get_weak_hash(self, plaintext):
         """Create a weaker CryptContext and hash plaintext.
 
-        (Weaker as in weaker then default context)
+        (Weaker as in weaker than default context)
         """
         weak_context = CryptContext(
             schemes=["pbkdf2_sha256"],
-            pbkdf2_sha256__default_rounds=10 ** 2,
+            pbkdf2_sha256__default_rounds=5,
             pbkdf2_sha256__vary_rounds=0.1,
-            pbkdf2_sha256__min_rounds=8 * 10 ** 1,
+            pbkdf2_sha256__min_rounds=1,
         )
 
         return weak_context.encrypt(plaintext)

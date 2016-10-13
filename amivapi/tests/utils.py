@@ -15,6 +15,7 @@ from tempfile import mkdtemp
 from itertools import count
 from pymongo import MongoClient
 from bson import ObjectId
+from passlib.context import CryptContext
 
 from flask import g
 from flask.testing import FlaskClient
@@ -35,7 +36,18 @@ test_config = {
     'SMTP_SERVER': '',
     'APIKEYS': {},
     'TESTING': True,
-    'DEBUG': True   # This makes eve's error messages more helpful
+    'DEBUG': True,   # This makes eve's error messages more helpful
+    'PASSWORD_CONTEXT': CryptContext(
+        schemes=["pbkdf2_sha256"],
+
+        # default_rounds is used when hashing new passwords, to be varied each
+        # time by vary_rounds
+        pbkdf2_sha256__default_rounds=10,
+        pbkdf2_sha256__vary_rounds=0.1,
+
+        # min_rounds is used to determine if a hash needs to be upgraded
+        pbkdf2_sha256__min_rounds=8,
+    )
 }
 
 
