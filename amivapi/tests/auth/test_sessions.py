@@ -20,8 +20,8 @@ class AuthentificationTest(WebTest):
         password = u"some-really-secure-password"
         nethz = u"somenethz"
 
-        user = self.new_user(nethz=nethz, password=password,
-                             membership="regular")
+        user = self.new_object('users', nethz=nethz, password=password,
+                               membership="regular")
 
         # Login with mail
         response = self.api.post("/sessions",
@@ -52,8 +52,8 @@ class AuthentificationTest(WebTest):
         password = u"some-really-secure-password"
         nethz = u"somenethz"
 
-        self.new_user(nethz=nethz, password=password,
-                      membership=None)
+        self.new_object('users', nethz=nethz, password=password,
+                        membership='none')
 
         # Expect 401 - unauthorized
         self.api.post("/sessions", data={
@@ -63,15 +63,16 @@ class AuthentificationTest(WebTest):
 
     def test_get_session(self):
         """Assert a user can see his sessions, but not others sessions."""
-        user = self.new_user(password=u"something")
-        session_1 = self.new_session(username=str(user['_id']),
-                                     password=u"something")
-        session_2 = self.new_session(username=str(user['_id']),
-                                     password=u"something")
+        user = self.new_object('users', password=u"something")
+        session_1 = self.new_object('sessions', username=str(user['_id']),
+                                    password=u"something")
+        session_2 = self.new_object('sessions', username=str(user['_id']),
+                                    password=u"something")
 
-        other_user = self.new_user(password=u"something_else")
-        other_session = self.new_session(username=str(other_user['_id']),
-                                         password=u"something_else")
+        other_user = self.new_object('users', password=u"something_else")
+        other_session = self.new_object('sessions',
+                                        username=str(other_user['_id']),
+                                        password=u"something_else")
 
         token = session_1['token']
         self.api.get("/sessions/%s" % session_1['_id'],
@@ -96,16 +97,17 @@ class AuthentificationTest(WebTest):
     def test_no_public_get(self):
         """Test that there is no public reading of sessions."""
         # Create a sess
-        user = self.new_user(password=u"something")
-        session = self.new_session(username=str(user['_id']),
-                                   password=u"something")
+        user = self.new_object('users', password=u"something")
+        session = self.new_object('sessions',
+                                  username=str(user['_id']),
+                                  password=u"something")
 
         self.api.get("/sessions", status_code=401)
         self.api.get("/sessions/%s" % session['_id'], status_code=401)
 
     def test_wrong_password(self):
         """Test to login with a wrong password."""
-        user = self.new_user(password=u"something")
+        user = self.new_object('users', password=u"something")
 
         self.api.post("/sessions", data={
             'username': user['email'],
@@ -115,10 +117,10 @@ class AuthentificationTest(WebTest):
     def test_delete_session(self):
         """Test to logout."""
         password = u"awesome-password"
-        user = self.new_user(password=password)
+        user = self.new_object('users', password=password)
 
-        session = self.new_session(username=str(user['_id']),
-                                   password=password)
+        session = self.new_object('sessions', username=str(user['_id']),
+                                  password=password)
         token = session['token']
 
         self.api.delete("/sessions/%s" % session['_id'], token=token,
@@ -130,9 +132,9 @@ class AuthentificationTest(WebTest):
     def test_bad_data(self):
         """Make extra sure data has to be correct to get a session."""
         password = u"some-really-secure-password"
-        user = self.new_user(nethz=u"abc",
-                             email="user@amiv",
-                             password=password)
+        user = self.new_object('users', nethz=u"abc",
+                               email="user@amiv",
+                               password=password)
         user_id = str(user['_id'])
 
         bad_data = [
