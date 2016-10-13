@@ -68,7 +68,8 @@ sessiondomain = {
                      'data_relation': {
                          'resource': 'users',
                          'field': '_id',
-                         'embeddable': True
+                         'embeddable': True,
+                         'cacade_delete': True
                      },
                      'readonly': True},
             'token': {'type': 'string',
