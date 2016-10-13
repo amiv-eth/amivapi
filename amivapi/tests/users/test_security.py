@@ -110,29 +110,36 @@ class UserFieldsTest(utils.WebTest):
 
     def create_users(self):
         """Add users with full data."""
-        self.user = self.new_user(
-            nethz='pablamiv',
-            firstname="Pabla",
-            lastname="AMIV",
-            membership="regular",
-            legi="12345678",
-            gender='female',
-            department='itet',
-            password="userpass",
-            email="pabla@amiv.ch",
-            rfid="123456")
-
-        self.other_user = self.new_user(
-            nethz='pablomiv',
-            firstname="Pablo",
-            lastname="AMIV",
-            membership="regular",
-            legi="87654321",
-            gender='male',
-            department='mavt',
-            password="userpass2",
-            email="pablo@amiv.ch",
-            rfid="654321")
+        users = self.load_fixture({
+            'users': [
+                {
+                    'nethz': 'pablamiv',
+                    'firstname': "Pabla",
+                    'lastname': "AMIV",
+                    'membership': "regular",
+                    'legi': "12345678",
+                    'gender': 'female',
+                    'department': 'itet',
+                    'password': "userpass",
+                    'email': "pabla@amiv.ch",
+                    'rfid': "123456"
+                },
+                {
+                    'nethz': 'pablomiv',
+                    'firstname': "Pablo",
+                    'lastname': "AMIV",
+                    'membership': "regular",
+                    'legi': "87654321",
+                    'gender': 'male',
+                    'department': 'mavt',
+                    'password': "userpass2",
+                    'email': "pablo@amiv.ch",
+                    'rfid': "654321"
+                }
+            ]
+        })
+        self.user = users[0]
+        self.other_user = users[1]
 
         self.user_token = self.get_user_token(str(self.user['_id']))
         self.root_token = self.get_root_token()
@@ -182,7 +189,10 @@ class UserFieldsTest(utils.WebTest):
 
     def test_change_by_user(self):
         """User can change password, email. and rfid."""
-        user = self.new_user(password="sosecure", email="a@b.c", rfid="123456")
+        user = self.new_object('users', email='a@b.c',
+                               password='sosecure',
+                               rfid='123456')
+
         token = self.get_user_token(str(user['_id']))
         etag = user['_etag']
         user_url = "/users/%s" % user['_id']
@@ -203,9 +213,9 @@ class UserFieldsTest(utils.WebTest):
 
     def test_not_patchable_unless_admin(self):
         """Admin can change everything, user not."""
-        user = self.new_user(gender='female', department='itet',
-                             membership="regular",
-                             nethz='user', password="userpass")
+        user = self.new_object('users', gender='female', department='itet',
+                               membership="regular",
+                               nethz='user', password="userpass")
         user_id = str(user['_id'])
         user_etag = user['_etag']  # This way we can overwrite it later easily
 
