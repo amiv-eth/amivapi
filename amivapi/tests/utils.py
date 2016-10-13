@@ -315,12 +315,12 @@ class WebTest(unittest.TestCase):
                     for user in fixture['users']:
                         if (user.get('nethz') == obj['username']
                                 or user.get('email') == obj['username']
-                                or user.get('_id') == obj['username']):
+                                or str(user.get('_id')) == obj['username']):
                             obj['password'] = user['password']
 
             if 'password' not in obj:
                 raise BadTestException("Could not determine password for user"
-                                       " %s in fixture with unspecified "
+                                       " %s in fixture with unspecified"
                                        " password for session %s"
                                        % (obj['username'], obj))
 
