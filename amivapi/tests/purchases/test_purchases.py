@@ -17,7 +17,7 @@ class PurchaseTest(utils.WebTestNoAuth):
         """Usecase: Vending machine wants to determine, if the user already
         had his daily drink"""
 
-        user = self.new_user()
+        user = self.new_object('users')
 
         # Should return no purchases, if none have been done
         p = self.api.get(
@@ -28,8 +28,8 @@ class PurchaseTest(utils.WebTestNoAuth):
         self.assertEqual(len(p), 0)
 
         # Next test with a transaction 2 days ago
-        self.new_purchase(user=user['_id'], product='beer',
-                          timestamp=datetime.utcnow() - timedelta(days=2))
+        self.new_object('purchases', user=user['_id'], product='beer',
+                        timestamp=datetime.utcnow() - timedelta(days=2))
 
         p = self.api.get(
                 '/purchases?where={"user": "%s", "product":"beer", '
@@ -39,8 +39,8 @@ class PurchaseTest(utils.WebTestNoAuth):
         self.assertEqual(len(p), 0)
 
         # Now we add a purchase and ask again
-        self.new_purchase(user=user['_id'], product='beer',
-                          timestamp=datetime.utcnow())
+        self.new_object('purchases', user=user['_id'], product='beer',
+                        timestamp=datetime.utcnow())
 
         time = (datetime.utcnow() - timedelta(hours=1)).strftime(DATE_FORMAT)
         p = self.api.get(
@@ -54,7 +54,7 @@ class PurchaseTest(utils.WebTestNoAuth):
         """Usecase: Vending machine dispensed an item and wants to register that
         """
 
-        user = self.new_user()
+        user = self.new_object('users')
 
         p = self.api.get("/purchases", status_code=200).json['_items']
         self.assertTrue(len(p) == 0)
@@ -73,13 +73,13 @@ class PurchaseAuthTest(utils.WebTest):
 
     def test_purchase_privacy(self):
         """Test that users can only see their own purchases"""
-        user1 = self.new_user()
-        user2 = self.new_user()
+        user1 = self.new_object('users')
+        user2 = self.new_object('users')
         u1_token = self.get_user_token(str(user1['_id']))
         u2_token = self.get_user_token(str(user2['_id']))
 
-        p1 = self.new_purchase(user=user1['_id'])
-        p2 = self.new_purchase(user=user2['_id'])
+        p1 = self.new_object('purchases', user=user1['_id'])
+        p2 = self.new_object('purchases', user=user2['_id'])
 
         u1_purchases = self.api.get(
             "/purchases", token=u1_token, status_code=200).json['_items']
