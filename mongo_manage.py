@@ -73,7 +73,7 @@ def initdb(app=None):
     root_data = {
         "_id": app.config['ROOT_ID'],
         "_etag": 'd34db33f',  # We need some etag, not important what it is
-        "password": u"root",
+        "password": settings.DEFAULT_ROOT_PASSWORD,
         "firstname": u"Lord",
         "lastname": "Root",
         "gender": "male",
