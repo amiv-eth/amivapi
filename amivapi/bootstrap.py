@@ -20,11 +20,12 @@ from amivapi import (
     utils,
     # joboffers,
     purchases,
-    studydocs
+    # studydocs
 )
 from amivapi.ldap import ldap_connector
 
 from amivapi.utils import get_config
+from amivapi import cascade
 
 
 def create_app(**kwargs):
@@ -64,7 +65,11 @@ def create_app(**kwargs):
     # groups.init_app(app)
     # joboffers.init_app(app)
     purchases.init_app(app)
-    studydocs.init_app(app)
+    # studydocs.init_app(app)
     # media.init_app(app)
+
+    # Register hooks for cascading deletes
+    app.on_deleted_item += cascade.cascade_delete
+    app.on_deleted += cascade.cascade_delete_collection
 
     return app

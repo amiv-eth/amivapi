@@ -338,8 +338,8 @@ class LinkIntegrationTest(WebTest):
         """Create two test users on setup."""
         super(LinkIntegrationTest, self).setUp()
 
-        self.user = self.new_user(membership='regular')
-        self.other_user = self.new_user(membership='regular')
+        self.user = self.new_object('users', membership='regular')
+        self.other_user = self.new_object('users', membership='regular')
 
         self.user_id = str(self.user['_id'])
         self.other_user_id = str(self.other_user['_id'])
@@ -485,7 +485,7 @@ class LinkIntegrationTest(WebTest):
 
     def test_patch(self):
         """Test PATCH by normal user and admin."""
-        user = self.new_user(email="original@amiv.ch")
+        user = self.new_object('users', email="original@amiv.ch")
         user_id = str(user['_id'])
 
         updates = {'email': 'new@amiv.ch'}
@@ -518,7 +518,7 @@ class LinkIntegrationTest(WebTest):
         The patch method uses a post_PATCH hook, witch is executed for errors
         as well. No link methods can be added then.
         """
-        user = self.new_user(email="original@amiv.ch")
+        user = self.new_object('users', email="original@amiv.ch")
         user_id = str(user['_id'])
 
         bad_updates = {'nethz': "can't be patched"}

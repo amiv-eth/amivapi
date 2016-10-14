@@ -56,11 +56,11 @@ class UserTest(utils.WebTestNoAuth):
 
     def test_nethz_lookup(self):
         """Test that a user can be accessed with nethz name."""
-        nethz = "testnethz"
+        self.load_fixture({
+            'users': [{'nethz': 'testnethz'}]
+        })
 
-        self.new_user(nethz=nethz)
-
-        self.api.get("/users/%s" % nethz, status_code=200)
+        self.api.get("/users/testnethz", status_code=200)
 
     def test_root_user_is_in_db(self):
         """Test if root user is in the db.
