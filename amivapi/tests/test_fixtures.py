@@ -2,18 +2,18 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Test the fixture system for tests"""
+"""Test the fixture system for tests."""
 
-from copy import deepcopy
 from bson import ObjectId
 
 from amivapi.tests.utils import WebTest
-from eve.io.mongo import Validator
 
 
 class FixtureTest(WebTest):
+    """Test the function to add test fixtures."""
+
     def test_fixtures_random_generator(self):
-        """Test that the fixture system generates valid documents"""
+        """Test that the fixture system generates valid documents."""
         # create a fixture, which creates all kinds of objects
         fixture = {}
         for resource in self.app.config['DOMAIN']:
@@ -22,7 +22,7 @@ class FixtureTest(WebTest):
         self.load_fixture(fixture)
 
     def test_fixtures_content(self):
-        """Test that loaded fixtures have the specified content"""
+        """Test that loaded fixtures have the specified content."""
         fixture = {
             'users': [
                 {
