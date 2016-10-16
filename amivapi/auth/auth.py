@@ -260,7 +260,7 @@ def check_if_admin(resource, *args):
     g.resource_admin = g.resource_admin_readonly = False
 
     # Check if root
-    if g.get('current_user') == str(current_app.config['ROOT_ID']):
+    if g.get('current_token') == current_app.config['ROOT_PASSWORD']:
         g.resource_admin = True
 
     # Notify callback

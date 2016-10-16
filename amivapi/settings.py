@@ -60,7 +60,7 @@ SESSION_TIMEOUT = timedelta(days=365)
 # The ObjectId the root user will have
 # There are always 24 character strings. So it will be just 24 zeros
 ROOT_ID = ObjectId(24 * "0")
-DEFAULT_ROOT_PASSWORD = u"root"
+ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
 
 # Text for automatically sent mails
 

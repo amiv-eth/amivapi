@@ -7,6 +7,7 @@
 from os import urandom
 from base64 import b64encode
 from bson import ObjectId
+from bson.errors import InvalidId
 
 from flask import abort, current_app as app
 from eve.methods.patch import patch_internal
@@ -37,14 +38,13 @@ sessiondomain = {
     'sessions': {
         'description': {
             'general': "A session is used to authenticate a user after he "
-            " provided login data. To acquire a session use POST, which will "
-            " give you a token to use as the user field of HTTP basic auth "
-            " header with an empty password. POST requires user and password "
-            " fields.",
+            " provided login data. A POST to /session will return a token you "
+            "can use in an Authorization header: token <yourtoken>",
             'methods': {
                 'POST': "Login and aquire a login token. Post the fields "
                 "'username' and 'password', the response will contain the "
-                "token."}
+                "token. username can be either nethz, mail, or user_id",
+                'GET': "Check token(s)."}
         },
 
         'authentication': SessionAuth,
@@ -91,9 +91,9 @@ def process_login(items):
 
     TODO (ALEX): make root user shortcut a setting maybe.
 
-    If the login is successful, the fields "user" and "password" are removed
-    and the fields "user_id" and "token" are added, which will be stored in the
-    db.
+    If the login is successful, the fields "username" and "password" are
+    removed and the fields "user" and "token" are added, which will be stored
+    in the db.
 
     If the login is unsuccessful, abort(401)
 
@@ -103,9 +103,8 @@ def process_login(items):
     for item in items:  # TODO (Alex): Batch POST doesnt really make sense
         username = item['username']
         password = item['password']
+
         # LDAP
-        # If LDAP is enabled, try to authenticate the user
-        # If this is successful, create/update user data and return token
         if (config.ENABLE_LDAP and
                 ldap_connector.authenticate_user(username, password)):
             # Success, sync user and get token
@@ -115,47 +114,26 @@ def process_login(items):
                 "User '%s' was authenticated with LDAP" % username)
             return
 
-        # Database
-        # Query user by nethz or email now
-
-        # Query user by nethz or email. Since they cannot be the same and
-        # both have to be unique we ca safely use find_one()
+        # Database, try to find via nethz, mail or objectid
         users = app.data.driver.db['users']
-
-        lookup = {'$or': [{'nethz': username},
-                          {'email': username}]}
+        lookup = {'$or': [{'nethz': username}, {'email': username}]}
         try:
             objectid = ObjectId(username)
             lookup['$or'].append({'_id': objectid})
-        except:
-            # input can't be used as ObjectId -> no need to look for it
-            pass
-
+        except InvalidId:
+            pass  # input can't be used as ObjectId
         user = users.find_one(lookup)
 
-        if user is not None:
+        if user:
             app.logger.debug("User found in db.")
             if verify_password(user, item['password']):
-                # Success
-                app.logger.debug(
-                    "Login for user '%s' successful." % username)
+                app.logger.debug("Login for user '%s' successful." % username)
                 _prepare_token(item, user['_id'])
                 return
             else:
                 status = "Login failed: Password does not match!"
                 app.logger.debug(status)
                 abort(401, description=debug_error_message(status))
-
-        # root user shortcut: If user is root additionally try login as root.
-        # Unless someone as nethz 'root' and the exact root password there
-        # will be no collision this way
-        if username == 'root':
-            app.logger.debug("Trying to log in as root.")
-            root = users.find_one({'_id': app.config['ROOT_ID']})
-            if root is not None and verify_password(root, item['password']):
-                app.logger.debug("Login as root successful.")
-                _prepare_token(item, app.config['ROOT_ID'])
-                return
 
         # Abort if everything else fails
         status = "Login with db failed: User not found!"

@@ -324,9 +324,12 @@ class AuthFunctionTest(FakeAuthTest):
                                    session['_updated'])
 
     def test_admin_rights_for_root(self):
-        """Test that login with root sets `g.resource_admin` to True."""
-        root_id = str(self.app.config['ROOT_ID'])
-        with self._init_context(current_user=root_id):
+        """Test that login with root sets `g.resource_admin` to True.
+
+        Login with root means that the token is the root password.
+        """
+        root_pw = self.app.config['ROOT_PASSWORD']
+        with self._init_context(current_token=root_pw):
             check_if_admin('some_resource')
             self.assertTrue(g.resource_admin)
 
