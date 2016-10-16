@@ -22,7 +22,7 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 from eve.methods.post import post_internal
 
-from amivapi import bootstrap, utils
+from amivapi import bootstrap
 from amivapi.settings import ROOT_PASSWORD, ROOT_ID
 from amivapi.utils import EMAIL_REGEX
 
@@ -173,29 +173,23 @@ class WebTest(unittest.TestCase):
         if sys.version_info >= (3, 2):
             self.assertItemsEqual = self.assertCountEqual
 
-        config = utils.get_config()
-
         # create temporary directories
         self.test_config['STORAGE_DIR'] = mkdtemp(prefix='amivapi_storage')
         self.test_config['FORWARD_DIR'] = mkdtemp(prefix='amivapi_forwards')
 
-        # connect to Mongo
-        self.connection = MongoClient(config['MONGO_HOST'],
-                                      config['MONGO_PORT'])
-
-        # create eve app
+        # create eve app and test client
         self.app = bootstrap.create_app(**self.test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
+        self.api = self.app.test_client()
 
-        # connect to testing database and create user
-        self.db = self.connection[self.test_config['MONGO_DBNAME']]
+        # Create a separate mongo connection and db reference for tests
+        self.connection = MongoClient(self.app.config['MONGO_HOST'],
+                                      self.app.config['MONGO_PORT'])
+        self.db = self.connection[self.app.config['MONGO_DBNAME']]
 
         # Assert that database is empty before starting tests.
         assert not self.db.collection_names(), "The database already exists!"
-
-        # create test client
-        self.api = self.app.test_client()
 
     def tearDown(self):
         """Tear down after testing."""
