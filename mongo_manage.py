@@ -52,48 +52,6 @@ def save_config(name, **config):
 
 
 #
-# Database Initialization (create root user)
-#
-
-@manager.command
-def initdb(app=None):
-    """Create root user with id 000000000000000000000000(24 zeros).
-
-    Note regarding the id: mongo is happy with any kind of id so we could use
-    a string like "root", but eve can only handle actual ObjectIds, so we have
-    to use one or eve returns links it cannot access ("/users/root")
-
-    We can create objectids from string and since they are always 24
-    characters long we just use 24 zeros.
-    """
-    # use app to load config and set up database for us
-    if app is None:
-        app = create_app()
-
-    root_data = {
-        "_id": app.config['ROOT_ID'],
-        "_etag": 'd34db33f',  # We need some etag, not important what it is
-        "password": settings.DEFAULT_ROOT_PASSWORD,
-        "firstname": u"Lord",
-        "lastname": "Root",
-        "gender": "male",
-        "email": app.config['ROOT_MAIL'],
-        "membership": "none"
-    }
-
-    # We need an app_contet for the app to set up a db connection
-    # And a request context for post_internal.
-    # Since the request_context includes the app_context we use this
-    with app.test_request_context():
-        collection = app.data.driver.db['users']
-        if collection.find_one({'_id': root_data['_id']}) is None:
-            with admin_permissions():
-                post_internal("users", payl=root_data, skip_validation=True)
-            print("Root user added successfully!")
-        else:
-            print("Root user already in db, aborting.")
-
-#
 # API Key management
 #
 
