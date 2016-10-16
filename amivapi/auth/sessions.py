@@ -69,7 +69,7 @@ sessiondomain = {
                          'resource': 'users',
                          'field': '_id',
                          'embeddable': True,
-                         'cacade_delete': True
+                         'cascade_delete': True
                      },
                      'readonly': True},
             'token': {'type': 'string',
