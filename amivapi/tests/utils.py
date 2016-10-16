@@ -23,9 +23,8 @@ from flask.wrappers import Response
 from eve.methods.post import post_internal
 
 from amivapi import bootstrap, utils
-from amivapi.settings import DEFAULT_ROOT_PASSWORD, ROOT_ID
+from amivapi.settings import ROOT_PASSWORD, ROOT_ID
 from amivapi.utils import EMAIL_REGEX
-from mongo_manage import initdb
 
 
 def find_by_pair(dicts, key, value):
@@ -193,10 +192,7 @@ class WebTest(unittest.TestCase):
         self.db = self.connection[self.test_config['MONGO_DBNAME']]
 
         # Assert that database is empty before starting tests.
-        # assert not self.db.collection_names(), "The database already exists!"
-
-        # init database
-        initdb(self.app)
+        assert not self.db.collection_names(), "The database already exists!"
 
         # create test client
         self.api = self.app.test_client()
@@ -309,7 +305,7 @@ class WebTest(unittest.TestCase):
             if 'password' not in obj:
                 username = obj['username']
                 if username in [u'root', str(ROOT_ID)]:
-                    obj['password'] = DEFAULT_ROOT_PASSWORD
+                    obj['password'] = ROOT_PASSWORD
                 else:
                     # find the user in the fixture and insert his password
                     for user in fixture['users']:
@@ -444,12 +440,12 @@ class WebTest(unittest.TestCase):
         return token
 
     def get_root_token(self):
-        """Create session for root user and return token.
+        """The root password is the root token.
 
         Returns:
             str: Token for the root user
         """
-        return self.get_user_token(24 * "0")
+        return ROOT_PASSWORD
 
 
 class WebTestNoAuth(WebTest):
