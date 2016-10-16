@@ -110,7 +110,7 @@ def process_login(items):
                 ldap_connector.authenticate_user(username, password)):
             # Success, sync user and get token
             updated = ldap_connector.sync_one(username)
-            _prepare_token(item, updated['id'])
+            _prepare_token(item, updated['_id'])
             app.logger.info(
                 "User '%s' was authenticated with LDAP" % username)
             return
