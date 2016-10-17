@@ -158,16 +158,6 @@ class AuthentificationTest(WebTest):
         """Try to do a request using invalid token."""
         self.api.get("/users", token=u"There is no token!", status_code=401)
 
-    def test_root(self):
-        """Test if nethz "root" can be used to log in as root user."""
-        # Per default the password is "root"
-        r = self.api.post("/sessions", data={
-            'username': 'root',
-            'password': 'root',
-        }, status_code=201)
-
-        self.assertTrue(r.json['user'] == 24 * "0")  # logged in as root?
-
 
 class PasswordVerificationTest(WebTest):
     """Test if password verfication and rehashing works."""

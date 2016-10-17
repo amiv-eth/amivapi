@@ -7,8 +7,6 @@
 Includes item and field permissions as well as password hashing.
 """
 
-from bson import ObjectId
-
 from amivapi.tests import utils
 
 
@@ -61,17 +59,3 @@ class UserTest(utils.WebTestNoAuth):
         })
 
         self.api.get("/users/testnethz", status_code=200)
-
-    def test_root_user_is_in_db(self):
-        """Test if root user is in the db.
-
-        Since objectid strings are 24 characters long, the root user id
-        string is just 24 zeros
-        """
-        root_id = 24 * "0"
-
-        query = self.db['users'].find_one({'_id': ObjectId(root_id)})
-        self.assertTrue(query is not None)
-
-        # Also test that eve can access it without error
-        self.api.get("/users/" + root_id, status_code=200)
