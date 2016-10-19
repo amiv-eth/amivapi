@@ -11,8 +11,21 @@ logic needed for signup of non members to events.
 from amivapi.utils import register_domain, register_validator
 
 from .endpoints import eventdomain
+
+from .projections import (
+    add_email_to_signup,
+    add_email_to_signup_collection,
+    add_signup_count_to_event,
+    add_signup_count_to_event_collection
+)
 from .validation import EventValidator
-from . import email_confirmations as mail
+from .email_confirmations import (
+    confirmprint,
+    send_confirmmail_to_unregistered_users,
+    send_confirmmail_to_unregistered_users_bulk,
+    add_confirmed_before_insert,
+    add_confirmed_before_insert_bulk
+)
 
 
 def init_app(app):
@@ -20,29 +33,19 @@ def init_app(app):
     register_domain(app, eventdomain)
     register_validator(app, EventValidator)
 
-    app.register_blueprint(mail.confirmprint)
+    # Show user's email in registered signups
+    app.on_fetched_resource_eventsignups += add_email_to_signup_collection
+    app.on_fetched_item_eventsignups += add_email_to_signup
 
-    # Hooks for anonymous users
-    app.on_insert_eventsignups += mail.signups_confirm_anonymous
+    # Show signup count in events
+    app.on_fetched_resource_events += add_signup_count_to_event_collection
+    app.on_fetched_item_events += add_signup_count_to_event
 
-    app.on_update += mail.pre_update_confirmation
-    app.on_delete_item += mail.pre_delete_confirmation
-    app.on_replace += mail.pre_replace_confirmation
+    # Add confirmed field to incoming signups
+    app.on_insert_item_eventsignups += add_confirmed_before_insert
+    app.on_insert_eventsignups += add_confirmed_before_insert_bulk
+    # Sending confirmation mails
+    app.on_inserted_item_eventsignups += send_confirmmail_to_unregistered_users
+    app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users_bulk
 
-    # Hooks to move 'email' to '_unregistered_email' after db access
-    app.on_insert_eventsignups += mail.replace_email_insert
-    app.on_update_eventsignups += mail.replace_email_update
-    app.on_replace_eventsignups += mail.replace_email_replace
-
-    # Hooks to move '_unregistered_email' to 'email' after db access
-    app.on_inserted_eventsignups += mail.replace_email_inserted
-    app.on_fetched_item_eventsignups += mail.replace_email_fetched_item
-    app.on_fetched_resource_eventsignups += mail.replace_email_fetched_resource
-    app.on_replaced_eventsignups += mail.replace_email_replaced
-    app.on_updated_eventsignups += mail.replace_email_updated
-
-    # Hooks to remove tokens from output
-    app.on_inserted_eventsignups += mail.remove_token_inserted
-    app.on_fetched_item_eventsignups += mail.remove_token_fetched_item
-    app.on_fetched_resource_eventsignups += mail.remove_token_fetched_resource
-    app.on_replaced_eventsignups += mail.remove_token_replaced
+    app.register_blueprint(confirmprint)
