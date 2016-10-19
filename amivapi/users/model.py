@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
-from amivapi.utils import EMAIL_REGEX
+from amivapi.settings import EMAIL_REGEX
 
 from .security import UserAuth
 
