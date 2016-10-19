@@ -22,9 +22,8 @@ from flask.testing import FlaskClient
 from flask.wrappers import Response
 from eve.methods.post import post_internal
 
-from amivapi import bootstrap
-from amivapi.settings import ROOT_PASSWORD, ROOT_ID
-from amivapi.utils import EMAIL_REGEX
+from amivapi import bootstrap, utils
+from amivapi.settings import ROOT_PASSWORD, ROOT_ID, EMAIL_REGEX
 
 
 def find_by_pair(dicts, key, value):
