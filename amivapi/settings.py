@@ -42,6 +42,7 @@ TESTING = False
 # ID_FIELD = "id"  # This seems to cause some problems. TODO(ALEX): investigate
 # AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+EMAIL_REGEX = '^.+@.+$'
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
