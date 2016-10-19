@@ -48,7 +48,6 @@ import pytz
 from bson import ObjectId
 from datetime import datetime, date, timedelta
 
-from flask import current_app
 from eve.methods.post import post_internal
 
 from amivapi.settings import ROOT_PASSWORD, ROOT_ID, EMAIL_REGEX
@@ -131,7 +130,7 @@ class FixtureMixin(object):
         preprocess_func = getattr(self, 'preprocess_%s' % resource, None)
         if preprocess_func:
             preprocess_func(schema, obj, fixture)
-        
+
         # We iterate over the schema to fix missing fields with random values
         for field, field_def in schema.items():
             if (field not in obj
@@ -240,10 +239,10 @@ class FixtureMixin(object):
                       self.db['events'].find({'spots': {'$ne': None}})]
         else:
             events = [obj['event']]
-            
+
         random.shuffle(events)
         random.shuffle(users)
-            
+
         for ev in events:
             for u in users:
                 if self.db['eventsignups'].find(
@@ -255,8 +254,8 @@ class FixtureMixin(object):
         raise BadFixtureException("Requested eventsignup creation, but no "
                                   "unique user/event combination is "
                                   "available anymore. Parsed object: %s"
-                                  % obj)            
-            
+                                  % obj)
+
     def create_random_value(self, definition):
         """Create a random value for the given cerberus field description."""
         # If there is a list of allowed values, just pick one
