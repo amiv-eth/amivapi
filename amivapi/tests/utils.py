@@ -180,7 +180,7 @@ class WebTest(unittest.TestCase):
         self.app = bootstrap.create_app(**self.test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
-        self.api = self.app.test_client()
+        self.app.test_mails = []
 
         # Create a separate mongo connection and db reference for tests
         self.connection = MongoClient(self.app.config['MONGO_HOST'],
