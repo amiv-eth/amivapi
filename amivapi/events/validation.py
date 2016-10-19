@@ -5,12 +5,13 @@
 """Event Validation."""
 
 import json
+import pytz
 from datetime import datetime
 
-from flask import g, current_app
+from flask import g, current_app, request
 
-from eve.utils import request_method
 from eve.validation import SchemaError
+from eve.utils import str_to_date
 
 
 class EventValidator(object):
@@ -29,14 +30,14 @@ class EventValidator(object):
         try:
             json_data = json.loads(value)
         except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception:" +
-                        " %s" % str(e))
+            self._error(field, "Must be json, parsing failed with exception: %s"
+                        % str(e))
         else:
             try:
                 self.validate_schema(json_data)
             except SchemaError as e:
-                self._error(field, "additional_fields does not contain a " +
-                            "valid schema: %s" % str(e))
+                self._error(field, "does not contain a valid schema: %s"
+                            % str(e))
 
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.
@@ -55,32 +56,34 @@ class EventValidator(object):
             else:
                 data = {}  # Do not crash if ''
         except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception:" +
-                        " %s" % str(e))
+            self._error(field, "Must be json, parsing failed with exception: %s"
+                        % str(e))
+
+        id_field = current_app.config['ID_FIELD']
+        # At this point we have valid JSON, check for event now.
+        # If PATCH, then event_id will not be provided, we have to find it
+        if request.method == 'PATCH':
+            lookup = {id_field: self._original_document['event']}
+        elif ('event' in self.document.keys()):
+            lookup = {id_field: self.document['event']}
         else:
-            # At this point we have valid JSON, check for event now.
-            # If PATCH, then event_id will not be provided, we have to find it
-            if request_method() == 'PATCH':
-                lookup = {'id': self._original_document['event_id']}
-            elif ('event_id' in self.document.keys()):
-                lookup = {'id': self.document['event_id']}
-            else:
-                self._error(field, "Cannot evaluate additional fields " +
-                                   "without event_id")
-                return
+            self._error(field, "Cannot evaluate additional fields "
+                        "without event")
 
-            event = current_app.data.find_one('events', None, **lookup)
+        event = current_app.data.find_one('events', None, **lookup)
 
-            # Load schema, we can use this without caution because only valid
-            # json schemas can be written to the database
-            if event is not None:
-                schema = json.loads(event['additional_fields'])
-                v = current_app.validator(schema)  # Create a new validator
-                v.validate(data)
+        # Load schema, we can use this without caution because only valid
+        # json schemas can be written to the database
+        if event is not None:
+            schema = json.loads(event['additional_fields'])
+            v = current_app.validator(schema)  # Create a new validator
+            v.validate(data)
 
-                # Move errors to main validator
-                for key in v.errors.keys():
-                    self._error("%s: %s" % (field, key), v.errors[key])
+            # Move errors to main validator
+            for key in v.errors.keys():
+                self._error("%s: %s" % (field, key), v.errors[key])
+
+        # if event id is not valid another validator will fail anyway
 
     def _validate_signup_requirements(self, signup_possible, field, value):
         """Validate if signup requirements are met.
@@ -88,7 +91,7 @@ class EventValidator(object):
         Used for an event_id field - checks if the value "spots" is
         not -1. In this case there is no signup.
 
-        Furthermore checks if current time is in the singup window for the
+        Furthermore checks if current time is in the signup window for the
         event.
 
         At last check if the event requires additional fields and display error
@@ -103,37 +106,38 @@ class EventValidator(object):
             value: field value.
         """
         if signup_possible:
-            event = current_app.data.find_one('events', None, id=value)
+            event_id = self.document.get('event', None)
+            lookup = {current_app.config['ID_FIELD']: event_id}
+            event = current_app.data.find_one("events", None, **lookup)
 
             if event:
-                if (event['spots'] == -1):
-                    self._error(field, "the event with id %s has no signup" %
-                                value)
+                if event['spots'] is None:
+                    self._error(field, "the event with id %s has no signup"
+                                % value)
                 else:
                     # The event has signup, check if it is open
-                    now = datetime.utcnow()
+                    now = datetime.now(pytz.utc)
                     if now < event['time_register_start']:
-                        self._error(field, "the signup for event with %s is"
+                        self._error(field, "the signup for event with %s is "
                                     "not open yet." % value)
                     elif now > event['time_register_end']:
-                        self._error(field, "the signup for event with id %s"
+                        self._error(field, "the signup for event with id %s "
                                     "closed." % value)
 
                 # If additional fields is missing still call the validator,
                 # except an emtpy string, then the valid
-                if (event['additional_fields'] and
+                if (event.get('additional_fields', False) and
                         ('additional_fields' not in self.document.keys())):
                     # Use validator to get accurate errors
                     self._validate_type_json_event_field('additional_fields',
                                                          None)
 
     def _validate_only_self_enrollment_for_event(self, enabled, field, value):
-        """Validate if the id can be used to enroll for an event.
+        """Validate if the user can be used to enroll for an event.
 
-        1.  -1 is a public id, anybody can use this (to e.g. sign up a friend
-            via mail) (if public has to be determined somewhere else)
+        1.  Anyone can signup with no user id
         2.  other id: Registered users can only enter their own id
-        3.  Exception are resource_admins: they can sign up others as well
+        3.  Exception are resource admins: they can sign up others as well
 
         Args:
             enabled (bool): validates nothing if set to false
@@ -141,12 +145,14 @@ class EventValidator(object):
             value: field value.
         """
         if enabled:
-            if not(g.resource_admin or (g.logged_in_user == value)):
+            if g.resource_admin or value is None:
+                return
+            if g.current_user != str(value):
                 self._error(field, "You can only enroll yourself. (%s: "
                             "%s is yours)." % (field, g.logged_in_user))
 
     def _validate_email_signup_must_be_allowed(self, enabled, field, value):
-        """Validation for a event_id field in eventsignups.
+        """Validation for a event field in eventsignups.
 
         Validates if the event allows self enrollment.
 
@@ -159,31 +165,32 @@ class EventValidator(object):
         """
         if enabled:
             # Get event
-            event_id = self.document.get('event_id', None)
-            event = current_app.data.find_one("events", None, id=event_id)
+            event_id = self.document.get('event', None)
+            lookup = {current_app.config['ID_FIELD']: event_id}
+            event = current_app.data.find_one("events", None, **lookup)
 
-            # If the event doesnt exist we dont have to do anything,
+            # If the event doesnt exist we do not have to do anything,
             # The 'type' validator will generate an error anyway
-            if event is not None and not(event["allow_email_signup"]):
+            if event is not None and not event["allow_email_signup"]:
                 self._error(field,
-                            "event with id '%s' does not allow signup with "
-                            "email address." % event_id)
+                            "event %s does not allow signup with email address"
+                            % event_id)
 
-    def _validate_only_anonymous(self, only_anonymous, field, valie):
-        """Make sure that the user is anonymous.
-
-        If you use this validator, ensure that there is a field 'user_id' in
-        the same resource, e.g. by setting a dependancy
+    def _validate_depends_any(self, any_of_fields, field, value):
+        """Validate, that any of the dependent fields is available
 
         Args:
-            only_anonymous (bool): validates nothing if set to false
-            field (string): field name.
-            value: field value.
+            any_of_fields (list of strings): A list of fields. One of those
+                                             fields must be provided.
+            field (string): This fields name
+            value: This fields value
         """
-        if only_anonymous:
-            if not(self.document.get('user_id', None) == -1):
-                self._error(field, "This field can only be set for anonymous "
-                            "users with user_id -1")
+        if request.method == 'POST':
+            for possible_field in any_of_fields:
+                if possible_field in self.document:
+                    return
+            self._error(field, "May only be provided, if any of %s is set"
+                        % ", ".join(any_of_fields))
 
     def _validate_later_than(self, later_than, field, value):
         """Validate time dependecy.
@@ -194,21 +201,44 @@ class EventValidator(object):
         :param field: field name.
         :param value: field value.
         """
-        if value < self.document[later_than]:
+        if later_than in self.document:
+            first_time = self.document[later_than]
+        else:
+            first_time = self._original_document[later_than]
+
+        if not isinstance(first_time, datetime):
+            # We need to parse the time for some reason
+            first_time = str_to_date(first_time)
+
+        if value < first_time:
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
-    def _validate_if_this_then(self, if_this_then, field, value):
+    def _validate_requires_if_not_null(self, required_fields, field, value):
         """Validate integer condition.
 
-        if value > 0, then other fields must exist
+        if value is not None, then other fields must exist
 
         Args:
-            if_this_then (list): fields that are required if value > 0.
+            required_fields (list): fields that are required if value => 0.
             field (string): field name.
             value: field value.
         """
-        if value > 0:
-            for item in if_this_then:
+        if value is not None:
+            for item in required_fields:
                 if item not in self.document.keys():
-                    self._error(item, "Required field.")
+                    self._error(item,
+                                "Required field for not null valued %s" % field)
+
+    def _validate_only_if_not_null(self, only_if_not_null,
+                                   field, value):
+        """The field may only be set if, another field is not None
+
+        Args:
+            depends_not_null (string): The field, that may not be None
+            field (string): name of the validated field
+            value: Value of the validated field
+        """
+        if self.document.get(only_if_not_null) is None:
+            self._error(field, "May only be specified if %s is not null"
+                        % only_if_not_null)
