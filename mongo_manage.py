@@ -318,8 +318,19 @@ def create_config(force=False,
         ldap_pass = prompt("LDAP password")
         config['LDAP_PASS'] = ldap_pass
 
+    config['EMAIL_CONFIRMED_REDIRECT'] = prompt(
+        "Where should people be redirected after successful email address "
+        "validation?",
+        default="http://lmgtfy.com/?q=your+email+address+was+verified")
+
+    config['SERVER_NAME'] = prompt(
+        "Server name? This is used to generate E-Mail links.", 'localhost:5000')
+
     # APIKEYS
     config['APIKEYS'] = {}
+
+    # generate a secret, which is used to sign email confirmation tokens
+    config['TOKEN_SECRET'] = urandom(32)
 
     # Write everything to file
     # Note: The file is opened in non-binary mode, because we want python to

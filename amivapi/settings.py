@@ -75,6 +75,13 @@ PERMISSION_EXPIRED_WARNMAIL_TEXT = (
     " %(admin_mail)s.\n\nRegards\n\nAutomatically sent by AMIV API"
 )
 
+# Email sent to external users signing up for events
+CONFIRM_EMAIL_TEXT = (
+    "Hello from AMIV!\n\nYou have signed up for %(title)s with your E-Mail "
+    "address. To verify this is a valid address and keep your spot please click"
+    " this link: %(link)s\n\nBest regards,\nAMIV!"
+)
+
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [
     u'Biomedical Engineering MSc',
