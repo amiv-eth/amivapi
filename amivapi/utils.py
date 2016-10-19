@@ -122,29 +122,36 @@ def get_owner(model, id):
 def mail(sender, to, subject, text):
     """Send a mail to a list of recipients.
 
-    :param from: From address
-    :param to: List of recipient addresses
-    :param subject: Subject string
-    :param text: Mail content
+    Args:
+        from(string): From address
+        to(list of strings): List of recipient addresses
+        subject(string): Subject string
+        text(string): Mail content
     """
-    msg = MIMEText(text)
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = ';'.join(to)
+    if app.config.get('TESTING', False):
+        app.test_mails.append({
+            'subject': subject,
+            'from': sender,
+            'receivers': to,
+            'text': text
+        })
+    else:
+        msg = MIMEText(text)
+        msg['Subject'] = subject
+        msg['From'] = sender
+        msg['To'] = ';'.join(to)
 
-    try:
-        s = smtplib.SMTP(config.SMTP_SERVER)
         try:
-            s.sendmail(msg['From'], to, msg.as_string())
-        except smtplib.SMTPRecipientsRefused as e:
-            print("Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
-                  % (sender, str(to), subject, text))
-        s.quit()
-    except smtplib.SMTPException as e:
-        print("SMTP error trying to send mails: %s" % e)
-
-
-EMAIL_REGEX = '^.+@.+$'
+            s = smtplib.SMTP(config.SMTP_SERVER)
+            try:
+                s.sendmail(msg['From'], to, msg.as_string())
+            except smtplib.SMTPRecipientsRefused as e:
+                app.logger.error(
+                    "Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
+                    % (sender, str(to), subject, text))
+            s.quit()
+        except smtplib.SMTPException as e:
+            app.logger.error("SMTP error trying to send mails: %s" % e)
 
 
 class ValidatorAMIV(Validator):

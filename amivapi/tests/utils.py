@@ -186,6 +186,7 @@ class WebTest(unittest.TestCase):
         self.app = bootstrap.create_app(**self.test_config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
+        self.app.test_mails = []
 
         # connect to testing database and create user
         self.db = self.connection[self.test_config['MONGO_DBNAME']]
