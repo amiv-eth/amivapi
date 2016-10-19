@@ -5,8 +5,6 @@
 """Utilities."""
 
 
-from base64 import urlsafe_b64encode
-from os import urandom
 import smtplib
 from email.mime.text import MIMEText
 from copy import deepcopy
