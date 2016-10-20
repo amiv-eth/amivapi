@@ -5,3 +5,5 @@ Flask==0.10.1
 passlib==1.6.5
 jsonschema==2.5.1
 click==6.6
+pytz==2016.7
+ruamel.yaml==0.12.14
