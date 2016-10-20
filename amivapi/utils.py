@@ -12,11 +12,9 @@ from email.mime.text import MIMEText
 from copy import deepcopy
 from contextlib import contextmanager
 
-from flask import Config, request, g, current_app as app
+from flask import request, g, current_app as app
 from eve.utils import config
 from eve.io.mongo import Validator
-
-from amivapi.settings import ROOT_DIR
 
 
 @contextmanager
@@ -36,22 +34,6 @@ def admin_permissions():
     app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
-
-
-def get_config():
-    """Load the config from settings.py and updates it with config.cfg.
-
-    :returns: Config dictionary
-    """
-    config = Config(ROOT_DIR)
-    config.from_object("amivapi.settings")
-    try:
-        config.from_pyfile("mongo_config.cfg")
-    except IOError as e:
-        raise IOError(str(e) + "\nYou can create it by running "
-                      "`python manage.py create_config`.")
-
-    return config
 
 
 def get_class_for_resource(resource):

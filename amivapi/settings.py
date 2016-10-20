@@ -9,16 +9,30 @@ These settings will be extended by additional config files in ROOT/config.
 Run `python manage.py create_config` to create such a config file.
 """
 
-from os.path import abspath, dirname, join
 from datetime import timedelta
 
 from passlib.context import CryptContext
 
-from bson import ObjectId
+# Flask
 
+DEBUG = False
+TESTING = False
 
-# Custom
-ROOT_DIR = abspath(join(dirname(__file__), ".."))
+# Eve
+
+# AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
+DOMAIN = {}  # Empty add first, resource will be added in bootstrap
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+BANDWIDTH_SAVER = False
+RESOURCE_METHODS = ['GET', 'POST']
+ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
+XML = False
+X_DOMAINS = '*'
+X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
+RETURN_MEDIA_AS_BASE64_STRING = False
+EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
+
+# Amivapi
 
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
@@ -32,47 +46,10 @@ PASSWORD_CONTEXT = CryptContext(
     pbkdf2_sha256__min_rounds=8 * 10 ** 4,
 )
 
-# Flask
-DEBUG = False
-TESTING = False
-
-# Flask-SQLALchemy
-
-# Eve
-# ID_FIELD = "id"  # This seems to cause some problems. TODO(ALEX): investigate
-# AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-BANDWIDTH_SAVER = False
-RESOURCE_METHODS = ['GET', 'POST']
-ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
-# TODO: Not needed anymore, remove soon
-# PUBLIC_METHODS = ['GET']  # This is the only way to make / public
-XML = False
-X_DOMAINS = '*'
-X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
-
-# Eve, file storage options
-RETURN_MEDIA_AS_BASE64_STRING = False
-EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
-
 SESSION_TIMEOUT = timedelta(days=365)
 
-# The ObjectId the root user will have
-# There are always 24 character strings. So it will be just 24 zeros
-ROOT_ID = ObjectId(24 * "0")
+# Default root password
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
-
-# Text for automatically sent mails
-
-# First argument is role name
-PERMISSION_EXPIRED_WARNMAIL_SUBJECT = (
-    "Your permissions as %(role)s at AMIV are about to expire")
-# First argument is name, second role, third admin email
-PERMISSION_EXPIRED_WARNMAIL_TEXT = (
-    "Hello %(name)s,\nYour permissions as %(role)s at AMIV will expire in 14 "
-    "days. If you want to get them renewed please sent an E-Mail to "
-    " %(admin_mail)s.\n\nRegards\n\nAutomatically sent by AMIV API"
-)
 
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [
