@@ -5,9 +5,11 @@
 
 """API factory."""
 
+from os import getcwd
+
+from flask import Config
 from eve import Eve
 # from eve_docs import eve_docs
-# from flask.ext.bootstrap import Bootstrap
 
 from amivapi import (
     users,
@@ -15,7 +17,6 @@ from amivapi import (
     events,
     # media,
     # groups,
-    # ldap,
     # documentation,
     utils,
     # joboffers,
@@ -23,26 +24,32 @@ from amivapi import (
     # studydocs
 )
 from amivapi.ldap import ldap_connector
-
-from amivapi.utils import get_config
 from amivapi import cascade
 
 
-def create_app(**kwargs):
+def create_app(config_file='mongo_config.cfg', **kwargs):
     """
     Create a new eve app object and initialize everything.
 
-    :param disable_auth: This can be used to allow every request without
-                         authentication for testing purposes
-    :param **kwargs: All other parameters overwrite config values
-    :returns: eve.Eve object, the app object
+    Args:
+        config (path or dict): If dict, use directly to update config, if its
+            a path load the file and update config.
+            If no config is provided, attemp to find it in the current working
+            directory
+        kwargs: All other key-value arguments will be used to update the config
+    Returns:
+        (Eve): The Eve application
     """
-    config = get_config()
-    # Unless specified start with empty domain and add resources later
-    config.setdefault('DOMAIN', {})
-    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    config = Config(getcwd())
+    config.from_object("amivapi.settings")
+    try:
+        config.from_pyfile(config_file)
+    except IOError as e:
+        raise IOError(str(e) + "\nYou can create it by running "
+                      "`python manage.py create_config`.")
     config.update(kwargs)
 
+    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     app = Eve(settings=config,
               validator=utils.ValidatorAMIV)
 
@@ -52,9 +59,8 @@ def create_app(**kwargs):
     # Bootstrap(app)
 
     # Create LDAP connector
-    # if config['ENABLE_LDAP']:
-    #    app.ldap_connector = ldap.LdapConnector(config['LDAP_USER'],
-    #                                            config['LDAP_PASS'])
+    if app.config['ENABLE_LDAP']:
+        ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
     # app.register_blueprint(eve_docs, url_prefix="/docs")
