@@ -4,6 +4,8 @@
 # license: AGPL, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
+"""Install amivapi. Provide the amivapi command."""
+
 from setuptools import setup, find_packages
 
 with open('LICENSE') as f:
@@ -21,4 +23,8 @@ setup(
     test_suite="amivapi.tests",
     tests_require=[],
     packages=find_packages(),
+    entry_points='''
+        [console_scripts]
+        amivapi=amivapi.cli:cli
+    '''
 )
