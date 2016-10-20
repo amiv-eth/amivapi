@@ -87,4 +87,8 @@ def on_confirm_email(token):
                    skip_validation=True, concurrency_check=False,
                    **{current_app.config['ID_FIELD']: signup_id})
 
-    return redirect(current_app.config['EMAIL_CONFIRMED_REDIRECT'])
+    redirect_url = current_app.config.get('EMAIL_CONFIRMED_REDIRECT')
+    if redirect_url:
+        return redirect(redirect_url)
+    else:
+        return current_app.config['CONFIRM_TEXT']

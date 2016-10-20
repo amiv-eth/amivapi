@@ -52,6 +52,16 @@ SESSION_TIMEOUT = timedelta(days=365)
 # Default root password
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
 
+# Email sent to external users signing up for events
+CONFIRM_EMAIL_TEXT = (
+    "Hello from AMIV!\n\nYou have signed up for %(title)s with your E-Mail "
+    "address. To verify this is a valid address and keep your spot please click"
+    " this link: %(link)s\n\nBest regards,\nAMIV!"
+)
+
+# Signup confirmation without redirct
+CONFIRM_TEXT = "Your singup was confirmed!"
+
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [
     u'Biomedical Engineering MSc',
