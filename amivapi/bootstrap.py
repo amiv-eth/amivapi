@@ -14,7 +14,7 @@ from eve import Eve
 from amivapi import (
     users,
     auth,
-    # events,
+    events,
     # media,
     # groups,
     # documentation,
@@ -68,7 +68,7 @@ def create_app(config_file='mongo_config.cfg', **kwargs):
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
     auth.init_app(app)
-    # events.init_app(app)
+    events.init_app(app)
     # groups.init_app(app)
     # joboffers.init_app(app)
     purchases.init_app(app)

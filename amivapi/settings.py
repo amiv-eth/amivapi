@@ -23,6 +23,7 @@ TESTING = False
 # AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
 DOMAIN = {}  # Empty add first, resource will be added in bootstrap
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+EMAIL_REGEX = '^.+@.+$'
 BANDWIDTH_SAVER = False
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
@@ -50,6 +51,13 @@ SESSION_TIMEOUT = timedelta(days=365)
 
 # Default root password
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
+
+# Email sent to external users signing up for events
+CONFIRM_EMAIL_TEXT = (
+    "Hello from AMIV!\n\nYou have signed up for %(title)s with your E-Mail "
+    "address. To verify this is a valid address and keep your spot please click"
+    " this link: %(link)s\n\nBest regards,\nAMIV!"
+)
 
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [
