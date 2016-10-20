@@ -45,7 +45,7 @@ def send_confirmmail_to_unregistered_users(item):
         }
         email_content = current_app.config['CONFIRM_EMAIL_TEXT'] % fields
 
-        mail(current_app.config['ROOT_MAIL'],  # from
+        mail(current_app.config['API_MAIL'],  # from
              [item['email']],  # receivers list
              'Registration for AMIV event %s' % title,
              email_content)

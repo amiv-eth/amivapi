@@ -131,7 +131,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'MONGO_DBNAME': 'test_amivapi',
         'STORAGE_DIR': '',
         'FORWARD_DIR': '',
-        'ROOT_MAIL': 'nobody@example.com',
+        'API_MAIL': 'api@test.ch',
         'SMTP_SERVER': '',
         'APIKEYS': {},
         'TESTING': True,
