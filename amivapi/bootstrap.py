@@ -6,6 +6,7 @@
 """API factory."""
 
 from os import getcwd
+from ruamel import yaml
 
 from flask import Config
 from eve import Eve
@@ -21,13 +22,14 @@ from amivapi import (
     utils,
     # joboffers,
     purchases,
+    cascade
     # studydocs
 )
 from amivapi.ldap import ldap_connector
-from amivapi import cascade
+from amivapi.settings import DEFAULT_CONFIG_FILENAME
 
 
-def create_app(config_file='mongo_config.cfg', **kwargs):
+def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
@@ -40,13 +42,18 @@ def create_app(config_file='mongo_config.cfg', **kwargs):
     Returns:
         (Eve): The Eve application
     """
+    # Load config
     config = Config(getcwd())
     config.from_object("amivapi.settings")
     try:
-        config.from_pyfile(config_file)
+        with open(config_file, 'r') as f:
+            yaml_data = yaml.load(f)
     except IOError as e:
         raise IOError(str(e) + "\nYou can create it by running "
-                      "`python manage.py create_config`.")
+                      "`amivapi create_config`.")
+    else:
+        config.update(yaml_data)
+
     config.update(kwargs)
 
     # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()

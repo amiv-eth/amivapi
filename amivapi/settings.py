@@ -34,6 +34,7 @@ RETURN_MEDIA_AS_BASE64_STRING = False
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
 
 # Amivapi
+DEFAULT_CONFIG_FILENAME = 'config.yaml'
 
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
