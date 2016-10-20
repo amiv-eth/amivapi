@@ -50,7 +50,7 @@ from datetime import datetime, date, timedelta
 
 from eve.methods.post import post_internal
 
-from amivapi.settings import ROOT_PASSWORD, EMAIL_REGEX
+from amivapi.settings import EMAIL_REGEX
 from amivapi.utils import admin_permissions
 
 
