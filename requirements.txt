@@ -1,8 +1,7 @@
 -e git+https://github.com/hermannsblum/eve-docs.git@c36c5a2d637c244f3b5c3fd443dbd911eff037bd#egg=Eve_docs-master
 -e git+https://github.com/NotSpecial/nethz.git@55f8c9e4fdcc1c0af156f47b40be63f3066eafad#egg=nethz
-Flask==0.10
 Eve==0.6.4
+Flask==0.10.1
 passlib==1.6.5
-Flask-Script==2.0.5
 jsonschema==2.5.1
-pytz==2016.7
+click==6.6
