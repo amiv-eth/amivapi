@@ -23,7 +23,8 @@ def cli():
 
 @cli.command()
 @option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None)
+        default=None,
+        help="use specified config file")
 def run(config):
     """Start amivapi development server."""
     app = create_app(config) if config else create_app()
@@ -42,34 +43,49 @@ def no_ldap_prompts(ctx, param, value):
 
 @cli.command()
 # Server settings
-@option("--server", "SERVER_NAME", prompt=True, default="localhost")
-@option("--debug/--no-debug", "DEBUG", default=False, prompt=True)
+@option("--server", "SERVER_NAME", default="localhost",
+        prompt=True,
+        help="server name")
+@option("--debug/--no-debug", "DEBUG", default=False,
+        prompt="Enable debug mode",
+        help="debug mode on/off")
 # Email settings
 @option("--smtp", "SMTP_SERVER", default="localhost",
-        prompt=True)
+        prompt="STMP server for outgoing mails",
+        help="SMTP server")
 @option("--mail", "API_MAIL", default="api@amiv.ethz.ch",
-        prompt=True)
+        prompt="E-mail address for outgoing mails",
+        help="api mail address")
 # Database settings
 @option("--mongo-host", "MONGO_HOST", default='localhost',
-        prompt=True)
+        prompt="MongoDB hostname",
+        help="MongoDB hostname")
 @option("--mongo-port", "MONGO_PORT", default=27017,
-        prompt=True)
+        prompt="MongoDB port",
+        help="MongoDB port")
 @option("--mongo-username", "MONGO_USERNAME", default="",
-        prompt=True)
+        prompt="MongoDB username",
+        help="MongoDB username")
 @option("--mongo-password", "MONGO_PASSWORD", default="",
-        prompt=True)
+        prompt="MongoDB password",
+        help="MongoDB password")
 @option("--mongo-dbname", "MONGO_DBNAME", default='amivapi',
-        prompt=True)
+        prompt="MongoDB database name",
+        help="MongoDB database name")
 # LDAP settings
 @option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
-        prompt=True, callback=no_ldap_prompts)
+        callback=no_ldap_prompts,
+        prompt="Enable LDAP",
+        help="LDAP on/off")
 @option("--ldap-user", "LDAP_USER",
-        prompt=True)
+        prompt="LDAP username",
+        help="LDAP username")
 @option("--ldap-pass", "LDAP_PASS",
-        prompt=True)
+        prompt="LDAP password",
+        help="LDAP password")
 # Specify config file (optional)
-@argument("config", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
-def create_config(config, **data):
+@argument("file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
+def create_config(file, **data):
     """Generate a config file."""
     # Add secret for token generation
     data['TOKEN_SECRET'] = b64encode(urandom(32)).decode('utf_8')
@@ -80,5 +96,5 @@ def create_config(config, **data):
         del data['LDAP_USER']
         del data['LDAP_PASS']
 
-    config.write("# Automatically generated on %s\n\n" % dt.utcnow())
-    yaml.safe_dump(data, config, default_flow_style=False)
+    file.write("# Automatically generated on %s\n\n" % dt.utcnow())
+    yaml.safe_dump(data, file, default_flow_style=False)
