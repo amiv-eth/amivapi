@@ -50,7 +50,7 @@ from datetime import datetime, date, timedelta
 
 from eve.methods.post import post_internal
 
-from amivapi.settings import ROOT_PASSWORD, ROOT_ID, EMAIL_REGEX
+from amivapi.settings import ROOT_PASSWORD, EMAIL_REGEX
 from amivapi.utils import admin_permissions
 
 
@@ -162,16 +162,13 @@ class FixtureMixin(object):
 
         if 'password' not in obj:
             username = obj['username']
-            if username in (u'root', str(ROOT_ID),
-                            self.app.config['ROOT_MAIL']):
-                obj['password'] = ROOT_PASSWORD
-            else:
-                # find the user in the fixture and insert his password
-                for user in fixture['users']:
-                    if username in (user.get('nethz'),
-                                    user.get('email'),
-                                    str(user.get('_id'))):
-                        obj['password'] = user['password']
+
+            # find the user in the fixture and insert his password
+            for user in fixture['users']:
+                if username in (user.get('nethz'),
+                                user.get('email'),
+                                str(user.get('_id'))):
+                    obj['password'] = user['password']
 
             if 'password' not in obj:
                 raise BadFixtureException(
