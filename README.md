@@ -15,9 +15,9 @@ You should also use a [virtual environment](http://docs.python-guide.org/en/late
 
 ### Installation
 
-> git clone -b mongo https://github.com/amiv-eth/amivapi.git amivapi
-> cd amivapi
-> pip install -r requirements.txt
+    git clone -b mongo https://github.com/amiv-eth/amivapi.git amivapi
+    cd amivapi
+    pip install -r requirements.txt
 
 This will also install amivapi in editable mode (take a look at 
 `requirements.txt` if you are curious) which will allow us to use the command
@@ -27,11 +27,11 @@ line interface of amivapi.
 
 First you need a config file:
 
-> amivapi create_config
+    amivapi create_config
 
 Now you are basically done, if you want to start a development server just type
 
-> amivapi run
+    amivapi run
 
 ### Production
 
