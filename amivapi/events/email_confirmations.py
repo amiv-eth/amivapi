@@ -36,7 +36,7 @@ def send_confirmmail_to_unregistered_users(item):
             title = event['title_de']
 
         token = Signer(current_app.config['TOKEN_SECRET']).sign(
-            str(item['_id']))
+            str(item['_id']).encode('utf-8'))
 
         fields = {
             'link': url_for('confirm.on_confirm_email', token=token,
@@ -79,7 +79,7 @@ def on_confirm_email(token):
     """
     try:
         s = Signer(current_app.config['TOKEN_SECRET'])
-        signup_id = ObjectId(s.unsign(token))
+        signup_id = ObjectId(s.unsign(token).decode('utf-8'))
     except BadSignature:
         return "Unknown token"
 
