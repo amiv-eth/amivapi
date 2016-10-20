@@ -34,9 +34,8 @@ class FixtureTest(WebTest):
 
         self.load_fixture(fixture)
 
-        # Find all non root users
-        users = self.db['users'].find(
-            {'_id': {'$ne': self.app.config['ROOT_ID']}})
+        # Find all users
+        users = self.db['users'].find()
 
         self.assertEqual(users.count(), 1)
         self.assertEqual(users[0]['nethz'], 'pablo')
