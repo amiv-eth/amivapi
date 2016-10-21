@@ -38,6 +38,10 @@ def send_confirmmail_to_unregistered_users(item):
         token = Signer(current_app.config['TOKEN_SECRET']).sign(
             str(item['_id']).encode('utf-8'))
 
+        if current_app.config.get('SERVER_NAME') is None:
+            current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
+                                       "will not work!")
+
         fields = {
             'link': url_for('confirm.on_confirm_email', token=token,
                             _external=True),

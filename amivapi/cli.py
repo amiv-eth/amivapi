@@ -42,9 +42,6 @@ def no_ldap_prompts(ctx, param, value):
 
 @cli.command()
 # Server settings
-@option("--server", "SERVER_NAME", default="localhost",
-        prompt=True,
-        help="server name")
 @option("--debug/--no-debug", "DEBUG", default=False,
         prompt="Enable debug mode",
         help="debug mode on/off")
