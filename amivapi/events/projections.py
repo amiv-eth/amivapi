@@ -32,5 +32,5 @@ def add_signup_count_to_event(item):
 
 
 def add_signup_count_to_event_collection(items):
-    for item in items:
+    for item in items['_items']:
         add_signup_count_to_event(item)
