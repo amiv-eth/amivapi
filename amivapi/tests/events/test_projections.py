@@ -23,6 +23,10 @@ class EventProjectionTest(WebTestNoAuth):
         event = self.api.get('/events/%s' % event['_id'], status_code=200).json
         self.assertEqual(event['signup_count'], 10)
 
+        # Test for collection
+        events = self.api.get('/events', status_code=200).json
+        self.assertEqual(events['_items'][0]['signup_count'], 10)
+
     def test_signup_email_correct(self):
         """Test that signups display the correct email address"""
         event = self.new_object('events', spots=100)
@@ -48,3 +52,7 @@ class EventProjectionTest(WebTestNoAuth):
         signup = self.api.get('/eventsignups/%s' % signup['_id'],
                               status_code=200).json
         self.assertEqual(signup['confirmed'], False)
+
+        # Test for collection
+        signups = self.api.get('/eventsignups', status_code=200).json
+        self.assertEqual(signups['_items'][0]['confirmed'], False)
