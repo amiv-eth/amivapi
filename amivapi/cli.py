@@ -12,7 +12,7 @@ from click import group, option, argument, Path, File
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
-from amivapi.settings import DEFAULT_CONFIG_FILENAME
+from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR
 
 
 @group()
@@ -68,6 +68,11 @@ def no_ldap_prompts(ctx, param, value):
 @option("--mongo-dbname", "MONGO_DBNAME", default='amivapi',
         prompt="MongoDB database name",
         help="MongoDB database name")
+# Storage settings
+@option("--storage-dir", "STORAGE_DIR", default=STORAGE_DIR,
+        type=Path(file_okay=False, resolve_path=True),
+        prompt="Directory to store all file uploads",
+        help="file storage directory")
 # LDAP settings
 @option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
         callback=no_ldap_prompts,

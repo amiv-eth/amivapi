@@ -7,37 +7,32 @@
 
 Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 
-Adds an endpoint to serve media files
+
 """
 
-from os import path, remove
-from io import FileIO
+from os import path, remove, makedirs
 import errno
 from imghdr import what
-
+from itsdangerous import Signer, BadSignature
 from werkzeug import secure_filename, FileStorage
-from flask import abort, Blueprint, send_from_directory, current_app as app
 
-from amivapi.auth.authorization import common_authorization
 from amivapi.utils import register_validator, register_domain
 
 
-class ExtFile(FileIO):
-    """This Class extends the normal file object.
+class FileWrapper(object):
+    """Put a little wrapper around a file so we can set attributes."""
 
-    Includes filename (basename of the file), size and content_url
-    """
-
-    def __init__(self, filename):
+    def __init__(self, file_):
         """Init."""
-        FileIO.__init__(self, filename)
-        self.filename = path.basename(self.name)
-        self.size = path.getsize(filename)
-        self.content_url = '%s/%s' % ('/storage', self.filename)
+        self._file = file_
+
+    def __getattr__(self, attr):
+        """Pass everything to the file."""
+        return getattr(self._file, attr)
 
     def close(self):
-        """Close internal file object."""
-        FileIO.close(self)
+        print("closed")
+        return self._file.close()
 
 
 class FileSystemStorage(object):
@@ -46,10 +41,19 @@ class FileSystemStorage(object):
     def __init__(self, app=None):
         """Init storage."""
         self.app = app
+        self.signer = Signer(self.app.config['TOKEN_SECRET'])
 
-    def fullpath(self, filename):
-        """Add storage path specified in config to the filename."""
-        return path.join(self.app.config['STORAGE_DIR'], filename)
+    def fullpath(self, filename, create=False):
+        """Add storage path specified in config to the filename.
+
+        Args:
+            filename (str): the name of the file to save
+            create (bool): If true, create all dirs along path.
+        """
+        path = self.app.config['STORAGE_DIR']
+        if create:
+            makedirs(path, exist_ok=True)
+        return path.join(path, filename)
 
     def get(self, filename):
         """Open the file given by name.
@@ -64,7 +68,11 @@ class FileSystemStorage(object):
             return None  # Without filename, there will be no file
 
         try:
-            f = ExtFile(self.fullpath(filename))
+            f = FileWrapper(open(self.fullpath(filename), 'r'))
+            f.filename = path.basename(self.name)
+            f.size = path.getsize(filename)
+            f.content_url = '%s/%s' % ('/storage', self.filename)
+
             return f
         except OSError as e:
             if e.errno != errno.ENOENT:  # errno.ENOENT = no such file
@@ -95,12 +103,12 @@ class FileSystemStorage(object):
         # If needed, add number
         base, ext = path.splitext(filename)
         i = 1
-        while self.exists(filename):
-            filename = '%s_%s%s' % (base, str(i), ext)
+        while self.exists(self.fullpath(filename)):
+            filename = '%s_%i%s' % (base, i, ext)
             i += 1
 
         # Save file
-        content.save(self.fullpath(filename))
+        content.save(self.fullpath(filename, create=True))
         return filename
 
     def delete(self, filename):
@@ -157,22 +165,6 @@ class MediaValidator(object):
                         " %s" % str(filetype))
 
 
-# Endpoint to download files
-
-download = Blueprint('download', __name__)
-
-
-@download.route('/storage/<filename>', methods=['GET'])
-def download_file(filename):
-    """Send a file.
-
-    TODO (Alex): Maybe better use new eve method?
-    """
-    if not common_authorization('storage', 'GET'):
-        abort(401)
-    return send_from_directory(app.config['STORAGE_DIR'], filename)
-
-
 storagedomain = {
     'storage': {
         'resource_methods': ['GET'],
@@ -191,5 +183,3 @@ def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_validator(app, MediaValidator)
     register_domain(app, storagedomain)
-
-    app.register_blueprint(download)

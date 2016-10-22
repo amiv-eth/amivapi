@@ -30,7 +30,11 @@ ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 XML = False
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
+
+# File Storage
+STORAGE_DIR = 'amivapi_storage'
 RETURN_MEDIA_AS_BASE64_STRING = False
+RETURN_MEDIA_AS_URL = True
 EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
 
 # Amivapi
