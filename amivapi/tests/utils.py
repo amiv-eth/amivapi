@@ -8,6 +8,7 @@ import sys
 import json
 import unittest
 import os
+from shutil import rmtree
 from tempfile import mkdtemp
 from itertools import count
 from pymongo import MongoClient
@@ -163,9 +164,10 @@ class WebTest(unittest.TestCase, FixtureMixin):
         if sys.version_info >= (3, 2):
             self.assertItemsEqual = self.assertCountEqual
 
-        # create temporary directories
-        self.test_config['STORAGE_DIR'] = mkdtemp(prefix='amivapi_storage')
-        self.test_config['FORWARD_DIR'] = mkdtemp(prefix='amivapi_forwards')
+        # create temporary directory for storage
+        base_dir = mkdtemp(prefix='amivapi_test')
+        self.test_config['STORAGE_DIR'] = os.path.join(base_dir, 'storage')
+        self.test_config['FORWARD_DIR'] = os.path.join(base_dir, 'forwards')
 
         # create eve app and test client
         self.app = bootstrap.create_app(**self.test_config)
@@ -189,32 +191,10 @@ class WebTest(unittest.TestCase, FixtureMixin):
         # close database connection
         self.connection.close()
 
-        # delete all uploaded files
-        self.file_cleanup()
-
         # remove temporary folders
-        os.rmdir(self.test_config['STORAGE_DIR'])
-        os.rmdir(self.test_config['FORWARD_DIR'])
-
-    def file_cleanup(self):
-        """Remove all remaining files."""
-        for f in os.listdir(self.app.config['STORAGE_DIR']):
-            try:
-                os.remove(os.path.join(self.app.config['STORAGE_DIR'], f))
-            except:
-                # The tests seem to be to fast sometimes, cleanup in the end
-                # works fine, in between tests deletion sometimes doesn't work.
-                # Hack-like solution: Just ignore that and be happy that all
-                # files are deleted in the end.
-                # TODO: Find out whats wrong
-                # (To reproduce remove the try-except block and run the
-                # file access test)
-                pass
-        for f in os.listdir(self.app.config['FORWARD_DIR']):
-            try:
-                os.unlink(os.path.join(self.app.config['FORWARD_DIR'], f))
-            except Exception as e:
-                print(e)
+        for directory_name in 'STORAGE_DIR', 'FORWARD_DIR':
+            directory = self.app.config[directory_name]
+            rmtree(directory, ignore_errors=True)
 
     # Shortcuts to get a token
     counter = count()

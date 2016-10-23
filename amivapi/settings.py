@@ -18,7 +18,7 @@ from passlib.context import CryptContext
 DEBUG = False
 TESTING = False
 
-# Eve
+# Eve & Amivapi
 
 # AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
 DOMAIN = {}  # Empty add first, resource will be added in bootstrap
@@ -33,11 +33,12 @@ X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
 
 # File Storage
 STORAGE_DIR = 'amivapi_storage'
+FILENAME_RANDOM_BYTES = 128
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True
-EXTENDED_MEDIA_INFO = ['filename', 'size', 'content_url']
+MEDIA_URL = 'string'  # Very important to match url properly
+EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
-# Amivapi
 DEFAULT_CONFIG_FILENAME = 'config.yaml'
 
 PASSWORD_CONTEXT = CryptContext(
