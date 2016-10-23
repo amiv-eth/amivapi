@@ -16,7 +16,7 @@ from amivapi import (
     users,
     auth,
     events,
-    # media,
+    media,
     # groups,
     # documentation,
     utils,
@@ -58,7 +58,8 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
 
     # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     app = Eve(settings=config,
-              validator=utils.ValidatorAMIV)
+              validator=utils.ValidatorAMIV,
+              media=media.FileSystemStorage)
 
     # TODO(Alex): media=media.FileSystemStorage)
 
@@ -80,7 +81,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     # joboffers.init_app(app)
     purchases.init_app(app)
     # studydocs.init_app(app)
-    # media.init_app(app)
+    media.init_app(app)
 
     # Register hooks for cascading deletes
     app.on_deleted_item += cascade.cascade_delete
