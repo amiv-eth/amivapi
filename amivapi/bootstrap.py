@@ -82,9 +82,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     purchases.init_app(app)
     # studydocs.init_app(app)
     media.init_app(app)
-
-    # Register hooks for cascading deletes
-    app.on_deleted_item += cascade.cascade_delete
-    app.on_deleted += cascade.cascade_delete_collection
+    cascade.init_app(app)
 
     return app
