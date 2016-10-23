@@ -24,27 +24,6 @@ from amivapi.tests.fixtures import FixtureMixin
 from amivapi import bootstrap, utils
 
 
-def find_by_pair(dicts, key, value):
-    """Find an entry in a list of dicts, which has a pair key => value.
-
-    If there is not exactly one result returns None
-
-    This is useful to find an entry in the result of a get query
-
-    Example:
-
-    users = api.get("/users")
-    root_user = find_by_pair(users, "nethz", "adietmue")
-
-    This will find the entry in the response which corresponds to the root
-    user
-    """
-    found = [x for x in dicts if key in x and x[key] == value]
-    if len(found) != 1:
-        return None
-    return found[0]
-
-
 def is_file_content(path, content):
     """Check file content.
 
