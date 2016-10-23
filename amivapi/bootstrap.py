@@ -61,8 +61,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
               validator=utils.ValidatorAMIV,
               media=media.FileSystemStorage)
 
-    # TODO(Alex): media=media.FileSystemStorage)
-
     # What is this good for? Seems to change nothing if commented out
     # Bootstrap(app)
 
