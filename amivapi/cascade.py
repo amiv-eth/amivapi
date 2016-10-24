@@ -54,3 +54,9 @@ def cascade_delete_collection(resource, items):
     """Hook to propagate the deletion of objects."""
     for item in items:
         cascade_delete(resource, item)
+
+
+def init_app(app):
+    """Add hooks to app."""
+    app.on_deleted_item += cascade_delete
+    app.on_deleted += cascade_delete_collection

@@ -5,18 +5,14 @@
 """Utilities."""
 
 
-from base64 import urlsafe_b64encode
-from os import urandom
 import smtplib
 from email.mime.text import MIMEText
 from copy import deepcopy
 from contextlib import contextmanager
 
-from flask import Config, request, g, current_app as app
+from flask import request, g, current_app as app
 from eve.utils import config
 from eve.io.mongo import Validator
-
-from amivapi.settings import ROOT_DIR
 
 
 @contextmanager
@@ -38,113 +34,39 @@ def admin_permissions():
         g.resource_admin = old_admin
 
 
-def get_config():
-    """Load the config from settings.py and updates it with config.cfg.
-
-    :returns: Config dictionary
-    """
-    config = Config(ROOT_DIR)
-    config.from_object("amivapi.settings")
-    try:
-        config.from_pyfile("mongo_config.cfg")
-    except IOError as e:
-        raise IOError(str(e) + "\nYou can create it by running "
-                      "`python manage.py create_config`.")
-
-    return config
-
-
-def get_class_for_resource(resource):
-    """Utility function to get SQL Alchemy model associated with a resource.
-
-    :param resource: Name of a resource
-    :returns: SQLAlchemy model associated with the resource from models.py
-    """
-    if resource in config.DOMAIN:
-        return config.DOMAIN[resource]['sql_model']
-    else:
-        return None
-
-
-def token_generator(size=6):
-    """Generate a random string of elements of chars.
-
-    :param size: length of the token
-    :returns: a random token
-    """
-    return urlsafe_b64encode(urandom(size))[0:size]
-
-
-def recursive_any_getattr(obj, path):
-    """Recursive gettattr.
-
-    Given some object and a path, retrive any value, which is reached with
-    this path. Lists are looped through.
-
-    @argument obj: Object to start with
-    @argument path: List of attribute names
-
-    @returns: List of values
-    """
-    if len(path) == 0:
-        if isinstance(obj, list):
-            return obj
-        return [obj]
-
-    if isinstance(obj, list):
-        results = []
-        for item in obj:
-            results.extend(recursive_any_getattr(item, path))
-        return results
-
-    next_field = getattr(obj, path[0])
-
-    return recursive_any_getattr(next_field, path[1:])
-
-
-def get_owner(model, id):
-    """Search for the owner(s) of a data-item.
-
-    :param model: the SQLAlchemy-model (in models.py)
-    :param _id: The id of the item (unique for each model)
-    :returns: a list of owner-ids
-    """
-    db = app.data.driver.session
-    doc = db.query(model).get(id)
-    if not doc or not hasattr(model, '__owner__'):
-        return None
-    ret = []
-    for path in doc.__owner__:
-        ret.extend(recursive_any_getattr(doc, path.split('.')))
-    return ret
-
-
 def mail(sender, to, subject, text):
     """Send a mail to a list of recipients.
 
-    :param from: From address
-    :param to: List of recipient addresses
-    :param subject: Subject string
-    :param text: Mail content
+    Args:
+        from(string): From address
+        to(list of strings): List of recipient addresses
+        subject(string): Subject string
+        text(string): Mail content
     """
-    msg = MIMEText(text)
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = ';'.join(to)
+    if app.config.get('TESTING', False):
+        app.test_mails.append({
+            'subject': subject,
+            'from': sender,
+            'receivers': to,
+            'text': text
+        })
+    else:
+        msg = MIMEText(text)
+        msg['Subject'] = subject
+        msg['From'] = sender
+        msg['To'] = ';'.join(to)
 
-    try:
-        s = smtplib.SMTP(config.SMTP_SERVER)
         try:
-            s.sendmail(msg['From'], to, msg.as_string())
-        except smtplib.SMTPRecipientsRefused as e:
-            print("Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
-                  % (sender, str(to), subject, text))
-        s.quit()
-    except smtplib.SMTPException as e:
-        print("SMTP error trying to send mails: %s" % e)
-
-
-EMAIL_REGEX = '^.+@.+$'
+            s = smtplib.SMTP(config.SMTP_SERVER)
+            try:
+                s.sendmail(msg['From'], to, msg.as_string())
+            except smtplib.SMTPRecipientsRefused as e:
+                app.logger.error(
+                    "Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
+                    % (sender, str(to), subject, text))
+            s.quit()
+        except smtplib.SMTPException as e:
+            app.logger.error("SMTP error trying to send mails: %s" % e)
 
 
 class ValidatorAMIV(Validator):

@@ -7,189 +7,163 @@
 
 Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 
-Adds an endpoint to serve media files
+
 """
 
-from os import path, remove
-from io import FileIO
+from os import path, remove, makedirs, urandom
 import errno
+from contextlib import contextmanager
+from datetime import datetime as dt
+from mimetypes import guess_type
+from base64 import b64encode
 from imghdr import what
+from werkzeug import secure_filename
 
-from werkzeug import secure_filename, FileStorage
-from flask import abort, Blueprint, send_from_directory, current_app as app
-
-from amivapi.auth.authorization import common_authorization
-from amivapi.utils import register_validator, register_domain
+from amivapi.utils import register_validator
 
 
-class ExtFile(FileIO):
-    """This Class extends the normal file object.
+@contextmanager
+def ignore_not_found():
+    """Ignore errno.ENOENT (no such file), re-raise everything else.
 
-    Includes filename (basename of the file), size and content_url
+    In case of a FileNotFound error, just do nothing.
     """
+    try:
+        yield
+    except (OSError, IOError) as e:
+        if e.errno != errno.ENOENT:
+            raise e
 
-    def __init__(self, filename):
-        """Init."""
-        FileIO.__init__(self, filename)
-        self.filename = path.basename(self.name)
-        self.size = path.getsize(filename)
-        self.content_url = '%s/%s' % ('/storage', self.filename)
 
-    def close(self):
-        """Close internal file object."""
-        FileIO.close(self)
+class FileWrapper(object):
+    """A little wrapper providing extra attributes to opened file."""
+
+    DEFAULT_MIMETYPE = "application/octet-stream"
+
+    def __init__(self, filepath, filename):
+        """Init: Open file and add attributes.
+
+        Args:
+            filepath (str): The path to the file (i.e. how its stored)
+            filename (str): The filename the client should receive,
+                will also be used to guess mimetype
+        """
+        self._file = open(filepath, 'rb')
+        self.length = path.getsize(filepath)
+        self.upload_date = dt.fromtimestamp(path.getmtime(filepath))
+        self.name = filename
+        self.content_type = guess_type(self.name)[0]
+        if self.content_type is None:
+            self.content_type = self.DEFAULT_MIMETYPE
+
+    def __iter__(self):
+        """Return the file as iterator."""
+        return self._file
+
+    def __getattr__(self, attr):
+        """Pass everything to the file."""
+        return getattr(self._file, attr)
 
 
 class FileSystemStorage(object):
     """Mediastorage class to save files on the server."""
+
+    def _add_randomness(self, str_in):
+        """Add random stuff to a string."""
+        n_bytes = self.app.config['FILENAME_RANDOM_BYTES']
+        randomstr = secure_filename(
+            b64encode(urandom(n_bytes)).decode('utf_8'))
+        return "%s.%s" % (str_in, randomstr)
+
+    def _remove_randomness(self, str_in):
+        """Remove random stuff from the end of a string."""
+        # Split at dots, remove last part and join with dots again
+        return ".".join(str_in.split(".")[:-1])
 
     def __init__(self, app=None):
         """Init storage."""
         self.app = app
 
     def fullpath(self, filename):
-        """Add storage path specified in config to the filename."""
-        return path.join(self.app.config['STORAGE_DIR'], filename)
-
-    def get(self, filename):
-        """Open the file given by name.
+        """Add storage path specified in config to the filename.
 
         Args:
-            filename (string): the file to open.
-
-        Returns:
-            ExtFile: file object with additional parameters
+            filename (str): the name of the file to save
         """
-        if not filename:
-            return None  # Without filename, there will be no file
+        storage_path = self.app.config['STORAGE_DIR']
+        return path.join(storage_path, filename)
 
-        try:
-            f = ExtFile(self.fullpath(filename))
-            return f
-        except OSError as e:
-            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file
-                raise  # re-raise exception if a different error occured
-            return None
+    def get(self, filename, resource=None):
+        """Open the file given by name."""
+        with ignore_not_found():
+            return FileWrapper(self.fullpath(filename),
+                               self._remove_randomness(filename))
 
-    def put(self, content, filename=None, content_type=None):
+    def put(self, content, filename=None, content_type=None, resource=None):
         """Save file.
 
-         Saves a new file using the storage system, preferably with the name
-        specified. If there already exists a file with this name name, the
-        storage system may modify the filename as necessary to get a unique
-        name. The actual name of the stored file will be returned.
-        The content argument has to be of type FileStorage (see Werkzeug),
-        the validator will ensure this.
-        The content type argument is used to appropriately identify the file
-        when it is retrieved.
-        .. versionchanged:: 0.5
-           Allow filename to be optional (#414).
+        Also add randomness to file name and create directories if needed.
         """
         if filename:
-            filename = secure_filename(filename)  # Safety first!
+            input_filename = secure_filename(filename)  # Safety first!
         elif content.filename:
-            filename = secure_filename(content.filename)
+            input_filename = secure_filename(content.filename)
         else:
-            filename = 'file'
+            input_filename = 'file'
 
         # If needed, add number
-        base, ext = path.splitext(filename)
-        i = 1
+        filename = self._add_randomness(input_filename)
         while self.exists(filename):
-            filename = '%s_%s%s' % (base, str(i), ext)
-            i += 1
+            filename = self._add_randomness(input_filename)
+
+        # Create dir if needed
+        storage_path = self.app.config['STORAGE_DIR']
+        if not path.isdir(storage_path):
+            makedirs(storage_path)
 
         # Save file
         content.save(self.fullpath(filename))
         return filename
 
-    def delete(self, filename):
+    def delete(self, filename, resource=None):
         """Delete the file referenced by name."""
-        if not(filename):
-            return  # Nothing to do here
-
-        try:
+        with ignore_not_found():
             remove(self.fullpath(filename))
-        except OSError as e:
-            if e.errno != errno.ENOENT:  # errno.ENOENT = no such file
-                raise  # re-raise exception if a different error occured
 
-    def exists(self, filename):
-        """Check if file exists.
-
-        Return True if a file referenced by the given name
-        already exists in the storage system, or False if the name is available
-        for a new file.
-        """
+    def exists(self, filename, resource=None):
+        """Check if file exists."""
         return path.isfile(self.fullpath(filename))
 
 
 class MediaValidator(object):
     """Validation for files."""
 
-    def _validate_type_media(self, field, value):
-        """Validate `media` data type.
-
-        Args:
-            field (string): field name.
-            value: field value.
-        """
-        if not isinstance(value, FileStorage):
-            self._error(field, "file was expected, got '%s' instead." % value)
-
     def _validate_filetype(self, filetype, field, value):
         """Validate filetype. Can validate images and pdfs.
 
-        Pdf: Check if first 4 characters are '%PDF' because that marks
+        pdf: Check if first 4 characters are '%PDF' because that marks
         a PDF
         Image: Use imghdr library function what()
 
         Cannot validate others formats.
+
+        Important: what() returns 'jpeg', NOT 'jpg', so 'jpg' will never be
+        recognized!
 
         Args:
             filetype (list): filetypes, e.g. ['pdf', 'png']
             field (string): field name.
             value: field value.
         """
-        if not((('pdf' in filetype) and (value.read(4) == r'%PDF')) or
-               (what(value) in filetype)):
-            self._error(field, "filetype not supported, has to be one of: " +
-                        " %s" % str(filetype))
+        is_pdf = value.read(4) == br'%PDF'
+        value.seek(0)  # Go back to beginning for what()
+        t = 'pdf' if is_pdf else what(value)
 
-
-# Endpoint to download files
-
-download = Blueprint('download', __name__)
-
-
-@download.route('/storage/<filename>', methods=['GET'])
-def download_file(filename):
-    """Send a file.
-
-    TODO (Alex): Maybe better use new eve method?
-    """
-    if not common_authorization('storage', 'GET'):
-        abort(401)
-    return send_from_directory(app.config['STORAGE_DIR'], filename)
-
-
-storagedomain = {
-    'storage': {
-        'resource_methods': ['GET'],
-        'item_methods': ['GET'],
-        'public_methods': [],
-        'public_item_methods': [],
-        'registered_methods': ['GET'],
-        'description': {
-            'general': 'Endpoint to download files, get the URLs via /files'
-        }
-    }
-}
+        if not(t in filetype):
+            self._error(field, "filetype '%s' not supported, has to be in: "
+                        "%s" % (t, filetype))
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_validator(app, MediaValidator)
-    register_domain(app, storagedomain)
-
-    app.register_blueprint(download)

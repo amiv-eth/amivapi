@@ -5,54 +5,67 @@
 
 """API factory."""
 
+from os import getcwd
+from ruamel import yaml
+
+from flask import Config
 from eve import Eve
 # from eve_docs import eve_docs
-# from flask.ext.bootstrap import Bootstrap
 
 from amivapi import (
     users,
     auth,
-    # events,
-    # media,
+    events,
+    media,
     # groups,
-    # ldap,
     # documentation,
     utils,
     joboffers,
     purchases,
+    cascade
     # studydocs
 )
 from amivapi.ldap import ldap_connector
-
-from amivapi.utils import get_config
-from amivapi import cascade
+from amivapi.settings import DEFAULT_CONFIG_FILENAME
 
 
-def create_app(**kwargs):
+def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
-    :param disable_auth: This can be used to allow every request without
-                         authentication for testing purposes
-    :param **kwargs: All other parameters overwrite config values
-    :returns: eve.Eve object, the app object
+    Args:
+        config (path or dict): If dict, use directly to update config, if its
+            a path load the file and update config.
+            If no config is provided, attemp to find it in the current working
+            directory
+        kwargs: All other key-value arguments will be used to update the config
+    Returns:
+        (Eve): The Eve application
     """
-    config = get_config()
-    # Unless specified start with empty domain and add resources later
-    config.setdefault('DOMAIN', {})
-    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
+    # Load config
+    config = Config(getcwd())
+    config.from_object("amivapi.settings")
+    try:
+        with open(config_file, 'r') as f:
+            yaml_data = yaml.load(f)
+    except IOError as e:
+        raise IOError(str(e) + "\nYou can create it by running "
+                      "`amivapi create_config`.")
+    else:
+        config.update(yaml_data)
+
     config.update(kwargs)
 
+    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     app = Eve(settings=config,
-              validator=utils.ValidatorAMIV)
-
-    # TODO(Alex): media=media.FileSystemStorage)
+              validator=utils.ValidatorAMIV,
+              media=media.FileSystemStorage)
 
     # What is this good for? Seems to change nothing if commented out
     # Bootstrap(app)
 
     # Create LDAP connector
-    if config['ENABLE_LDAP']:
+    if app.config['ENABLE_LDAP']:
         ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
@@ -61,15 +74,12 @@ def create_app(**kwargs):
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
     auth.init_app(app)
-    # events.init_app(app)
+    events.init_app(app)
     # groups.init_app(app)
     joboffers.init_app(app)
     purchases.init_app(app)
     # studydocs.init_app(app)
-    # media.init_app(app)
-
-    # Register hooks for cascading deletes
-    app.on_deleted_item += cascade.cascade_delete
-    app.on_deleted += cascade.cascade_delete_collection
+    media.init_app(app)
+    cascade.init_app(app)
 
     return app
