@@ -11,9 +11,9 @@ from os.path import abspath, dirname, join, exists, expanduser
 from pprint import pprint
 from base64 import b64encode
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError, ProgrammingError
+#from sqlalchemy import create_engine
+#from sqlalchemy.orm import sessionmaker
+#from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from flask import Flask
 from flask.ext.script import (
@@ -25,7 +25,7 @@ from flask.ext.script import (
 )
 
 from amivapi import settings
-from amivapi.users import User
+from amivapi.users import model
 from amivapi.utils import get_config
 from amivapi.bootstrap import init_database, clear_database
 from amivapi.ldap import ldap_synchronize
