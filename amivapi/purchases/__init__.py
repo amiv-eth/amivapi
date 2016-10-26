@@ -34,18 +34,7 @@ purchasedomain = {
 
         'authentication': PurchaseAuth,
 
-        'schema': {
-            '_author': {
-                'data_relation': {
-                    'embeddable': False,
-                    'resource': 'users'
-                },
-                'nullable': True,
-                'readonly': True,
-                'required': False,
-                'type': 'objectid',
-                'unique': False
-            },
+        'schema': { 
             'timestamp': {
                 'nullable': False,
                 'required': True,
