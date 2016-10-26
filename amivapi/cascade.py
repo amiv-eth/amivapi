@@ -16,6 +16,8 @@ from werkzeug.exceptions import NotFound
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 
+from amivapi.utils import admin_permissions
+
 
 def cascade_delete(resource, item):
     """Cascade DELETE.
@@ -37,15 +39,17 @@ def cascade_delete(resource, item):
                 # Delete all objects in resource `res`, which have `field` set
                 # to item['_id']
                 try:
-                    deleteitem_internal(res, concurrency_check=False,
-                                        **{field: deleted_id})
+                    with admin_permissions():
+                        deleteitem_internal(res, concurrency_check=False,
+                                            **{field: deleted_id})
                 except NotFound:
                     pass
             else:
                 try:
-                    patch_internal(res, payload={field: None},
-                                   concurrency_check=False,
-                                   **{field: deleted_id})
+                    with admin_permissions():
+                        patch_internal(res, payload={field: None},
+                                       concurrency_check=False,
+                                       **{field: deleted_id})
                 except NotFound:
                     pass
 
