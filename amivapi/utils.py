@@ -135,6 +135,22 @@ class ValidatorAMIV(Validator):
                         "combination with values for: %s" %
                         unique_combination)
 
+    def _validate_depends_any(self, any_of_fields, field, value):
+        """Validate, that any of the dependent fields is available
+
+        Args:
+            any_of_fields (list of strings): A list of fields. One of those
+                                             fields must be provided.
+            field (string): This fields name
+            value: This fields value
+        """
+        if request.method == 'POST':
+            for possible_field in any_of_fields:
+                if possible_field in self.document:
+                    return
+            self._error(field, "May only be provided, if any of %s is set"
+                        % ", ".join(any_of_fields))
+
 
 def register_domain(app, domain):
     """Add all resources in a domain to the app.
