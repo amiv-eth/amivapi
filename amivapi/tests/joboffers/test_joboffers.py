@@ -39,9 +39,10 @@ class JobOffersTest(utils.WebTestNoAuth):
         # Should return no joboffers since the only one has expired
         expired_time = datetime.utcnow() - timedelta(days=1)
 
-        self.new_object('joboffers',)
-                #company='ACME Inc.',
-                #time_end=expired_time)
+        self.new_object('joboffers',
+                company='ACME Inc.',
+                title_en="ACME Wants engineers",
+                time_end=expired_time)
 
         p = self.api.get(
                 '/joboffers?where={"time_end": {"$gte": "%s"}}'
@@ -54,12 +55,15 @@ class JobOffersTest(utils.WebTestNoAuth):
         valid_time = (datetime.utcnow() + timedelta(days=1))
 
         self.new_object(
-                'joboffers',)
-                #company='AMIV Inc.',
-                #time_end=valid_time)
+                'joboffers',
+                company='AMIV Inc.',
+                title_en="ACME wants more engineers",
+                time_end=valid_time)
 
         p = self.api.get(
                 '/joboffers?where={"time_end" : {"$gte": "%s"}}'
                 % datetime.utcnow().strftime(DATE_FORMAT),
                 status_code=200).json['_items']
         self.assertTrue(len(p) > 0)
+
+

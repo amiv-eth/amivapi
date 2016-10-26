@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Joboffers module.
 
-Since there are no hooks or anything everything is just in here.
+Since there are no hooks or anything, everything is just in here.
 """
 
 from amivapi.utils import register_domain
@@ -27,19 +27,16 @@ jobdomain = {
             'public_methods': ['GET'],
 
             'schema': {
-                '_author': {
-                    'data_relation': {
-                        'resource': 'users'
-                    },
-                    'nullable': True,
-                    'readonly': True,
-                    'type': 'objectid'
-                },
                 'company': {
                     'required': True,
                     'maxlength': 30,
                     'nullable': True,
-                    'type': 'string'
+                    'type': 'string',
+                    
+                    # This is basically here, because this is a required
+                    # field. It will make sure there is always either an english
+                    # or a german title
+                    'depends_any': ['title_de', 'title_en']                
                 },
                 'description_de': {
                     'nullable': True,
@@ -70,8 +67,9 @@ jobdomain = {
                     'nullable': True,
                     'type': 'string'
                 }
+            }
+        }
     }
-}}
 
 
 def init_app(app):
