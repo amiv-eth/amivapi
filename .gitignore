@@ -56,3 +56,7 @@ target/
 # AMIV stuff
 *.db
 config.cfg
+
+# Demo Files
+config.yaml
+amivapi/config.yaml
