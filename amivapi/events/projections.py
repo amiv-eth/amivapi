@@ -24,6 +24,19 @@ def add_email_to_signup_collection(response):
         add_email_to_signup(item)
 
 
+def add_position_to_signup(item):
+    signup_time = item['_created']
+    position = current_app.data.driver.db['eventsignups'].find({
+        '_created': {'$lte': signup_time},
+        'event': item['event']}).count()
+    item['position'] = position
+
+
+def add_position_to_signup_collection(response):
+    for item in response['_items']:
+        add_position_to_signup(item)
+
+
 def add_signup_count_to_event(item):
     """After an event is fetched from the database we add the current signup
     count"""
