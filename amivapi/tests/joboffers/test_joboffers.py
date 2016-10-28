@@ -17,16 +17,26 @@ class JobOffersTest(utils.WebTestNoAuth):
         """ Usecase: A firm wants to post a joboffer on the website without any media
         """
 
+        time_end = (datetime.utcnow() + timedelta(days=2)).strftime(DATE_FORMAT)
         post_data = {
             'company': 'ACME Inc.',
-            'description_de': 'Firmenbeschreibung auf Deutsch der weltberühmten ACME Inc. Von Herr Rädö im Jahr 1893 gegründet und seither nur am Wachsen, ACME Inc. zeichnete sich mit aussergewöhnlichst kreative Lösungen zum spontan Sachen zum explodieren bringen und irgendein depressives Coyote langsam aber doch zum Selbstmord zu führen',
-            'description_en': 'Firmdescription in English of the world renown ACME Inc. Founded by Mr. Rädö in 1893 and in proving constant growth since, ACME Inc. stands out thanks to it borderline creative solutions for spontaneous destruction by explosion and driving some random Coyote slowly but steadily to suicide',
-            'time_end': (datetime.utcnow() + timedelta(days=2)).strftime(DATE_FORMAT),
+            'description_de': """Firmenbeschreibung auf Deutsch der
+            weltberühmten ACME Inc. Von Herr Rädö im Jahr 1893 gegründet und
+            seither nur am Wachsen, ACME Inc. zeichnete sich mit
+            aussergewöhnlichst kreative Lösungen zum spontan Sachen zum
+            explodieren bringen und irgendein depressives Coyote langsam
+            aber doch zum Selbstmord zu führen""",
+            'description_en': """Firmdescription in English of the world renown
+            ACME Inc. Founded by Mr. Rädö in 1893 and in proving constant
+            growth since, ACME Inc. stands out thanks to it borderline
+            creative solutions for spontaneous destruction by explosion and
+            driving some random Coyote slowly but steadily to suicide""",
+            'time_end': time_end,
             'title_de': 'ACME Inc jetzt auf der Suche nach Explosionsexperte',
             'title_en': 'ACME Inc now hiring explosions experts',
         }
 
-        p = self.api.post("/joboffers", data=post_data, status_code=201)
+        self.api.post("/joboffers", data=post_data, status_code=201)
 
     def test_get_joboffer(self):
         """Usecase: User wants to see a job offer listing
