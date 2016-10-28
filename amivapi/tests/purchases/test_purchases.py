@@ -21,10 +21,10 @@ class PurchaseTest(utils.WebTestNoAuth):
 
         # Should return no purchases, if none have been done
         p = self.api.get(
-                '/purchases?where={"user": "%s", "product":"beer", '
-                '"timestamp": {"$gte": "%s"}}'
-                % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
-                status_code=200).json['_items']
+            '/purchases?where={"user": "%s", "product":"beer", '
+            '"timestamp": {"$gte": "%s"}}'
+            % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
+            status_code=200).json['_items']
         self.assertEqual(len(p), 0)
 
         # Next test with a transaction 2 days ago
@@ -32,10 +32,10 @@ class PurchaseTest(utils.WebTestNoAuth):
                         timestamp=datetime.utcnow() - timedelta(days=2))
 
         p = self.api.get(
-                '/purchases?where={"user": "%s", "product":"beer", '
-                '"timestamp": {"$gte": "%s"}}'
-                % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
-                status_code=200).json['_items']
+            '/purchases?where={"user": "%s", "product":"beer", '
+            '"timestamp": {"$gte": "%s"}}'
+            % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
+            status_code=200).json['_items']
         self.assertEqual(len(p), 0)
 
         # Now we add a purchase and ask again
@@ -44,10 +44,10 @@ class PurchaseTest(utils.WebTestNoAuth):
 
         time = (datetime.utcnow() - timedelta(hours=1)).strftime(DATE_FORMAT)
         p = self.api.get(
-                '/purchases?where={"user": "%s", "product":"beer", '
-                '"timestamp": {"$gte": "%s"}}'
-                % (str(user['_id']), time),
-                status_code=200).json['_items']
+            '/purchases?where={"user": "%s", "product":"beer", '
+            '"timestamp": {"$gte": "%s"}}'
+            % (str(user['_id']), time),
+            status_code=200).json['_items']
         self.assertEqual(len(p), 1)
 
     def test_add_purchase(self):

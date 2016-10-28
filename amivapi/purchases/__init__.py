@@ -34,7 +34,7 @@ purchasedomain = {
 
         'authentication': PurchaseAuth,
 
-        'schema': { 
+        'schema': {
             'timestamp': {
                 'nullable': False,
                 'required': True,
@@ -59,7 +59,7 @@ purchasedomain = {
                      'resource': 'users',
                      'field': '_id',
                      'embeddable': True
-                 },
+                },
             }
         }
     }

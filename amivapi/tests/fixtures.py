@@ -256,8 +256,8 @@ class FixtureMixin(object):
     def preprocess_joboffers(self, schema, obj, fixture):
         """Add title to JobOffers to make them valid. """
         obj.setdefault(
-                'title_de',
-                self.create_random_value(schema['title_de']))
+            'title_de',
+            self.create_random_value(schema['title_de']))
 
     def create_random_value(self, definition):
         """Create a random value for the given cerberus field description."""
