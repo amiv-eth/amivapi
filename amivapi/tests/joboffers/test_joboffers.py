@@ -35,7 +35,7 @@ class JobOffersTest(utils.WebTestNoAuth):
             'title_de': 'ACME Inc jetzt auf der Suche nach Explosionsexperte',
             'title_en': 'ACME Inc now hiring explosions experts',
         }
-        
+
         # Check if posting the joboffer is successful
         self.api.post("/joboffers", data=post_data, status_code=201)
 
