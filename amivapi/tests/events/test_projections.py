@@ -6,6 +6,7 @@
 - events.signup_count
 - eventsignups.email
 - eventsignups.confirmed
+- eventsignups.position
 """
 
 from amivapi.tests.utils import WebTestNoAuth
@@ -31,9 +32,10 @@ class EventProjectionTest(WebTestNoAuth):
     def test_waitinglist_position_projection(self):
         """Test that waiting list position is correctly inserted into a
         signup information"""
+        # Create a new event
         event = self.new_object('events', spots=3)
 
-        # Add 5 signups
+        # Add 3 signups
         for i in range(3):
             user = self.new_object('users')
             self.api.post('/eventsignups', data={
@@ -42,10 +44,12 @@ class EventProjectionTest(WebTestNoAuth):
                 }, status_code=201).json
             time.sleep(1)
 
+        # Check that the number of signups on that event is correct
         event = self.api.get('events/%s' % event['_id'], status_code=200).json
         self.assertTrue(event['signup_count'] == 3)
 
-        time.sleep(2)
+        # Delay signup of late user
+        time.sleep(1)
 
         late_user = self.new_object('users')
         signup = self.api.post('/eventsignups', data={
@@ -53,6 +57,7 @@ class EventProjectionTest(WebTestNoAuth):
             'user': str(late_user['_id'])
             }, status_code=201).json
 
+        # GET the late user's signup to check his position
         signup_info = self.api.get(
                 'eventsignups/%s' % signup['_id'],
                 status_code=200).json
