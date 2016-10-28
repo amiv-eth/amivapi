@@ -9,6 +9,7 @@
 """
 
 from amivapi.tests.utils import WebTestNoAuth
+import time
 
 
 class EventProjectionTest(WebTestNoAuth):
@@ -26,6 +27,36 @@ class EventProjectionTest(WebTestNoAuth):
         # Test for collection
         events = self.api.get('/events', status_code=200).json
         self.assertEqual(events['_items'][0]['signup_count'], 10)
+
+    def test_waitinglist_position_projection(self):
+        """Test that waiting list position is correctly inserted into a
+        signup information"""
+        event = self.new_object('events', spots=3)
+
+        # Add 5 signups
+        for i in range(3):
+            user = self.new_object('users')
+            self.api.post('/eventsignups', data={
+                'event': str(event['_id']),
+                'user': str(user['_id'])
+                }, status_code=201).json
+            time.sleep(1)
+
+        event = self.api.get('events/%s' % event['_id'], status_code=200).json
+        self.assertTrue(event['signup_count'] == 3)
+
+        time.sleep(2)
+
+        late_user = self.new_object('users')
+        signup = self.api.post('/eventsignups', data={
+            'event': str(event['_id']),
+            'user': str(late_user['_id'])
+            }, status_code=201).json
+
+        signup_info = self.api.get(
+                'eventsignups/%s' % signup['_id'],
+                status_code=200).json
+        self.assertEqual(signup_info['position'], 4)
 
     def test_signup_email_correct(self):
         """Test that signups display the correct email address"""
