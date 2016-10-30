@@ -12,12 +12,12 @@ logic needed for signup of non members to events.
 from amivapi.utils import register_domain
 
 from .endpoints import studydocdomain
-from .authorization import add_author_on_insert, add_author_on_bulk_insert
+from .authorization import add_uploader_on_insert, add_uploader_on_bulk_insert
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, studydocdomain)
 
-    app.on_insert_item_studydocuments += add_author_on_insert
-    app.on_insert_studydocuments += add_author_on_bulk_insert
+    app.on_insert_item_studydocuments += add_uploader_on_insert
+    app.on_insert_studydocuments += add_uploader_on_bulk_insert
