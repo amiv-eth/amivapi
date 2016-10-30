@@ -14,9 +14,9 @@ studydocdomain = {
             'fields': {
                 'semester': 'Study-Semester as an Integer starting with '
                 'first semester Bachelor.',
-                '_author': 'Read-only field describing which AMIV member '
+                'uploader': 'Read-only field describing which AMIV member '
                 'uploaded the files',
-                'file_author': 'Original author of the uploaded files'
+                'author': 'Original author of the uploaded files'
                 '(Prof, Assistant, copyright owner)'
             },
             'general': 'Study-documents are basically all documents that '
@@ -32,7 +32,7 @@ studydocdomain = {
         'authentication': StudydocsAuth,
 
         'schema': {
-            '_author': {
+            'uploader': {
                 'data_relation': {
                     'resource': 'users'
                 },
@@ -40,7 +40,7 @@ studydocdomain = {
                 'readonly': True,
                 'type': 'objectid'
             },
-            'file_author': {
+            'author': {
                 'maxlength': 100,
                 'nullable': True,
                 'type': 'string'
@@ -50,17 +50,13 @@ studydocdomain = {
                 'nullable': True,
                 'type': 'string'
             },
-            'exam_session': {
-                'maxlength': 10,
-                'nullable': True,
-                'type': 'string'
-            },
-            'files': {
-                'type': 'list',
-                'schema': {
-                    'type': 'media'
-                }
-            },
+            # 'files': {
+            #     'type': 'list',
+            #     'schema': {
+            #         'type': 'media'
+            #     },
+            #     'required': True
+            # },
             'lecture': {
                 'maxlength': 100,
                 'nullable': True,

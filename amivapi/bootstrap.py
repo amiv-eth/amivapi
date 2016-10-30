@@ -22,8 +22,8 @@ from amivapi import (
     utils,
     joboffers,
     purchases,
-    cascade
-    # studydocs
+    cascade,
+    studydocs
 )
 from amivapi.ldap import ldap_connector
 from amivapi.settings import DEFAULT_CONFIG_FILENAME
@@ -78,7 +78,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     # groups.init_app(app)
     joboffers.init_app(app)
     purchases.init_app(app)
-    # studydocs.init_app(app)
+    studydocs.init_app(app)
     media.init_app(app)
     cascade.init_app(app)
 
