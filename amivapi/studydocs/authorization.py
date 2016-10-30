@@ -12,7 +12,7 @@ from amivapi.auth import AmivTokenAuth
 
 class StudydocsAuth(AmivTokenAuth):
     def has_item_write_permission(self, user_id, item):
-        return str(item['_author']) == user_id
+        return str(item['uploader']) == user_id
 
     def has_resource_write_permission(self, user_id):
         if request.method == 'POST':
@@ -20,11 +20,11 @@ class StudydocsAuth(AmivTokenAuth):
         return False  # No delete on resource for users
 
 
-def add_author_on_insert(item):
+def add_uploader_on_insert(item):
     """Add the _author field before inserting studydocs"""
-    item['_author'] = g.current_user
+    item['uploader'] = g.get('current_user')
 
 
-def add_author_on_bulk_insert(items):
+def add_uploader_on_bulk_insert(items):
     for item in items:
-        add_author_on_insert(item)
+        add_uploader_on_insert(item)
