@@ -95,22 +95,22 @@ eventdomain = {
                 'type': 'datetime'
             },
 
-            # 'img_banner': {
-            #     'filetype': ['png', 'jpeg'],
-            #     'type': 'media'
-            # },
-            # 'img_infoscreen': {
-            #     'filetype': ['png', 'jpeg'],
-            #     'type': 'media'
-            # },
-            # 'img_poster': {
-            #     'filetype': ['png', 'jpeg'],
-            #     'type': 'media'
-            # },
-            # 'img_thumbnail': {
-            #     'filetype': ['png', 'jpeg'],
-            #     'type': 'media'
-            # },
+            'img_banner': {
+                'filetype': ['png', 'jpeg'],
+                'type': 'media'
+            },
+            'img_infoscreen': {
+                'filetype': ['png', 'jpeg'],
+                'type': 'media'
+            },
+            'img_poster': {
+                'filetype': ['png', 'jpeg'],
+                'type': 'media'
+            },
+            'img_thumbnail': {
+                'filetype': ['png', 'jpeg'],
+                'type': 'media'
+            },
 
             'show_announce': {
                 'nullable': False,
