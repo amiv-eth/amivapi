@@ -45,13 +45,20 @@ See preprocess_sessions or preprocess_events below for examples
 import random
 import string
 import pytz
+from os.path import join, dirname
 from bson import ObjectId
 from datetime import datetime, date, timedelta
 
+from werkzeug.datastructures import FileStorage
 from eve.methods.post import post_internal
 
 from amivapi.settings import EMAIL_REGEX
 from amivapi.utils import admin_permissions
+
+
+pngpath = join(dirname(__file__), "fixtures", 'lena.png')
+jpgpath = join(dirname(__file__), "fixtures", 'lena.jpg')
+pdfpath = join(dirname(__file__), "fixtures", 'test.pdf')
 
 
 class BadFixtureException(Exception):
@@ -311,6 +318,24 @@ class FixtureMixin(object):
                 return random.choice(list(self.db[related_res].find()))['_id']
             return ObjectId(''.join(random.choice(string.hexdigits)
                                     for _ in range(24)))
+
+        elif t == 'media':
+            ftype = random.choice(definition.get('filetype', ['zip']))
+            if ftype == 'jpg':
+                return FileStorage(open(jpgpath, 'rb'), 'test.jpg')
+            if ftype == 'png':
+                return FileStorage(open(pngpath, 'rb'), 'test.png')
+            return FileStorage(open(pdfpath, 'rb'), 'test.pdf')
+
+        elif t == 'list':
+            v = []
+            for _ in range(0, random.randint(0, 20)):
+                default_type = random.choice(['string', 'integer', 'float',
+                                              'datetime', 'boolean', 'date',
+                                              'media'])
+                subschema = definition.get('schema', {'type': default_type})
+                v.append(self.create_random_value(subschema))
+            return v
 
         raise NotImplementedError
 
