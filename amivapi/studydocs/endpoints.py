@@ -5,7 +5,7 @@
 """Resource description for studydocuments
 """
 
-from authorization import StudydocsAuth
+from .authorization import StudydocsAuth
 
 
 studydocdomain = {
@@ -50,13 +50,13 @@ studydocdomain = {
                 'nullable': True,
                 'type': 'string'
             },
-            # 'files': {
-            #     'type': 'list',
-            #     'schema': {
-            #         'type': 'media'
-            #     },
-            #     'required': True
-            # },
+            'files': {
+                'type': 'list',
+                'schema': {
+                    'type': 'media'
+                },
+                'required': True
+            },
             'lecture': {
                 'maxlength': 100,
                 'nullable': True,
