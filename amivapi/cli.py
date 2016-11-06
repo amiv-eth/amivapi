@@ -28,7 +28,7 @@ def run(config):
     """Start amivapi development server."""
     app = create_app(config) if config else create_app()
 
-    app.run()
+    app.run(threaded=True)
 
 
 def no_ldap_prompts(ctx, param, value):
