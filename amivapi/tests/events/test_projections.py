@@ -10,7 +10,8 @@
 """
 
 from amivapi.tests.utils import WebTestNoAuth
-import time
+from freezegun import freeze_time
+from datetime import timedelta
 
 
 class EventProjectionTest(WebTestNoAuth):
@@ -32,36 +33,38 @@ class EventProjectionTest(WebTestNoAuth):
     def test_waitinglist_position_projection(self):
         """Test that waiting list position is correctly inserted into a
         signup information"""
-        # Create a new event
-        event = self.new_object('events', spots=3)
+        with freeze_time("2016-01-01 00:00:00") as frozen_time:
+            # Create a new event
+            event = self.new_object('events', spots=3)
 
-        # Add 3 signups
-        for i in range(3):
-            user = self.new_object('users')
-            self.api.post('/eventsignups', data={
+            # Add 3 signups
+            for _ in range(3):
+                user = self.new_object('users')
+                self.api.post('/eventsignups', data={
+                    'event': str(event['_id']),
+                    'user': str(user['_id'])
+                }, status_code=201)
+                frozen_time.tick(delta=timedelta(seconds=1))
+
+            # Check that the number of signups on that event is correct
+            event = self.api.get('events/%s' % event['_id'],
+                                 status_code=200).json
+            self.assertTrue(event['signup_count'] == 3)
+
+            # Delay signup of late user
+            frozen_time.tick(delta=timedelta(seconds=1))
+
+            late_user = self.new_object('users')
+            signup = self.api.post('/eventsignups', data={
                 'event': str(event['_id']),
-                'user': str(user['_id'])
-                }, status_code=201).json
-            time.sleep(1)
-
-        # Check that the number of signups on that event is correct
-        event = self.api.get('events/%s' % event['_id'], status_code=200).json
-        self.assertTrue(event['signup_count'] == 3)
-
-        # Delay signup of late user
-        time.sleep(1)
-
-        late_user = self.new_object('users')
-        signup = self.api.post('/eventsignups', data={
-            'event': str(event['_id']),
-            'user': str(late_user['_id'])
+                'user': str(late_user['_id'])
             }, status_code=201).json
 
-        # GET the late user's signup to check his position
-        signup_info = self.api.get(
+            # GET the late user's signup to check his position
+            signup_info = self.api.get(
                 'eventsignups/%s' % signup['_id'],
                 status_code=200).json
-        self.assertEqual(signup_info['position'], 4)
+            self.assertEqual(signup_info['position'], 4)
 
     def test_signup_email_correct(self):
         """Test that signups display the correct email address"""
