@@ -5,11 +5,10 @@
 
 """Auth and session endpoint initialization."""
 
-from ruamel import yaml
-
 from amivapi.utils import register_domain
 
 from .sessions import sessiondomain, process_login
+from . import apikeys
 from .auth import (
     AmivTokenAuth,
     authenticate,
@@ -32,14 +31,6 @@ def init_app(app):
     """Register sessions resource, add auth and hooks."""
     # Auth
     app.auth = AmivTokenAuth()
-
-    # Load apikeys
-    try:
-        with open(app.config['APIKEY_FILENAME'], 'r') as f:
-            yaml_data = yaml.load(f)
-            app.config['APIKEYS'] = yaml_data
-    except IOError:
-        app.config['APIKEYS'] = {}
 
     # Sessions
     register_domain(app, sessiondomain)
@@ -73,3 +64,6 @@ def init_app(app):
     app.on_fetched_resource += add_permitted_methods_after_fetch_resource
     app.on_post_GET += add_permitted_methods_for_home
     app.on_post_PATCH += add_permitted_methods_after_update
+
+    # Add apikey authorization
+    apikeys.init_apikeys(app)
