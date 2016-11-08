@@ -60,3 +60,5 @@ config.cfg
 # Demo Files
 config.yaml
 amivapi/config.yaml
+apikeys.yaml
+amivapi_storage

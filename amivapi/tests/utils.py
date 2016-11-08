@@ -113,7 +113,6 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'FORWARD_DIR': '',
         'API_MAIL': 'api@test.ch',
         'SMTP_SERVER': '',
-        'APIKEYS': {},
         'TESTING': True,
         'DEBUG': True,   # This makes eve's error messages more helpful
         'ENABLE_LDAP': False,  # LDAP test require special treatment
