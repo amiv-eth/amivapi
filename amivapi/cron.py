@@ -139,17 +139,16 @@ def run_scheduled_tasks():
     """ Check for scheduled task, which have passed the deadline and run them.
     This needs an app context.
     """
+    while True:
+        task = (current_app.data.driver.db['scheduled_tasks']
+                .find_one_and_delete(
+                    {'time': {'$lte': datetime.utcnow()}}))
 
-    overdue_tasks = current_app.data.driver.db['scheduled_tasks'].find(
-        {'time': {'$lte': datetime.utcnow()}})
+        if task is None:
+            return
 
-    for task in overdue_tasks:
         args = pickle.loads(task['args'])
         func = schedulable_functions[task['function']]
-
-        current_app.data.driver.db['scheduled_tasks'].remove(
-            {'_id': task['_id']})
-
         func(*args)
 
 
