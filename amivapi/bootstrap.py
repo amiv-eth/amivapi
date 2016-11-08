@@ -15,6 +15,7 @@ from eve import Eve
 from amivapi import (
     users,
     auth,
+    cron,
     events,
     media,
     # groups,
@@ -81,5 +82,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     studydocs.init_app(app)
     media.init_app(app)
     cascade.init_app(app)
+    cron.init_app(app)
 
     return app

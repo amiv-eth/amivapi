@@ -12,6 +12,7 @@ from click import group, option, argument, Path, File, prompt
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
+from amivapi.cron import run_scheduled_tasks
 from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR
 
 
@@ -159,6 +160,16 @@ def apikeys_list():
     for token, apikey_data in apikeys.items():
         print("%s: %s" % (apikey_data['NAME'], token))
         print("    %s" % apikey_data['PERMISSIONS'])
+
+
+@cli.command()
+@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
+        default=None,
+        help="use specified config file")
+def cron(config):
+    app = create_app(config) if config else create_app()
+    with app.app_context():
+        run_scheduled_tasks()
 
 
 @cli.command()
