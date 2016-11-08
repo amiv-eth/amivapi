@@ -263,6 +263,18 @@ def check_if_admin(resource, *args):
     if g.get('current_token') == current_app.config['ROOT_PASSWORD']:
         g.resource_admin = True
 
+    # Check for apikeys
+    elif (g.get('current_token') and
+          g.current_token in current_app.config['APIKEYS']):
+        perms = current_app.config['APIKEYS'][g.current_token]['PERMISSIONS']
+
+        if request.method in perms.get(resource, []):
+            g.resource_admin = True
+        else:
+            # If an API key is used, deny everything else, even public things
+            abort(403, "Your API key does not grant access to the requested"
+                  "endpoint.")
+
     # Notify callback
     current_app.after_auth(resource)
 
