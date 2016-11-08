@@ -8,11 +8,13 @@ from os import urandom
 from base64 import b64encode
 from bson import ObjectId
 from bson.errors import InvalidId
+import datetime
 
 from flask import abort, current_app as app
 from eve.methods.patch import patch_internal
 from eve.utils import debug_error_message, config
 
+from amivapi.cron import periodic
 from amivapi.utils import admin_permissions
 from amivapi.ldap import ldap_connector
 from .auth import AmivTokenAuth
@@ -184,3 +186,19 @@ def verify_password(user, plaintext):
         with admin_permissions():
             patch_internal("users", payload=update, _id=user['_id'])
     return is_valid
+
+
+# Regular task to clean up expired sessions
+@periodic(datetime.timedelta(days=1))
+def delete_expired_sessions():
+    """Delete expired sessions.
+
+    Needs an app context to access current_app,
+    make sure to create one if necessary.
+
+    E.g.
+    >>> with app.app_context():
+    >>>     delete_expired_sessions()
+    """
+    deadline = datetime.datetime.utcnow() - app.config['SESSION_TIMEOUT']
+    app.data.driver.db['sessions'].remove({'_updated': {'$lt': deadline}})
