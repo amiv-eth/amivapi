@@ -136,21 +136,21 @@ groupdomain = {
             },
             'receive_from': {
                 'type': 'list',
+                'unique_elements': True,
+                'unique_elements_for_resource': True,
                 'schema': {
                     'type': 'string',
                     'maxlength': 100,
-                    'regex': '[a-z0-9_\.-]+',
-                    'unique_entries': True,
-                    'unique_entries_per_resource': True,
-                }
+                    'regex': '[a-z0-9_\.-]+'
+                },
             },
             'forward_to': {
                 'type': 'list',
+                'unique_elements': True,
                 'schema': {
                     'type': 'string',
                     'maxlength': 100,
-                    'regex': EMAIL_REGEX,
-                    'unique_entries': True
+                    'regex': EMAIL_REGEX
                 }
             },
             'allow_self_enrollment': {

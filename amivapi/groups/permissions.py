@@ -11,7 +11,12 @@ from flask import current_app, g
 
 
 def check_group_permissions(resource):
-    """do shit"""
+    """Retrieve groups for current user and apply permissions for resource.
+
+    Every group has the permissions field which is a dict of resources.
+    If the value of a resource is `read`, `resource_admin_readonly` is set to
+    True, if it is `readwrite` is set `resource_admin` to True.
+    """
     user = g.get('current_user')
 
     if user:
