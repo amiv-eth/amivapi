@@ -12,7 +12,7 @@ from click import group, option, argument, Path, File
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
-from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR
+from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR, FORWARD_DIR
 
 
 @group()
@@ -73,6 +73,10 @@ def no_ldap_prompts(ctx, param, value):
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store all file uploads",
         help="file storage directory")
+@option("--forward-dir", "FORWARD_DIR", default=FORWARD_DIR,
+        type=Path(file_okay=False, resolve_path=True),
+        prompt="Directory to store mailing list files",
+        help="forward directory")
 # LDAP settings
 @option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
         callback=no_ldap_prompts,
