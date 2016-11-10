@@ -10,45 +10,18 @@ Also contains email management for group mailing lists
 And provides a helper function to check group permissions.
 """
 
-from flask import current_app
-
 from amivapi.utils import register_domain, register_validator
 
-from .endpoints import (
-    groupdomain
-)
+from .mailing_lists import (
+    new_groups,
+    new_members,
+    removed_group,
+    removed_member,
+    updated_group,
+    updated_user)
+from .model import groupdomain
+from .permissions import check_group_permissions
 from .validation import GroupValidator
-from . import mailing_lists as mail
-
-
-def check_group_permission(user_id, resource, method):
-    """Check group permissions of user.
-
-    This function checks wether the user is permitted to access
-    the given resource with the given method based on the groups
-    he is in.
-
-    :param user_id: the id of the user to check
-    :param resource: the requested resource
-    :param method: the used method
-
-    :returns: Boolean, True if permitted, False otherwise
-    """
-    Group = None  # No SQL anymore, placeholder for flake9
-    GroupMember = None
-
-    db = current_app.data.driver.session
-    query = db.query(Group.permissions).filter(
-        Group.members.any(GroupMember.user_id == user_id))
-
-    # All entries are dictionaries
-    # If any dicitionary contains the permission it is good.
-    for row in query:
-        if (row.permissions and
-                (row.permissions.get(resource, {}).get(method, False))):
-            return True
-
-    return False
 
 
 def init_app(app):
@@ -56,17 +29,15 @@ def init_app(app):
     register_domain(app, groupdomain)
     register_validator(app, GroupValidator)
 
-    # email-management
-    # Addresses
-    app.on_inserted_groupaddresses += mail.create_files
-    app.on_replaced_groupaddresses += mail.update_file
-    app.on_updated_groupaddresses += mail.update_file
-    app.on_deleted_item_groupaddresses += mail.delete_file
-    # Members - can not be updated or replaced
-    app.on_inserted_groupmembers += mail.add_user_email
-    app.on_deleted_item_groupmembers += mail.remove_user_email
-    # Forwards
-    app.on_inserted_groupforwards += mail.add_forward_email
-    app.on_replaced_groupforwards += mail.replace_forward_email
-    app.on_updated_groupforwards += mail.update_forward_email
-    app.on_deleted_item_groupforwards += mail.remove_forward_email
+    # authentication
+    app.after_auth += check_group_permissions
+
+    # email lists
+    app.on_inserted_groups += new_groups
+    app.on_updated_groups += updated_group
+    app.on_deleted_item_groups += removed_group
+
+    app.on_inserted_groupmemberships += new_members
+    app.on_deleted_item_groupmemberships += removed_member
+
+    app.on_updated_users += updated_user
