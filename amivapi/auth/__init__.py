@@ -50,7 +50,7 @@ def init_app(app):
             event += add_lookup_filter
 
     # Check resource write permission for POST and DELETE
-    app.on_insert += check_resource_write_permission
+    app.on_pre_POST += check_resource_write_permission
     app.on_delete_resource = check_resource_write_permission
 
     # Check item write permission for PATCH and DELETE

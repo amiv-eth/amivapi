@@ -16,6 +16,8 @@ from werkzeug.exceptions import NotFound
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 
+from amivapi.utils import admin_permissions
+
 
 def cascade_delete(resource, item):
     """Cascade DELETE.
@@ -24,28 +26,29 @@ def cascade_delete(resource, item):
     in the data_relation and relate to the object, which was just deleted.
     """
     domain = current_app.config['DOMAIN']
-
     deleted_id = item[domain[resource]['id_field']]
 
     for res, res_domain in domain.items():
+        # Filter schema of `res` to get all fields containing references
+        # to the resource of the deleted item
         relations = ((field, field_def['data_relation'])
                      for field, field_def in res_domain['schema'].items()
                      if 'data_relation' in field_def and
                      field_def['data_relation'].get('resource') == resource)
         for field, data_relation in relations:
-            if data_relation.get('cascade_delete'):
-                # Delete all objects in resource `res`, which have `field` set
-                # to item['_id']
+            # All items in `res` with reference to the deleted item
+            lookup = {field: deleted_id}
+            with admin_permissions():
                 try:
-                    deleteitem_internal(res, concurrency_check=False,
-                                        **{field: deleted_id})
-                except NotFound:
-                    pass
-            else:
-                try:
-                    patch_internal(res, payload={field: None},
-                                   concurrency_check=False,
-                                   **{field: deleted_id})
+                    if data_relation.get('cascade_delete'):
+                        # Delete the item as well
+                        deleteitem_internal(res, concurrency_check=False,
+                                            **lookup)
+                    else:
+                        # Don't delete, only remove reference
+                        patch_internal(res, payload={field: None},
+                                       concurrency_check=False,
+                                       **lookup)
                 except NotFound:
                     pass
 
