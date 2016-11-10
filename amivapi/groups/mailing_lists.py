@@ -2,229 +2,124 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Api group resources.
+"""Api group emails.
 
-Contains groups, groupmemberships, groupaddresses and forwards as well as
-group permission and mailinglist functions.
+A email list can be generated for any group.
+Everytime a group changes or a groupmember is added/removed, the group mail
+files will be regenerated.
+(Since we do not get thousands of requests like this per second we don't need
+ anything fancy.)
 """
 
-from os import remove, rename
+from itertools import chain
+from os import makedirs, path, remove
 
-from flask import current_app as app
-from flask import abort
+from bson import ObjectId
 
-from eve.utils import config
+from flask import current_app
 
-from amivapi.users import User
 
-from .endpoints import GroupMember, GroupAddress, GroupForward
+def make_files(group_id):
+    """Create all mailing lists for a group.
+
+    If the file exists it will be overwritten.
+
+    Args:
+        group_id (str): The id of the group
+    """
+    group_objectid = ObjectId(group_id)
+
+    # Get group
+    group = current_app.data.driver.db['groups'].find_one(
+        {'_id': group_objectid}, {'receive_from': 1, 'forward_to': 1})
+
+    if group:
+        # Get user mails
+        memberships = current_app.data.driver.db['groupmemberships'].find(
+            {'group': group_objectid}, {'user': 1})
+        user_ids = [membership['user'] for membership in memberships]
+        users = current_app.data.driver.db['users'].find(
+            {'_id': {'$in': user_ids}}, {'email': 1})
+        user_mails = (user['email'] for user in users)
+
+        # The empty string at the chain end ensures we end the data with \n
+        addresses = '\n'.join(chain(group.get('forward_to', []),
+                                    user_mails,
+                                    ''))
+
+        # Create all needed forwards
+        for listname in group.get('receive_from', []):
+            # Check if directory needs to be created
+            forward_path = current_app.config['FORWARD_DIR']
+            if not path.isdir(forward_path):
+                makedirs(forward_path)
+
+            with open(_get_filename(listname), 'w') as f:
+                f.write(addresses)
+                f.truncate()  # Needed if old file was bigger
+
+
+def remove_files(addresses):
+    """Create several mailing list files
+
+    Args:
+        addresses (list): email addresses with a forward file to delete
+    """
+    for address in addresses:
+        try:
+            remove(_get_filename(address))
+        except OSError as e:
+            current_app.logger.error(
+                str(e) + "\nCan not remove forward %s ! It seems the "
+                "forward database is inconsistent!" % address)
 
 
 def _get_filename(email):
-    """Generate the filename for a mailinglist for itet mail forwarding.
-
-    :param email: adress of the mailinglist
-    :returns: path of forward file
-    """
-    return config.FORWARD_DIR + '/.forward+' + email
+    """Generate the filename for a mailinglist for itet mail forwarding."""
+    return path.join(current_app.config['FORWARD_DIR'], '.forward+%s' % email)
 
 
-def _add_email(group_id, email):
-    """Add an address to the mailinglist file.
+# Hooks
 
-    :param group_id: id of Group object(which addresses are forwarded)
-    :param email: address to forward to to add(where to forward)
-    """
-    db = app.data.driver.session
-
-    groupaddresses = db.query(GroupAddress).filter(
-        GroupAddress.group_id == group_id)
-    for groupaddress in groupaddresses:
-        try:
-            with open(_get_filename(groupaddress.email), 'a') as f:
-                f.write(email + '\n')
-        except IOError as e:
-            app.logger.error(str(e) + "Can not open forward file! "
-                             "Please check permissions!")
-            abort(500)
+def new_groups(groups):
+    """Create mailing list files for all new groups."""
+    for group in groups:
+        make_files(group['_id'])
 
 
-def _remove_email(group_id, email):
-    """Remove an address from a mailinglist file.
-
-    :param group_id: id of Group object
-    :param email: Address to forward to to remove
-    """
-    db = app.data.driver.session
-
-    groupaddresses = db.query(GroupAddress).filter(
-        GroupAddress.group_id == group_id)
-    for groupaddress in groupaddresses:
-        path = _get_filename(groupaddress.email)
-        try:
-            with open(path, 'r') as f:
-                lines = [x for x in f.readlines() if x != email + '\n']
-            with open(path, 'w') as f:
-                f.write(''.join(lines))
-        except IOError as e:
-            app.logger.error(str(e) + "Can not remove forward " + email +
-                             " from " + path + "! It seems the forward"
-                             " database is inconsistent!")
+def updated_group(updates, original):
+    """Update group mailing lists if any address changes."""
+    # This is just the simplest solution. Could be advanced if needed.
+    if ('receive_from' in updates) or ('forward_to' in updates):
+        remove_files(original.get('receive_from', []))
+        make_files(original['_id'])
 
 
-def add_user(group_id, user_id):
-    """Add a user to all GroupAddresses of a group in the filesystem.
-
-    :param group_id: id of the group object
-    :param user_id: id of the user to add
-    """
-    db = app.data.driver.session
-    user = db.query(User).get(user_id)
-
-    _add_email(group_id, user.email)
+def removed_group(group):
+    """Delete all mailinglist files."""
+    print(group)
+    remove_files(group.get('receive_from', []))
 
 
-def remove_user(group_id, user_id):
-    """Remove a user from a group in the filesystem.
+def new_members(new_memberships):
+    """Post on memberships, recreate files for the groups"""
+    # Get group ids without duplicates
+    group_ids = set(m['group'] for m in new_memberships)
 
-    :param group_id: id of the group object
-    :param user_id: id of the user to remove
-    """
-    db = app.data.driver.session
-    user = db.query(User).get(user_id)
-
-    _remove_email(group_id, user.email)
+    for group_id in group_ids:
+        make_files(group_id)
 
 
-# Hooks for groupaddresses, all methods needed
+def removed_member(member):
+    """Update files for the group the user was in."""
+    make_files(member['group'])
 
 
-def create_files(items):
-    """Create mailinglist files.
-
-    Hook to add all users in group to a file for the address, necessary
-    when the address is added to an existing group to get it up to date
-    """
-    session = app.data.driver.session
-
-    for item in items:
-        # Get members in group
-        members = session.query(GroupMember).filter_by(
-            group_id=item['group_id']).all()
-        members = [groupmember.user.email for groupmember in members]
-
-        forwards = session.query(GroupForward).filter_by(
-            group_id=item['group_id']).all()
-        forwards = [f.email for f in forwards]
-
-        for email in members + forwards:
-            _add_email(item['group_id'], email)
-
-
-def delete_file(item):
-    """Hook to delete a the mailinglist file when the address is removed.
-
-    :param item: address which is being deleted
-    """
-    path = _get_filename(item['email'])
-
-    try:
-        remove(path)
-    except OSError as e:
-        app.logger.error(str(e) + "Can not remove forward " +
-                         item['email'] + "! It seems the forward "
-                         "database is inconsistent!")
-        pass
-
-
-def update_file(updates, original):
-    """Rename the file to the new address."""
+def updated_user(updates, original):
+    """Update group mailing files if a member changes his email."""
     if 'email' in updates:
-        old_path = _get_filename(original['email'])
-        new_path = _get_filename(updates['email'])
+        memberships = current_app.data.driver.db['groupmemberships'].find(
+            {'user': ObjectId(original['_id'])}, {'group': 1})
 
-        try:
-            rename(old_path, new_path)
-        except OSError as e:
-            app.logger.error(str(e) + "Can not rename file " +
-                             original['email'] + "to " + updates['email'] +
-                             "! It seems the forward database is " +
-                             "inconsistent!")
-
-
-# Hooks for groupmembers, only POST and DELETE needed
-
-def add_user_email(items):
-    """Add user to list.
-
-    Hook to add a user to a forward in the filesystem when a ForwardUser
-    object is created
-
-    :param items: GroupMember objects
-    """
-    for i in items:
-        add_user(i['group_id'], i['user_id'])
-
-
-def remove_user_email(item):
-    """Remove user from list.
-
-    Hook to remove the entries in the forward files in the filesystem when
-    a GroupMember is DELETEd
-
-    :param item: dict of the GroupMember which is deleted
-    """
-    remove_user(item['group_id'], item['user_id'])
-
-
-# Hooks for groupforwards, all methods needed
-
-
-def add_forward_email(items):
-    """Add mail to list.
-
-    Hook to add an entry to a forward file in the filesystem when a
-    GroupAddressMember object is created using POST
-
-    :param items: List of new GroupAddressMember objects
-    """
-    for forward in items:
-        _add_email(forward['group_id'], forward['email'])
-
-
-def replace_forward_email(item, original):
-    """Replace mail in list.
-
-    Hook to replace an entry in forward files in the filesystem when a
-    GroupAddressMember object is replaced using PUT
-
-    :param item: New GroupAddressMember object to be registered
-    :param original: The old GroupAddressMember object
-    """
-    _remove_email(original['group_id'], original['email'])
-    _add_email(item['group_id'], item['email'])
-
-
-def update_forward_email(updates, original):
-    """Update mail in list.
-
-    Hook to update an entry in forward files in the filesystem when a
-    GroupAddressMember object is changed using PATCH
-
-    :param updates: dict of updates to GroupAddressMember object
-    :param original: The old GroupAddressMember object
-    """
-    new_item = original.copy()
-    new_item.update(updates)
-    replace_forward_email(new_item, original)
-
-
-def remove_forward_email(item):
-    """Delete mail from list.
-
-    Hook to remove an entry in forward files in the filesystem when a
-    GroupAddressMember object is DELETEd
-
-    :param item: The GroupAddressMember object which is being deleted
-    """
-    _remove_email(item['group_id'], item['email'])
+        for membership in memberships:
+            make_files(str(membership['group']))

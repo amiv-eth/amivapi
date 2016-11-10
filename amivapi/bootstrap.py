@@ -18,7 +18,7 @@ from amivapi import (
     cron,
     events,
     media,
-    # groups,
+    groups,
     # documentation,
     utils,
     joboffers,
@@ -76,8 +76,8 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     users.init_app(app)
     auth.init_app(app)
     events.init_app(app)
-    # groups.init_app(app)
-    joboffers.init_app(app)
+    groups.init_app(app)
+    # joboffers.init_app(app)
     purchases.init_app(app)
     studydocs.init_app(app)
     media.init_app(app)
