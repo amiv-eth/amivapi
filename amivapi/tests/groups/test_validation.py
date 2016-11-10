@@ -89,7 +89,7 @@ class ValidationTest(WebTest):
         self.enroll(bad_data, token, 422)
 
     def test_enroll_by_mod(self):
-        """Moderators can enroll others to their groups."""
+        """Test moderators can enroll others to their groups."""
         user_id = 24 * '0'
         mod_id = 24 * '1'
         mod_group_id = 24 * '2'
@@ -114,7 +114,7 @@ class ValidationTest(WebTest):
         self.enroll(other_data, self.get_user_token(mod_id), 422)
 
     def test_enroll_by_admin(self):
-        """Admins can enroll anyone."""
+        """Test admins can enroll anyone."""
         user_id = 24 * '0'
         group_id = 24 * '1'
         self.load_fixture({
@@ -146,3 +146,38 @@ class ValidationTest(WebTest):
         self.enroll(good_data, token, 201)
         print("now")
         self.enroll(bad_data, token, 422)
+
+    def test_unique_elements(self):
+        """Test the unique_elements validator."""
+        with_duplicates = {'name': "Test",
+                           'forward_to': ['a@b.c', 'a@b.c']}
+        without_duplicates = {'name': "Test",
+                              'forward_to': ['a@b.c', 'd@b.c']}
+        token = self.get_root_token()
+
+        self.api.post('/groups', data=with_duplicates,
+                      token=token, status_code=422)
+        self.api.post('/groups', data=without_duplicates,
+                      token=token, status_code=201)
+
+    def test_unique_elements_for_resource(self):
+        """Test that the the group addresses are unique over all groups."""
+        group = {'name': 'first', 'receive_from': ['abc']}
+        group_with_duplicate = {'name': 'second', 'receive_from': ['abc']}
+        token = self.get_root_token()
+
+        self.api.post('/groups', data=group, token=token, status_code=201)
+        self.api.post('/groups', data=group_with_duplicate,
+                      token=token, status_code=422)
+
+    def test_unique_elements_for_resource_works_with_update(self):
+        """Test edge case: You must be able to replace a list with a subset."""
+        r = self.load_fixture({'groups': [
+            {'name': 'test', 'receive_from': ['a', 'b', 'c']}
+        ]})
+        id = str(r[0]['_id'])
+        etag = r[0]['_etag']
+        token = self.get_root_token()
+        subset = {'receive_from': ['a', 'b']}
+        self.api.patch("/groups/" + id, data=subset, token=token,
+                       headers={'If-Match': etag}, status_code=200)
