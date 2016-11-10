@@ -35,6 +35,7 @@ X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
 
 # File Storage
 STORAGE_DIR = 'amivapi_storage'
+FORWARD_DIR = 'amivapi_forwards'
 FILENAME_RANDOM_BYTES = 128
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True
