@@ -53,3 +53,29 @@ class GroupValidator(object):
         """Value must be in api domain."""
         if enabled and value not in current_app.config['DOMAIN']:
             self._error(field, "'%s' is not a api resource." % value)
+
+    def _validate_unique_elements(self, enabled, field, value):
+        """Validate that a list does only contain unique elements."""
+        if enabled:
+            if len(value) > len(set(value)):
+                self._error(field, "All list elements must be unique.")
+
+    def _validate_unique_elements_for_resource(self, enabled, field, value):
+        """Validate that no list elements exists in another items list."""
+        if enabled:
+            # Ignore values already present in original document if updating
+            if self._original_document is not None:
+                old_list = self._original_document.get(field, [])
+                elements = (e for e in value if e not in old_list)
+            else:
+                elements = value
+
+            errors = []
+            for element in elements:
+                group = current_app.data.driver.db['groups'].find_one(
+                    {field: element}, {'_id': 1})
+                if group:
+                    errors.append(element)
+            if errors:
+                self._error(field, "The following values already exist in "
+                            "other items: " + ", ".join(errors))
