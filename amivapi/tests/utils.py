@@ -159,10 +159,6 @@ class WebTest(unittest.TestCase, FixtureMixin):
                                       self.app.config['MONGO_PORT'])
         self.db = self.connection[self.app.config['MONGO_DBNAME']]
 
-        # Assert that database is empty before starting tests.
-        assert len(self.db.collection_names()) == 1, \
-            "The database already exists!"
-
     def tearDown(self):
         """Tear down after testing."""
         # delete testing database
