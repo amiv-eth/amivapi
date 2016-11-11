@@ -49,7 +49,7 @@ All methods go through the following methods:
 
 - `AmivTokenAuth.authorized` (only if the methods is not public!)
 - `authenticate`
-- `check_if_admin`
+- `check_if_admin`  (this will also call the `after_auth` hooks)
 - `abort_if_not_public` (Check if abort is needed)
 
 If the request is not public, the following happens next:
@@ -275,7 +275,7 @@ def abort_if_not_public(*args):
     If auth is required and we are no admin, check if a user is logged in.
     If not abort, since the requested resource is not public.
     """
-    if not g.current_user:
+    if g.current_user is None:
         current_app.logger.debug(
             "Access denied: "
             "Action is not public and user can't be authenticated.")
@@ -300,7 +300,8 @@ def add_lookup_filter(auth, resource, request, lookup):
 @only_amiv_token_auth
 def check_resource_write_permission(auth, resource, *args):
     """Check if the user is allowed to POST to (or DELETE) a resource."""
-    if not auth.has_resource_write_permission(g.current_user):
+    user = g.current_user
+    if not (user and auth.has_resource_write_permission(user)):
         current_app.logger.debug(
             "Access denied: "
             "The current user has no permission to write.")
@@ -312,7 +313,8 @@ def check_resource_write_permission(auth, resource, *args):
 @only_amiv_token_auth
 def check_item_write_permission(auth, resource, item):
     """Check if the user is allowed to PATCH or DELETE the item."""
-    if not auth.has_item_write_permission(g.current_user, item):
+    user = g.current_user
+    if not (user and auth.has_item_write_permission(user, item)):
         current_app.logger.debug(
             "Access denied: "
             "The current user has no permission to write.")
