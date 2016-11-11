@@ -118,7 +118,6 @@ def schedule_once_soon(func, *args):
     """
     if current_app.data.driver.db['scheduled_tasks'].find(
                     {'function': func_str(func)}).count() != 0:
-        print("skip")
         return
     schedule_task(datetime.utcnow(), func, *args)
 
