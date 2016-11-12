@@ -97,13 +97,13 @@ class LdapConnector():
         """
         res = {
             'nethz': data['cn'][0],
-            'legi': data['swissEduPersonMatriculationNumber'][0],
+            'legi': data['swissEduPersonMatriculationNumber'],
             'firstname': data['givenName'][0],
             'lastname': data['sn'][0]
         }
         res['email'] = '%s@ethz.ch' % res['nethz']
         res['gender'] = \
-            u"male" if int(data['swissEduPersonGender'][0]) == 1 else u"female"
+            u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
         if ('D-ITET' in data['ou']):
             res['department'] = u"itet"
@@ -153,8 +153,8 @@ class LdapConnector():
         Returns:
             dict: ldap data of user if found, None otherwise
         """
-        result = self.ldap.search("(cn=%s)" % self._escape(cn),
-                                  attributes=self.LDAP_ATTR)
+        result = list(self.ldap.search("(cn=%s)" % self._escape(cn),
+                                       attributes=self.LDAP_ATTR))
 
         if result:
             return self._filter_data(result[0])
@@ -194,7 +194,7 @@ class LdapConnector():
             ldap_data (dict): User data from ldap
 
         Returns:
-            dict: Everything that was actually patched
+            dict: The updated user (or original user if nothing is updated)
         """
         # Compare to find only necessary updates
         updates = {
@@ -213,6 +213,8 @@ class LdapConnector():
                                       updates,
                                       skip_validation=True,
                                       _id=db_data['_id'])[0]
+        else:
+            return db_data  # No updates
 
     def sync_one(self, cn):
         """Synrchonize ldap and database for a single user.
