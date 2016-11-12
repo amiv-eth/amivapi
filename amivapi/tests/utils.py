@@ -24,22 +24,6 @@ from amivapi.tests.fixtures import FixtureMixin
 from amivapi import bootstrap, utils
 
 
-def is_file_content(path, content):
-    """Check file content.
-
-    Returns true if the file at path exists and has the content in the
-    second parameter
-    """
-    try:
-        with open(path, "r") as f:
-            if content != f.read():
-                return False
-    except IOError:
-        return False
-
-    return True
-
-
 class TestClient(FlaskClient):
     """Custom test client with additional request/response checks.
 
