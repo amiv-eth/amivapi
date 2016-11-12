@@ -14,6 +14,8 @@ from click import (
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
+from amivapi.cron import run_scheduled_tasks
+from amivapi.ldap import ldap_connector
 from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR, FORWARD_DIR
 
 
@@ -21,10 +23,13 @@ from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR, FORWARD_DIR
 def cli():
     """Manage amivapi."""
 
+config_option = option("--config",
+                       type=Path(exists=True, dir_okay=False, readable=True),
+                       help="use specified config file")
+
 
 @cli.command()
-@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None, help="use specified config file")
+@config_option
 def cron(config):
     """Run scheduled tasks."""
     app = create_app(config) if config else create_app()
@@ -33,8 +38,7 @@ def cron(config):
 
 
 @cli.group()
-@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None, help="use specified config file")
+@config_option
 @pass_context
 def apikeys(ctx, config):
     """Manage amivapi apikeys."""
@@ -141,9 +145,36 @@ def remove(app, keyname):
 
 
 @cli.command()
-@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None,
-        help="use specified config file")
+@config_option
+@option('--all', is_flag=True, help="Sync all users.")
+@argument('nethz', nargs=-1)
+def ldap_sync(config, all, nethz):
+    """Synchronize users with eth ldap.
+
+    Examples:
+
+        amivapi ldap_sync --all
+
+        amivapi ldap_sync adietmue bconrad blumh
+    """
+    app = create_app(config) if config else create_app()
+    if not app.config['ENABLE_LDAP']:
+        echo("LDAP is not enabled, can't proceed!")
+    else:
+        with app.test_request_context():
+            if all:
+                res = ldap_connector.sync_all()
+                echo("Synchronized %i users." % len(res))
+            else:
+                for user in nethz:
+                    if ldap_connector.sync_one(user) is not None:
+                        echo("Succesfully synchronized '%s'." % user)
+                    else:
+                        echo("Could not synchronize '%s'." % user)
+
+
+@cli.command()
+@config_option
 def run(config):
     """Start amivapi development server."""
     app = create_app(config) if config else create_app()
