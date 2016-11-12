@@ -182,6 +182,14 @@ def run(config):
     app.run(threaded=True)
 
 
+def no_prompts(ctx, param, value):
+    """Deactivate prompting completely."""
+    if value:  # enable_ldap == False
+        for opt in ctx.command.params:
+            opt.prompt = None
+    return value
+
+
 def no_ldap_prompts(ctx, param, value):
     """Deactivate prompting for ldap user and password."""
     if not value:  # enable_ldap == False
@@ -192,20 +200,23 @@ def no_ldap_prompts(ctx, param, value):
 
 
 @cli.command()
+# Turn off all prompts (defaults will be used)
+@option("--no-prompts", is_flag=True, is_eager=True, expose_value=False,
+        callback=no_prompts, help="Do not prompt user for input.")
 # Server settings
 @option("--root-password", "ROOT_PASSWORD", default="root",
         prompt="AMIVAPI root password.",
         help="Root Password.")
 @option("--debug/--no-debug", "DEBUG", default=False,
         prompt="Enable debug mode",
-        help="debug mode on/off.")
+        help="Debug mode on/off.")
 # Email settings
 @option("--smtp", "SMTP_SERVER", default="localhost",
         prompt="STMP server for outgoing mails",
         help="SMTP server.")
 @option("--mail", "API_MAIL", default="api@amiv.ethz.ch",
         prompt="E-mail address for outgoing mails",
-        help="api mail address.")
+        help="Api mail address.")
 # Database settings
 @option("--mongo-host", "MONGO_HOST", default='localhost',
         prompt="MongoDB hostname",
@@ -226,11 +237,11 @@ def no_ldap_prompts(ctx, param, value):
 @option("--storage-dir", "STORAGE_DIR", default=STORAGE_DIR,
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store all file uploads",
-        help="file storage directory.")
+        help="File storage directory.")
 @option("--forward-dir", "FORWARD_DIR", default=FORWARD_DIR,
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store mailing list files",
-        help="forward directory.")
+        help="Forward directory.")
 # LDAP settings
 @option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
         callback=no_ldap_prompts,
