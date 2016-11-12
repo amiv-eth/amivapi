@@ -105,6 +105,13 @@ class AuthentificationTest(WebTest):
         self.api.get("/sessions", status_code=401)
         self.api.get("/sessions/%s" % session['_id'], status_code=401)
 
+    def test_wrong_user(self):
+        """Try to login with a non existing user."""
+        self.api.post("/sessions", data={
+            'username': u"I don't exist.",
+            'password': u"something-else",
+        }, status_code=401)
+
     def test_wrong_password(self):
         """Test to login with a wrong password."""
         user = self.new_object('users', password=u"something")
@@ -138,15 +145,17 @@ class AuthentificationTest(WebTest):
         user_id = str(user['_id'])
 
         bad_data = [
+            # Missing data
             {'username': user_id},
             {'password': password},
+            # Invalid user
             {'username': None,
              'password': password},
             {'username': '',
              'password': password},
+            # Invalid password
             {'username': user_id,
-             'password': None},
-            {'username': "not_user@amiv"}
+             'password': None}
         ]
 
         for data in bad_data:
