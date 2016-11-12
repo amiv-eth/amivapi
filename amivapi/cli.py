@@ -8,7 +8,9 @@
 from os import urandom
 from base64 import b64encode
 from datetime import datetime as dt
-from click import group, option, argument, Path, File, prompt
+from click import (
+    Choice, echo, group, option, argument, Path, File, BadParameter,
+    pass_context, pass_obj, ParamType, confirmation_option)
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
@@ -20,155 +22,122 @@ def cli():
     """Manage amivapi."""
 
 
-def change_apikey_prompt(config, current_permissions):
-    """ Prompt for changes to the permissions described by current_permissions
-    """
-
-    # We need to create an app to get a list of resources available
-    app = create_app(config) if config else create_app()
-    resources = list(app.config['DOMAIN'].keys())
-
-    while True:
-        print("Current permissions:")
-        print(current_permissions)
-        print("")
-        print("Available resources:")
-        print(", ".join(resources))
-        resource = prompt("Change permissions of what resource? \"x\" to exit",
-                          default="x")
-        if resource == "x":
-            break
-
-        if resource not in resources:
-            print("Unknown resource")
-            continue
-
-        method = prompt("Which method to toggle"
-                        "(GET, POST, PATCH, PUT, DELETE)?", default="")
-
-        if method in ['GET', 'POST', 'PATCH', 'PUT', 'DELETE']:
-            if method in current_permissions.get(resource, []):
-                current_permissions[resource].remove(method)
-                if not current_permissions[resource]:
-                    current_permissions.remove(resource)
-            else:
-                if resource not in current_permissions:
-                    current_permissions[resource] = []
-                current_permissions[resource].append(method)
-        else:
-            print("Unknown method")
-
-
-@cli.command()
-@option("--name", "name", prompt="Key name", help="Name of the key")
-@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None,
-        help="use specified config file")
-def apikeys_add(name, config):
-    """ Add a new apikey to the apikey file """
-    try:
-        with open('apikeys.yaml', 'r') as apikey_file:
-            apikeys = yaml.load(apikey_file)
-    except IOError:
-        apikeys = {}
-
-    for token, apikey_data in apikeys.items():
-        if apikey_data['NAME'] == name:
-            print("A key with that name already exists!")
-            return
-
-    token = b64encode(urandom(32)).decode('utf_8')
-
-    current_permissions = {}
-    change_apikey_prompt(config, current_permissions)
-
-    apikeys[token] = {
-        'NAME': name,
-        'PERMISSIONS': current_permissions
-    }
-
-    with open('apikeys.yaml', 'w') as apikey_file:
-        yaml.safe_dump(apikeys, apikey_file, default_flow_style=False)
-
-
-@cli.command()
-@option("--name", "name", prompt="Key name", help="Name of the key")
-def apikeys_delete(name):
-    """ Delete an apikey """
-    try:
-        with open('apikeys.yaml', 'r') as apikey_file:
-            apikeys = yaml.load(apikey_file)
-    except IOError:
-        print("No apikeys set.")
-        return
-
-    token_to_delete = None
-    for token, apikey_data in apikeys.items():
-        if apikey_data['NAME'] == name:
-            token_to_delete = token
-
-    if token_to_delete is None:
-        print("No such key.")
-        return
-
-    del apikeys[token_to_delete]
-
-    with open('apikeys.yaml', 'w') as apikey_file:
-        yaml.safe_dump(apikeys, apikey_file, default_flow_style=False)
-
-
-@cli.command()
-@option("--name", "name", prompt="Key name", help="Name of the key")
-@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None,
-        help="use specified config file")
-def apikeys_change(name, config):
-    """ Change the permissions of an existing apikey """
-    try:
-        with open('apikeys.yaml', 'r') as apikey_file:
-            apikeys = yaml.load(apikey_file)
-    except IOError:
-        print("No apikeys set.")
-        return
-
-    token_to_edit = None
-    for token, apikey_data in apikeys.items():
-        if apikey_data['NAME'] == name:
-            token_to_edit = token
-
-    if token_to_edit is None:
-        print("No such key.")
-        return
-
-    change_apikey_prompt(config, apikeys[token_to_edit]['PERMISSIONS'])
-
-    with open('apikeys.yaml', 'w') as apikey_file:
-        yaml.safe_dump(apikeys, apikey_file, default_flow_style=False)
-
-
-@cli.command()
-def apikeys_list():
-    """ Show existing apikeys """
-    try:
-        with open('apikeys.yaml', 'r') as apikey_file:
-            apikeys = yaml.load(apikey_file)
-    except IOError:
-        print("No apikeys set.")
-        return
-
-    for token, apikey_data in apikeys.items():
-        print("%s: %s" % (apikey_data['NAME'], token))
-        print("    %s" % apikey_data['PERMISSIONS'])
-
-
 @cli.command()
 @option("--config", type=Path(exists=True, dir_okay=False, readable=True),
-        default=None,
-        help="use specified config file")
+        default=None, help="use specified config file")
 def cron(config):
+    """Run scheduled tasks."""
     app = create_app(config) if config else create_app()
     with app.app_context():
         run_scheduled_tasks()
+
+
+@cli.group()
+@option("--config", type=Path(exists=True, dir_okay=False, readable=True),
+        default=None, help="use specified config file")
+@pass_context
+def apikeys(ctx, config):
+    """Manage amivapi apikeys."""
+    # Set the app as ctx.obj, then we can use the @pass_obj decorator to get it
+    ctx.obj = create_app(config) if config else create_app()
+
+    # Automatically safe keys after commands finish (call_on_close)
+    def _safe_keys():
+        with open('apikeys.yaml', 'w') as apikey_file:
+            yaml.safe_dump(ctx.obj.config['APIKEYS'], apikey_file,
+                           default_flow_style=False)
+    ctx.call_on_close(_safe_keys)
+
+
+class _Res(ParamType):
+    name = 'resource'
+
+    def convert(self, value, param, ctx):
+        if value not in ctx.obj.config['DOMAIN']:
+            self.fail("'%s' is not an amivapi resource." % value, param, ctx)
+        return value
+
+
+class _Key(ParamType):
+    name = 'apikey'
+
+    def convert(self, value, param, ctx):
+        if value not in ctx.obj.config['APIKEYS']:
+            self.fail("Apikey '%s' doesn't exist." % value, param, ctx)
+        return value
+
+
+def _unique(ctx, param, value):
+    for keydata in ctx.obj.config['APIKEYS'].values():
+        if value == keydata['token']:
+            raise BadParameter("Token already exists.")
+    return value
+
+
+@apikeys.command()
+@pass_obj  # obj is the app
+def list(app):
+    """List all apikeys."""
+    if app.config['APIKEYS']:
+        echo(yaml.dump(app.config['APIKEYS'], default_flow_style=False))
+    else:
+        echo('There are no apikeys.')
+
+
+@apikeys.command()
+@option('-t', '--token', help="The apikey auth token.", callback=_unique,
+        default=lambda: b64encode(urandom(64)).decode('utf_8'))
+@option('-p', '--permission', type=(_Res(), Choice(['read', 'readwrite'])),
+        help="Permissions for a resource, can either be 'read' or 'readwrite'."
+        " This option can be used multiple times.", multiple=True)
+@argument('keyname')
+@pass_obj
+def add(app, permission, keyname, token):
+    """Add an apikey, overwrite if it exists already.
+
+    Example:
+
+        amivapi apikeys add Bierkey -p users read -p purchases readwrite
+    """
+    app.config['APIKEYS'][keyname] = {
+        'token': token,
+        'permissions': {res: perm for (res, perm) in permission}}
+
+
+@apikeys.command()
+@option('-t', '--token', help="New apikey auth token.", callback=_unique)
+@option('-p', '--permission', type=(_Res(), Choice(['read', 'readwrite'])),
+        help="Permissions for a resource, can either be 'read' or 'readwrite'."
+        " This option can be used multiple times.", multiple=True)
+@option('-r', '--remove', multiple=True, type=_Res(),
+        help="Remove permissions for a resource. Can be used multiple times.")
+@argument('keyname', type=_Key())
+@pass_obj
+def update(app, token, permission, remove, keyname):
+    """Update an apikey.
+
+    Add or remove permissions. If both is specified, add overwrites remove.
+
+    Example:
+
+        amivapi apikeys update Bierkey -r users -p groups read
+    """
+    apikey = app.config['APIKEYS'][keyname]  # safe because key must exist
+    if token:
+        apikey['token'] = token
+    for key in remove:
+        apikey['permissions'].pop(key, None)
+    for res, perm in permission:
+        apikey['permissions'][res] = perm
+
+
+@apikeys.command()
+@confirmation_option(prompt="Do you really want to delete this apikey?")
+@argument('keyname', type=_Key())
+@pass_obj
+def remove(app, keyname):
+    """Remove an apikey."""
+    app.config['APIKEYS'].pop(keyname, None)
 
 
 @cli.command()
