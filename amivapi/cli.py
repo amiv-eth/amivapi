@@ -193,52 +193,55 @@ def no_ldap_prompts(ctx, param, value):
 
 @cli.command()
 # Server settings
+@option("--root-password", "ROOT_PASSWORD", default="root",
+        prompt="AMIVAPI root password.",
+        help="Root Password.")
 @option("--debug/--no-debug", "DEBUG", default=False,
         prompt="Enable debug mode",
-        help="debug mode on/off")
+        help="debug mode on/off.")
 # Email settings
 @option("--smtp", "SMTP_SERVER", default="localhost",
         prompt="STMP server for outgoing mails",
-        help="SMTP server")
+        help="SMTP server.")
 @option("--mail", "API_MAIL", default="api@amiv.ethz.ch",
         prompt="E-mail address for outgoing mails",
-        help="api mail address")
+        help="api mail address.")
 # Database settings
 @option("--mongo-host", "MONGO_HOST", default='localhost',
         prompt="MongoDB hostname",
-        help="MongoDB hostname")
+        help="MongoDB hostname.")
 @option("--mongo-port", "MONGO_PORT", default=27017,
         prompt="MongoDB port",
-        help="MongoDB port")
+        help="MongoDB port.")
 @option("--mongo-username", "MONGO_USERNAME", default="",
         prompt="MongoDB username",
-        help="MongoDB username")
+        help="MongoDB username.")
 @option("--mongo-password", "MONGO_PASSWORD", default="",
         prompt="MongoDB password",
-        help="MongoDB password")
+        help="MongoDB password.")
 @option("--mongo-dbname", "MONGO_DBNAME", default='amivapi',
         prompt="MongoDB database name",
-        help="MongoDB database name")
+        help="MongoDB database name.")
 # Storage settings
 @option("--storage-dir", "STORAGE_DIR", default=STORAGE_DIR,
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store all file uploads",
-        help="file storage directory")
+        help="file storage directory.")
 @option("--forward-dir", "FORWARD_DIR", default=FORWARD_DIR,
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store mailing list files",
-        help="forward directory")
+        help="forward directory.")
 # LDAP settings
 @option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
         callback=no_ldap_prompts,
         prompt="Enable LDAP",
-        help="LDAP on/off")
+        help="LDAP on/off.")
 @option("--ldap-user", "LDAP_USER",
         prompt="LDAP username",
-        help="LDAP username")
+        help="LDAP username.")
 @option("--ldap-pass", "LDAP_PASS",
         prompt="LDAP password",
-        help="LDAP password")
+        help="LDAP password.")
 # Specify config file (optional)
 @argument("file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
 def create_config(file, **data):
