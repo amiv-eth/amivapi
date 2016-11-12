@@ -18,7 +18,7 @@ class ApiKeyTest(WebTest):
         'testkey': {
             'token': token,
             'permissions': {
-                'sessions': 'read'
+                'sessions': 'read',
             }
         }
     }
@@ -55,3 +55,14 @@ class ApiKeyTest(WebTest):
                         status_code=403)
 
         self.api.get('/users', token=self.token, status_code=403)
+
+    def test_readwrite(self):
+        """Test also the readwrite permission."""
+        user = self.load_fixture({'users': [{}]})[0]
+
+        self.app.config['APIKEYS']['testkey']['permissions']['users'] = \
+            'readwrite'
+
+        self.api.delete('/users/%s' % user['_id'], token=self.token,
+                        headers={'If-Match': user['_etag']},
+                        status_code=204)
