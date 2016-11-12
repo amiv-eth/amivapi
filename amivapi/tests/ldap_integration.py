@@ -120,7 +120,7 @@ class LdapIntegrationTest(WebTest):
 
             # Assert user is found
             user_data = [member for member in members
-                         if member['nethz'] == self.data['nethz']][0]
+                         if member['nethz'] == self.data['nethz']]
             self.assertEqual(user_data, self.data)
 
     def test_compare_and_update(self):
@@ -146,8 +146,10 @@ class LdapIntegrationTest(WebTest):
 
     def test_update_only_upgrades_membership(self):
         """Assert that the update only changes membership if none."""
-        data_no_change = {'nethz': 'nochange', 'membership': u"honorary"}
-        data_change = {'nethz': 'change', 'membership': u"none"}
+        data_no_change = {'_id': 24 * '0',
+                          'nethz': 'nochange', 'membership': u"honorary"}
+        data_change = {'_id': 24 * '1',
+                       'nethz': 'change', 'membership': u"none"}
         self.load_fixture({'users': [data_no_change, data_change]})
 
         with self.app.test_request_context():
