@@ -2,7 +2,7 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Test apikey authorization"""
+"""Test apikey authorization."""
 
 from amivapi.tests.utils import WebTest
 import os
@@ -11,18 +11,20 @@ import tempfile
 
 
 class ApiKeyTest(WebTest):
+    """Apikey auth test class."""
+
     token = 'ABCDEFG'
     APIKEYS = {
-        token: {
-            'NAME': 'testkey',
-            'PERMISSIONS': {
-                'sessions': ['GET']
+        'testkey': {
+            'token': token,
+            'permissions': {
+                'sessions': 'read'
             }
         }
     }
 
     def setUp(self):
-        # Create temp apikey file
+        """Create temp apikey file before normal setup."""
         with tempfile.NamedTemporaryFile(
                 mode='w', suffix='.yaml', delete=False) as f:
             yaml.safe_dump(self.APIKEYS, f, default_flow_style=False)
@@ -31,12 +33,13 @@ class ApiKeyTest(WebTest):
         super(ApiKeyTest, self).setUp()
 
     def tearDown(self):
+        """Remove key file."""
         os.remove(self.test_config['APIKEY_FILENAME'])
 
         super(ApiKeyTest, self).tearDown()
 
     def test_apikey_gives_permission(self):
-        """ Test that APIKEY gives specified permissions """
+        """Test that APIKEY gives specified permissions."""
         self.load_fixture({
             'users': [{}, {}],
             'sessions': [{}, {}]
