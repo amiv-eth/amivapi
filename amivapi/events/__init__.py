@@ -28,6 +28,9 @@ from .email_confirmations import (
     add_confirmed_before_insert,
     add_confirmed_before_insert_bulk
 )
+from .ics_formatter import (
+    post_events_get_callback
+)
 
 
 def init_app(app):
@@ -53,5 +56,8 @@ def init_app(app):
     # Sending confirmation mails
     app.on_inserted_item_eventsignups += send_confirmmail_to_unregistered_users
     app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users_bulk
+
+    # convert to iCalendar format if requested
+    app.on_post_GET_events += post_events_get_callback
 
     app.register_blueprint(confirmprint)
