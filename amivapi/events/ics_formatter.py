@@ -23,7 +23,7 @@ def find_Language_match(acceptedLang):
 
 def post_events_get_callback(request, payload):
     # test if Accept header is set to the .ics MIME type
-    if request.headers['Accept'] == 'text/calendar':
+    if ('Accept' in request.headers) and (request.headers['Accept'] == 'text/calendar'):
 
         # figure out best language
         engflag = (find_Language_match(request.accept_languages) == 'en')

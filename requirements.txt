@@ -8,5 +8,6 @@ click==6.6
 pytz==2016.7
 ruamel.yaml==0.12.14
 freezegun==0.3.8
+icalendar==3.10
 # Install amivapi in editable mode to enable command line tools
 -e .
