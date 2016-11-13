@@ -12,7 +12,7 @@ script:
   - tox -e $TOX_ENV
 before_script:
   - sleep 15  # Travis recommends this to avoid problems
-  - mongo test_amivapi --eval 'db.addUser("test_user",test_pw");'
+  - mongo test_amivapi --eval 'db.addUser("test_user","test_pw");'
   - pip install -r requirements.txt  # We need this to create config with cli
   - amivapi create_config --no-prompts --mongo-username=test_user --mongo-password=test_pw
 branches:
