@@ -8,6 +8,7 @@ from json import loads as jloads
 from icalendar import Calendar, Event
 from eve.utils import str_to_date
 from datetime import timedelta
+from pprint import pprint
 
 
 def find_Language_match(acceptedLang):
@@ -36,8 +37,15 @@ def post_events_get_callback(request, payload):
         cal.add('prodid', 'created_by_AMIVAPI_by_AMIV_an_der_ETH')
         cal.add('version', '2.0') # specify iCalendar format
 
-        # loop through events
-        for jevent in p['_items']:
+        # create list of all events
+        if ('_items' in p):
+            jeventlst = p['_items']
+        else:
+            # special case for event/_id endpoint
+            jeventlst = [p]
+
+        # loop through all events
+        for jevent in jeventlst:
 
             # add start / end times
             if ('time_start' in jevent):
