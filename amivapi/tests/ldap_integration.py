@@ -13,7 +13,6 @@ This means we need lots of environment variables:
 - ldap_nethz
 - ldap_password
 - ldap_firstname
-- ldap_firstname
 - ldap_lastname
 - ldap_legi
 - ldap_gender
