@@ -17,7 +17,8 @@ studydocdomain = {
                 'uploader': 'Read-only field describing which AMIV member '
                 'uploaded the files',
                 'author': 'Original author of the uploaded files'
-                '(Prof, Assistant, copyright owner)'
+                '(Prof, Assistant, copyright owner)',
+                'coursesemester': 'Course Semester as Enum(HS/FS)+Integer'
             },
             'general': 'Study-documents are basically all documents that '
             'are connected to a course. All metadata is optional and intended '
@@ -80,6 +81,11 @@ studydocdomain = {
                 'maxlength': 30,
                 'nullable': True,
                 'type': 'string'
+            },
+            'coursesemester': {
+                    'maxlength': 5,
+                    'nullable': True,
+                    'type': 'string'
             }
         },
     }
