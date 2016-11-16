@@ -121,6 +121,7 @@ def schedule_once_soon(func, *args):
         return
     schedule_task(datetime.utcnow(), func, *args)
 
+
 #
 # Internal functions
 #

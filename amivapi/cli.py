@@ -23,6 +23,7 @@ from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR, FORWARD_DIR
 def cli():
     """Manage amivapi."""
 
+
 config_option = option("--config",
                        type=Path(exists=True, dir_okay=False, readable=True),
                        help="use specified config file")
