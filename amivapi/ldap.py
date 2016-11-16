@@ -293,6 +293,7 @@ class LdapConnector():
 
         return synced_users
 
+
 ldap_connector = LdapConnector()
 """The ldap connector.
 
