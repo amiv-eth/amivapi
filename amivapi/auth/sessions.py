@@ -40,12 +40,12 @@ sessiondomain = {
     'sessions': {
         'description': {
             'general': "A session is used to authenticate a user after he "
-            " provided login data. A POST to /session will return a token you "
+            "provided login data. A POST to /session will return a token you "
             "can use in an Authorization header: token <yourtoken>",
             'methods': {
                 'POST': "Login and aquire a login token. Post the fields "
                 "'username' and 'password', the response will contain the "
-                "token. username can be either nethz, mail, or user_id",
+                "token. 'username' can be either nethz, mail, or user_id",
                 'GET': "Check token(s)."}
         },
 
@@ -86,7 +86,7 @@ sessiondomain = {
 def process_login(items):
     """Hook to add token on POST to /sessions.
 
-    Attempts login via LDAP if enabled first, then login via database.
+    Attempts to first login via LDAP (if enabled), then login via database.
 
     Root login is possible if 'user' is 'root' (instead of nethz or mail).
     This shortcut is hardcoded.
