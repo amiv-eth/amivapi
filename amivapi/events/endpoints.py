@@ -127,9 +127,9 @@ eventdomain = {
                 'type': 'boolean',
                 'required': True,
 
-                # This is basically here, because this is a required
-                # field. It will make sure there is always either an english
-                # or a german title
+                # This is basically here because this is a required field. It
+                # will make sure there is always either an english or a german
+                # title
                 'depends_any': ['title_de', 'title_en']
             },
 
