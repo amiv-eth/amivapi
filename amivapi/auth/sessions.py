@@ -52,7 +52,7 @@ sessiondomain = {
         'authentication': SessionAuth,
         'public_methods': ['POST'],
         'public_item_methods': [],
-        'resource_methods': ['GET', 'POST', 'DELETE'],
+        'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'DELETE'],
 
         'schema': {
