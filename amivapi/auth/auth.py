@@ -45,7 +45,7 @@ Take a look at `users.security` for an example.
 **How it works**
 
 We are using Eve's hooks to add authentiation.
-All methods go through the following methods:
+All requests go through the following methods:
 
 - `AmivTokenAuth.authorized` (only if the methods is not public!)
 - `authenticate`
