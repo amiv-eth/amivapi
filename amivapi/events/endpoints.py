@@ -134,9 +134,9 @@ eventdomain = {
             },
 
             'spots': {
-                'requires_if_not_null': ['time_register_start',
-                                         'time_register_end',
-                                         'allow_email_signup'],
+                'dependencies': ['time_register_start',
+                                 'time_register_end',
+                                 'allow_email_signup'],
                 'min': 0,
                 'required': True,
                 'nullable': True,
@@ -144,13 +144,15 @@ eventdomain = {
             },
             'time_register_start': {
                 'nullable': True,
-                'type': 'datetime'
+                'type': 'datetime',
+                'only_if_not_null': 'spots'
             },
             'time_register_end': {
                 'dependencies': ['time_register_start'],
                 'later_than': 'time_register_start',
                 'nullable': True,
-                'type': 'datetime'
+                'type': 'datetime',
+                'only_if_not_null': 'spots'
             },
             'additional_fields': {
                 'nullable': True,
@@ -159,21 +161,14 @@ eventdomain = {
             },
             'allow_email_signup': {
                 'nullable': False,
-                'type': 'boolean'
+                'type': 'boolean',
+                'only_if_not_null': 'spots'
             },
 
             'signup_count': {
                 'readonly': True,
                 'type': 'integer'
             },
-            # 'signups': {
-            #     'data_relation': {
-            #         'embeddable': True,
-            #         'resource': 'eventsignups'
-            #     },
-            #     'type': 'objectid',
-            #     'readonly': True
-            # }
         },
     },
 

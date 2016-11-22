@@ -134,10 +134,12 @@ class EventValidatorTest(WebTestNoAuth):
             'time_end': '2017-03-19T13:33:37Z'
         }, status_code=201)
 
-    def test_requires_if_not_null(self):
+    def test_spot_dependencies(self):
         """Test that the requires if not null validator works.
+
         We do this by trying to add an event with spots >= 0, but no
-        further required data"""
+        further required data.
+        """
         self.api.post('/events', data={
             'title_en': 'party',
             'description_en': 'fun',
@@ -156,15 +158,10 @@ class EventValidatorTest(WebTestNoAuth):
             'show_infoscreen': False,
             'show_announce': False,
             'spots': 100,
-            'time_register_start': '2016-10-17T21:11:14Z',
             'time_register_end': '2016-10-17T21:11:15Z',
             'allow_email_signup': True
-        }, status_code=201)
+        }, status_code=422)
 
-    def test_only_if_not_null(self):
-        """Test that the only if not null validator works.
-        We test this by trying to add additional fields to an event signup
-        while there are no spots"""
         self.api.post('/events', data={
             'title_en': 'party',
             'description_en': 'fun',
@@ -172,8 +169,9 @@ class EventValidatorTest(WebTestNoAuth):
             'show_website': False,
             'show_infoscreen': False,
             'show_announce': False,
-            'spots': None,
-            'additional_fields': json.dumps({})
+            'spots': 100,
+            'time_register_start': '2016-10-17T21:11:14Z',
+            'allow_email_signup': True
         }, status_code=422)
 
         self.api.post('/events', data={
@@ -186,6 +184,41 @@ class EventValidatorTest(WebTestNoAuth):
             'spots': 100,
             'time_register_start': '2016-10-17T21:11:14Z',
             'time_register_end': '2016-10-17T21:11:15Z',
-            'allow_email_signup': True,
-            'additional_fields': json.dumps({})
+            'allow_email_signup': True
         }, status_code=201)
+
+    def test_spots_none(self):
+        """Test you can set spots to None and this does not require deps."""
+        self.api.post('/events', data={
+            'title_en': 'party',
+            'description_en': 'fun',
+            'catchphrase_en': 'disco, disco, party, party',
+            'show_website': False,
+            'show_infoscreen': False,
+            'show_announce': False,
+            'spots': None,
+        }, status_code=201)
+
+    def test_fields_depending_on_signup_not_null(self):
+        """Test that signup needs to be not None for fields depending on it."""
+        base_data = {
+            'title_en': 'party',
+            'description_en': 'fun',
+            'catchphrase_en': 'disco, disco, party, party',
+            'show_website': False,
+            'show_infoscreen': False,
+            'show_announce': False
+        }
+
+        test_data = [
+            {'allow_email_signup': True},
+            {'additional_fields': ''},
+            {'time_register_start': '2016-10-17T21:11:14Z'},
+        ]
+        # No need to test time end, this depends on time start anyway.
+
+        for data in test_data:
+            data.update(base_data)
+
+            data['spots'] = None
+            self.api.post('/events', data=data, status_code=422)
