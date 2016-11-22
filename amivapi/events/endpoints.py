@@ -115,17 +115,17 @@ eventdomain = {
             'show_announce': {
                 'nullable': False,
                 'type': 'boolean',
-                'required': True
+                'default': False,
             },
             'show_infoscreen': {
                 'nullable': False,
                 'type': 'boolean',
-                'required': True
+                'default': False,
             },
             'show_website': {
                 'nullable': False,
                 'type': 'boolean',
-                'required': True,
+                'default': False,
 
                 # This is basically here because this is a required field. It
                 # will make sure there is always either an english or a german
@@ -135,10 +135,8 @@ eventdomain = {
 
             'spots': {
                 'dependencies': ['time_register_start',
-                                 'time_register_end',
-                                 'allow_email_signup'],
+                                 'time_register_end'],
                 'min': 0,
-                'required': True,
                 'nullable': True,
                 'type': 'integer',
             },
@@ -162,6 +160,7 @@ eventdomain = {
             'allow_email_signup': {
                 'nullable': False,
                 'type': 'boolean',
+                'default': False,
                 'only_if_not_null': 'spots'
             },
 
