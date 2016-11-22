@@ -198,25 +198,9 @@ class EventValidator(object):
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
-    def _validate_requires_if_not_null(self, required_fields, field, value):
-        """Validate integer condition.
-
-        if value is not None, then other fields must exist
-
-        Args:
-            required_fields (list): fields that are required if value => 0.
-            field (string): field name.
-            value: field value.
-        """
-        if value is not None:
-            for item in required_fields:
-                if item not in self.document.keys():
-                    self._error(item,
-                                "Required field for not null valued %s" % field)
-
     def _validate_only_if_not_null(self, only_if_not_null,
                                    field, value):
-        """The field may only be set if, another field is not None
+        """The field may only be set if another field is not None.
 
         Args:
             depends_not_null (string): The field, that may not be None
