@@ -2,6 +2,7 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
+
 """Event Validation."""
 
 import json
@@ -210,3 +211,27 @@ class EventValidator(object):
         if self.document.get(only_if_not_null) is None:
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
+
+    def _validate_required_if_not(self, *args):
+        """Dummy function for Cerberus (It complains if it can find the rule).
+
+        Functionality is implemented in the requierd field validation.
+        """
+
+    def _validate_required_fields(self, document):
+        """Extend the parsing of to support requirements depending on fields.
+
+        Needed for language fields, where either german or english is needed.
+        The new requirement validator will (in addition to the default
+        `required` field) check for a a `required_`
+        """
+        super(EventValidator, self)._validate_required_fields(document)
+
+        for field, schema in self.schema.items():
+            # If the field is there do nothing
+            if field not in document:
+                req_dep = schema.get('required_if_not')
+                if req_dep is not None and req_dep not in document:
+                    self._error(field,
+                                "'%s' is required if '%s' is not present."
+                                % (field, req_dep))
