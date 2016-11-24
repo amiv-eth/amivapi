@@ -2,7 +2,8 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Test event validators"""
+
+"""Test event validators."""
 
 from pytz import utc
 import json
@@ -12,6 +13,8 @@ from amivapi.tests.utils import WebTestNoAuth
 
 
 class EventValidatorTest(WebTestNoAuth):
+    """Test Class for event validation."""
+
     def test_signup_to_event_without_signup(self):
         """Test that signups to events without a signup are rejected."""
         ev = self.new_object("events", spots=None)
@@ -71,10 +74,8 @@ class EventValidatorTest(WebTestNoAuth):
         }, status_code=201)
 
     def test_email_signup_only_when_allowed(self):
-        """Test that it is only possible to sign up with emails, if it is
-        enabled."""
+        """Test that email signup is only possible if enabled."""
         ev = self.new_object("events", spots=100, allow_email_signup=False)
-
         self.api.post("/eventsignups", data={
             'email': 'bla@bla.org',
             'event': str(ev['_id'])
@@ -87,29 +88,23 @@ class EventValidatorTest(WebTestNoAuth):
         }, status_code=201)
 
     def test_de_or_en_required(self):
-        """Test that events need at least one language. This tests the
-        depends_any validator."""
+        """Test that events need at least one language.
 
-        self.api.post("/events", data={
-            'spots': None,
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False
-        }, status_code=422)
+        This tests the depends_any validator.
+        """
+        self.api.post("/events", data={}, status_code=422)
 
         self.api.post("/events", data={
             'title_en': 'party',
             'description_en': 'fun',
             'catchphrase_en': 'disco, disco, party, party',
-            'spots': None,
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False
         }, status_code=201)
 
     def test_later_than(self):
-        """Test the later_than validator. We do this using the start and end
-        date of an event"""
+        """Test the later_than validator.
+
+        We do this using the start and end date of an event.
+        """
         self.api.post("/events", data={
             'title_en': 'party',
             'description_en': 'fun',
