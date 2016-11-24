@@ -46,13 +46,15 @@ eventdomain = {
                 'nullable': True,
                 'type': 'string',
                 'maxlength': 100,
-                'dependencies': ['catchphrase_de', 'description_de']
+                'dependencies': ['catchphrase_de', 'description_de'],
+                'required_if_not': 'title_en'
             },
             'title_en': {
                 'nullable': True,
                 'type': 'string',
                 'maxlength': 100,
-                'dependencies': ['catchphrase_en', 'description_en']
+                'dependencies': ['catchphrase_en', 'description_en'],
+                'required_if_not': 'title_de'
             },
             'catchphrase_de': {
                 'nullable': True,
@@ -126,11 +128,6 @@ eventdomain = {
                 'nullable': False,
                 'type': 'boolean',
                 'default': False,
-
-                # This is basically here because this is a required field. It
-                # will make sure there is always either an english or a german
-                # title
-                'depends_any': ['title_de', 'title_en']
             },
 
             'spots': {
