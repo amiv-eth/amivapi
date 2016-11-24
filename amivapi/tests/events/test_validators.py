@@ -15,6 +15,13 @@ from amivapi.tests.utils import WebTestNoAuth
 class EventValidatorTest(WebTestNoAuth):
     """Test Class for event validation."""
 
+    def event_data(self, data):
+        """Add minimum needed data for an event (descriptions)."""
+        return dict(title_en='party',
+                    description_en='fun',
+                    catchphrase_en='disco, disco, party, party',
+                    **data)
+
     def test_signup_to_event_without_signup(self):
         """Test that signups to events without a signup are rejected."""
         ev = self.new_object("events", spots=None)
@@ -105,29 +112,15 @@ class EventValidatorTest(WebTestNoAuth):
 
         We do this using the start and end date of an event.
         """
-        self.api.post("/events", data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'spots': None,
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post("/events", data=self.event_data({
             'time_start': '2016-10-17T21:11:14Z',
             'time_end': '2016-03-19T13:33:37Z'
-        }, status_code=422)
+        }), status_code=422)
 
-        self.api.post("/events", data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'spots': None,
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post("/events", data=self.event_data({
             'time_start': '2016-10-17T21:11:14Z',
             'time_end': '2017-03-19T13:33:37Z'
-        }, status_code=201)
+        }), status_code=201)
 
     def test_spot_dependencies(self):
         """Test that the requires if not null validator works.
@@ -135,76 +128,37 @@ class EventValidatorTest(WebTestNoAuth):
         We do this by trying to add an event with spots >= 0, but no
         further required data.
         """
-        self.api.post('/events', data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post('/events', data=self.event_data({
             'spots': 100
-        }, status_code=422)
+        }), status_code=422)
 
-        self.api.post('/events', data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post('/events', data=self.event_data({
             'spots': 100,
             'time_register_end': '2016-10-17T21:11:15Z',
             'allow_email_signup': True
-        }, status_code=422)
+        }), status_code=422)
 
-        self.api.post('/events', data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post('/events', data=self.event_data({
             'spots': 100,
             'time_register_start': '2016-10-17T21:11:14Z',
             'allow_email_signup': True
-        }, status_code=422)
+        }), status_code=422)
 
-        self.api.post('/events', data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post('/events', data=self.event_data({
             'spots': 100,
             'time_register_start': '2016-10-17T21:11:14Z',
             'time_register_end': '2016-10-17T21:11:15Z',
             'allow_email_signup': True
-        }, status_code=201)
+        }), status_code=201)
 
     def test_spots_none(self):
         """Test you can set spots to None and this does not require deps."""
-        self.api.post('/events', data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False,
+        self.api.post('/events', data=self.event_data({
             'spots': None,
-        }, status_code=201)
+        }), status_code=201)
 
     def test_fields_depending_on_signup_not_null(self):
         """Test that signup needs to be not None for fields depending on it."""
-        base_data = {
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
-            'show_website': False,
-            'show_infoscreen': False,
-            'show_announce': False
-        }
-
         test_data = [
             {'allow_email_signup': True},
             {'additional_fields': ''},
@@ -213,7 +167,7 @@ class EventValidatorTest(WebTestNoAuth):
         # No need to test time end, this depends on time start anyway.
 
         for data in test_data:
-            data.update(base_data)
+            data = self.event_data(data)
 
             data['spots'] = None
             self.api.post('/events', data=data, status_code=422)
