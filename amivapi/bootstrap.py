@@ -9,8 +9,9 @@ from os import getcwd
 from ruamel import yaml
 
 from flask import Config
+from flask_bootstrap import Bootstrap
 from eve import Eve
-# from eve_docs import eve_docs
+from eve_docs import eve_docs
 
 from amivapi import (
     users,
@@ -19,7 +20,6 @@ from amivapi import (
     events,
     media,
     groups,
-    # documentation,
     utils,
     joboffers,
     purchases,
@@ -57,20 +57,19 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
 
     config.update(kwargs)
 
-    # config['BLUEPRINT_DOCUMENTATION'] = documentation.get_blueprint_doc()
     app = Eve(settings=config,
               validator=utils.ValidatorAMIV,
               media=media.FileSystemStorage)
 
     # What is this good for? Seems to change nothing if commented out
-    # Bootstrap(app)
+    Bootstrap(app)
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
         ldap_connector.init_app(app)
 
     # Generate and expose docs via eve-docs extension
-    # app.register_blueprint(eve_docs, url_prefix="/docs")
+    app.register_blueprint(eve_docs, url_prefix="/docs")
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
