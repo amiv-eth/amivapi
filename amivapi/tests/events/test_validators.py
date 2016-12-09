@@ -107,6 +107,12 @@ class EventValidatorTest(WebTestNoAuth):
             'catchphrase_en': 'disco, disco, party, party',
         }, status_code=201)
 
+        self.api.post("/events", data={
+            'title_de': 'party',
+            'description_de': 'fun',
+            'catchphrase_de': 'disco, disco, party, party',
+        }, status_code=201)
+
     def test_later_than(self):
         """Test the later_than validator.
 
@@ -121,6 +127,31 @@ class EventValidatorTest(WebTestNoAuth):
             'time_start': '2016-10-17T21:11:14Z',
             'time_end': '2017-03-19T13:33:37Z'
         }), status_code=201)
+
+    def test_patch_later_than(self):
+        """Test patching time dependent fields."""
+        ev = self.new_object("events",
+                             spots=1337,
+                             time_start='2016-10-10T13:33:37Z',
+                             time_end='2016-10-20T13:33:37Z')
+
+        headers = {'If-Match': ev['_etag']}
+        url = "/events/%s" % ev['_id']
+
+        bad_start = {'time_start': '2016-10-25T13:33:37Z'}
+        good_start = {'time_start': '2016-10-15T13:33:37Z'}
+
+        bad_end = {'time_end': '2016-10-5T13:33:37Z'}
+        good_end = {'time_end': '2016-10-26T13:33:37Z'}
+
+        for bad in bad_start, bad_end:
+            self.api.patch(url, headers=headers, data=bad, status_code=422)
+
+        for good in good_start, good_end:
+            r = self.api.patch(url, headers=headers,
+                               data=good, status_code=200).json
+            # Update etag for next request
+            headers['If-Match'] = r['_etag']
 
     def test_spot_dependencies(self):
         """Test that the requires if not null validator works.

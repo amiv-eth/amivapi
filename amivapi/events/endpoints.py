@@ -87,14 +87,16 @@ eventdomain = {
                 'type': 'integer'
             },
             'time_start': {
+                'type': 'datetime',
                 'nullable': True,
-                'type': 'datetime'
+                'dependencies': ['time_end'],
+                'earlier_than': 'time_end',
             },
             'time_end': {
+                'type': 'datetime',
+                'nullable': True,
                 'dependencies': ['time_start'],
                 'later_than': 'time_start',
-                'nullable': True,
-                'type': 'datetime'
             },
 
             'img_banner': {
@@ -138,15 +140,17 @@ eventdomain = {
                 'type': 'integer',
             },
             'time_register_start': {
-                'nullable': True,
                 'type': 'datetime',
+                'nullable': True,
+                'dependencies': ['time_register_end'],
+                'earlier_than': 'time_register_end',
                 'only_if_not_null': 'spots'
             },
             'time_register_end': {
+                'type': 'datetime',
+                'nullable': True,
                 'dependencies': ['time_register_start'],
                 'later_than': 'time_register_start',
-                'nullable': True,
-                'type': 'datetime',
                 'only_if_not_null': 'spots'
             },
             'additional_fields': {
