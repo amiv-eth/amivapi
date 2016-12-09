@@ -12,7 +12,6 @@ from datetime import datetime
 from flask import g, current_app, request
 
 from eve.validation import SchemaError
-from eve.utils import str_to_date
 
 
 class EventValidator(object):
@@ -177,34 +176,46 @@ class EventValidator(object):
                             "event %s does not allow signup with email address"
                             % event_id)
 
+    # Eve doesn't handle time zones properly. Its always UTC but sometimes
+    # the timezone is included, sometimes it isn't.
+
+    def _get_time(self, fieldname):
+        """Retrieve time field from document or _original_document.
+
+        This method assumes that this field will be present. Ensure this with
+        appropriate `required` validators.
+        """
+        # Try to pick the value from document first, fall back to original
+        original_time = (self._original_document[fieldname]
+                         if self._original_document else None)
+        time = self.document.get(fieldname, original_time)
+
+        return time.replace(tzinfo=None)
+
     def _validate_later_than(self, later_than, field, value):
         """Validate time dependecy.
 
         Value must be at the same time or later than a the value of later_than
-
-        :param later_than: The field it will be compared to
-        :param field: field name.
-        :param value: field value.
         """
-        if later_than in self.document:
-            first_time = self.document[later_than]
-        else:
-            first_time = self._original_document[later_than]
-
-        if not isinstance(first_time, datetime):
-            # We need to parse the time for some reason
-            first_time = str_to_date(first_time)
-
-        if value < first_time:
+        if value.replace(tzinfo=None) <= self._get_time(later_than):
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
+
+    def _validate_earlier_than(self, earlier_than, field, value):
+        """Validate time dependecy.
+
+        Value must be at the same time or later than a the value of later_than
+        """
+        if value.replace(tzinfo=None) >= self._get_time(earlier_than):
+            self._error(field, "Must be at a point in time before %s" %
+                        earlier_than)
 
     def _validate_only_if_not_null(self, only_if_not_null,
                                    field, value):
         """The field may only be set if another field is not None.
 
         Args:
-            depends_not_null (string): The field, that may not be None
+            only_if_not_null (string): The field, that may not be None
             field (string): name of the validated field
             value: Value of the validated field
         """
