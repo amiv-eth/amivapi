@@ -49,8 +49,8 @@ class GroupMembershipAuth(AmivTokenAuth):
     def has_resource_write_permission(self, user_id):
         """All user can signup for groups.
 
-        The validator will check if the group in question is open for self
-        enrollment to provide precise error messages.
+        Group-specific settings related to the question "who is allowed to enroll
+        into this group?" are done in the validator.
         """
         return True
 
