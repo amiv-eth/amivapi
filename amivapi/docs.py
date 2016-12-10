@@ -34,6 +34,7 @@ def init_app(app):
         'AMIVauth': {
             'type': 'apiKey',
             'name': 'Authorization',
-            'in': 'header'
+            'in': 'header',
+            'description': 'enter a token you got with POST to /sessions'
         }
     }})
