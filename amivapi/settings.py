@@ -116,3 +116,25 @@ DEPARTMENT_LIST = [
     'mtec',
     'gess'
 ]
+
+# Config for swagger (/docs)
+# TODO: should be linked to the setup.py information in the package
+SWAGGER_INFO = {
+    'title': 'AMIVAPI',
+    'version': '0.1-dev',
+    'description': "The REST API behind most of AMIV's web services.",
+    'termsOfService': 'todo',
+    'contact': {
+        'name': 'AMIV an der ETH',
+        'url': 'http://amiv.ch/'
+    },
+    'license': {
+        'name': 'GNU',
+        'url': 'https://github.com/amiv-eth/amivapi/blob/master/LICENSE',
+    }
+}
+# ENABLE_HOOK_DESCRIPTION = True
+X_DOMAINS = ['http://127.0.0.1:5000',  # The domain where Swagger UI is running
+             'http://editor.swagger.io',
+             'http://petstore.swagger.io']
+X_HEADERS = ['Content-Type', 'If-Match']  # Needed for the "Try it out" buttons
