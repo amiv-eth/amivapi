@@ -208,6 +208,14 @@ class FixtureMixin(object):
                 'description_en',
                 self.create_random_value(schema['description_en']))
 
+        # fullfill earlier_than and later_than validators
+        obj['time_advertising_start'] = (
+            datetime.now(pytz.utc) - timedelta(
+                seconds=random.randint(0, 1000000)))
+        obj['time_advertising_end'] = (
+            datetime.now(pytz.utc) + timedelta(
+                seconds=random.randint(0, 1000000)))
+
         # add some number of spots. If not specified different, we default
         # to have a signup, so possibly created signups will have something
         # to have relations to
