@@ -20,6 +20,9 @@ class EventValidatorTest(WebTestNoAuth):
         return dict(title_en='party',
                     description_en='fun',
                     catchphrase_en='disco, disco, party, party',
+                    time_advertising_start='1970-01-01T00:00:01Z',
+                    time_advertising_end='2020-01-01T00:00:00Z',
+                    priority=5,
                     **data)
 
     def test_signup_to_event_without_signup(self):
@@ -94,23 +97,38 @@ class EventValidatorTest(WebTestNoAuth):
             'event': str(ev['_id'])
         }, status_code=201)
 
-    def test_de_or_en_required(self):
+    def test_depends_any(self):
         """Test that events need at least one language.
 
         This tests the depends_any validator.
         """
-        self.api.post("/events", data={}, status_code=422)
+        self.app.register_resource('test_res', {
+            'resource_methods': ['POST', 'GET'],
+            'item_methods': ['GET'],
+            'schema': {
+                'option1': {
+                    'type': 'integer'
+                },
+                'option2': {
+                    'type': 'integer'
+                },
+                'needs_an_option': {
+                    'type': 'integer',
+                    'depends_any': ['option1', 'option2']
+                }
+            }
+        })
 
-        self.api.post("/events", data={
-            'title_en': 'party',
-            'description_en': 'fun',
-            'catchphrase_en': 'disco, disco, party, party',
+        self.api.post("/test_res", data={'needs_an_option': 1}, status_code=422)
+
+        self.api.post("/test_res", data={
+            'needs_an_option': 1,
+            'option1': 1
         }, status_code=201)
 
-        self.api.post("/events", data={
-            'title_de': 'party',
-            'description_de': 'fun',
-            'catchphrase_de': 'disco, disco, party, party',
+        self.api.post("/test_res", data={
+            'needs_an_option': 1,
+            'option2': 1
         }, status_code=201)
 
     def test_later_than(self):
