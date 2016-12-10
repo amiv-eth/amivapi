@@ -186,9 +186,10 @@ class EventValidator(object):
         appropriate `required` validators.
         """
         # Try to pick the value from document first, fall back to original
-        original_time = (self._original_document[fieldname]
-                         if self._original_document else None)
-        time = self.document.get(fieldname, original_time)
+        time = self.document.get(fieldname)
+        if time is None:
+            time = (self._original_document[fieldname]
+                    if self._original_document else None)
 
         return time.replace(tzinfo=None)
 
