@@ -10,8 +10,9 @@ import re
 from flask import current_app
 from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
-from amivapi.models import User
 from nethz import ldap
+
+from amivapi.utils import admin_permissions
 
 
 class LdapConnector():
@@ -85,7 +86,6 @@ class LdapConnector():
 
         Returns:
             dict: A dict with data as needed by our API, containing:
-                _ldap_updated
                 firstname,
                 lastname,
                 nethz,
@@ -251,16 +251,9 @@ class LdapConnector():
 
         Updates existing ones if ldap data has changed.
 
-        Args:
-            user: the ldap user. must be privileged to search for all ldap users
-            password: the password for the ldap user
-            session: a database session
-            ou_list: list of assigned organisational units in ldap
-
         Returns:
             tuple: First element is the number of new users,
                 Second element the number of updated users
-                Third element a list of users that failed to update (if any)
         """
         ldap_data = self.find_members()
         ldap_dict = {member['nethz']: member for member in ldap_data}
