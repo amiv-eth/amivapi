@@ -11,7 +11,6 @@ from ruamel import yaml
 from flask import Config
 from flask_bootstrap import Bootstrap
 from eve import Eve
-from eve_docs import eve_docs
 
 from amivapi import (
     users,
@@ -68,9 +67,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
         ldap_connector.init_app(app)
-
-    # Generate and expose docs via eve-docs extension
-    app.register_blueprint(eve_docs, url_prefix="/docs")
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
