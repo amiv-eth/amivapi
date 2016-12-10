@@ -133,7 +133,19 @@ SWAGGER_INFO = {
         'url': 'https://github.com/amiv-eth/amivapi/blob/master/LICENSE',
     }
 }
-# ENABLE_HOOK_DESCRIPTION = True
+ENABLE_HOOK_DESCRIPTION = True
+HIDE_HOOK_FUNCTIONS = ['authenticate',
+                       'check_if_admin',
+                       'abort_if_not_public',
+                       'add_lookup_filter',
+                       'check_resource_write_permission',
+                       'check_item_write_permission',
+                       'add_permitted_methods_after_insert'
+                       'add_permitted_methods_after_fetch_resource',
+                       'add_permitted_methods_after_fetch_item',
+                       'add_permitted_methods_after_fetch_resource',
+                       'add_permitted_methods_for_home',
+                       'add_permitted_methods_after_update']
 X_DOMAINS = ['http://127.0.0.1:5000',  # The domain where Swagger UI is running
              'http://editor.swagger.io',
              'http://petstore.swagger.io']
