@@ -40,6 +40,13 @@ class GroupModelTest(WebTest):
         self.api.post("/groups", data=data, token=self.get_root_token(),
                       status_code=201)
 
+    def test_additional_lookup(self):
+        """Test that you can use groupname for lookup."""
+        self.new_object("groups", name="testname")
+
+        self.api.get("/groups/testname", token=self.get_root_token(),
+                     status_code=200)
+
     def test_lookup_filter(self):
         """Test lookup.
 

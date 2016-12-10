@@ -121,6 +121,12 @@ groupdomain = {
 
         'authentication': GroupAuth,
 
+        # Additional lookup: Since group name is unique, you can use it as url
+        'additional_lookup': {
+            'url': 'regex("[\w]+")',
+            'field': 'name'
+        },
+
         'schema': {
             'name': {
                 'type': 'string',
