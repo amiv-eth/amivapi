@@ -2,8 +2,9 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Resource description for studydocuments
-"""
+"""Model for studydocuments."""
+
+from amivapi.settings import DEPARTMENT_LIST
 
 from .authorization import StudydocsAuth
 
@@ -18,7 +19,7 @@ studydocdomain = {
                 'uploaded the files',
                 'author': 'Original author of the uploaded files'
                 '(Prof, Assistant, copyright owner)',
-                'coursesemester': 'Course Semester as Enum(HS/FS)+Integer'
+                'course_year': 'Course Year'
             },
             'general': 'Study-documents are basically all documents that '
             'are connected to a course. All metadata is optional and intended '
@@ -34,22 +35,21 @@ studydocdomain = {
 
         'schema': {
             'uploader': {
-                'data_relation': {
-                    'resource': 'users'
-                },
+                'type': 'objectid',
+                'data_relation': {'resource': 'users'},
+                # Must be nullable: e.g. if root user uploads there is no user
                 'nullable': True,
                 'readonly': True,
-                'type': 'objectid'
             },
             'author': {
+                'type': 'string',
                 'maxlength': 100,
                 'nullable': True,
-                'type': 'string'
             },
             'department': {
-                'maxlength': 4,
+                'type': 'string',
                 'nullable': True,
-                'type': 'string'
+                'allowed': DEPARTMENT_LIST
             },
             'files': {
                 'type': 'list',
@@ -63,10 +63,10 @@ studydocdomain = {
                 'nullable': True,
                 'type': 'string'
             },
-            'name': {
+            'title': {
+                'type': 'string',
+                'empty': False,
                 'maxlength': 100,
-                'nullable': True,
-                'type': 'string'
             },
             'professor': {
                 'maxlength': 100,
@@ -75,17 +75,16 @@ studydocdomain = {
             },
             'semester': {
                 'nullable': True,
-                'type': 'integer'
+                'type': 'string',
+                'allowed': ['1', '2', '3', '4', '5+']
             },
             'type': {
-                'maxlength': 30,
-                'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'allowed': ['exams', 'cheat sheets', 'lecture documents',
+                            'exercises']
             },
-            'coursesemester': {
-                    'maxlength': 5,
-                    'nullable': True,
-                    'type': 'string'
+            'course_year': {
+                'type': 'integer'
             }
         },
     }

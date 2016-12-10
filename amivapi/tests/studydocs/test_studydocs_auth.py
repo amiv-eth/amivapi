@@ -2,8 +2,7 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Tests for auth rules for studydocuments
-"""
+"""Tests for auth rules for studydocuments."""
 
 from io import BytesIO
 
@@ -11,12 +10,14 @@ from amivapi.tests.utils import WebTest
 
 
 # this is the smallest possible zip file
-test_file_content = b"\x50\x4b\x05\x06" + b"\x00"*18
+test_file_content = b"\x50\x4b\x05\x06" + b"\x00" * 18
 
 
 class StudydocsAuthTest(WebTest):
+    """Studycos Test class."""
+
     def test_uploader_added(self):
-        """Test that the uploader is correctly added to a document"""
+        """Test that the uploader is correctly added to a document."""
         user = self.new_object('users')
         token = self.get_user_token(user['_id'])
 
@@ -31,7 +32,7 @@ class StudydocsAuthTest(WebTest):
         self.assertEqual(doc['uploader'], str(user['_id']))
 
     def test_can_edit_own_doc(self):
-        """Test that a user can edit the studydocs he uploaded"""
+        """Test that a user can edit the studydocs he uploaded."""
         user = self.new_object('users')
         token = self.get_user_token(user['_id'])
 
@@ -45,14 +46,14 @@ class StudydocsAuthTest(WebTest):
 
         doc = self.api.patch('/studydocuments/%s' % doc['_id'], token=token,
                              headers={'If-Match': doc['_etag']},
-                             data={'name': 'new name'}, status_code=200).json
+                             data={'title': 'new name'}, status_code=200).json
 
         self.api.delete('/studydocuments/%s' % doc['_id'], token=token,
                         headers={'If-Match': doc['_etag']},
                         status_code=204)
 
     def test_can_not_edit_others_docs(self):
-        """Test that a user can not edit the studydocs other people uploaded"""
+        """Test that a user can't edit the studydocs other people uploaded."""
         user = self.new_object('users')
         user2 = self.new_object('users')
         token = self.get_user_token(user['_id'])
@@ -68,14 +69,14 @@ class StudydocsAuthTest(WebTest):
 
         self.api.patch('/studydocuments/%s' % doc['_id'], token=token2,
                        headers={'If-Match': doc['_etag']},
-                       data={'name': 'new name'}, status_code=403)
+                       data={'title': 'new name'}, status_code=403)
 
         self.api.delete('/studydocuments/%s' % doc['_id'], token=token2,
                         headers={'If-Match': doc['_etag']},
                         status_code=403)
 
     def test_can_see_all_docs(self):
-        """Test that a user can see all docs"""
+        """Test that a user can see all docs."""
         self.load_fixture({
             'studydocuments': [{} for _ in range(5)]
         })
