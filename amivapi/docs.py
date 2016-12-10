@@ -9,7 +9,6 @@ swagger_ui = Blueprint('swagger_ui', __name__,
 
 @swagger_ui.route('/docs')
 def index():
-    print(request.url)
     return redirect(url_for('swagger_ui.static', filename='index.html')
                     + "?url={}/api-docs".format(request.url))
 
@@ -30,3 +29,11 @@ def init_app(app):
         'password': {'default': ''},
         'nethz': {'default': ''}
     }}}})
+
+    add_documentation({'securityDefinitions': {
+        'AMIVauth': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }})
