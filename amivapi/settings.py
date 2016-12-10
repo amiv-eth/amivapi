@@ -96,3 +96,23 @@ LDAP_MEMBER_OU_LIST = [
     u'Doktorat Informationstechnologie & Elektrotechnik',
     u'Doktorat Maschinenbau und Verfahrenstechnik'
 ]
+
+# All departments at ETH
+DEPARTMENT_LIST = [
+    'itet',
+    'mavt',
+    'arch',
+    'baug',
+    'bsse',
+    'infk',
+    'matl',
+    'biol',
+    'chab',
+    'math',
+    'phys',
+    'erdw',
+    'usys',
+    'hest',
+    'mtec',
+    'gess'
+]
