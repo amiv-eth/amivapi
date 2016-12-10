@@ -11,7 +11,7 @@ logic needed for signup of non members to events.
 
 from amivapi.utils import register_domain
 
-from .endpoints import studydocdomain
+from .model import studydocdomain
 from .authorization import add_uploader_on_insert, add_uploader_on_bulk_insert
 
 

@@ -10,7 +10,7 @@ logic needed for signup of non members to events.
 
 from amivapi.utils import register_domain, register_validator
 
-from .endpoints import eventdomain
+from .model import eventdomain
 
 from .projections import (
     add_email_to_signup,
