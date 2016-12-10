@@ -9,7 +9,6 @@ from os import getcwd
 from ruamel import yaml
 
 from flask import Config
-from flask_bootstrap import Bootstrap
 from eve import Eve
 
 from amivapi import (
@@ -60,9 +59,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     app = Eve(settings=config,
               validator=utils.ValidatorAMIV,
               media=media.FileSystemStorage)
-
-    # What is this good for? Seems to change nothing if commented out
-    Bootstrap(app)
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
