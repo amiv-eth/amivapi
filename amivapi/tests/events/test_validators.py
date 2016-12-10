@@ -202,3 +202,18 @@ class EventValidatorTest(WebTestNoAuth):
 
             data['spots'] = None
             self.api.post('/events', data=data, status_code=422)
+
+    def test_can_add_time_start(self):
+        """ Test issue #141
+        The validator of time_start (later_than) assumed, that the field is
+        already existing on PATCH requests. Check that this is fixed.
+        """
+        ev = self.new_object("events", spots=100, allow_email_signup=False)
+
+        data = {
+            'time_start': "2016-01-01T00:00:00Z",
+            'time_end': "2016-02-02T00:00:00Z"
+        }
+        ev = self.api.patch('/events/%s' % ev['_id'], data=data,
+                            headers={'If-Match': ev['_etag']},
+                            status_code=200).json
