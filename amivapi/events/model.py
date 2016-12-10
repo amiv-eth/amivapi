@@ -124,8 +124,8 @@ eventdomain = {
                 'min': 0,
                 'nullable': True,
                 'type': 'integer',
-                'description': "For no limit, set to '0'. If no signup"
-                "required, set to '-1'. Otherwise just provide an integer."
+                'description': "For no signup, set to 'null'. Unlimited spots "
+                "if set to '0'. Otherwise just provide number of spots."
             },
             'time_register_start': {
                 'type': 'datetime',
