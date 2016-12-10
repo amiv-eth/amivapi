@@ -38,16 +38,14 @@ class SessionAuth(AmivTokenAuth):
 
 sessiondomain = {
     'sessions': {
-        'description': {
-            'general': "A session is used to authenticate a user after he "
-            "provided login data. A POST to /session will return a token you "
-            "can use in an Authorization header: token <yourtoken>",
-            'methods': {
-                'POST': "Login and aquire a login token. Post the fields "
-                "'username' and 'password', the response will contain the "
-                "token. 'username' can be either nethz, mail, or user_id",
-                'GET': "Check token(s)."}
-        },
+        'description': "A session is used to authenticate a user after he "
+        "provided login data. A POST to /session will return a token you can "
+        "use in an Authorization header: token <yourtoken>",
+        # 'methods': {
+        #    'POST': "Login and aquire a login token. Post the fields "
+        #    "'username' and 'password', the response will contain the "
+        #    "token. 'username' can be either nethz, mail, or user_id",
+        #    'GET': "Check token(s)."}
 
         'authentication': SessionAuth,
         'public_methods': ['POST'],

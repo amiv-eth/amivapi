@@ -14,27 +14,12 @@ from .authorization import EventSignupAuth
 
 eventdomain = {
     'events': {
-        'description': {
-            'fields': {
-                'additional_fields':
-                'must be provided in form of a JSON-Schema. You can add here '
-                'fields you want to know from people signing up going further '
-                'than their email-address',
-                'allow_email_signup': 'If False, only AMIV-Members can sign '
-                'up for this event',
-                'price': 'Price of the event as Integer in Rappen.',
-                'spots': "For no limit, set to '0'. If no signup required, "
-                "set to '-1'. Otherwise just provide an integer."
-            },
-            'general': 'An Event is basically everything happening in the '
-            'AMIV. All time fields have the format YYYY-MM-DDThh:mmZ, e.g. '
-            '2014-12-20T11:50:06Z',
-            'methods': {
-                'GET': 'You are always allowed, even without session, '
-                'to view AMIV-Events'
-            }
-        },
-
+        'description': 'An Event is basically everything happening in the '
+        'AMIV. All time fields have the format YYYY-MM-DDThh:mmZ, e.g. '
+        '2014-12-20T11:50:06Z',
+        # 'methods': {
+        #     'GET': 'You are always allowed, even without session, '
+        #     'to view AMIV-Events'
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
@@ -84,7 +69,8 @@ eventdomain = {
             'price': {
                 'min': 0,
                 'nullable': True,
-                'type': 'integer'
+                'type': 'integer',
+                'description': 'Price of the event as Integer in Rappen.'
             },
             'time_start': {
                 'type': 'datetime',
@@ -138,6 +124,8 @@ eventdomain = {
                 'min': 0,
                 'nullable': True,
                 'type': 'integer',
+                'description': "For no limit, set to '0'. If no signup"
+                "required, set to '-1'. Otherwise just provide an integer."
             },
             'time_register_start': {
                 'type': 'datetime',
@@ -156,13 +144,18 @@ eventdomain = {
             'additional_fields': {
                 'nullable': True,
                 'type': 'json_schema',
-                'only_if_not_null': 'spots'
+                'only_if_not_null': 'spots',
+                'description': 'must be provided in form of a JSON-Schema. You'
+                'can add here fields you want to know from people signing up '
+                'going further than their email-address'
             },
             'allow_email_signup': {
                 'nullable': False,
                 'type': 'boolean',
                 'default': False,
-                'only_if_not_null': 'spots'
+                'only_if_not_null': 'spots',
+                'description': 'If False, only AMIV-Members can sign up for '
+                'this event'
             },
 
             'signup_count': {
@@ -173,24 +166,12 @@ eventdomain = {
     },
 
     'eventsignups': {
-        'description': {
-            'fields': {
-                'additional_fields': "Data-schema depends on "
-                "'additional_fields' from the mapped event. Please provide in "
-                "json-format.",
-                'email': 'For registered users, this is just a projection of '
-                'your general email-address. External users need to provide '
-                'their email here.',
-                'user': "Provide either user or email."
-            },
-            'general': 'You can signup here for an existing event inside of '
-            'the registration-window. External Users can only sign up to '
-            'public events.',
-            'methods': {
-                'PATCH': 'Only additional_fields can be changed'
-            }
-        },
-
+        'description': 'You can signup here for an existing event inside of '
+        'the registration-window. External Users can only sign up to public '
+        'events.',
+        # 'methods': {
+        #     'PATCH': 'Only additional_fields can be changed'
+        # }
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
@@ -220,7 +201,7 @@ eventdomain = {
                 'only_self_enrollment_for_event': True,
                 'type': 'objectid',
                 'nullable': False,
-
+                'description': 'Provide either user or email.'
                 # This creates a presence XOR with email
                 # TODO: This needs cerberus > 1.0.1
                 # enable as soon as eve supports it
@@ -229,7 +210,9 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_event_field'
+                'type': 'json_event_field',
+                'description': "Data-schema depends on 'additional_fields' "
+                "from the mapped event. Please provide in json-format."
             },
             'email': {
                 'email_signup_must_be_allowed': True,
@@ -238,7 +221,9 @@ eventdomain = {
                 'nullable': False,
                 'regex': EMAIL_REGEX,
                 'type': 'string',
-
+                'description': 'For registered users, this is just a projection'
+                ' of your general email-address. External users need to provide'
+                ' their email here.'
                 # This creates a presence XOR with user
                 # TODO: This needs cerberus > 1.0.1
                 # enable as soon as eve supports it
