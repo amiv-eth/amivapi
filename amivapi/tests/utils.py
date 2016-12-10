@@ -21,7 +21,7 @@ from flask.wrappers import Response
 
 from amivapi.settings import ROOT_PASSWORD
 from amivapi.tests.fixtures import FixtureMixin
-from amivapi import bootstrap, utils
+from amivapi import bootstrap
 
 
 class TestClient(FlaskClient):
@@ -136,6 +136,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
         self.app.test_mails = []
+        self.api = self.app.test_client()
 
         # Create a separate mongo connection and db reference for tests
         self.connection = MongoClient(self.app.config['MONGO_HOST'],
@@ -188,7 +189,6 @@ class WebTestNoAuth(WebTest):
         super(WebTestNoAuth, self).setUp()
 
         def authenticate_root(resource):
-            g.current_user = str(self.app.config['ROOT_ID'])
             g.resource_admin = True
 
         self.app.after_auth += authenticate_root

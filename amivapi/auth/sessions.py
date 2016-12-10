@@ -11,12 +11,12 @@ from bson.errors import InvalidId
 import datetime
 
 from flask import abort, current_app as app
-from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
 from eve.utils import debug_error_message, config
 
 from amivapi.cron import periodic
 from amivapi.utils import admin_permissions
+from amivapi.ldap import ldap_connector
 from .auth import AmivTokenAuth
 
 
