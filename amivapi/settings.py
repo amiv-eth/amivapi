@@ -13,6 +13,8 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
+VERSION = '0.9dev'
+
 # Flask
 
 DEBUG = False
@@ -120,8 +122,8 @@ DEPARTMENT_LIST = [
 # Config for swagger (/docs)
 # TODO: should be linked to the setup.py information in the package
 SWAGGER_INFO = {
-    'title': 'AMIVAPI',
-    'version': '0.1-dev',
+    'title': 'AMIVAPI Documentation',
+    'version': VERSION,
     'description': "The REST API behind most of AMIV's web services.",
     'termsOfService': 'todo',
     'contact': {
