@@ -208,6 +208,12 @@ groupdomain = {
                 'required': True,
                 'only_self_or_moderator': True,
                 'unique_combination': ['group']
+            },
+            'expiry': {
+                'type': 'datetime',
+                # TODO: activate when swagger is merged
+                # 'description': 'Time at which the person will automatically '
+                # 'be removed from the group.'
             }
         }
     },
