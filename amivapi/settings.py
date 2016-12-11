@@ -143,7 +143,7 @@ HIDE_HOOK_FUNCTIONS = ['authenticate',
                        'add_lookup_filter',
                        'check_resource_write_permission',
                        'check_item_write_permission',
-                       'add_permitted_methods_after_insert'
+                       'add_permitted_methods_after_insert',
                        'add_permitted_methods_after_fetch_resource',
                        'add_permitted_methods_after_fetch_item',
                        'add_permitted_methods_after_fetch_resource',
