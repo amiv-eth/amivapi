@@ -25,6 +25,9 @@ counter = count(random.randint(0, 0x7fffffff))
 # Can be overwriten by command line argument
 DEBUG = False
 
+req_session = requests.Session()
+req_session.verify = False
+
 #
 # Utils
 #
@@ -37,7 +40,7 @@ class RequestError(Exception):
 def get(url, **kwargs):
     if DEBUG:
         print("GET " + url)
-    resp = requests.get(url, **kwargs)
+    resp = req_session.get(url, **kwargs)
     if DEBUG:
         print(resp.status_code)
         if resp.status_code != 200:
@@ -50,7 +53,7 @@ def get(url, **kwargs):
 def post(url, **kwargs):
     if DEBUG:
         print("POST %s, data=%s" % (url, kwargs.get('data')))
-    resp = requests.post(url, **kwargs)
+    resp = req_session.post(url, **kwargs)
     if DEBUG:
         print(resp.status_code)
         if resp.status_code != 201:
@@ -86,6 +89,7 @@ def get_token(username, password):
     }
     return post(BASE_URL + '/sessions', data=data).json()['token']
 
+
 def create_event():
     data = {
         'title_en': 'event%i' % next(counter),
@@ -97,7 +101,7 @@ def create_event():
         'spots': 0,
         'time_register_start': datetime(1970, 1, 1).strftime(DATE_FORMAT),
         'time_register_end': (datetime.utcnow() +
-                               timedelta(days=100)).strftime(DATE_FORMAT),
+                              timedelta(days=100)).strftime(DATE_FORMAT),
         'allow_email_signup': True
     }
     return post(BASE_URL + '/events', json=data, auth=(ROOT_PW, '')).json()
@@ -124,7 +128,7 @@ def get_events():
 
 def get_studydocs():
     get(BASE_URL + '/studydocuments', auth=(SESSIONS[0]['token'], ''))
-    
+
 
 def download_random_studydoc():
     studydocs = get(BASE_URL + '/studydocuments',
@@ -140,9 +144,9 @@ def download_random_studydoc():
 def random_eventsignup():
     """ Simulate one user signing up for an event """
     user = random.choice(SESSIONS)
-    
+
     events = get(BASE_URL + '/events').json()['_items']
-    
+
     event = random.choice(events)
 
     data = {
@@ -188,6 +192,7 @@ def time_func(func):
     stdout.flush()
     return elapsed
 
+
 def batch_requests(batch_size, batch_time, batch_count,
                    request_func=do_random_all):
     """ Run a performance test, sending batch_size requests every batch_time
@@ -209,7 +214,7 @@ def batch_requests(batch_size, batch_time, batch_count,
 
 
 if len(argv) < 3:
-    print("Usage: %s <API URL> <root password> [test type] [debug]")
+    print("Usage: %s <API URL> <root password> [test type] [debug]" % argv[0])
     print("")
     print("Arguments:")
     print("test type: GET or ALL")
@@ -240,7 +245,7 @@ with ThreadPoolExecutor(max_workers=100) as executor:
     USERS = [future.result() for future in u_futures]
 
     s_futures = [(user_id, executor.submit(get_token, user_id, 'pass'))
-                for user_id in USERS]
+                 for user_id in USERS]
     SESSIONS = [{'id': user_id, 'token': future.result()}
                 for user_id, future in s_futures]
 
@@ -266,7 +271,7 @@ for n_requests in [5000, 5000, 10000, 30000]:
     times_desc.append("%i requests in 30 seconds" % n_requests)
     times_mean.append(mean)
     times_stdev.append(stdev)
-    
+
     print("Finished test.")
     print("Average response time: %.3f s" % mean)
     print("Standard deviation: %.3f s" % stdev)
