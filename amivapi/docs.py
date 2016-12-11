@@ -55,8 +55,9 @@ def init_app(app):
     add_documentation({'securityDefinitions': {
         'AMIVauth': {
             'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header',
-            'description': 'enter a token you got with POST to /sessions'
+            'name': 'Authorization header',
+            'in': 'AMIVAPI',
+            'description': 'Enter a session token you got with POST to '
+            '/sessions, or an API key, stored in the server config'
         }
     }})

@@ -125,13 +125,14 @@ SWAGGER_INFO = {
     'title': 'AMIVAPI Documentation',
     'version': VERSION,
     'description': "The REST API behind most of AMIV's web services.",
+    # TODO: fill this
     'termsOfService': 'todo',
     'contact': {
         'name': 'AMIV an der ETH',
-        'url': 'http://amiv.ch/'
+        'url': 'https://amiv.ch/'
     },
     'license': {
-        'name': 'GNU',
+        'name': 'GNU Affero General Public License',
         'url': 'https://github.com/amiv-eth/amivapi/blob/master/LICENSE',
     }
 }
