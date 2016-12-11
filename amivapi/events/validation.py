@@ -181,15 +181,15 @@ class EventValidator(object):
 
     def _get_time(self, fieldname):
         """Retrieve time field from document or _original_document.
-
-        This method assumes that this field will be present. Ensure this with
-        appropriate `required` validators.
         """
         # Try to pick the value from document first, fall back to original
         time = self.document.get(fieldname)
         if time is None:
             time = (self._original_document[fieldname]
                     if self._original_document else None)
+
+        if time is None:
+            return None
 
         return time.replace(tzinfo=None)
 
@@ -198,7 +198,11 @@ class EventValidator(object):
 
         Value must be at the same time or later than a the value of later_than
         """
-        if value.replace(tzinfo=None) <= self._get_time(later_than):
+        other_time = self._get_time(later_than)
+        if other_time is None:
+            return
+
+        if value.replace(tzinfo=None) <= other_time:
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
@@ -207,7 +211,11 @@ class EventValidator(object):
 
         Value must be at the same time or later than a the value of later_than
         """
-        if value.replace(tzinfo=None) >= self._get_time(earlier_than):
+        other_time = self._get_time(earlier_than)
+        if other_time is None:
+            return
+
+        if value.replace(tzinfo=None) >= other_time:
             self._error(field, "Must be at a point in time before %s" %
                         earlier_than)
 
