@@ -149,7 +149,3 @@ HIDE_HOOK_FUNCTIONS = ['authenticate',
                        'add_permitted_methods_after_fetch_resource',
                        'add_permitted_methods_for_home',
                        'add_permitted_methods_after_update']
-X_DOMAINS = ['http://127.0.0.1:5000',  # The domain where Swagger UI is running
-             'http://editor.swagger.io',
-             'http://petstore.swagger.io']
-X_HEADERS = ['Content-Type', 'If-Match']  # Needed for the "Try it out" buttons
