@@ -5,9 +5,14 @@
 """Tests for purchases module"""
 
 from datetime import datetime, timedelta
+from io import BytesIO
+from os.path import join, dirname
 
 from amivapi.tests import utils
 from amivapi.settings import DATE_FORMAT
+
+pdfpath = join(dirname(__file__), "../fixtures", 'test.pdf')
+lenapath = join(dirname(__file__), "../fixtures", 'lena.png')
 
 
 class JobOffersTest(utils.WebTestNoAuth):
@@ -34,10 +39,14 @@ class JobOffersTest(utils.WebTestNoAuth):
             'time_end': time_end,
             'title_de': 'ACME Inc jetzt auf der Suche nach Explosionsexperte',
             'title_en': 'ACME Inc now hiring explosions experts',
+            'pdf': (BytesIO(br'%PDF magic'), 'test.pdf'),
+            'logo': (open(lenapath, 'rb'), 'logo.png'),
         }
 
         # Check if posting the joboffer is successful
-        self.api.post("/joboffers", data=post_data, status_code=201)
+        self.api.post("/joboffers",
+                      headers={'content-type': 'multipart/form-data'},
+                      data=post_data, status_code=201)
 
     def test_get_joboffer(self):
         """Usecase: User wants to see a job offer listing
@@ -51,6 +60,7 @@ class JobOffersTest(utils.WebTestNoAuth):
             'joboffers',
             company='ACME Inc.',
             title_en="ACME Wants engineers",
+            description_en="ACME needs your life",
             time_end=expired_time
         )
 
@@ -68,6 +78,7 @@ class JobOffersTest(utils.WebTestNoAuth):
             'joboffers',
             company='AMIV Inc.',
             title_en="ACME wants more engineers",
+            description_en="ACME need you life",
             time_end=valid_time
         )
 
