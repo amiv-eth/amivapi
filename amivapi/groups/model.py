@@ -47,7 +47,7 @@ class GroupMembershipAuth(AmivTokenAuth):
     """Auth for group memberships."""
 
     def has_resource_write_permission(self, user_id):
-        """All user can enroll into groups.
+        """All users can enroll in groups.
 
         Group-specific settings related to the question "who is allowed to
         enroll for this group?" are done in the validator.

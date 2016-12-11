@@ -16,10 +16,9 @@ eventdomain = {
     'events': {
         'description': 'An Event is basically everything happening in the '
         'AMIV. All time fields have the format YYYY-MM-DDThh:mmZ, e.g. '
-        '2014-12-20T11:50:06Z',
-        # 'methods': {
-        #     'GET': 'You are always allowed, even without session, '
-        #     'to view AMIV-Events'
+        '2014-12-20T11:50:06Z\n\n'
+        'GET: This is public even without a session',
+
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
@@ -168,10 +167,9 @@ eventdomain = {
     'eventsignups': {
         'description': 'You can signup here for an existing event inside of '
         'the registration-window. External Users can only sign up to public '
-        'events.',
-        # 'methods': {
-        #     'PATCH': 'Only additional_fields can be changed'
-        # }
+        'events.\n\n'
+        'PATCH: Only additional fields can be changed.',
+
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
