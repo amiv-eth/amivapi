@@ -116,7 +116,8 @@ class FixtureMixin(object):
             # Add it to the database
             with self.app.test_request_context("/" + resource, method='POST'):
                 with admin_permissions():
-                    response, _, _, return_code = post_internal(resource, obj)
+                    response, _, _, return_code, _ = post_internal(resource,
+                                                                   obj)
                 if return_code != 201:
                     raise BadFixtureException("Fixture could not be loaded:\n"
                                               "%s\nProblem was caused by:\n%s"
