@@ -273,6 +273,9 @@ class FixtureMixin(object):
         obj.setdefault(
             'title_de',
             self.create_random_value(schema['title_de']))
+        obj.setdefault(
+            'description_de',
+            self.create_random_value(schema['description_de']))
 
     def create_random_value(self, definition):
         """Create a random value for the given cerberus field description."""
@@ -329,7 +332,7 @@ class FixtureMixin(object):
 
         elif t == 'media':
             ftype = random.choice(definition.get('filetype', ['zip']))
-            if ftype == 'jpg':
+            if ftype == 'jpg' or ftype == 'jpeg':
                 return FileStorage(open(jpgpath, 'rb'), 'test.jpg')
             if ftype == 'png':
                 return FileStorage(open(pngpath, 'rb'), 'test.png')
