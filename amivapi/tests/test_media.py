@@ -135,8 +135,9 @@ class MediaTest(WebTestNoAuth):
     def test_timezone_error(self):
         """Test that #150 is fixed."""
         obj = self.new_object('test',
-            test_file=FileStorage(BytesIO(lenadata), lenaname))
+                              test_file=FileStorage(BytesIO(lenadata),
+                                                    lenaname))
 
-        self.api.get(obj['test_file']['file'],
-            headers={'If-Modified-Since': 'Mon, 12 Dec 2016 12:23:46 GMT'},
-            status_code=200)
+        self.api.get(obj['test_file']['file'], headers={
+            'If-Modified-Since': 'Mon, 12 Dec 2016 12:23:46 GMT'},
+                     status_code=200)
