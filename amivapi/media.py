@@ -10,7 +10,7 @@ Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 
 """
 
-from bson import tz_util
+import pytz
 from os import path, remove, makedirs, urandom
 import errno
 from contextlib import contextmanager
@@ -52,7 +52,7 @@ class FileWrapper(object):
         self._file = open(filepath, 'rb')
         self.length = path.getsize(filepath)
         self.upload_date = dt.fromtimestamp(path.getmtime(filepath),
-                                            tz_util.utc)
+                                            pytz.utc)
         self.name = filename
         self.content_type = guess_type(self.name)[0]
         if self.content_type is None:
