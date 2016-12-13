@@ -12,11 +12,13 @@ from bson import ObjectId
 
 from flask import current_app, Blueprint, redirect, url_for
 
+from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 
 from amivapi.utils import mail
+from .queue import update_waiting_list
 
-confirmprint = Blueprint('confirm', __name__)
+email_blueprint = Blueprint('emails', __name__)
 
 
 def send_confirmmail_to_unregistered_users(item):
@@ -43,7 +45,7 @@ def send_confirmmail_to_unregistered_users(item):
                                        "will not work!")
 
         fields = {
-            'link': url_for('confirm.on_confirm_email', token=token,
+            'link': url_for('emails.on_confirm_email', token=token,
                             _external=True),
             'title': title
         }
@@ -75,7 +77,7 @@ def add_confirmed_before_insert_bulk(items):
         add_confirmed_before_insert(item)
 
 
-@confirmprint.route('/confirm_email/<token>')
+@email_blueprint.route('/confirm_email/<token>')
 def on_confirm_email(token):
     """Email confirmation endpoint.
 
@@ -91,8 +93,35 @@ def on_confirm_email(token):
                    skip_validation=True, concurrency_check=False,
                    **{current_app.config['ID_FIELD']: signup_id})
 
+    # Now the user may be able to get accepted, so update the events waiting
+    # list
+    lookup = {current_app.config['ID_FIELD']: signup_id}
+    signup = current_app.data.find_one('eventsignups', None, **lookup)
+
+    update_waiting_list(signup['event'])
+
     redirect_url = current_app.config.get('EMAIL_CONFIRMED_REDIRECT')
     if redirect_url:
         return redirect(redirect_url)
     else:
         return current_app.config['CONFIRM_TEXT']
+
+
+@email_blueprint.route('/delete_signup/<token>')
+def on_delete_signup(token):
+    """Endpoint to delete signups via email"""
+
+    try:
+        s = Signer(current_app.config['TOKEN_SECRET'])
+        signup_id = ObjectId(s.unsign(token).decode('utf-8'))
+    except BadSignature:
+        return "Unknown token"
+
+    deleteitem_internal('eventsignups', concurrency_check=False,
+                        **{current_app.config['ID_FIELD']: signup_id})
+
+    redirect_url = current_app.config.get('SIGNUP_DELETED_REDIRECT')
+    if redirect_url:
+        return redirect(redirect_url)
+    else:
+        return current_app.config['SIGNUP_DELETED_TEXT']

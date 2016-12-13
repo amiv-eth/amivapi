@@ -160,7 +160,8 @@ eventdomain = {
 
             'spots': {
                 'dependencies': ['time_register_start',
-                                 'time_register_end'],
+                                 'time_register_end',
+                                 'selection_strategy'],
                 'min': 0,
                 'nullable': True,
                 'type': 'integer',
@@ -191,6 +192,12 @@ eventdomain = {
                 'only_if_not_null': 'spots'
             },
 
+            'selection_strategy': {
+                'type': 'string',
+                'allowed': ['fcfs', 'manual'],
+                'only_if_not_null': 'spots'
+            },
+
             'signup_count': {
                 'readonly': True,
                 'type': 'integer'
@@ -207,7 +214,16 @@ eventdomain = {
                 'email': 'For registered users, this is just a projection of '
                 'your general email-address. External users need to provide '
                 'their email here.',
-                'user': "Provide either user or email."
+                'user': "Provide either user or email.",
+                'confirmed': "This fields describes, whether the email address "
+                "was validated. This is automatically set for registered users "
+                "and will be True after the user has clicked the confirmation "
+                "link for unregistered users.",
+                'accepted': "This field describes, whether a user is in the "
+                "accepted list of people for the event or on the waiting list. "
+                "Depending on the `selection_method` field of the parent event,"
+                " this field is automatically set to True for new signups, as "
+                "long as there is space, or needs to be set by an admin."
             },
             'general': 'You can signup here for an existing event inside of '
             'the registration-window. External Users can only sign up to '
@@ -273,9 +289,12 @@ eventdomain = {
                 # 'excludes': ['user']
             },
             'confirmed': {
-                'nullable': True,
                 'type': 'boolean',
                 'readonly': True
+            },
+            'accepted': {
+                'type': 'boolean',
+                'admin_only': True
             },
         }
     }

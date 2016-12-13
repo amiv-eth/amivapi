@@ -40,3 +40,39 @@ class EventMailTest(WebTestNoAuth):
         signup = self.api.get('/eventsignups/%s' % signup['_id'],
                               status_code=200).json
         self.assertEqual(signup['confirmed'], True)
+
+    def test_email_signup_delete(self):
+        """Test deletion of signup via email link."""
+        event = self.new_object('events', spots=100, selection_strategy='fcfs')
+        user = self.new_object('users')
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[0]
+        token = re.search(r'/delete_signup/(.+)\n\n', mail['text']).group(1)
+
+        # With redirect set
+        self.app.config['SIGNUP_DELETED_REDIRECT'] = "somewhere"
+        self.api.get('/delete_signup/%s' % token, status_code=302)
+
+        # Check that signup was deleted
+        self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
+
+        # Another signup
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[1]
+        token = re.search(r'/delete_signup/(.+)\n\n', mail['text']).group(1)
+
+        # Without redirect set
+        self.app.config.pop('SIGNUP_DELETED_REDIRECT')
+        self.api.get('/delete_signup/%s' % token, status_code=200)
+
+        # Check that signup was deleted
+        self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)

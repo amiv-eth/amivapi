@@ -21,12 +21,20 @@ from .projections import (
     add_signup_count_to_event_collection
 )
 from .validation import EventValidator
-from .email_confirmations import (
-    confirmprint,
+from .emails import (
+    email_blueprint,
     send_confirmmail_to_unregistered_users,
     send_confirmmail_to_unregistered_users_bulk,
     add_confirmed_before_insert,
     add_confirmed_before_insert_bulk
+)
+from .queue import (
+    add_accepted_before_insert,
+    add_accepted_before_insert_collection,
+    update_waiting_list_after_insert,
+    update_waiting_list_after_insert_collection,
+    update_waiting_list_after_delete,
+    update_waiting_list_after_delete_collection
 )
 
 
@@ -55,4 +63,14 @@ def init_app(app):
     app.on_inserted_item_eventsignups += send_confirmmail_to_unregistered_users
     app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users_bulk
 
-    app.register_blueprint(confirmprint)
+    # Auto accept registrations for fcfs system
+    app.on_insert_item_eventsignups += add_accepted_before_insert
+    app.on_insert_eventsignups += add_accepted_before_insert_collection
+
+    # Update waiting list after insert or delete of signups
+    app.on_inserted_item_eventsignups += update_waiting_list_after_insert
+    app.on_inserted_eventsignups += update_waiting_list_after_insert_collection
+    app.on_deleted_item_eventsignups += update_waiting_list_after_delete
+    app.on_deleted_eventsignups += update_waiting_list_after_delete_collection
+
+    app.register_blueprint(email_blueprint)

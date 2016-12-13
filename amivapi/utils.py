@@ -99,6 +99,12 @@ class ValidatorAMIV(Validator):
             self._error(field, "this field can not be changed with PATCH "
                         "unless you have admin rights.")
 
+    def _validate_admin_only(self, enabled, field, value):
+        """Prohibit anyone except admins from setting this field."""
+        if enabled and not g.resource_admin:
+            self._error(field, "This field can only be set with admin "
+                        "permissions.")
+
     def _validate_unique_combination(self, unique_combination, field, value):
         """Validate that a combination of fields is unique.
 
