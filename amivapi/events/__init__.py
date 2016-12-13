@@ -33,8 +33,7 @@ from .queue import (
     add_accepted_before_insert_collection,
     update_waiting_list_after_insert,
     update_waiting_list_after_insert_collection,
-    update_waiting_list_after_delete,
-    update_waiting_list_after_delete_collection
+    update_waiting_list_after_delete
 )
 
 
@@ -71,6 +70,5 @@ def init_app(app):
     app.on_inserted_item_eventsignups += update_waiting_list_after_insert
     app.on_inserted_eventsignups += update_waiting_list_after_insert_collection
     app.on_deleted_item_eventsignups += update_waiting_list_after_delete
-    app.on_deleted_eventsignups += update_waiting_list_after_delete_collection
 
     app.register_blueprint(email_blueprint)

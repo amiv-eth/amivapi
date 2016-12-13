@@ -120,9 +120,3 @@ def update_waiting_list_after_delete(signup):
         return
 
     update_waiting_list(signup['event'])
-
-
-def update_waiting_list_after_delete_collection(signups):
-    """Call item hook for collection endpoint"""
-    for s in signups:
-        update_waiting_list_after_delete(s)
