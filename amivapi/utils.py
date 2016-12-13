@@ -122,8 +122,7 @@ class ValidatorAMIV(Validator):
         # If we are patching the issue is more complicated, some fields might
         # have to be checked but are not part of the document because they will
         # not be patched. We have to load them from the database
-        patch = (request.method == 'PATCH')
-        if patch:
+        if request.method == 'PATCH':
             original = self._original_document
             for key in unique_combination:
                 if key not in self.document.keys():

@@ -4,6 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Test event authorization"""
 
+from datetime import datetime, timedelta
+import json
+from pytz import utc
+
 from amivapi.tests.utils import WebTest
 
 
@@ -60,3 +64,80 @@ class EventAuthTest(WebTest):
             'event': str(event['_id']),
             'email': 'test@bla.com',
         }, status_code=201)
+
+    def test_signups_patchable_fields(self):
+        """Test that only additional_fields can be changes by users and accepted
+        only by admins."""
+        event = self.new_object('events',
+                                spots=100,
+                                additional_fields=json.dumps({'a': {}}))
+        event2 = self.new_object('events',
+                                 spots=100,
+                                 additional_fields=json.dumps({'a': {}}))
+        user = self.new_object('users')
+        user2 = self.new_object('users')
+        user_token = self.get_user_token(user['_id'])
+        root_token = self.get_root_token()
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id']),
+            'additional_fields': '{"a":1}'
+        }, token=root_token, status_code=201).json
+
+        # Check that user can not be patched
+        self.api.patch('/eventsignups/%s' % signup['_id'],
+                       headers={'If-Match': signup['_etag']},
+                       data={'user': str(user2['_id'])},
+                       token=root_token,
+                       status_code=422)
+
+        # Check that email can not be patched
+        self.api.patch('/eventsignups/%s' % signup['_id'],
+                       headers={'If-Match': signup['_etag']},
+                       data={'email': 'a@b.c'},
+                       token=root_token,
+                       status_code=422)
+
+        # Check that event can not be patched
+        self.api.patch('/eventsignups/%s' % signup['_id'],
+                       headers={'If-Match': signup['_etag']},
+                       data={'event': str(event2['_id'])},
+                       token=root_token,
+                       status_code=422)
+
+        # Check that only admins can patch accepted
+        self.api.patch('/eventsignups/%s' % signup['_id'],
+                       headers={'If-Match': signup['_etag']},
+                       data={'accepted': True},
+                       token=user_token,
+                       status_code=422)
+
+        self.api.patch('/eventsignups/%s' % signup['_id'],
+                       headers={'If-Match': signup['_etag']},
+                       data={'accepted': True},
+                       token=root_token,
+                       status_code=200)
+
+    def test_signup_out_of_registration_window(self):
+        """Test that signups out of the registration window are rejected for
+        unpriviledged users."""
+        t_open = datetime.now(utc) - timedelta(days=2)
+        t_close = datetime.now(utc) - timedelta(days=1)
+
+        ev = self.new_object("events", spots=100,
+                             time_register_start=t_open,
+                             time_register_end=t_close)
+        user = self.new_object("users")
+        token = self.get_user_token(user['_id'])
+        root_token = self.get_root_token()
+
+        self.api.post("/eventsignups", data={
+            'event': str(ev['_id']),
+            'user': str(user['_id'])
+        }, token=token, status_code=422)
+
+        self.api.post("/eventsignups", data={
+            'event': str(ev['_id']),
+            'user': str(user['_id'])
+        }, token=root_token, status_code=201)

@@ -17,28 +17,6 @@ from eve.validation import SchemaError
 class EventValidator(object):
     """Custom Validator for event validation rules."""
 
-    def _validate_type_json_schema(self, field, value):
-        """Validate a cerberus schema saved as JSON.
-
-        1.  Is it JSON?
-        2.  Is it a valid cerberus schema?
-
-        Args:
-            field (string): field name.
-            value: field value.
-        """
-        try:
-            json_data = json.loads(value)
-        except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception: %s"
-                        % str(e))
-        else:
-            try:
-                self.validate_schema(json_data)
-            except SchemaError as e:
-                self._error(field, "does not contain a valid schema: %s"
-                            % str(e))
-
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.
 
@@ -131,28 +109,9 @@ class EventValidator(object):
             # If additional fields is missing still call the validator,
             # so correct error messages are produced
             if (event.get('additional_fields') and
-                ('additional_fields' not in self.document.keys())):
+                    ('additional_fields' not in self.document.keys())):
                 self._validate_type_json_event_field('additional_fields',
-                                                         None)
-
-    def _validate_only_self_enrollment_for_event(self, enabled, field, value):
-        """Validate if the user can be used to enroll for an event.
-
-        1.  Anyone can signup with no user id
-        2.  other id: Registered users can only enter their own id
-        3.  Exception are resource admins: they can sign up others as well
-
-        Args:
-            enabled (bool): validates nothing if set to false
-            field (string): field name.
-            value: field value.
-        """
-        if enabled:
-            if g.resource_admin or value is None:
-                return
-            if g.current_user != str(value):
-                self._error(field, "You can only enroll yourself. (%s: "
-                            "%s is yours)." % (field, g.logged_in_user))
+                                                     None)
 
     def _validate_email_signup_must_be_allowed(self, enabled, field, value):
         """Validation for a event field in eventsignups.
@@ -178,6 +137,32 @@ class EventValidator(object):
                 self._error(field,
                             "event %s does not allow signup with email address"
                             % event_id)
+
+    """
+    General purpose validators
+    """
+
+    def _validate_type_cerberus_schema(self, field, value):
+        """Validate a cerberus schema saved as JSON.
+
+        1.  Is it JSON?
+        2.  Is it a valid cerberus schema?
+
+        Args:
+            field (string): field name.
+            value: field value.
+        """
+        try:
+            json_data = json.loads(value)
+        except Exception as e:
+            self._error(field, "Must be json, parsing failed with exception: %s"
+                        % str(e))
+        else:
+            try:
+                self.validate_schema(json_data)
+            except SchemaError as e:
+                self._error(field, "does not contain a valid schema: %s"
+                            % str(e))
 
     # Eve doesn't handle time zones properly. Its always UTC but sometimes
     # the timezone is included, sometimes it isn't.

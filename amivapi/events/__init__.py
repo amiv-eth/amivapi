@@ -11,7 +11,7 @@ logic needed for signup of non members to events.
 from amivapi.utils import register_domain, register_validator
 
 from .model import eventdomain
-
+from .authorization import EventAuthValidator
 from .projections import (
     add_email_to_signup,
     add_email_to_signup_collection,
@@ -34,6 +34,7 @@ def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, eventdomain)
     register_validator(app, EventValidator)
+    register_validator(app, EventAuthValidator)
 
     # Show user's email in registered signups
     app.on_fetched_resource_eventsignups += add_email_to_signup_collection

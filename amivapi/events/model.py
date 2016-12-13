@@ -181,7 +181,7 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_schema',
+                'type': 'cerberus_schema',
                 'only_if_not_null': 'spots'
             },
             'allow_email_signup': {
@@ -213,7 +213,8 @@ eventdomain = {
             'the registration-window. External Users can only sign up to '
             'public events.',
             'methods': {
-                'PATCH': 'Only additional_fields can be changed'
+                'PATCH': 'Only additional_fields can be changed by users. '
+                'Admins can also patch accepted.'
             }
         },
 
@@ -234,8 +235,6 @@ eventdomain = {
                 'required': True,
                 'signup_requirements': True,
                 'type': 'objectid',
-                'unique_combination': ['user',
-                                       'email'],
             },
             'user': {
                 'data_relation': {
@@ -246,6 +245,7 @@ eventdomain = {
                 'only_self_enrollment_for_event': True,
                 'type': 'objectid',
                 'nullable': False,
+                'unique_combination': ['event']
 
                 # This creates a presence XOR with email
                 # TODO: This needs cerberus > 1.0.1
@@ -264,6 +264,7 @@ eventdomain = {
                 'nullable': False,
                 'regex': EMAIL_REGEX,
                 'type': 'string',
+                'unique_combination': ['event']
 
                 # This creates a presence XOR with user
                 # TODO: This needs cerberus > 1.0.1
