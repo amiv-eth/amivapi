@@ -110,26 +110,29 @@ class EventValidator(object):
             lookup = {current_app.config['ID_FIELD']: event_id}
             event = current_app.data.find_one("events", None, **lookup)
 
-            if event:
-                if event['spots'] is None:
-                    self._error(field, "the event with id %s has no signup"
-                                % value)
-                else:
-                    # The event has signup, check if it is open
-                    now = datetime.now(pytz.utc)
-                    if now < event['time_register_start']:
-                        self._error(field, "the signup for event with %s is "
-                                    "not open yet." % value)
-                    elif now > event['time_register_end']:
-                        self._error(field, "the signup for event with id %s "
-                                    "closed." % value)
+            if not event:
+                return
 
-                # If additional fields is missing still call the validator,
-                # except an emtpy string, then the valid
-                if (event.get('additional_fields', False) and
-                        ('additional_fields' not in self.document.keys())):
-                    # Use validator to get accurate errors
-                    self._validate_type_json_event_field('additional_fields',
+            if event['spots'] is None:
+                self._error(field, "the event with id %s has no signup"
+                            % value)
+                return
+
+            # The event has signup, check if it is open
+            if not g.get('resource_admin'):
+                now = datetime.now(pytz.utc)
+                if now < event['time_register_start']:
+                    self._error(field, "the signup for event with %s is "
+                                "not open yet." % value)
+                elif now > event['time_register_end']:
+                    self._error(field, "the signup for event with id %s "
+                                "closed." % value)
+
+            # If additional fields is missing still call the validator,
+            # so correct error messages are produced
+            if (event.get('additional_fields') and
+                ('additional_fields' not in self.document.keys())):
+                self._validate_type_json_event_field('additional_fields',
                                                          None)
 
     def _validate_only_self_enrollment_for_event(self, enabled, field, value):
