@@ -79,6 +79,12 @@ class EventProjectionTest(WebTestNoAuth):
                               status_code=200).json
         self.assertEqual(signup['email'], 'testemail@amiv.com')
 
+        # Check again with embedding of user
+        signup = self.api.get('/eventsignups/%s?embedded={"user":1}'
+                              % signup['_id'],
+                              status_code=200).json
+        self.assertEqual(signup['email'], 'testemail@amiv.com')
+
     def test_confirmed_projected(self):
         """Test that an external signups gets the confirmed field"""
         event = self.new_object('events', spots=100, additional_fields=None,

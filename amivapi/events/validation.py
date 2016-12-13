@@ -42,11 +42,12 @@ class EventValidator(object):
         # If PATCH, then event_id will not be provided, we have to find it
         if request.method == 'PATCH':
             lookup = {id_field: self._original_document['event']}
-        elif ('event' in self.document.keys()):
+        elif 'event' in self.document:
             lookup = {id_field: self.document['event']}
         else:
-            self._error(field, "Cannot evaluate additional fields "
-                        "without event")
+            # No event provided, the required validator of the event field
+            # will complain.
+            return
 
         event = current_app.data.find_one('events', None, **lookup)
 
@@ -63,7 +64,7 @@ class EventValidator(object):
 
         # if event id is not valid another validator will fail anyway
 
-    def _validate_signup_requirements(self, signup_possible, field, value):
+    def _validate_signup_requirements(self, signup_possible, field, event_id):
         """Validate if signup requirements are met.
 
         Used for an event_id field - checks if the value "spots" is
@@ -84,16 +85,14 @@ class EventValidator(object):
             value: field value.
         """
         if signup_possible:
-            event_id = self.document.get('event', None)
+            # We can assume event_id is valid, as the type validator will abort
+            # otherwise and this validator is not executed
             lookup = {current_app.config['ID_FIELD']: event_id}
             event = current_app.data.find_one("events", None, **lookup)
 
-            if not event:
-                return
-
             if event['spots'] is None:
                 self._error(field, "the event with id %s has no signup"
-                            % value)
+                            % event_id)
                 return
 
             # The event has signup, check if it is open
@@ -101,10 +100,10 @@ class EventValidator(object):
                 now = datetime.now(pytz.utc)
                 if now < event['time_register_start']:
                     self._error(field, "the signup for event with %s is "
-                                "not open yet." % value)
+                                "not open yet." % event_id)
                 elif now > event['time_register_end']:
                     self._error(field, "the signup for event with id %s "
-                                "closed." % value)
+                                "closed." % event_id)
 
             # If additional fields is missing still call the validator,
             # so correct error messages are produced

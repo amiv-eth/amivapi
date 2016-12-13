@@ -91,6 +91,10 @@ class EventValidatorTest(WebTestNoAuth):
         })
 
         self.api.post("/test", data={
+            'field2': '2016-10-17T10:10:10Z'
+        }, status_code=201)
+
+        self.api.post("/test", data={
             'field1': '2016-10-17T21:11:14Z',
             'field2': '2016-03-19T13:33:37Z'
         }, status_code=422)
@@ -113,6 +117,10 @@ class EventValidatorTest(WebTestNoAuth):
                 }
             }
         })
+
+        self.api.post("/test", data={
+            'field1': '2016-10-17T10:10:10Z'
+        }, status_code=201)
 
         self.api.post("/test", data={
             'field1': '2016-10-17T21:11:14Z',
@@ -216,3 +224,23 @@ class EventValidatorTest(WebTestNoAuth):
         self.api.patch('/test/%s' % obj['_id'], data=data,
                        headers={'If-Match': obj['_etag']},
                        status_code=200)
+
+    def test_required_if_not(self):
+        """Test required_if_not validator"""
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'integer',
+                    'required_if_not': 'field2'
+                },
+                'field2': {
+                    'type': 'integer',
+                    'required_if_not': 'field1'
+                }
+            }
+        })
+
+        self.api.post('/test', data={}, status_code=422)
+        self.api.post('/test', data={'field1': 1}, status_code=201)
+        self.api.post('/test', data={'field2': 1}, status_code=201)
+        self.api.post('/test', data={'field1': 1, 'field2': 2}, status_code=201)

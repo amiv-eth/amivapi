@@ -4,9 +4,9 @@
 #          you to buy us beer if we meet and you like the software.
 """Test event authorization"""
 
-from datetime import datetime, timedelta
+from datetime import datetime
+from freezegun import freeze_time
 import json
-from pytz import utc
 
 from amivapi.tests.utils import WebTest
 
@@ -119,11 +119,11 @@ class EventAuthTest(WebTest):
                        token=root_token,
                        status_code=200)
 
-    def test_signup_out_of_registration_window(self):
+    def test_registration_window(self):
         """Test that signups out of the registration window are rejected for
         unpriviledged users."""
-        t_open = datetime.now(utc) - timedelta(days=2)
-        t_close = datetime.now(utc) - timedelta(days=1)
+        t_open = datetime(2016, 1, 1)
+        t_close = datetime(2016, 12, 31)
 
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
@@ -132,12 +132,32 @@ class EventAuthTest(WebTest):
         token = self.get_user_token(user['_id'])
         root_token = self.get_root_token()
 
-        self.api.post("/eventsignups", data={
-            'event': str(ev['_id']),
-            'user': str(user['_id'])
-        }, token=token, status_code=422)
+        # Too early
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.post("/eventsignups", data={
+                'event': str(ev['_id']),
+                'user': str(user['_id'])
+            }, token=token, status_code=422)
 
-        self.api.post("/eventsignups", data={
-            'event': str(ev['_id']),
-            'user': str(user['_id'])
-        }, token=root_token, status_code=201)
+        # Too late
+        with freeze_time(datetime(2017, 1, 1)):
+            self.api.post("/eventsignups", data={
+                'event': str(ev['_id']),
+                'user': str(user['_id'])
+            }, token=token, status_code=422)
+
+        # Correct time
+        with freeze_time(datetime(2016, 6, 1)):
+            self.api.post("/eventsignups", data={
+                'event': str(ev['_id']),
+                'user': str(user['_id'])
+            }, token=token, status_code=201)
+
+        user2 = self.new_object('users')
+
+        # Admin can ignore time
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.post("/eventsignups", data={
+                'event': str(ev['_id']),
+                'user': str(user2['_id'])
+            }, token=root_token, status_code=201)

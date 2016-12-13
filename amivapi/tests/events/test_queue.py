@@ -58,3 +58,29 @@ class EventsignupQueueTest(WebTestNoAuth):
         waiting = self.api.get('/eventsignups?where={"accepted":false}',
                                status_code=200).json['_items']
         self.assertEqual(len(waiting), 0)
+
+    def test_removing_from_waitinglist_does_nothing(self):
+        """Test that removing someone from the waitinglist, who did not have
+        space, does not crash.
+
+        The reason for this test is
+        1. Test coverage, as that is a special case in some hooks.
+        2. Making sure nothing weird happens, like API crashes for those code
+        paths."""
+        event = self.new_object('events', spots=1, selection_strategy='fcfs')
+        user = self.new_object('users')
+        user2 = self.new_object('users')
+
+        self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201)
+
+        signup2 = self.api.post('/eventsignups', data={
+            'user': str(user2['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        self.api.delete('/eventsignups/%s' % signup2['_id'],
+                        headers={'If-Match': signup2['_etag']},
+                        status_code=204)

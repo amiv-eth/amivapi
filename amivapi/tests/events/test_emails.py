@@ -76,3 +76,35 @@ class EventMailTest(WebTestNoAuth):
 
         # Check that signup was deleted
         self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
+
+    def test_invalid_token(self):
+        """Test that an error is returned for an invalid token to the email
+        link endpoints."""
+        resp = self.api.get("/confirm_email/invalid", status_code=200).data
+        self.assertEqual(resp, b'Unknown token')
+
+        resp = self.api.get("/delete_signup/invalid", status_code=200).data
+        self.assertEqual(resp, b'Unknown token')
+
+    def test_external_signups_wait_for_confirmation(self):
+        """Test that external signups do not get accepted until confirmed."""
+        event = self.new_object('events', spots=100, selection_strategy='fcfs',
+                                allow_email_signup=True)
+
+        signup = self.api.post('/eventsignups', data={
+            'email': 'a@example.com',
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        # Signup should not be accepted yet
+        self.assertTrue(not self.api.get('/eventsignups/%s' % signup['_id'],
+                                         status_code=200).json['accepted'])
+
+        mail = self.app.test_mails[0]
+        token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
+
+        self.api.get('/confirm_email/%s' % token, status_code=200)
+
+        # Signup should now be accepted
+        self.assertTrue(self.api.get('/eventsignups/%s' % signup['_id'],
+                                     status_code=200).json['accepted'])
