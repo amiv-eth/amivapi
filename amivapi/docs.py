@@ -5,22 +5,20 @@
 
 """Eve Swagger initialization."""
 
-from flask import Blueprint, redirect, url_for, request
+from flask import Blueprint, render_template
 
 from eve_swagger import swagger, add_documentation
 
 from amivapi.utils import register_validator
 
-swagger_ui = Blueprint('swagger_ui', __name__,
-                       static_folder='swagger_ui',
-                       static_url_path='/docs')
+redoc = Blueprint('redoc', __name__, static_url_path='/docs',
+                  template_folder='ReDoc')
 
 
-@swagger_ui.route('/docs')
+@redoc.route('/docs')
 def index():
     """Redirect to the correct url to view docs."""
-    return redirect(url_for('swagger_ui.static', filename='index.html') +
-                    "?url={}/api-docs".format(request.url))
+    return render_template('index.html')
 
 
 class DocValidator(object):
@@ -37,11 +35,10 @@ class DocValidator(object):
 def init_app(app):
     """Create a swagger-ui endpoint at /docs."""
     # Generate documentation to be used by swagger ui
-    # will be exposed at /api-docs
+    # will be exposed at /prefix/api-docs
     app.register_blueprint(swagger, url_prefix="/docs")
-    # host the swagger ui at /docs
-
-    app.register_blueprint(swagger_ui)
+    # host the swagger ui (we use redoc) at /docs
+    app.register_blueprint(redoc)
 
     register_validator(app, DocValidator)
 
@@ -61,3 +58,19 @@ def init_app(app):
             '/sessions, or an API key, stored in the server config'
         }
     }})
+
+    # just an example of how to include code samples
+    add_documentation({'paths': {'/sessions': {'post': {
+        'x-code-samples': [
+            {'lang': 'python',
+             'source': '\n\n'.join([
+                'import requests',
+                ('login = requests.post("http://api.amiv.ethz.ch/sessions", '
+                 'data={"user": "myuser", "password": "mypassword"})'),
+                "token = login.json()['token']",
+                ('# now use this token to authenticate a request\n'
+                 'response = requests.get('
+                 '"https://api.amiv.ethz.ch/users/myuser", '
+                 'auth=requests.auth.HTTPBasicAuth(token, ""))')
+            ])}
+        ]}}}})
