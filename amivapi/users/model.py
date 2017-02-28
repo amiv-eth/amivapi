@@ -15,8 +15,6 @@ userdomain = {
                         'the RFID-Number or the membership-status. '
                         'Extraordinary members may not have a LDAP-Account '
                         'and can therefore access all given fields.',
-                        #'methods': {'GET': 'Authorization is required for '
-                        #            'most of the fields'}},
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 
