@@ -24,9 +24,7 @@ def index():
         '<!-- needed for adaptive design -->'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         "<!-- ReDoc doesn't change outer page styles -->"
-        '<style>'
-            'body {margin: 0; padding: 0; }'
-        '</style>'
+        '<style> body {margin: 0; padding: 0; } </style>'
         '</head>'
         '<body>'
         "<redoc spec-url='{{ request.url }}/api-docs'></redoc>"
@@ -86,6 +84,7 @@ def init_app(app):
                 ('# now use this token to authenticate a request\n'
                  'response = requests.get('
                  '"https://api.amiv.ethz.ch/users/myuser", '
-                 'auth=requests.auth.HTTPBasicAuth(token, ""))')
-            ])}
-        ]}}}})
+                 'auth=requests.auth.HTTPBasicAuth(token, ""))')])
+             }
+        ]
+    }}}})

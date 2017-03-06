@@ -16,6 +16,7 @@ class BeveragesAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
         return {'user': user_id}
 
+
 beveragesdomain = {
     'beverages': {
         'description': 'A beer machine or kaffi machine transaction. Users '
