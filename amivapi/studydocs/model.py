@@ -28,7 +28,7 @@ studydocdomain = {
             'aiming at all levels of experience.'
         },
 
-        'resource_methods': ['GET', 'POST', 'DELETE'],
+        'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
         'authentication': StudydocsAuth,
