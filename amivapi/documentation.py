@@ -11,13 +11,12 @@ from eve_swagger import swagger, add_documentation
 
 from amivapi.utils import register_validator
 
-redoc = Blueprint('redoc', __name__, static_url_path='/docs',
-                  template_folder='ReDoc')
+redoc = Blueprint('redoc', __name__, static_url_path='/docs')
 
 
 @redoc.route('/docs')
 def index():
-    """Output simple html that includes ReDoc and sets style"""
+    """Output simple html that includes ReDoc's JS and sets style"""
     redoc_template = (
         '<!DOCTYPE html>'
         '<html><head>'
@@ -49,11 +48,11 @@ class DocValidator(object):
 
 
 def init_app(app):
-    """Create a swagger-ui endpoint at /docs."""
-    # Generate documentation to be used by swagger ui
-    # will be exposed at /prefix/api-docs
+    """Create a ReDoc endpoint at /docs."""
+    # Generate documentation (i.e. swagger/OpenApi) to be used by any UI
+    # will be exposed at /docs/api-docs
     app.register_blueprint(swagger, url_prefix="/docs")
-    # host the swagger ui (we use redoc) at /docs
+    # host the ui (we use redoc) at /docs
     app.register_blueprint(redoc)
 
     register_validator(app, DocValidator)
