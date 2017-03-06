@@ -26,5 +26,6 @@ def add_uploader_on_insert(item):
 
 
 def add_uploader_on_bulk_insert(items):
+    """Add the _author field before inserting studydocs"""
     for item in items:
         add_uploader_on_insert(item)
