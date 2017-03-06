@@ -17,28 +17,6 @@ from eve.validation import SchemaError
 class EventValidator(object):
     """Custom Validator for event validation rules."""
 
-    def _validate_type_json_schema(self, field, value):
-        """Validate a cerberus schema saved as JSON.
-
-        1.  Is it JSON?
-        2.  Is it a valid cerberus schema?
-
-        Args:
-            field (string): field name.
-            value: field value.
-        """
-        try:
-            json_data = json.loads(value)
-        except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception: %s"
-                        % str(e))
-        else:
-            try:
-                self.validate_schema(json_data)
-            except SchemaError as e:
-                self._error(field, "does not contain a valid schema: %s"
-                            % str(e))
-
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.
 
@@ -64,11 +42,12 @@ class EventValidator(object):
         # If PATCH, then event_id will not be provided, we have to find it
         if request.method == 'PATCH':
             lookup = {id_field: self._original_document['event']}
-        elif ('event' in self.document.keys()):
+        elif 'event' in self.document:
             lookup = {id_field: self.document['event']}
         else:
-            self._error(field, "Cannot evaluate additional fields "
-                        "without event")
+            # No event provided, the required validator of the event field
+            # will complain.
+            return
 
         event = current_app.data.find_one('events', None, **lookup)
 
@@ -85,7 +64,7 @@ class EventValidator(object):
 
         # if event id is not valid another validator will fail anyway
 
-    def _validate_signup_requirements(self, signup_possible, field, value):
+    def _validate_signup_requirements(self, signup_possible, field, event_id):
         """Validate if signup requirements are met.
 
         Used for an event_id field - checks if the value "spots" is
@@ -106,50 +85,32 @@ class EventValidator(object):
             value: field value.
         """
         if signup_possible:
-            event_id = self.document.get('event', None)
+            # We can assume event_id is valid, as the type validator will abort
+            # otherwise and this validator is not executed
             lookup = {current_app.config['ID_FIELD']: event_id}
             event = current_app.data.find_one("events", None, **lookup)
 
-            if event:
-                if event['spots'] is None:
-                    self._error(field, "the event with id %s has no signup"
-                                % value)
-                else:
-                    # The event has signup, check if it is open
-                    now = datetime.now(pytz.utc)
-                    if now < event['time_register_start']:
-                        self._error(field, "the signup for event with %s is "
-                                    "not open yet." % value)
-                    elif now > event['time_register_end']:
-                        self._error(field, "the signup for event with id %s "
-                                    "closed." % value)
-
-                # If additional fields is missing still call the validator,
-                # except an emtpy string, then the valid
-                if (event.get('additional_fields', False) and
-                        ('additional_fields' not in self.document.keys())):
-                    # Use validator to get accurate errors
-                    self._validate_type_json_event_field('additional_fields',
-                                                         None)
-
-    def _validate_only_self_enrollment_for_event(self, enabled, field, value):
-        """Validate if the user can be used to enroll for an event.
-
-        1.  Anyone can signup with no user id
-        2.  other id: Registered users can only enter their own id
-        3.  Exception are resource admins: they can sign up others as well
-
-        Args:
-            enabled (bool): validates nothing if set to false
-            field (string): field name.
-            value: field value.
-        """
-        if enabled:
-            if g.resource_admin or value is None:
+            if event['spots'] is None:
+                self._error(field, "the event with id %s has no signup"
+                            % event_id)
                 return
-            if g.current_user != str(value):
-                self._error(field, "You can only enroll yourself. (%s: "
-                            "%s is yours)." % (field, g.logged_in_user))
+
+            # The event has signup, check if it is open
+            if not g.get('resource_admin'):
+                now = datetime.now(pytz.utc)
+                if now < event['time_register_start']:
+                    self._error(field, "the signup for event with %s is "
+                                "not open yet." % event_id)
+                elif now > event['time_register_end']:
+                    self._error(field, "the signup for event with id %s "
+                                "closed." % event_id)
+
+            # If additional fields is missing still call the validator,
+            # so correct error messages are produced
+            if (event.get('additional_fields') and
+                    ('additional_fields' not in self.document.keys())):
+                self._validate_type_json_event_field('additional_fields',
+                                                     None)
 
     def _validate_email_signup_must_be_allowed(self, enabled, field, value):
         """Validation for a event field in eventsignups.
@@ -175,6 +136,32 @@ class EventValidator(object):
                 self._error(field,
                             "event %s does not allow signup with email address"
                             % event_id)
+
+    """
+    General purpose validators
+    """
+
+    def _validate_type_cerberus_schema(self, field, value):
+        """Validate a cerberus schema saved as JSON.
+
+        1.  Is it JSON?
+        2.  Is it a valid cerberus schema?
+
+        Args:
+            field (string): field name.
+            value: field value.
+        """
+        try:
+            json_data = json.loads(value)
+        except Exception as e:
+            self._error(field, "Must be json, parsing failed with exception: %s"
+                        % str(e))
+        else:
+            try:
+                self.validate_schema(json_data)
+            except SchemaError as e:
+                self._error(field, "does not contain a valid schema: %s"
+                            % str(e))
 
     # Eve doesn't handle time zones properly. Its always UTC but sometimes
     # the timezone is included, sometimes it isn't.

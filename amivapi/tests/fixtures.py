@@ -240,6 +240,9 @@ class FixtureMixin(object):
             obj.setdefault('allow_email_signup',
                            random.choice([True, False]))
 
+            obj.setdefault('selection_strategy',
+                           random.choice(['fcfs', 'manual']))
+
     def preprocess_eventsignups(self, schema, obj, fixture):
         """Find random unique combination of user/event"""
         if 'user' not in obj and 'email' not in obj:

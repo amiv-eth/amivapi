@@ -11,22 +11,12 @@ from .authorization import StudydocsAuth
 
 studydocdomain = {
     'studydocuments': {
-        'description': {
-            'fields': {
-                'semester': 'Study-Semester as an Integer starting with '
-                'first semester Bachelor.',
-                'uploader': 'Read-only field describing which AMIV member '
-                'uploaded the files',
-                'author': 'Original author of the uploaded files'
-                '(Prof, Assistant, copyright owner)',
-                'course_year': 'Course Year'
-            },
-            'general': 'Study-documents are basically all documents that '
-            'are connected to a course. All metadata is optional and intended '
-            'to help finding the file. There are no strict categories, as those'
-            ' do not work well for courses available to many departements and '
-            'aiming at all levels of experience.'
-        },
+
+        'description': 'Study-documents are basically all documents that are '
+        'connected to a course. Most metadata is optional and intended to '
+        'help finding the file. There are no strict categories, as those do '
+        'not work well for courses available to many departements and aiming '
+        'at all levels of experience.',
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
@@ -40,11 +30,16 @@ studydocdomain = {
                 # Must be nullable: e.g. if root user uploads there is no user
                 'nullable': True,
                 'readonly': True,
+                'description': 'Read-only field describing which AMIV member '
+                'uploaded the files'
             },
             'author': {
                 'type': 'string',
                 'maxlength': 100,
+                'empty': False,
                 'nullable': True,
+                'description': 'Original author of the uploaded files'
+                '(Prof, Assistant, copyright owner)'
             },
             'department': {
                 'type': 'string',
@@ -74,9 +69,11 @@ studydocdomain = {
                 'type': 'string'
             },
             'semester': {
-                'nullable': True,
                 'type': 'string',
-                'allowed': ['1', '2', '3', '4', '5+']
+                'nullable': True,
+                'allowed': ['1', '2', '3', '4', '5+'],
+                'description': 'Study-Semester of the lecture starting with '
+                'first semester Bachelor.'
             },
             'type': {
                 'type': 'string',
@@ -84,7 +81,8 @@ studydocdomain = {
                             'exercises']
             },
             'course_year': {
-                'type': 'integer'
+                'type': 'integer',
+                'description': 'Course Year as Integer'
             }
         },
     }

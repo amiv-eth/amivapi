@@ -9,9 +9,7 @@ from os import getcwd
 from ruamel import yaml
 
 from flask import Config
-from flask_bootstrap import Bootstrap
 from eve import Eve
-from eve_docs import eve_docs
 
 from amivapi import (
     users,
@@ -24,7 +22,8 @@ from amivapi import (
     joboffers,
     beverages,
     cascade,
-    studydocs
+    studydocs,
+    documentation
 )
 from amivapi.ldap import ldap_connector
 from amivapi.settings import DEFAULT_CONFIG_FILENAME
@@ -61,15 +60,9 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
               validator=utils.ValidatorAMIV,
               media=media.FileSystemStorage)
 
-    # What is this good for? Seems to change nothing if commented out
-    Bootstrap(app)
-
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
         ldap_connector.init_app(app)
-
-    # Generate and expose docs via eve-docs extension
-    app.register_blueprint(eve_docs, url_prefix="/docs")
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
@@ -82,5 +75,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     media.init_app(app)
     cascade.init_app(app)
     cron.init_app(app)
+    documentation.init_app(app)
 
     return app
