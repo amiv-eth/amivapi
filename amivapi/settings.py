@@ -73,6 +73,7 @@ CONFIRM_EMAIL_TEXT = (
 
 # Signup confirmation without redirct
 CONFIRM_TEXT = "Your singup was confirmed!"
+SIGNUP_DELETED_TEXT = "Your signup was removed."
 
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [

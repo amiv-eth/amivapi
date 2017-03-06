@@ -4,6 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 """Authorization for events and eventsignups resources"""
 
+from flask import g
+
 from amivapi.auth import AmivTokenAuth
 
 
@@ -25,3 +27,26 @@ class EventSignupAuth(AmivTokenAuth):
         address.
         """
         return True
+
+
+class EventAuthValidator(object):
+    """ Custom validator to check permissions for events. """
+
+    def _validate_only_self_enrollment_for_event(self, enabled, field, value):
+        """Validate if the user can be used to enroll for an event.
+
+        1.  Anyone can signup with no user id
+        2.  other id: Registered users can only enter their own id
+        3.  Exception are resource admins: they can sign up others as well
+
+        Args:
+            enabled (bool): validates nothing if set to false
+            field (string): field name.
+            value: field value.
+        """
+        if enabled:
+            if g.resource_admin or value is None:
+                return
+            if g.get('current_user') != str(value):
+                self._error(field, "You can only enroll yourself. (%s: "
+                            "%s is yours)." % (field, g.current_user))

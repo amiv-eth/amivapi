@@ -145,7 +145,8 @@ eventdomain = {
 
             'spots': {
                 'dependencies': ['time_register_start',
-                                 'time_register_end'],
+                                 'time_register_end',
+                                 'selection_strategy'],
                 'min': 0,
                 'nullable': True,
                 'type': 'integer',
@@ -168,7 +169,7 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_schema',
+                'type': 'cerberus_schema',
                 'only_if_not_null': 'spots',
                 'description': 'must be provided in form of a JSON-Schema. You'
                 'can add here fields you want to know from people signing up '
@@ -181,6 +182,12 @@ eventdomain = {
                 'only_if_not_null': 'spots',
                 'description': 'If False, only AMIV-Members can sign up for '
                 'this event'
+            },
+
+            'selection_strategy': {
+                'type': 'string',
+                'allowed': ['fcfs', 'manual'],
+                'only_if_not_null': 'spots'
             },
 
             'signup_count': {
@@ -213,8 +220,6 @@ eventdomain = {
                 'required': True,
                 'signup_requirements': True,
                 'type': 'objectid',
-                'unique_combination': ['user',
-                                       'email'],
             },
             'user': {
                 'data_relation': {
@@ -225,7 +230,9 @@ eventdomain = {
                 'only_self_enrollment_for_event': True,
                 'type': 'objectid',
                 'nullable': False,
+                'unique_combination': ['event'],
                 'description': 'Provide either user or email.'
+
                 # This creates a presence XOR with email
                 # TODO: This needs cerberus > 1.0.1
                 # enable as soon as eve supports it
@@ -245,9 +252,11 @@ eventdomain = {
                 'nullable': False,
                 'regex': EMAIL_REGEX,
                 'type': 'string',
+                'unique_combination': ['event'],
                 'description': 'For registered users, this is just a projection'
                 ' of your general email-address. External users need to provide'
                 ' their email here.'
+
                 # This creates a presence XOR with user
                 # TODO: This needs cerberus > 1.0.1
                 # enable as soon as eve supports it
@@ -255,9 +264,12 @@ eventdomain = {
                 # 'excludes': ['user']
             },
             'confirmed': {
-                'nullable': True,
                 'type': 'boolean',
                 'readonly': True
+            },
+            'accepted': {
+                'type': 'boolean',
+                'admin_only': True
             },
         }
     }
