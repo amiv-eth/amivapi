@@ -15,11 +15,9 @@ class StudydocsAuth(AmivTokenAuth):
         return str(item['uploader']) == user_id
 
     def has_resource_write_permission(self, user_id):
-        if request.method == 'POST':
-            return True
-        return False  # No delete on resource for users
-
-
+        # All users can create studydocs
+        return True
+    
 def add_uploader_on_insert(item):
     """Add the _author field before inserting studydocs"""
     item['uploader'] = g.get('current_user')
