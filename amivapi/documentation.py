@@ -5,7 +5,7 @@
 
 """Eve Swagger initialization."""
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template_string
 
 from eve_swagger import swagger, add_documentation
 
@@ -17,8 +17,24 @@ redoc = Blueprint('redoc', __name__, static_url_path='/docs',
 
 @redoc.route('/docs')
 def index():
-    """Redirect to the correct url to view docs."""
-    return render_template('index.html')
+    """Output simple html that includes ReDoc and sets style"""
+    redoc_template = (
+        '<!DOCTYPE html>'
+        '<html><head>'
+        '<title>ReDoc</title>'
+        '<!-- needed for adaptive design -->'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        "<!-- ReDoc doesn't change outer page styles -->"
+        '<style>'
+            'body {margin: 0; padding: 0; }'
+        '</style>'
+        '</head>'
+        '<body>'
+        "<redoc spec-url='{{ request.url }}/api-docs'></redoc>"
+        '<script src="https://rebilly.github.io/ReDoc/releases/latest/'
+        'redoc.min.js"> </script>'
+        '</body></html>')
+    return render_template_string(redoc_template)
 
 
 class DocValidator(object):
