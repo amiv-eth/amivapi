@@ -15,8 +15,7 @@ from amivapi.cron import run_scheduled_tasks
 
 class TestSessionExpiry(WebTest):
     def test_session_expiry(self):
-        with self.app.app_context(), freeze_time(
-                "2016-01-01 00:00:00") as frozen_time:
+        with self.app.app_context(), freeze_time() as frozen_time:
             self.new_object("users", nethz="pablo", password="pass")
             self.api.post('/sessions',
                           data={"username": "pablo", "password": "pass"},
