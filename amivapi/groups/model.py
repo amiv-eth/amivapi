@@ -47,7 +47,7 @@ class GroupMembershipAuth(AmivTokenAuth):
     """Auth for group memberships."""
 
     def has_resource_write_permission(self, user_id):
-        """All user can signup for groups.
+        """All users can enroll in groups.
 
         Group-specific settings related to the question "who is allowed to
         enroll for this group?" are done in the validator.
@@ -55,7 +55,7 @@ class GroupMembershipAuth(AmivTokenAuth):
         return True
 
     def has_item_write_permission(self, user_id, item):
-        """The group moderator and the member can change a signup."""
+        """The group moderator and the member can change an enrollment."""
         if user_id == str(item['user']):
             # Own membership can be modified
             return True
@@ -101,20 +101,11 @@ class GroupMembershipAuth(AmivTokenAuth):
 groupdomain = {
 
     'groups': {
-        'description': {
-            'fields': {'allow_self_enrollment': 'If true, the group can be '
-                       'seen by all users and they can subscribe themselves',
-                       'has_zoidberg_share': 'If the group has a share in the '
-                       'amiv storage',
-                       'permissions': 'permissions the group grants. has to '
-                       'be according to the jsonschema available at '
-                       '/notyetavailable'},
-            'general': "This resource describes the different teams in AMIV.A "
-            "group can grant API permissions and can be reached with several "
-            "addresses. To see the addresses of this group, see "
-            "/groupaddressesTo see the members, have a look at "
-            "'/groupmembers'. To see the addresses messages are forwarded to, "
-            "see /groupforwards"},
+        'description': "This resource describes the different teams in AMIV.A "
+        "group can grant API permissions and can be reached with several "
+        "addresses. To see the addresses of this group, see /groupaddresses."
+        "To see the members, have a look at '/groupmembers'. To see the "
+        "addresses messages are forwarded to, see /groupforwards",
 
         'resource_methods': ['POST', 'GET'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
@@ -161,11 +152,14 @@ groupdomain = {
             },
             'allow_self_enrollment': {
                 'type': 'boolean',
-                'default': False
+                'default': False,
+                'description': 'If true, the group can be seen by all users and'
+                ' they can subscribe themselves'
             },
             'has_zoidberg_share': {
                 'type': 'boolean',
-                'default': False
+                'default': False,
+                'description': 'If the group has a share in the amiv storage.'
             },
             'permissions': {
                 'type': 'dict',
@@ -174,13 +168,15 @@ groupdomain = {
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'nullable': True,
+                'description': 'permissions the group grants. has to be '
+                'according to the jsonschema available at /notyetavailable'
             }
         }
     },
 
 
     'groupmemberships': {
-        'description': {'general': 'Assignment of registered users to groups.'},
+        'description': 'Assignment of registered users to groups.',
 
         'resource_methods': ['POST', 'GET'],
         'item_methods': ['GET', 'DELETE'],  # No patching!

@@ -19,16 +19,10 @@ class BeveragesAuth(AmivTokenAuth):
 
 beveragesdomain = {
     'beverages': {
-        'description': {
-            'fields': {
-            },
-            'general': 'A beer machine or kaffi machine '
-            'transaction. Users should be able to get beer or '
-            'kaffi, if their last timestamp is older than one day '
-            'and they are AMIV members. This resource is used to '
-            'log their purchases.'
-        },
-
+        'description': 'A beer machine or kaffi machine transaction. Users '
+        'should be able to get beer or kaffi, if their last timestamp is older '
+        'than one day and they are AMIV members. This resource is used to log '
+        'their purchases.',
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET'],
 
@@ -56,9 +50,9 @@ beveragesdomain = {
                 'type': 'objectid',
                 'unique': False,
                 'data_relation': {
-                     'resource': 'users',
-                     'field': '_id',
-                     'embeddable': True
+                    'resource': 'users',
+                    'field': '_id',
+                    'embeddable': True
                 },
             }
         }

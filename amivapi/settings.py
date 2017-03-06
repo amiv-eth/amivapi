@@ -13,6 +13,8 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
+VERSION = '0.9dev'
+
 # Flask
 
 DEBUG = False
@@ -117,3 +119,34 @@ DEPARTMENT_LIST = [
     'mtec',
     'gess'
 ]
+
+# Config for swagger (/docs)
+# TODO: should be linked to the setup.py information in the package
+SWAGGER_INFO = {
+    'title': 'AMIVAPI Documentation',
+    'version': VERSION,
+    'description': "The REST API behind most of AMIV's web services.",
+    # TODO: fill this
+    'termsOfService': 'todo',
+    'contact': {
+        'name': 'AMIV an der ETH',
+        'url': 'https://amiv.ch/'
+    },
+    'license': {
+        'name': 'GNU Affero General Public License',
+        'url': 'https://github.com/amiv-eth/amivapi/blob/master/LICENSE',
+    }
+}
+ENABLE_HOOK_DESCRIPTION = True
+HIDE_HOOK_FUNCTIONS = ['authenticate',
+                       'check_if_admin',
+                       'abort_if_not_public',
+                       'add_lookup_filter',
+                       'check_resource_write_permission',
+                       'check_item_write_permission',
+                       'add_permitted_methods_after_insert',
+                       'add_permitted_methods_after_fetch_resource',
+                       'add_permitted_methods_after_fetch_item',
+                       'add_permitted_methods_after_fetch_resource',
+                       'add_permitted_methods_for_home',
+                       'add_permitted_methods_after_update']

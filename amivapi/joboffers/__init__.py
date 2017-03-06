@@ -12,13 +12,8 @@ from amivapi.utils import register_domain
 
 jobdomain = {
     'joboffers': {
-        'description': {
-            'fields': {
-            },
-            'general': 'A Job Offer posts repository'
-            'Users can post a job offer with the necessary'
-            'content to fill out a job offer advertisement'
-        },
+        'description': 'A Job Offer posts repository Users can post a job offer'
+        ' with the necessary content to fill out a job offer advertisement',
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],

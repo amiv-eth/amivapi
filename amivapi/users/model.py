@@ -10,14 +10,11 @@ from .security import UserAuth
 
 userdomain = {
     'users': {
-        'description': {'general': 'In general, the user data will be '
-                        'generated from LDAP-Data. However, one might change '
-                        'the RFID-Number or the membership-status. '
-                        'Extraordinary members may not have a LDAP-Account '
-                        'and can therefore access all given fields.',
-                        'methods': {'GET': 'Authorization is required for '
-                                    'most of the fields'}},
-
+        'description': 'In general, the user data will be '
+                       'generated from LDAP-Data. However, one might change '
+                       'the RFID-Number or the membership-status. '
+                       'Extraordinary members may not have a LDAP-Account '
+                       'and can therefore access all given fields.',
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 
