@@ -20,7 +20,7 @@ from amivapi import (
     groups,
     utils,
     joboffers,
-    purchases,
+    beverages,
     cascade,
     studydocs,
     documentation
@@ -70,7 +70,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     events.init_app(app)
     groups.init_app(app)
     joboffers.init_app(app)
-    purchases.init_app(app)
+    beverages.init_app(app)
     studydocs.init_app(app)
     media.init_app(app)
     cascade.init_app(app)

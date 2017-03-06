@@ -7,6 +7,7 @@
 
 from os.path import join, dirname
 from io import BytesIO
+from werkzeug.datastructures import FileStorage
 
 from amivapi.media import ignore_not_found
 from amivapi.tests.utils import WebTestNoAuth
@@ -130,3 +131,13 @@ class MediaTest(WebTestNoAuth):
         data = {'test_file': (BytesIO(b'trololo'), "something")}
         self.api.post("/test", data=data, headers=headers,
                       status_code=422)
+
+    def test_timezone_error(self):
+        """Test that #150 is fixed."""
+        obj = self.new_object('test',
+                              test_file=FileStorage(BytesIO(lenadata),
+                                                    lenaname))
+
+        self.api.get(obj['test_file']['file'], headers={
+            'If-Modified-Since': 'Mon, 12 Dec 2016 12:23:46 GMT'},
+                     status_code=200)

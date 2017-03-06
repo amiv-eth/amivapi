@@ -116,7 +116,8 @@ class FixtureMixin(object):
             # Add it to the database
             with self.app.test_request_context("/" + resource, method='POST'):
                 with admin_permissions():
-                    response, _, _, return_code = post_internal(resource, obj)
+                    response, _, _, return_code, _ = post_internal(resource,
+                                                                   obj)
                 if return_code != 201:
                     raise BadFixtureException("Fixture could not be loaded:\n"
                                               "%s\nProblem was caused by:\n%s"
@@ -208,6 +209,14 @@ class FixtureMixin(object):
                 'description_en',
                 self.create_random_value(schema['description_en']))
 
+        # fullfill earlier_than and later_than validators
+        obj['time_advertising_start'] = (
+            datetime.now(pytz.utc) - timedelta(
+                seconds=random.randint(0, 1000000)))
+        obj['time_advertising_end'] = (
+            datetime.now(pytz.utc) + timedelta(
+                seconds=random.randint(0, 1000000)))
+
         # add some number of spots. If not specified different, we default
         # to have a signup, so possibly created signups will have something
         # to have relations to
@@ -265,6 +274,9 @@ class FixtureMixin(object):
         obj.setdefault(
             'title_de',
             self.create_random_value(schema['title_de']))
+        obj.setdefault(
+            'description_de',
+            self.create_random_value(schema['description_de']))
 
     def create_random_value(self, definition):
         """Create a random value for the given cerberus field description."""
@@ -321,7 +333,7 @@ class FixtureMixin(object):
 
         elif t == 'media':
             ftype = random.choice(definition.get('filetype', ['zip']))
-            if ftype == 'jpg':
+            if ftype == 'jpg' or ftype == 'jpeg':
                 return FileStorage(open(jpgpath, 'rb'), 'test.jpg')
             if ftype == 'png':
                 return FileStorage(open(pngpath, 'rb'), 'test.png')

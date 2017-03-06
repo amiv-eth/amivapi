@@ -84,6 +84,8 @@ eventdomain = {
                 'later_than': 'time_start',
             },
 
+            # Images
+
             'img_banner': {
                 'filetype': ['png', 'jpeg'],
                 'type': 'media'
@@ -101,6 +103,28 @@ eventdomain = {
                 'type': 'media'
             },
 
+            # Display settings
+
+            'time_advertising_start': {
+                'type': 'datetime',
+                'required': True,
+                'nullable': False,
+                'earlier_than': 'time_advertising_end',
+            },
+            'time_advertising_end': {
+                'type': 'datetime',
+                'required': True,
+                'nullable': False,
+                'later_than': 'time_advertising_start'
+            },
+            'priority': {
+                'type': 'integer',
+                'min': 0,
+                'max': 10,
+                'required': True,
+                'default': 5
+            },
+
             'show_announce': {
                 'nullable': False,
                 'type': 'boolean',
@@ -116,6 +140,8 @@ eventdomain = {
                 'type': 'boolean',
                 'default': False,
             },
+
+            # Signups
 
             'spots': {
                 'dependencies': ['time_register_start',

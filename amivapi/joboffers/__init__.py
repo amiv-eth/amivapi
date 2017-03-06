@@ -23,43 +23,46 @@ jobdomain = {
 
         'schema': {
             'company': {
-                'required': True,
                 'maxlength': 30,
-                'nullable': True,
                 'type': 'string',
-                # This is basically here, because this is a required
-                # field. It will make sure there is always either an english
-                # or a german title
-                'depends_any': ['title_de', 'title_en']
             },
             'description_de': {
-                'nullable': True,
                 'type': 'string',
-                'unique': False
             },
             'description_en': {
-                'nullable': True,
                 'type': 'string'
             },
             'logo': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'required': True
             },
             'pdf': {
                 'filetype': ['pdf'],
-                'type': 'media'
+                'type': 'media',
+                'required': True
             },
             'time_end': {
-                'nullable': True,
                 'type': 'datetime'
             },
             'title_de': {
-                'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'required_if_not': 'title_en',
+                'dependencies': 'description_de'
             },
             'title_en': {
-                'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'required_if_not': 'title_de',
+                'dependencies': 'description_en'
+            },
+            'show_website': {
+                'type': 'boolean',
+                # TODO: Activate this, when it is possible to post files and
+                # boolean in the same request
+                # Currently this is not possible and therefore this would
+                # prevent POST to /joboffers
+                # 'required': True,
+                'default': False
             }
         }
     }

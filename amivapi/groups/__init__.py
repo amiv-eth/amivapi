@@ -10,6 +10,10 @@ Also contains email management for group mailing lists
 And provides a helper function to check group permissions.
 """
 
+from datetime import timedelta, datetime
+from flask import current_app
+
+from amivapi.cron import periodic
 from amivapi.utils import register_domain, register_validator
 
 from .mailing_lists import (
@@ -41,3 +45,9 @@ def init_app(app):
     app.on_deleted_item_groupmemberships += removed_member
 
     app.on_updated_users += updated_user
+
+
+@periodic(timedelta(days=1))
+def remove_expired_group_members():
+    current_app.data.driver.db['groupmemberships'].remove(
+        {'expiry': {'$lte': datetime.utcnow()}})
