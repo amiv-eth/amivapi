@@ -169,12 +169,12 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_schema',
+                'type': 'json_schema_object',
                 'only_if_not_null': 'spots',
                 'description': 'must be provided in form of a JSON-Schema. You'
                 'can add here fields you want to know from people signing up '
                 'going further than their email-address.\nThe JSON-Schema will'
-                ' always be overwritten with: {'
+                ' always require these fields: {'
                 '"$schema": "http://json-schema.org/draft-04/schema#",'
                 '"type": "object",'
                 '"additionalProperties": False}'

@@ -33,20 +33,53 @@ class EventModelTest(WebTestNoAuth):
             'user': str(user['_id'])
         }, status_code=422)
 
+    def test_additional_fields_must_satisfy_constraints(self):
+        """Test that the jsonschema constraints must always be met."""
+
+        ev = self.new_object('events', spots=100)
+
+        event_url = '/events/{id}'.format(id=ev['_id'])
+
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+            'additional_fields': json.dumps({
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object"
+            })
+        }, status_code=422)
+
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+            'additional_fields': json.dumps({
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "additionalProperties": True
+            })
+        }, status_code=422)
+
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+            'additional_fields': json.dumps({
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "additionalProperties": False
+            })
+        }, status_code=201)
+
+
     def test_additional_fields_must_match(self):
         """Test the validation of additional fields."""
-        ev = self.new_object("events", spots=100,
-                             additional_fields=json.dumps({
-                                 'properties': {
-                                     'field1': {
-                                         'type': 'string',
-                                         'maxLength': 10
-                                     },
-                                     'field2': {
-                                         'type': 'integer'
-                                     }},
-                                 'required': ['field1']
-                             }))
+        ev = self.new_object("events", spots=100, additional_fields=json.dumps({
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "type": "object",
+            "additionalProperties": False,
+            'properties': {
+             'field1': {
+                 'type': 'string',
+                 'maxLength': 10
+             },
+             'field2': {
+                 'type': 'integer'
+             }},
+            'required': ['field1']
+        }))
 
         user = self.new_object("users")
 

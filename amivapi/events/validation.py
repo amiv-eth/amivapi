@@ -18,12 +18,6 @@ from jsonschema import SchemaError, Draft4Validator
 class EventValidator(object):
     """Custom Validator for event validation rules."""
 
-    # additonal_fields should be declared as properties within this schema
-    additional_fields_schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "object",
-        "additionalProperties": False
-    }
 
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.
@@ -63,7 +57,6 @@ class EventValidator(object):
         # json schemas can be written to the database
         if event is not None:
             schema = json.loads(event['additional_fields'])
-            schema.update(EventValidator.additional_fields_schema)
             v = Draft4Validator(schema)  # Create a new validator
 
             # search for errors and move them into main validator
@@ -149,11 +142,12 @@ class EventValidator(object):
     General purpose validators
     """
 
-    def _validate_type_json_schema(self, field, value):
+    def _validate_type_json_schema_object(self, field, value):
         """Validate a cerberus schema saved as JSON.
 
         1.  Is it JSON?
-        2.  Is it a valid cerberus schema?
+        2.  Does it satisfy our restrictions for jsonschemas?
+        3.  Is it a valid json-schema?
 
         Args:
             field (string): field name.
@@ -165,13 +159,24 @@ class EventValidator(object):
             self._error(field, "Must be json, parsing failed with exception: %s"
                         % str(e))
         else:
+            # validate if these fields are included exactly as given
+            # (we e.g. always require objects so UI can rely on this)
+            additional_fields_schema = {
+                '$schema': 'http://json-schema.org/draft-04/schema#',
+                'type': 'object',
+                'additionalProperties': False
+            }
+
+            for key, value in additional_fields_schema.items():
+                if key not in json_data or json_data[key] != value:
+                    self._error(field,
+                                "'{key}' is required to be set to '{value}'"
+                                .format(key=key, value=value))
+
             try:
-                # validate will first validate the provided schema and then the
-                # provided document. Since we provide an empty document, it will
-                # only validate the schema
-                json_data.update(EventValidator.additional_fields_schema)
+                # now check if it is entirely valid jsonschema
                 v = Draft4Validator(json_data)
-                # by defualt, jsonschema allows unknown properties
+                # by defualt, jsonschema specification allows unknown properties
                 # We do not allow these.
                 v.META_SCHEMA['additionalProperties'] = False
                 v.check_schema(json_data)
