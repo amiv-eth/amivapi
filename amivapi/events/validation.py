@@ -8,7 +8,6 @@
 import json
 import pytz
 from datetime import datetime
-from copy import deepcopy
 
 from flask import g, current_app, request
 
@@ -17,7 +16,6 @@ from jsonschema import SchemaError, Draft4Validator
 
 class EventValidator(object):
     """Custom Validator for event validation rules."""
-
 
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.

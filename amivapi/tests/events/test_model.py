@@ -40,14 +40,14 @@ class EventModelTest(WebTestNoAuth):
 
         event_url = '/events/{id}'.format(id=ev['_id'])
 
-        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data={
             'additional_fields': json.dumps({
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object"
             })
         }, status_code=422)
 
-        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data={
             'additional_fields': json.dumps({
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object",
@@ -55,14 +55,13 @@ class EventModelTest(WebTestNoAuth):
             })
         }, status_code=422)
 
-        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data= {
+        self.api.patch(event_url, headers={'If-Match': ev['_etag']}, data={
             'additional_fields': json.dumps({
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object",
                 "additionalProperties": False
             })
         }, status_code=200)
-
 
     def test_additional_fields_must_match(self):
         """Test the validation of additional fields."""
