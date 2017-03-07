@@ -8,14 +8,22 @@
 import json
 import pytz
 from datetime import datetime
+from copy import deepcopy
 
 from flask import g, current_app, request
 
-from eve.validation import SchemaError
+from jsonschema import SchemaError, Draft4Validator
 
 
 class EventValidator(object):
     """Custom Validator for event validation rules."""
+
+    # additonal_fields should be declared as properties within this schema
+    additional_fields_schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "additionalProperties": False
+    }
 
     def _validate_type_json_event_field(self, field, value):
         """Validate data in json format with event data.
@@ -55,12 +63,12 @@ class EventValidator(object):
         # json schemas can be written to the database
         if event is not None:
             schema = json.loads(event['additional_fields'])
-            v = current_app.validator(schema)  # Create a new validator
-            v.validate(data)
+            schema.update(EventValidator.additional_fields_schema)
+            v = Draft4Validator(schema)  # Create a new validator
 
-            # Move errors to main validator
-            for key in v.errors.keys():
-                self._error("%s: %s" % (field, key), v.errors[key])
+            # search for errors and move them into main validator
+            for error in v.iter_errors(data):
+                self._error(field, error.message)
 
         # if event id is not valid another validator will fail anyway
 
@@ -141,7 +149,7 @@ class EventValidator(object):
     General purpose validators
     """
 
-    def _validate_type_cerberus_schema(self, field, value):
+    def _validate_type_json_schema(self, field, value):
         """Validate a cerberus schema saved as JSON.
 
         1.  Is it JSON?
@@ -158,7 +166,15 @@ class EventValidator(object):
                         % str(e))
         else:
             try:
-                self.validate_schema(json_data)
+                # validate will first validate the provided schema and then the
+                # provided document. Since we provide an empty document, it will
+                # only validate the schema
+                json_data.update(EventValidator.additional_fields_schema)
+                v = Draft4Validator(json_data)
+                # by defualt, jsonschema allows unknown properties
+                # We do not allow these.
+                v.META_SCHEMA['additionalProperties'] = False
+                v.check_schema(json_data)
             except SchemaError as e:
                 self._error(field, "does not contain a valid schema: %s"
                             % str(e))
