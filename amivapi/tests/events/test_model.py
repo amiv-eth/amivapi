@@ -61,7 +61,7 @@ class EventModelTest(WebTestNoAuth):
                 "type": "object",
                 "additionalProperties": False
             })
-        }, status_code=201)
+        }, status_code=200)
 
 
     def test_additional_fields_must_match(self):
