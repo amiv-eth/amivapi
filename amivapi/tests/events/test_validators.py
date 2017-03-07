@@ -13,12 +13,12 @@ from amivapi.tests.utils import WebTestNoAuth
 class EventValidatorTest(WebTestNoAuth):
     """Unit test class for general purpose validators of event module."""
 
-    def test_validate_cerberus_schema(self):
+    def test_validate_json_schema(self):
         """ Test cerberus schema validator """
         self.app.register_resource('test', {
             'schema': {
                 'field': {
-                    'type': 'cerberus_schema'
+                    'type': 'json_schema'
                 }
             }
         })
@@ -34,14 +34,15 @@ class EventValidatorTest(WebTestNoAuth):
 
         self.api.post('/test', data={
             "field": json.dumps({
-                "field1": {
-                    "type": "integer",
-                    "max": 10
-                },
-                "field2": {
-                    "type": "datetime",
-                    "required": True
-                }
+                'properties': {
+                    "field1": {
+                        "type": "integer",
+                        "maximum": 10
+                    },
+                    "field2": {
+                        "type": "string"
+                    }},
+                "required": ["field2"]
             })
         }, status_code=201)
 
