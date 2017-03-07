@@ -169,11 +169,15 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'cerberus_schema',
+                'type': 'json_schema',
                 'only_if_not_null': 'spots',
                 'description': 'must be provided in form of a JSON-Schema. You'
                 'can add here fields you want to know from people signing up '
-                'going further than their email-address'
+                'going further than their email-address.\nThe JSON-Schema will'
+                ' always be overwritten with: {'
+                '"$schema": "http://json-schema.org/draft-04/schema#",'
+                '"type": "object",'
+                '"additionalProperties": False}'
             },
             'allow_email_signup': {
                 'nullable': False,
