@@ -236,7 +236,12 @@ class EventValidator(object):
             field (string): name of the validated field
             value: Value of the validated field
         """
-        if self.document.get(only_if_not_null) is None:
+        doc = self.document
+        if self._original_document is not None:
+            # This is a patch. The patch-document will not contain all
+            # information
+            doc = self._original_document
+        if doc.get(only_if_not_null) is None:
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
 
