@@ -70,10 +70,14 @@ class EventAuthTest(WebTest):
         only by admins."""
         event = self.new_object('events',
                                 spots=100,
-                                additional_fields=json.dumps({'a': {}}))
+                                additional_fields=json.dumps({'properties': {
+                                                                 'a': {}
+                                                             }}))
         event2 = self.new_object('events',
                                  spots=100,
-                                 additional_fields=json.dumps({'a': {}}))
+                                 additional_fields=json.dumps({'properties': {
+                                                                 'a': {}
+                                                             }}))
         user = self.new_object('users')
         user2 = self.new_object('users')
         user_token = self.get_user_token(user['_id'])
@@ -82,7 +86,7 @@ class EventAuthTest(WebTest):
         signup = self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event['_id']),
-            'additional_fields': '{"a":1}'
+            'additional_fields': '{"a": 1}'
         }, token=root_token, status_code=201).json
 
         # Check that user can not be patched

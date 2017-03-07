@@ -37,13 +37,15 @@ class EventModelTest(WebTestNoAuth):
         """Test the validation of additional fields."""
         ev = self.new_object("events", spots=100,
                              additional_fields=json.dumps({
-                                 'field1': {
-                                     'type': 'string',
-                                     'maxlength': 10
-                                 },
-                                 'field2': {
-                                     'type': 'integer'
-                                 }
+                                 'properties': {
+                                     'field1': {
+                                         'type': 'string',
+                                         'maxLength': 10
+                                     },
+                                     'field2': {
+                                         'type': 'integer'
+                                     }},
+                                 'required': ['field1']
                              }))
 
         user = self.new_object("users")
@@ -59,6 +61,14 @@ class EventModelTest(WebTestNoAuth):
             'event': str(ev['_id']),
             'additional_fields': json.dumps({
                 'field1': 'aaaaaaaaaaaaaaaaaaaaa',
+                'field2': 0
+            })
+        }, status_code=422)
+
+        self.api.post("/eventsignups", data={
+            'user': str(user['_id']),
+            'event': str(ev['_id']),
+            'additional_fields': json.dumps({
                 'field2': 0
             })
         }, status_code=422)
