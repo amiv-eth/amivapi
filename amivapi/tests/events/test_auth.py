@@ -68,14 +68,14 @@ class EventAuthTest(WebTest):
     def test_signups_patchable_fields(self):
         """Test that only additional_fields can be changes by users and accepted
         only by admins."""
-        event = self.new_object('events', spots=100,
-            additional_fields=json.dumps({
+        event = self.new_object(
+            'events', spots=100, additional_fields=json.dumps({
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object",
                 "additionalProperties": False,
                 'properties': {'a': {}}}))
-        event2 = self.new_object('events', spots=100,
-            additional_fields=json.dumps({
+        event2 = self.new_object(
+            'events', spots=100, additional_fields=json.dumps({
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object",
                 "additionalProperties": False,
