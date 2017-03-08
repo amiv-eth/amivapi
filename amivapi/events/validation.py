@@ -8,6 +8,7 @@
 import json
 import pytz
 from datetime import datetime
+from copy import deepcopy
 
 from flask import g, current_app, request
 
@@ -238,7 +239,8 @@ class EventValidator(object):
         if self._original_document is not None:
             # This is a patch. The patch-document will not contain all
             # information
-            doc = self._original_document
+            doc = deepcopy(self._original_document)
+            doc.update(self.document)
         if doc.get(only_if_not_null) is None:
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
