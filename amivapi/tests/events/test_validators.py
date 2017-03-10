@@ -14,7 +14,7 @@ class EventValidatorTest(WebTestNoAuth):
     """Unit test class for general purpose validators of event module."""
 
     def test_validate_json_schema_object(self):
-        """ Test cerberus schema validator """
+        """Test cerberus schema validator."""
         self.app.register_resource('test', {
             'schema': {
                 'field': {
@@ -50,7 +50,7 @@ class EventValidatorTest(WebTestNoAuth):
         }, status_code=201)
 
     def test_depends_any(self):
-        """ This tests the depends_any validator. """
+        """Test the depends_any validator."""
         self.app.register_resource('test', {
             'resource_methods': ['POST', 'GET'],
             'item_methods': ['GET'],
@@ -202,8 +202,41 @@ class EventValidatorTest(WebTestNoAuth):
             'field2': 1,
         }, status_code=201)
 
+        # If the values would have a negative boolean value it
+        # should still work
+        self.api.post('/test', data={
+            'field1': 0,
+            'field2': 1,
+        }, status_code=201)
+
+    def test_only_if_not_null_patch(self):
+        """Test that patches check the original document."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'integer',
+                },
+                'field2': {
+                    'type': 'integer',
+                    'only_if_not_null': 'field1'
+                }
+            }
+        })
+
+        response = self.api.post('/test', data={
+            'field1': 1
+        }, status_code=201).json
+
+        self.api.patch(
+            '/test/%s' % response['_id'],
+            data={'field2': 1},
+            headers={'If-Match': response['_etag']},
+            status_code=200
+        )
+
     def test_can_add_time_for_later_than(self):
-        """ Test issue #141
+        """Test issue #141.
+
         The validator later_than assumed, that the field is
         already existing on PATCH requests. Check that this is fixed.
         """
@@ -230,7 +263,7 @@ class EventValidatorTest(WebTestNoAuth):
                        status_code=200)
 
     def test_required_if_not(self):
-        """Test required_if_not validator"""
+        """Test required_if_not validator."""
         self.app.register_resource('test', {
             'schema': {
                 'field1': {
