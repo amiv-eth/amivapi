@@ -159,14 +159,14 @@ class EventValidator(object):
                         % str(e))
         else:
             # validate if these fields are included exactly as given
-            # (we e.g. always require objects so UI can rely on this)
-            additional_fields_schema = {
+            # (we, e.g., always require objects so UI can rely on this)
+            enforced_fields = {
                 '$schema': 'http://json-schema.org/draft-04/schema#',
                 'type': 'object',
                 'additionalProperties': False
             }
 
-            for key, value in additional_fields_schema.items():
+            for key, value in enforced_fields.items():
                 if key not in json_data or json_data[key] != value:
                     self._error(field,
                                 "'{key}' is required to be set to '{value}'"
@@ -175,7 +175,7 @@ class EventValidator(object):
             try:
                 # now check if it is entirely valid jsonschema
                 v = Draft4Validator(json_data)
-                # by defualt, jsonschema specification allows unknown properties
+                # by default, jsonschema specification allows unknown properties
                 # We do not allow these.
                 v.META_SCHEMA['additionalProperties'] = False
                 v.check_schema(json_data)
