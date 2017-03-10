@@ -112,7 +112,7 @@ class EventValidator(object):
                                                      None)
 
     def _validate_email_signup_must_be_allowed(self, enabled, field, value):
-        """Validation for a event field in eventsignups.
+        """Validation for an event field in eventsignups.
 
         Validates if the event allows self enrollment.
 
