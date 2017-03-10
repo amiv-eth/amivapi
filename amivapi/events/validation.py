@@ -8,7 +8,6 @@
 import json
 import pytz
 from datetime import datetime
-from copy import deepcopy
 
 from flask import g, current_app, request
 
@@ -187,8 +186,7 @@ class EventValidator(object):
     # the timezone is included, sometimes it isn't.
 
     def _get_time(self, fieldname):
-        """Retrieve time field from document or _original_document.
-        """
+        """Retrieve time field from document or _original_document."""
         # Try to pick the value from document first, fall back to original
         time = self.document.get(fieldname)
         if time is None:
@@ -236,17 +234,16 @@ class EventValidator(object):
             value: Value of the validated field
         """
         doc = self.document
-        if self._original_document is not None:
-            # This is a patch. The patch-document will not contain all
-            # information
-            doc = deepcopy(self._original_document)
-            doc.update(self.document)
-        if doc.get(only_if_not_null) is None:
+        exists_in_original = (  # Check original document in case of patches
+            self._original_document is not None and
+            self._original_document.get(only_if_not_null) is not None)
+
+        if not(doc.get(only_if_not_null) is not None or exists_in_original):
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
 
     def _validate_required_if_not(self, *args):
-        """Dummy function for Cerberus (It complains if it can find the rule).
+        """Dummy function for Cerberus.(It complains if it can find the rule).
 
         Functionality is implemented in the requierd field validation.
         """
