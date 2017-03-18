@@ -100,7 +100,7 @@ class MediaTest(WebTestNoAuth):
         """Test that file not found is suppressed and nothing else."""
         with ignore_not_found():
             # This will raise file not found, nothing should happen
-            open("", 'r')
+            open("")
 
         # Is raised for any other OSError or IOError
         for exc in (OSError, IOError):
