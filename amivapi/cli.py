@@ -8,9 +8,7 @@
 from os import urandom
 from base64 import b64encode
 from datetime import datetime as dt
-from click import (
-    Choice, echo, group, option, argument, Path, File, BadParameter,
-    pass_context, pass_obj, ParamType, confirmation_option)
+from click import echo, group, option, argument, Path, File
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
@@ -36,113 +34,6 @@ def cron(config):
     app = create_app(config) if config else create_app()
     with app.app_context():
         run_scheduled_tasks()
-
-
-@cli.group()
-@config_option
-@pass_context
-def apikeys(ctx, config):
-    """Manage amivapi apikeys."""
-    # Set the app as ctx.obj, then we can use the @pass_obj decorator to get it
-    ctx.obj = create_app(config) if config else create_app()
-
-    # Automatically safe keys after commands finish (call_on_close)
-    def _safe_keys():
-        with open('apikeys.yaml', 'w') as apikey_file:
-            yaml.safe_dump(ctx.obj.config['APIKEYS'], apikey_file,
-                           default_flow_style=False)
-    ctx.call_on_close(_safe_keys)
-
-
-class _Res(ParamType):
-    name = 'resource'
-
-    def convert(self, value, param, ctx):
-        if value not in ctx.obj.config['DOMAIN']:
-            self.fail("'%s' is not an amivapi resource." % value, param, ctx)
-        return value
-
-
-class _Key(ParamType):
-    name = 'apikey'
-
-    def convert(self, value, param, ctx):
-        if value not in ctx.obj.config['APIKEYS']:
-            self.fail("Apikey '%s' doesn't exist." % value, param, ctx)
-        return value
-
-
-def _unique(ctx, param, value):
-    for keydata in ctx.obj.config['APIKEYS'].values():
-        if value == keydata['token']:
-            raise BadParameter("Token already exists.")
-    return value
-
-
-@apikeys.command()
-@pass_obj  # obj is the app
-def list(app):
-    """List all apikeys."""
-    if app.config['APIKEYS']:
-        echo(yaml.dump(app.config['APIKEYS'], default_flow_style=False))
-    else:
-        echo('There are no apikeys.')
-
-
-@apikeys.command()
-@option('-t', '--token', help="The apikey auth token.", callback=_unique,
-        default=lambda: b64encode(urandom(64)).decode('utf_8'))
-@option('-p', '--permission', type=(_Res(), Choice(['read', 'readwrite'])),
-        help="Permissions for a resource, can either be 'read' or 'readwrite'."
-        " This option can be used multiple times.", multiple=True)
-@argument('keyname')
-@pass_obj
-def add(app, permission, keyname, token):
-    """Add an apikey, overwrite if it exists already.
-
-    Example:
-
-        amivapi apikeys add Bierkey -p users read -p purchases readwrite
-    """
-    app.config['APIKEYS'][keyname] = {
-        'token': token,
-        'permissions': {res: perm for (res, perm) in permission}}
-
-
-@apikeys.command()
-@option('-t', '--token', help="New apikey auth token.", callback=_unique)
-@option('-p', '--permission', type=(_Res(), Choice(['read', 'readwrite'])),
-        help="Permissions for a resource, can either be 'read' or 'readwrite'."
-        " This option can be used multiple times.", multiple=True)
-@option('-r', '--remove', multiple=True, type=_Res(),
-        help="Remove permissions for a resource. Can be used multiple times.")
-@argument('keyname', type=_Key())
-@pass_obj
-def update(app, token, permission, remove, keyname):
-    """Update an apikey.
-
-    Add or remove permissions. If both is specified, add overwrites remove.
-
-    Example:
-
-        amivapi apikeys update Bierkey -r users -p groups read
-    """
-    apikey = app.config['APIKEYS'][keyname]  # safe because key must exist
-    if token:
-        apikey['token'] = token
-    for key in remove:
-        apikey['permissions'].pop(key, None)
-    for res, perm in permission:
-        apikey['permissions'][res] = perm
-
-
-@apikeys.command()
-@confirmation_option(prompt="Do you really want to delete this apikey?")
-@argument('keyname', type=_Key())
-@pass_obj
-def remove(app, keyname):
-    """Remove an apikey."""
-    app.config['APIKEYS'].pop(keyname, None)
 
 
 @cli.command()

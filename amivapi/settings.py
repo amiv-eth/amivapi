@@ -45,7 +45,6 @@ MEDIA_URL = 'string'  # Very important to match url properly
 EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
 DEFAULT_CONFIG_FILENAME = 'config.yaml'
-APIKEY_FILENAME = 'apikeys.yaml'
 
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
