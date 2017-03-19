@@ -49,11 +49,6 @@ class GroupValidator(object):
                             "Group with id '%s' does not allow self enrollment"
                             " and you are not the group moderator.")
 
-    def _validate_api_resources(self, enabled, field, value):
-        """Value must be in api domain."""
-        if enabled and value not in current_app.config['DOMAIN']:
-            self._error(field, "'%s' is not a api resource." % value)
-
     def _validate_unique_elements(self, enabled, field, value):
         """Validate that a list does only contain unique elements."""
         if enabled:
