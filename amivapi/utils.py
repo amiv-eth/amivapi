@@ -72,6 +72,11 @@ def mail(sender, to, subject, text):
 class ValidatorAMIV(Validator):
     """Validator subclass adding more validation for special fields."""
 
+    def _validate_api_resources(self, enabled, field, value):
+        """Value must be in api domain."""
+        if enabled and value not in app.config['DOMAIN']:
+            self._error(field, "'%s' is not a api resource." % value)
+
     def _validate_not_patchable(self, enabled, field, value):
         """Custom Validator to inhibit patching of the field.
 
