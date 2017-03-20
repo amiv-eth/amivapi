@@ -87,7 +87,7 @@ class ApiKeyPermissionsTest(WebTest):
         self.api.post('/apikeys', data={}, token=token, status_code=403)
 
     def test_readwrite_permission(self):
-        """Read permission allows everything."""
+        """Readwrite permission allows everything."""
         key = self.new_object("apikeys", permissions={'apikeys': 'readwrite'})
         token = key['token']
         item_url = '/apikeys/%s' % key['_id']
