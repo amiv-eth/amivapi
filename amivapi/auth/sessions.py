@@ -4,20 +4,20 @@
 #          you to buy us beer if we meet and you like the software.
 """Sessions endpoint."""
 
-from os import urandom
 from base64 import b64encode
+import datetime
+from os import urandom
+
 from bson import ObjectId
 from bson.errors import InvalidId
-import datetime
-
-from flask import abort, current_app as app
 from eve.methods.patch import patch_internal
-from eve.utils import debug_error_message, config
+from eve.utils import config, debug_error_message
+from flask import abort, current_app as app
 
+from amivapi.auth import AmivTokenAuth
 from amivapi.cron import periodic
-from amivapi.utils import admin_permissions
 from amivapi.ldap import ldap_connector
-from .auth import AmivTokenAuth
+from amivapi.utils import admin_permissions
 
 
 class SessionAuth(AmivTokenAuth):

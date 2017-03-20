@@ -6,13 +6,11 @@
 
 Contains models for groups and group mmeberships.
 """
+from bson import ObjectId
+from flask import current_app
 
 from amivapi.auth import AmivTokenAuth
 from amivapi.settings import EMAIL_REGEX
-
-from bson import ObjectId
-
-from flask import current_app
 
 
 class GroupAuth(AmivTokenAuth):

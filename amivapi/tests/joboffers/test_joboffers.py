@@ -6,10 +6,10 @@
 
 from datetime import datetime, timedelta
 from io import BytesIO
-from os.path import join, dirname
+from os.path import dirname, join
 
-from amivapi.tests import utils
 from amivapi.settings import DATE_FORMAT
+from amivapi.tests import utils
 
 pdfpath = join(dirname(__file__), "../fixtures", 'test.pdf')
 lenapath = join(dirname(__file__), "../fixtures", 'lena.png')

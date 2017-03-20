@@ -42,15 +42,15 @@ validators and will therefore reject random values.
 See preprocess_sessions or preprocess_events below for examples
 """
 
+from datetime import date, datetime, timedelta
+from os.path import dirname, join
 import random
 import string
-import pytz
-from os.path import join, dirname
-from bson import ObjectId
-from datetime import datetime, date, timedelta
 
-from werkzeug.datastructures import FileStorage
+from bson import ObjectId
 from eve.methods.post import post_internal
+import pytz
+from werkzeug.datastructures import FileStorage
 
 from amivapi.settings import EMAIL_REGEX
 from amivapi.utils import admin_permissions

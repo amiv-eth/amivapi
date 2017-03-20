@@ -10,10 +10,10 @@ Links are only added for resources using AmivTokenAuth.
 
 import json
 
-from flask import current_app, g
 from eve.auth import resource_auth
+from flask import current_app, g
 
-from .auth import AmivTokenAuth, authenticate, check_if_admin
+from amivapi.auth import AmivTokenAuth, authenticate, check_if_admin
 
 
 def _get_item_methods(resource, item):

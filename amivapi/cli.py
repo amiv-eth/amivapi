@@ -5,16 +5,17 @@
 
 """A command line interface for AMIVApi."""
 
-from os import urandom
 from base64 import b64encode
 from datetime import datetime as dt
-from click import echo, group, option, argument, Path, File
+from os import urandom
+
+from click import argument, echo, File, group, option, Path
 from ruamel import yaml
 
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi.ldap import ldap_connector
-from amivapi.settings import DEFAULT_CONFIG_FILENAME, STORAGE_DIR, FORWARD_DIR
+from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR, STORAGE_DIR
 
 
 @group()

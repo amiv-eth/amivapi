@@ -5,14 +5,15 @@
 """Utilities."""
 
 
-import smtplib
-from email.mime.text import MIMEText
-from copy import deepcopy
 from contextlib import contextmanager
+from copy import deepcopy
+from email.mime.text import MIMEText
+import smtplib
 
-from flask import request, g, current_app as app
-from eve.utils import config
 from eve.io.mongo import Validator
+from eve.utils import config
+from flask import current_app as app
+from flask import g, request
 
 
 @contextmanager

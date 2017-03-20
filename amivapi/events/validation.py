@@ -4,14 +4,12 @@
 #          you to buy us beer if we meet and you like the software.
 
 """Event Validation."""
-
-import json
-import pytz
 from datetime import datetime
+import json
 
-from flask import g, current_app, request
-
-from jsonschema import SchemaError, Draft4Validator
+from flask import current_app, g, request
+from jsonschema import Draft4Validator, SchemaError
+import pytz
 
 
 class EventValidator(object):

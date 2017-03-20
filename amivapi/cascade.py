@@ -11,10 +11,10 @@ referencing object. If false, the reference will be set to NULL, when the
 referenced object is deleted.
 """
 
-from flask import current_app
-from werkzeug.exceptions import NotFound
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
+from flask import current_app
+from werkzeug.exceptions import NotFound
 
 from amivapi.utils import admin_permissions
 

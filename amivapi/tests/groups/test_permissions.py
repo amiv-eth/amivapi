@@ -7,10 +7,9 @@
 Since this hook will be added for all requests (the after auth hook) and this
 is tested for auth.py we only get get on resource level to test functionality.
 """
+from flask import g
 
 from amivapi.tests.utils import WebTest
-
-from flask import g
 
 
 class PermissionsTest(WebTest):

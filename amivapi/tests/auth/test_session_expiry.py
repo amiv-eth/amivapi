@@ -9,8 +9,8 @@
 from datetime import timedelta
 from freezegun import freeze_time
 
-from amivapi.tests.utils import WebTest
 from amivapi.cron import run_scheduled_tasks
+from amivapi.tests.utils import WebTest
 
 
 class TestSessionExpiry(WebTest):

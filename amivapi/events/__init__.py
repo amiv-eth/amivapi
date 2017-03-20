@@ -8,11 +8,17 @@ Contains settings for eve resource, special validation and email_confirmation
 logic needed for signup of non members to events.
 """
 
-from amivapi.utils import register_domain, register_validator
 
-from .model import eventdomain
-from .authorization import EventAuthValidator
-from .projections import (
+from amivapi.events.authorization import EventAuthValidator
+from amivapi.events.emails import (
+    add_confirmed_before_insert,
+    add_confirmed_before_insert_bulk,
+    email_blueprint,
+    send_confirmmail_to_unregistered_users,
+    send_confirmmail_to_unregistered_users_bulk
+)
+from amivapi.events.model import eventdomain
+from amivapi.events.projections import (
     add_email_to_signup,
     add_email_to_signup_collection,
     add_position_to_signup,
@@ -20,21 +26,15 @@ from .projections import (
     add_signup_count_to_event,
     add_signup_count_to_event_collection
 )
-from .validation import EventValidator
-from .emails import (
-    email_blueprint,
-    send_confirmmail_to_unregistered_users,
-    send_confirmmail_to_unregistered_users_bulk,
-    add_confirmed_before_insert,
-    add_confirmed_before_insert_bulk
-)
-from .queue import (
+from amivapi.events.queue import (
     add_accepted_before_insert,
     add_accepted_before_insert_collection,
+    update_waiting_list_after_delete,
     update_waiting_list_after_insert,
-    update_waiting_list_after_insert_collection,
-    update_waiting_list_after_delete
+    update_waiting_list_after_insert_collection
 )
+from amivapi.events.validation import EventValidator
+from amivapi.utils import register_domain, register_validator
 
 
 def init_app(app):

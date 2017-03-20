@@ -5,9 +5,8 @@
 
 """Eve Swagger initialization."""
 
+from eve_swagger import add_documentation, swagger
 from flask import Blueprint, render_template_string
-
-from eve_swagger import swagger, add_documentation
 
 from amivapi.utils import register_validator
 

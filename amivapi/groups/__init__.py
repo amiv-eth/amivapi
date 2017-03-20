@@ -9,23 +9,22 @@ Also contains email management for group mailing lists
 
 And provides a helper function to check group permissions.
 """
+from datetime import datetime, timedelta
 
-from datetime import timedelta, datetime
 from flask import current_app
 
 from amivapi.cron import periodic
-from amivapi.utils import register_domain, register_validator
-
-from .mailing_lists import (
+from amivapi.groups.mailing_lists import (
     new_groups,
     new_members,
     removed_group,
     removed_member,
     updated_group,
     updated_user)
-from .model import groupdomain
-from .permissions import check_group_permissions
-from .validation import GroupValidator
+from amivapi.groups.model import groupdomain
+from amivapi.groups.permissions import check_group_permissions
+from amivapi.groups.validation import GroupValidator
+from amivapi.utils import register_domain, register_validator
 
 
 def init_app(app):

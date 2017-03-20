@@ -74,8 +74,8 @@ Item endpoints:
 from datetime import datetime as dt
 from functools import wraps
 
-from flask import current_app, g, request, abort
 from eve.auth import BasicAuth, resource_auth
+from flask import abort, current_app, g, request
 
 
 class AmivTokenAuth(BasicAuth):

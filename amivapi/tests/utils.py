@@ -4,24 +4,24 @@
 #          you to buy us beer if we meet and you like the software.
 """General testing utilities."""
 
-import sys
+from itertools import count
 import json
-import unittest
 import os
 from shutil import rmtree
+import sys
 from tempfile import mkdtemp
-from itertools import count
-from pymongo import MongoClient
-from bson import ObjectId
-from passlib.context import CryptContext
+import unittest
 
+from bson import ObjectId
 from flask import g
 from flask.testing import FlaskClient
 from flask.wrappers import Response
+from passlib.context import CryptContext
+from pymongo import MongoClient
 
+from amivapi import bootstrap
 from amivapi.settings import ROOT_PASSWORD
 from amivapi.tests.fixtures import FixtureMixin
-from amivapi import bootstrap
 
 
 class TestClient(FlaskClient):

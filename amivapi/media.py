@@ -10,14 +10,15 @@ Saves Uploaded media to a folder specified in config['STORAGE_FOLDER']
 
 """
 
-import pytz
-from os import path, remove, makedirs, urandom
-import errno
+from base64 import b64encode
 from contextlib import contextmanager
 from datetime import datetime as dt
-from mimetypes import guess_type
-from base64 import b64encode
+import errno
 from imghdr import what
+from mimetypes import guess_type
+from os import makedirs, path, remove, urandom
+
+import pytz
 from werkzeug import secure_filename
 
 from amivapi.utils import register_validator

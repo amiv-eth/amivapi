@@ -6,8 +6,8 @@
 
 from datetime import datetime, timedelta
 
-from amivapi.tests import utils
 from amivapi.settings import DATE_FORMAT
+from amivapi.tests import utils
 
 
 class BeveragesTest(utils.WebTestNoAuth):

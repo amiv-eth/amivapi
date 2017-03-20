@@ -38,8 +38,8 @@ LDAP_PASS = 'YOUR_LDAP_ACCOUNT_PASSWORD'
 
 from os import getenv
 
-from amivapi.tests.utils import WebTest
 from amivapi.ldap import ldap_connector
+from amivapi.tests.utils import WebTest
 
 
 class LdapIntegrationTest(WebTest):
