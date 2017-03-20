@@ -4,27 +4,25 @@
 #          you to buy us beer if we meet and you like the software.
 
 """Auth and session endpoint initialization."""
-
-from amivapi.utils import register_domain
-
-from .sessions import sessiondomain, process_login
-from . import apikeys
-from .auth import (
+from amivapi.auth import apikeys
+from amivapi.auth.auth import (
+    abort_if_not_public,
+    add_lookup_filter,
     AmivTokenAuth,
     authenticate,
     check_if_admin,
-    abort_if_not_public,
-    add_lookup_filter,
-    check_resource_write_permission,
-    check_item_write_permission
+    check_item_write_permission,
+    check_resource_write_permission
 )
-from .link_methods import (
-    add_permitted_methods_after_update,
-    add_permitted_methods_after_insert,
+from amivapi.auth.link_methods import (
     add_permitted_methods_after_fetch_item,
     add_permitted_methods_after_fetch_resource,
+    add_permitted_methods_after_insert,
+    add_permitted_methods_after_update,
     add_permitted_methods_for_home
 )
+from amivapi.auth.sessions import process_login, sessiondomain
+from amivapi.utils import register_domain
 
 
 def init_app(app):

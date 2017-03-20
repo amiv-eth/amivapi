@@ -4,30 +4,30 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for auth functions."""
 
-from bson import ObjectId
 from base64 import b64encode
 from datetime import datetime, timedelta
 
+from bson import ObjectId
 from flask import g
-from werkzeug.exceptions import Unauthorized, Forbidden
+from werkzeug.exceptions import Forbidden, Unauthorized
 
 from amivapi.auth import (
-    AmivTokenAuth,
-    add_lookup_filter,
-    check_item_write_permission,
-    check_resource_write_permission,
     abort_if_not_public,
+    add_lookup_filter,
+    AmivTokenAuth,
     authenticate,
-    check_if_admin
+    check_if_admin,
+    check_item_write_permission,
+    check_resource_write_permission
 )
 from amivapi.auth.auth import (
-    only_if_auth_required,
     not_if_admin,
     not_if_admin_or_readonly_admin,
-    only_amiv_token_auth
+    only_amiv_token_auth,
+    only_if_auth_required
 )
+from amivapi.tests.auth.fake_auth import FakeAuthTest
 from amivapi.tests.utils import WebTest
-from .fake_auth import FakeAuthTest
 
 
 class AmivTokenAuthTest(WebTest):

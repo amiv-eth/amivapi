@@ -16,19 +16,19 @@ Note on link setup. The links in eve are a little inconsistent
 from copy import deepcopy
 import json
 
-from flask import Response, g
+from flask import g, Response
 
 from amivapi.auth.link_methods import (
+    _get_data as get_response_data,
     add_methods_to_item_links,
     add_methods_to_resource_links,
-    add_permitted_methods_after_update,
-    add_permitted_methods_after_insert,
     add_permitted_methods_after_fetch_item,
     add_permitted_methods_after_fetch_resource,
-    add_permitted_methods_for_home,
-    _get_data as get_response_data
+    add_permitted_methods_after_insert,
+    add_permitted_methods_after_update,
+    add_permitted_methods_for_home
 )
-from .fake_auth import FakeAuthTest
+from amivapi.tests.auth.fake_auth import FakeAuthTest
 from amivapi.tests.utils import WebTest
 
 

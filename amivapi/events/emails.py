@@ -6,17 +6,14 @@
 
 Needed when external users want to sign up for public events.
 """
-
-from itsdangerous import Signer, BadSignature
 from bson import ObjectId
-
-from flask import current_app, Blueprint, redirect, url_for
-
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
+from flask import Blueprint, current_app, redirect, url_for
+from itsdangerous import BadSignature, Signer
 
+from amivapi.events.queue import update_waiting_list
 from amivapi.utils import mail
-from .queue import update_waiting_list
 
 email_blueprint = Blueprint('emails', __name__)
 

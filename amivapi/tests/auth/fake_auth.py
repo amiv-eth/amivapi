@@ -6,8 +6,8 @@
 
 from contextlib import contextmanager
 
-from flask import g
 from eve.auth import BasicAuth
+from flask import g
 
 from amivapi.auth import AmivTokenAuth
 from amivapi.tests.utils import WebTest

@@ -5,8 +5,9 @@
 """Test event authorization"""
 
 from datetime import datetime
-from freezegun import freeze_time
 import json
+
+from freezegun import freeze_time
 
 from amivapi.tests.utils import WebTest
 

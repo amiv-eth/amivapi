@@ -7,9 +7,9 @@
 
 import re
 
-from flask import current_app
-from eve.methods.post import post_internal
 from eve.methods.patch import patch_internal
+from eve.methods.post import post_internal
+from flask import current_app
 from nethz import ldap
 
 from amivapi.utils import admin_permissions

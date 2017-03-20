@@ -5,8 +5,8 @@
 
 """Test Media handling."""
 
-from os.path import join, dirname
 from io import BytesIO
+from os.path import dirname, join
 from werkzeug.datastructures import FileStorage
 
 from amivapi.media import ignore_not_found

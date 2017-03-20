@@ -8,10 +8,11 @@
 - eventsignups.confirmed
 - eventsignups.position
 """
+from datetime import timedelta
+
+from freezegun import freeze_time
 
 from amivapi.tests.utils import WebTestNoAuth
-from freezegun import freeze_time
-from datetime import timedelta
 
 
 class EventProjectionTest(WebTestNoAuth):

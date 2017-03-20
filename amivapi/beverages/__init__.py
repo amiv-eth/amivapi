@@ -6,10 +6,8 @@
 
 Since there are no hooks or anything everything is just in here.
 """
-
-from amivapi.utils import register_domain
-
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import register_domain
 
 
 class BeveragesAuth(AmivTokenAuth):

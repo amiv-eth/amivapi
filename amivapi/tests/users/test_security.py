@@ -9,11 +9,11 @@ Includes item and field permissions as well as password hashing.
 
 from bson import ObjectId
 
+from passlib.hash import pbkdf2_sha256
+
 from amivapi.tests import utils
 from amivapi.users.security import (
     hash_on_insert, hash_on_update)
-
-from passlib.hash import pbkdf2_sha256
 
 
 class PasswordHashing(utils.WebTestNoAuth):

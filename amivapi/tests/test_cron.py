@@ -9,16 +9,16 @@
 from datetime import datetime, timedelta
 from freezegun import freeze_time
 
-from .utils import WebTestNoAuth
 from amivapi import cron
 from amivapi.cron import (
-    schedulable,
-    schedule_task,
-    periodic,
-    schedule_once_soon,
-    run_scheduled_tasks,
     NotSchedulable,
+    periodic,
+    run_scheduled_tasks,
+    schedulable,
+    schedule_once_soon,
+    schedule_task
 )
+from amivapi.tests.utils import WebTestNoAuth
 
 
 class CronTest(WebTestNoAuth):

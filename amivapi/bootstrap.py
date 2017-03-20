@@ -6,24 +6,24 @@
 """API factory."""
 
 from os import getcwd
+
+from eve import Eve
+from flask import Config
 from ruamel import yaml
 
-from flask import Config
-from eve import Eve
-
 from amivapi import (
-    users,
     auth,
-    cron,
-    events,
-    media,
-    groups,
-    utils,
-    joboffers,
     beverages,
     cascade,
+    cron,
+    documentation,
+    events,
+    groups,
+    joboffers,
+    media,
     studydocs,
-    documentation
+    users,
+    utils
 )
 from amivapi.ldap import ldap_connector
 from amivapi.settings import DEFAULT_CONFIG_FILENAME
