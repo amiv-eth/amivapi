@@ -141,9 +141,9 @@ class FixtureMixin(object):
 
         # We iterate over the schema to fix missing fields with random values
         for field, field_def in schema.items():
-            if (field not in obj
-                    and field_def.get('required', False)
-                    and not field_def.get('readonly', False)):
+            if (field not in obj and
+                    field_def.get('required', False) and
+                    not field_def.get('readonly', False)):
                 # We need to add a value for the field to create a valid
                 # object
                 if 'default' in field_def:
@@ -222,8 +222,8 @@ class FixtureMixin(object):
         # to have relations to
         obj.setdefault('spots', random.randint(50, 500))
         if obj['spots']:
-            if ('time_register_start' not in obj
-                    and 'time_register_end' not in obj):
+            if ('time_register_start' not in obj and
+                    'time_register_end' not in obj):
                 obj['time_register_start'] = (
                     datetime.now(pytz.utc) - timedelta(
                         seconds=random.randint(0, 1000000)))
@@ -231,8 +231,8 @@ class FixtureMixin(object):
                     datetime.now(pytz.utc) + timedelta(
                         seconds=random.randint(0, 1000000)))
             else:
-                if ('time_register_start' not in obj
-                        or 'time_register_end' not in obj):
+                if ('time_register_start' not in obj or
+                        'time_register_end' not in obj):
                     raise BadFixtureException(
                         "Bad fixture: please specify either both "
                         "time_register_start and time_register_end or none")

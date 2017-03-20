@@ -140,4 +140,4 @@ class MediaTest(WebTestNoAuth):
 
         self.api.get(obj['test_file']['file'], headers={
             'If-Modified-Since': 'Mon, 12 Dec 2016 12:23:46 GMT'},
-                     status_code=200)
+            status_code=200)

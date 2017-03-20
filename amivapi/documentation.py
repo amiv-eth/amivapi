@@ -74,16 +74,17 @@ def init_app(app):
     # just an example of how to include code samples
     add_documentation({'paths': {'/sessions': {'post': {
         'x-code-samples': [
-            {'lang': 'python',
-             'source': '\n\n'.join([
-                'import requests',
-                ('login = requests.post("http://api.amiv.ethz.ch/sessions", '
-                 'data={"user": "myuser", "password": "mypassword"})'),
-                "token = login.json()['token']",
-                ('# now use this token to authenticate a request\n'
-                 'response = requests.get('
-                 '"https://api.amiv.ethz.ch/users/myuser", '
-                 'auth=requests.auth.HTTPBasicAuth(token, ""))')])
-             }
+            {
+                'lang': 'python',
+                'source': '\n\n'.join([
+                    'import requests',
+                    ('login = requests.post("http://api.amiv.ethz.ch/sessions",'
+                     ' data={"user": "myuser", "password": "mypassword"})'),
+                    "token = login.json()['token']",
+                    ('# now use this token to authenticate a request\n'
+                     'response = requests.get('
+                     '"https://api.amiv.ethz.ch/users/myuser", '
+                     'auth=requests.auth.HTTPBasicAuth(token, ""))')])
+            }
         ]
     }}}})

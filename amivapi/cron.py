@@ -117,7 +117,7 @@ def schedule_once_soon(func, *args):
     time. Also check, that it is not already scheduled to be run first.
     """
     if current_app.data.driver.db['scheduled_tasks'].find(
-                    {'function': func_str(func)}).count() != 0:
+            {'function': func_str(func)}).count() != 0:
         return
     schedule_task(datetime.utcnow(), func, *args)
 

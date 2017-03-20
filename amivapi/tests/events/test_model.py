@@ -70,13 +70,13 @@ class EventModelTest(WebTestNoAuth):
             "type": "object",
             "additionalProperties": False,
             'properties': {
-             'field1': {
-                 'type': 'string',
-                 'maxLength': 10
-             },
-             'field2': {
-                 'type': 'integer'
-             }},
+                'field1': {
+                    'type': 'string',
+                    'maxLength': 10
+                },
+                'field2': {
+                    'type': 'integer'
+                }},
             'required': ['field1']
         }))
 
