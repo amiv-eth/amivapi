@@ -39,9 +39,9 @@ def cron(config):
 
 @cli.command()
 @config_option
-@option('--all', is_flag=True, help="Sync all users.")
+@option('--all', 'sync_all', is_flag=True, help="Sync all users.")
 @argument('nethz', nargs=-1)
-def ldap_sync(config, all, nethz):
+def ldap_sync(config, sync_all, nethz):
     """Synchronize users with eth ldap.
 
     Examples:
@@ -55,7 +55,7 @@ def ldap_sync(config, all, nethz):
         echo("LDAP is not enabled, can't proceed!")
     else:
         with app.test_request_context():
-            if all:
+            if sync_all:
                 res = ldap_connector.sync_all()
                 echo("Synchronized %i users." % len(res))
             else:
@@ -147,8 +147,8 @@ def no_ldap_prompts(ctx, param, value):
         prompt="LDAP password",
         help="LDAP password.")
 # Specify config file (optional)
-@argument("file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
-def create_config(file, **data):
+@argument("config_file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
+def create_config(config_file, **data):
     """Generate a config file."""
     # Add secret for token generation
     data['TOKEN_SECRET'] = b64encode(urandom(32)).decode('utf_8')
@@ -159,5 +159,5 @@ def create_config(file, **data):
         del data['LDAP_USER']
         del data['LDAP_PASS']
 
-    file.write("# Automatically generated on %s\n\n" % dt.utcnow())
-    yaml.safe_dump(data, file, default_flow_style=False)
+    config_file.write("# Automatically generated on %s\n\n" % dt.utcnow())
+    yaml.safe_dump(data, config_file, default_flow_style=False)
