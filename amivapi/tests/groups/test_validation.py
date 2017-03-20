@@ -175,9 +175,9 @@ class ValidationTest(WebTest):
         r = self.load_fixture({'groups': [
             {'name': 'test', 'receive_from': ['a', 'b', 'c']}
         ]})
-        id = str(r[0]['_id'])
+        ID = str(r[0]['_id'])
         etag = r[0]['_etag']
         token = self.get_root_token()
         subset = {'receive_from': ['a', 'b']}
-        self.api.patch("/groups/" + id, data=subset, token=token,
+        self.api.patch("/groups/" + ID, data=subset, token=token,
                        headers={'If-Match': etag}, status_code=200)
