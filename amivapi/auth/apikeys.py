@@ -50,7 +50,9 @@ def authorize_apikeys(resource):
 class ApikeyAuth(AmivTokenAuth):
     """Do not let (non-admin) users view API keys at all.
 
-    We don't want to filter the output , we want to abort completely."""
+    If this hook gets called, the user is not an admin for this resource.
+    Therefore no results should be given. To give a more precise error message,
+    we abort. Otherwise normal users would just see an empty list."""
     def create_user_lookup_filter(self, user):
         abort(403)
 
