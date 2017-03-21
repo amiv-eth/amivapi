@@ -6,7 +6,7 @@
 
 """Install amivapi. Provide the amivapi command."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 with open('LICENSE') as f:
     LICENSE = f.read()
