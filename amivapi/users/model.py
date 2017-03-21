@@ -16,7 +16,7 @@ userdomain = {
                        'be changed by admins. The password is optional for '
                        'users with an LDAP entry. When querying users without '
                        'admin permissions, AMIV members can see some metadata '
-                       ' about other members. External people can see nothing.',
+                       'about other members. External people can see nothing.',
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 

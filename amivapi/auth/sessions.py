@@ -41,11 +41,11 @@ sessiondomain = {
         'description': "A session is used to authenticate a user after he "
         "provided login data."
         "\n\n"
-        "A POST to /sessions will return a token you can "
-        "use in further requests as a header "
+        "A POST to /sessions will return a token you can use in further "
+        " request as an Authorization header "
         "\"Authorization: &lt;yourtoken&gt;\"\n"
         "POST requests take exactly two parameters 'username' and 'password'.\n"
-        "The username can be either the _id, nethz or email address of a user."
+        "The username can be the _id, nethz or email address of a user."
         "\n\n"
         "GET and DELETE requests work on the session objects.",
 
