@@ -91,7 +91,7 @@ apikeydomain = {
                                 'allowed': ['read', 'readwrite']},
                 'description': 'Permissions the apikey grants. '
                 'Key, value pairs with resource names as keys and either '
-                '"read" or "readwrite"'
+                '"read" or "readwrite" as values.'
             }
         },
     }

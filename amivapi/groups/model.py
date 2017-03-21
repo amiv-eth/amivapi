@@ -99,11 +99,12 @@ class GroupMembershipAuth(AmivTokenAuth):
 groupdomain = {
 
     'groups': {
-        'description': "This resource describes the different teams in AMIV.A "
-        "group can grant API permissions and can be reached with several "
-        "addresses. To see the addresses of this group, see /groupaddresses."
-        "To see the members, have a look at '/groupmembers'. To see the "
-        "addresses messages are forwarded to, see /groupforwards",
+        'description': "This resource describes the different teams in AMIV. "
+        "Being a member of a group can grant API permissions. Furthermore a "
+        "group can have associated email addresses, which forward to all "
+        "members of the group. Emails sent to the group can also be forwarded "
+        "to other email addresses without an associated user. "
+        "To see the members, have a look at '/groupmembers'.",
 
         'resource_methods': ['POST', 'GET'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
@@ -127,7 +128,8 @@ groupdomain = {
             'moderator': {
                 'type': 'objectid',
                 'data_relation': {'resource': 'users'},
-                'nullable': True
+                'nullable': True,
+                'description': 'ID of a user which can add and remove members.'
             },
             'receive_from': {
                 'type': 'list',
@@ -138,6 +140,9 @@ groupdomain = {
                     'maxlength': 100,
                     'regex': '[a-z0-9_\.-]+'
                 },
+                'description': 'Email addresses of this group. These addresses '
+                'will forward to all group members and the additional addresses'
+                ' specified by forward_to.'
             },
             'forward_to': {
                 'type': 'list',
@@ -146,13 +151,15 @@ groupdomain = {
                     'type': 'string',
                     'maxlength': 100,
                     'regex': EMAIL_REGEX
-                }
+                },
+                'description': 'Additional addresses to which this group will '
+                'forward emails.'
             },
             'allow_self_enrollment': {
                 'type': 'boolean',
                 'default': False,
                 'description': 'If true, the group can be seen by all users and'
-                ' they can subscribe themselves'
+                ' they can subscribe themselves.'
             },
             'has_zoidberg_share': {
                 'type': 'boolean',
@@ -166,8 +173,10 @@ groupdomain = {
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'nullable': True,
-                'description': 'permissions the group grants. has to be '
-                'according to the jsonschema available at /notyetavailable'
+                'description': 'permissions the group grants. The value is a '
+                'json object with resources as properties and "read" or '
+                '"readwrite" as a value.'
+                # TODO: Make the schema available as a jsonschema
             }
         }
     },
@@ -201,13 +210,12 @@ groupdomain = {
                 },
                 'required': True,
                 'only_self_or_moderator': True,
-                'unique_combination': ['group']
+                'unique_combination': ['group'],
             },
             'expiry': {
                 'type': 'datetime',
-                # TODO: activate when swagger is merged
-                # 'description': 'Time at which the person will automatically '
-                # 'be removed from the group.'
+                'description': 'Time at which the person will automatically '
+                'be removed from the group.'
             }
         }
     },

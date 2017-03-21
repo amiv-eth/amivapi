@@ -10,11 +10,13 @@ from .security import UserAuth
 
 userdomain = {
     'users': {
-        'description': 'In general, the user data will be '
-                       'generated from LDAP-Data. However, one might change '
-                       'the RFID-Number or the membership-status. '
-                       'Extraordinary members may not have a LDAP-Account '
-                       'and can therefore access all given fields.',
+        'description': 'User data will be generated from LDAP-data wherever '
+                       'possible. Users themselves can modify password, email, '
+                       'rfid, phone and send_newsletter. Everything else can '
+                       'be changed by admins. The password is optional for '
+                       'users with an LDAP entry. When querying users without '
+                       'admin permissions, AMIV members can see some metadata '
+                       ' about other members. External people can see nothing.',
         'additional_lookup': {'field': 'nethz',
                               'url': 'regex(".*[\\w].*")'},
 
@@ -31,7 +33,10 @@ userdomain = {
                 'maxlength': 30,
                 'not_patchable_unless_admin': True,
                 'unique': True,
-                'default': None},  # Do multiple none values work?
+                'default': None,  # Do multiple none values work?
+                'description': 'Nethz(short ETH name)  of the user. Used for '
+                'identification in LDAP and for login.'
+            },
             'firstname': {
                 'type': 'string',
                 'maxlength': 50,
@@ -61,19 +66,22 @@ userdomain = {
                 'nullable': True,
                 'required': False,
                 'type': 'string',
-                'unique': True},
+                'unique': True
+            },
             'department': {
                 'type': 'string',
                 'allowed': ['itet', 'mavt'],
                 'not_patchable_unless_admin': True,
-                'nullable': True},
+                'nullable': True
+            },
             'gender': {
                 'type': 'string',
                 'allowed': ['male', 'female'],
                 'maxlength': 6,
                 'not_patchable_unless_admin': True,
                 'required': True,
-                'unique': False},
+                'unique': False
+            },
 
             # Fields the user can modify himself
             'password': {
@@ -81,27 +89,37 @@ userdomain = {
                 'maxlength': 100,
                 'empty': False,
                 'nullable': True,
-                'default': None},
+                'default': None,
+                'description': 'Leave empty to use just LDAP authentification. '
+                'People without LDAP should use this field.'
+            },
             'email': {
                 'type': 'string',
                 'maxlength': 100,
                 'regex': EMAIL_REGEX,
                 'required': True,
-                'unique': True},
+                'unique': True
+            },
             'rfid': {
                 'type': 'string',
                 'maxlength': 6,
                 'empty': False,
                 'nullable': True,
-                'unique': True},
+                'unique': True,
+                'description': 'Number on the back of the legi. This is not in '
+                'LDAP, therefore users need to enter it themselves to use the '
+                'vending machines.'
+            },
             'phone': {
                 'type': 'string',
                 'maxlength': 20,
                 'empty': False,
-                'nullable': True},
+                'nullable': True
+            },
             'send_newsletter': {
                 'type': 'boolean',
-                'nullable': True},
+                'nullable': True
+            },
         }
     }
 }
