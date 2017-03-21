@@ -36,18 +36,20 @@ class SessionAuth(AmivTokenAuth):
         return {'user': user_id}
 
 
+DESCRIPTION = \
+"""A session is used to authenticate a user after he provided login data.
+
+A POST to /sessions will return a token you can use in further requests as
+an Authorization header "Authorization: &lt;yourtoken&gt;"
+
+POST requests take exactly two parameters 'username' and 'password'.
+The username can be the ID, nethz or email address of a user.
+"""
+
+
 sessiondomain = {
     'sessions': {
-        'description': "A session is used to authenticate a user after he "
-        "provided login data."
-        "\n\n"
-        "A POST to /sessions will return a token you can use in further "
-        " request as an Authorization header "
-        "\"Authorization: &lt;yourtoken&gt;\"\n"
-        "POST requests take exactly two parameters 'username' and 'password'.\n"
-        "The username can be the _id, nethz or email address of a user."
-        "\n\n"
-        "GET and DELETE requests work on the session objects.",
+        'description': DESCRIPTION,
 
         'authentication': SessionAuth,
         'public_methods': ['POST'],
@@ -61,15 +63,15 @@ sessiondomain = {
                 'required': True,
                 'nullable': False,
                 'empty': False,
-                'description': 'Only in POST. _id, nethz or email of a user.'
+                'description': 'Only in POST: _id, nethz or email of a user.'
             },
             'password': {
                 'type': 'string',
                 'required': True,
                 'nullable': False,
                 'empty': False,
-                'description': 'Only in POST. LDAP or local password of the '
-                'user.'
+                'description': 'Only in POST: LDAP or local password of the '
+                               'user.'
             },
             'user': {
                 'type': 'objectid',
@@ -80,12 +82,12 @@ sessiondomain = {
                     'cascade_delete': True
                 },
                 'readonly': True,
-                'description': 'Only in GET, DELETE.'
+                'description': 'Will be returned for GET requests.'
             },
             'token': {
                 'type': 'string',
                 'readonly': True,
-                'description': 'Only in GET, DELETE.'
+                'description': 'Will be returned for GET requests.'
             }
         },
     }
@@ -108,7 +110,7 @@ def process_login(items):
     Args:
         items (list): List of items as passed by EVE to post hooks.
     """
-    for item in items:  # TODO (Alex): Batch POST doesnt really make sense
+    for item in items:
         username = item['username']
         password = item['password']
 
