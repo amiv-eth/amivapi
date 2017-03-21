@@ -210,7 +210,7 @@ groupdomain = {
                 },
                 'required': True,
                 'only_self_or_moderator': True,
-                'unique_combination': ['group']
+                'unique_combination': ['group'],
             },
             'expiry': {
                 'type': 'datetime',
