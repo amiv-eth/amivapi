@@ -7,6 +7,7 @@
 from base64 import b64encode
 import datetime
 from os import urandom
+import textwrap
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -36,15 +37,20 @@ class SessionAuth(AmivTokenAuth):
         return {'user': user_id}
 
 
+DESCRIPTION = textwrap.dedent("""
+    A session is used to authenticate a user after he provided login data.
+
+    A POST to /sessions will return a token you can use in further requests as
+    an Authorization header "Authorization: &lt;yourtoken&gt;"
+
+    POST requests take exactly two parameters 'username' and 'password'.
+    The username can be the ID, nethz or email address of a user.
+    """)
+
+
 sessiondomain = {
     'sessions': {
-        'description': "A session is used to authenticate a user after he "
-        "provided login data.\n\n"
-        "A POST to /session will return a token you can "
-        "use in an Authorization header: token <yourtoken>\n"
-        "POST requests take exactly two parameters 'username' and 'password'.\n"
-        "The username can be either a user _id, nethz or email address.\n\n"
-        "GET and DELETE requests work on the session objects.",
+        'description': DESCRIPTION,
 
         'authentication': SessionAuth,
         'public_methods': ['POST'],
@@ -57,22 +63,33 @@ sessiondomain = {
                 'type': 'string',
                 'required': True,
                 'nullable': False,
-                'empty': False},
+                'empty': False,
+                'description': 'Only in POST: _id, nethz or email of a user.'
+            },
             'password': {
                 'type': 'string',
                 'required': True,
                 'nullable': False,
-                'empty': False},
-            'user': {'type': 'objectid',
-                     'data_relation': {
-                         'resource': 'users',
-                         'field': '_id',
-                         'embeddable': True,
-                         'cascade_delete': True
-                     },
-                     'readonly': True},
-            'token': {'type': 'string',
-                      'readonly': True}
+                'empty': False,
+                'description': 'Only in POST: LDAP or local password of the '
+                               'user.'
+            },
+            'user': {
+                'type': 'objectid',
+                'data_relation': {
+                    'resource': 'users',
+                    'field': '_id',
+                    'embeddable': True,
+                    'cascade_delete': True
+                },
+                'readonly': True,
+                'description': 'Will be returned for GET requests.'
+            },
+            'token': {
+                'type': 'string',
+                'readonly': True,
+                'description': 'Will be returned for GET requests.'
+            }
         },
     }
 }
@@ -85,11 +102,6 @@ def process_login(items):
 
     Attempts to first login via LDAP (if enabled), then login via database.
 
-    Root login is possible if 'user' is 'root' (instead of nethz or mail).
-    This shortcut is hardcoded.
-
-    TODO (ALEX): make root user shortcut a setting maybe.
-
     If the login is successful, the fields "username" and "password" are
     removed and the fields "user" and "token" are added, which will be stored
     in the db.
@@ -99,7 +111,7 @@ def process_login(items):
     Args:
         items (list): List of items as passed by EVE to post hooks.
     """
-    for item in items:  # TODO (Alex): Batch POST doesnt really make sense
+    for item in items:
         username = item['username']
         password = item['password']
 
