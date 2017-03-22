@@ -7,6 +7,7 @@
 from base64 import b64encode
 import datetime
 from os import urandom
+import textwrap
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -36,15 +37,15 @@ class SessionAuth(AmivTokenAuth):
         return {'user': user_id}
 
 
-DESCRIPTION = \
-"""A session is used to authenticate a user after he provided login data.
+DESCRIPTION = textwrap.dedent("""
+    A session is used to authenticate a user after he provided login data.
 
-A POST to /sessions will return a token you can use in further requests as
-an Authorization header "Authorization: &lt;yourtoken&gt;"
+    A POST to /sessions will return a token you can use in further requests as
+    an Authorization header "Authorization: &lt;yourtoken&gt;"
 
-POST requests take exactly two parameters 'username' and 'password'.
-The username can be the ID, nethz or email address of a user.
-"""
+    POST requests take exactly two parameters 'username' and 'password'.
+    The username can be the ID, nethz or email address of a user.
+    """)
 
 
 sessiondomain = {
