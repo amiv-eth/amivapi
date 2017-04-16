@@ -3,9 +3,18 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-"""Ldap connection for the api."""
+"""Ldap connection for the api using the nethz module.
 
-import re
+Can be used to authenticate a user and update a single user or all members.
+Don't forget to call `init_app' first. The app config needs to contain some
+ldao related configuration: The `LDAP_USER' and `LDAP_PASS'.
+
+Possible improvements:
+- The `_filter_data' function is rather complicated. Maybe some filtering could
+  be done better or moved to the nethz module?
+- `_create_or_patch_user' is also not very straightforward, maybe the ldap
+  importing logic could be simplified?
+"""
 
 from eve.methods.patch import patch_internal
 from eve.methods.post import post_internal
@@ -15,40 +24,105 @@ from nethz.ldap import AuthenticatedLdap
 from amivapi.utils import admin_permissions
 
 
+def init_app(app):
+    """Attach ldap to the app."""
+    user = app.config['LDAP_USER']
+    password = app.config['LDAP_PASS']
+    app.config['ldap_connector'] = AuthenticatedLdap(user, password)
+
+
+def authenticate_user(cn, password):
+    """Try to authenticate a user with ldap.
+
+    Args:
+        cn (string): the common name to search ldap for -> the nethz name
+        password (string): the user password (plaintext)
+
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    return current_app.config['ldap_connector'].authenticate(cn, password)
+
+
+def sync_one(cn):
+    """Synrchonize ldap and database for a single user.
+
+    The cn will be excaped for ldap, no need to worry about this.
+
+    Args:
+        cn (string): Common name of user.
+
+    Returns:
+        dict: Data of updated or newly created user in database,
+              None if user not found in ldap.
+    """
+    query = "(cn=%s)" % _escape(cn)
+    ldap_data = next(_search(query), None)
+
+    if ldap_data:
+        return _create_or_update_user(ldap_data)
+
+
+def sync_all():
+    """Query the ETH LDAP for all our members. Adds nonexisting ones to db.
+
+    Updates existing ones if ldap data has changed.
+    Depending on the system, this can take 30 seconds or longer.
+
+    Returns:
+        list: Data of all updated users.
+    """
+    # Create query: VSETH member and part of any of member ou
+    ou_items = ''.join(u"(ou=%s)" % _escape(item) for item in
+                       current_app.config['LDAP_MEMBER_OU_LIST'])
+    query = u"(& (ou=VSETH Mitglied) (| %s) )" % ou_items
+    ldap_data = _search(query)
+
+    return [_create_or_update_user(user) for user in ldap_data]
+
+
+def _search(query):
+    """Search the LDAP. Returns filtered data (iterable) for string query."""
+    attr = [
+        'cn',
+        'swissEduPersonMatriculationNumber',
+        'givenName',
+        'sn',
+        'swissEduPersonGender',
+        'ou'
+    ]
+    results = current_app.config['ldap_connector'].search(query,
+                                                          attributes=attr)
+    return (_filter_data(res) for res in results)
+
+
+def _escape(query):
+    """LDAP-style excape according to the ldap3 documentation."""
+    replacements = (
+        ('\\', r'\\5C'),  # Do this first or we'll break the other replacements
+        ('*', r'\\2A'),
+        ('(', r'\\28'),
+        (')', r'\\29'),
+        (chr(0), r'\\00')
+    )
+    for old, new in replacements:
+        query = query.replace(old, new)
+
+    return query
+
+
 def _filter_data(data):
     """Utility to filter ldap data.
 
     It will take all fields relevant for a user update and map them
     to the correct fields as used by our api.
-
-    Also sets the _ldap_updated field to utcnow.
-
-    Sets default for send_newsletter to True.
-
-    Args:
-        data: One single item from LDAP (i.e. data for one student)
-
-    Returns:
-        dict: A dict with data as needed by our API, containing:
-            firstname,
-            lastname,
-            nethz,
-            legi,
-            gender,
-            department,
-            membership,
-            It does NOT contain, password, email and RFID
     """
-
-    from pprint import pprint
-    pprint(data)
-
-    res = {
-        'nethz': data['cn'][0],
-        'legi': data['swissEduPersonMatriculationNumber'],
-        'firstname': data['givenName'][0],
-        'lastname': data['sn'][0]
-    }
+    res = {'nethz': data['cn'][0],
+           'legi': data['swissEduPersonMatriculationNumber'],
+           'firstname': data['givenName'][0],
+           'lastname': data['sn'][0]}
+    # email can be removed when Eve switches to Cerberus 1.x, then
+    # We could do this as a default value in the user model
     res['email'] = '%s@ethz.ch' % res['nethz']
     res['gender'] = \
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
@@ -62,7 +136,6 @@ def _filter_data(data):
 
     # ou contains all organisation units. Check if it contains a unit which
     # is associated with the organisation: Will be false if no intersection
-    # The implementation with set intersection yields the fastest result
     ou_list = current_app.config['LDAP_MEMBER_OU_LIST']
     is_member = bool(set(data['ou']).intersection(set(ou_list)))
 
@@ -74,227 +147,22 @@ def _filter_data(data):
     return res
 
 
-def _escape(query):
-    """LDAP-style excape symbols for some special characters.
+def _create_or_update_user(ldap_data):
+    """Try to find user in database. Update if it exists, else create."""
+    query = {'nethz': ldap_data['nethz']}
+    db_data = current_app.data.driver.db['users'].find_one(query)
 
-    According to the ldap3 documentation.
-    """
-    replacements = {
-        '*': r'\\2A',
-        '(': r'\\28',
-        ')': r'\\29',
-        '\\': r'\\5C',
-        chr(0): r'\\00'
-    }
-
-    return re.sub(
-        '.',
-        lambda m: replacements.get(m.group(), m.group()),
-        query)
-
-
-def _create(data):
-    """Add user to db.
-
-    Args:
-        data (dict): The ldap user data
-
-    Returns:
-        dict: The new user
-    """
     with admin_permissions():
-        return post_internal('users', data, skip_validation=True)[0]
+        if db_data:
+            # Membership will not be downgraded and email not be overwritten
+            ldap_data.pop('email', None)
+            if db_data.get('membership') != u"none":
+                ldap_data.pop('membership', None)
 
-
-def _compare_and_update(db_data, ldap_data):
-    """Compare ldap data to user in db and patch if needed.
-
-    Args:
-        db_data (dict): User data from the database
-        ldap_data (dict): User data from ldap
-
-    Returns:
-        dict: The updated user (or original user if nothing is updated)
-    """
-    # Compare to find only necessary updates
-    updates = {
-        key: value for (key, value) in ldap_data.items() if
-        ldap_data[key] != db_data.get(key)
-    }
-
-    # Membership and Mail will not be overwritten
-    updates.pop('email', None)
-    if db_data.get('membership') != u"none":
-        updates.pop('membership', None)
-
-    if updates:
-        with admin_permissions():
-            return patch_internal('users',
-                                  updates,
-                                  skip_validation=True,
+            user = patch_internal('users',
+                                  ldap_data,
                                   _id=db_data['_id'])[0]
-    else:
-        return db_data  # No updates
-
-
-class LdapConnector():
-    """LDAP Connector.
-
-    With all functions required for the app object.
-    Can authenticate a user and provide up-to-date information for ETH LDAP.
-
-    The app config needs to contain the following keys:
-        LDAP_USER
-        LDAP_PASS
-        LDAP_MEMBER_OU_LIST
-
-    Args:
-        app (optional[Flaskapp]): The app object, defaults to None.
-            If you don't provide it when initializing, don't forget
-            to call ``init_app``
-    """
-
-    def __init__(self, app=None):
-        """Init the connector."""
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app):
-        """Initialize me like one of your flask extensions."""
-        user = app.config['LDAP_USER']
-        password = app.config['LDAP_PASS']
-        self.ldap = AuthenticatedLdap(user, password)
-
-    # The LDAP attributes we need for the api
-    LDAP_ATTR = [
-        'cn',
-        'swissEduPersonMatriculationNumber',
-        'givenName',
-        'sn',
-        'swissEduPersonGender',
-        'ou'
-    ]
-
-    def authenticate_user(self, cn, password):
-        """Try to authenticate a user with ldap.
-
-        If successful it queries the data, parses it and returns it.
-        If either auth fails or user doesnt exist it returns None.
-
-        Args:
-            cn (string): the common name to search ldap for -> the nethz name
-            password (string): the user password (plaintext)
-
-        Returns:
-            bool: True if successful
-        """
-        return self.ldap.authenticate(cn, password)
-
-
-    def find_user(self, cn):
-        """Query ldap by common name. Return filtered data or None.
-
-        Args:
-            cn (str): Common name of a user
-
-        Returns:
-            dict: ldap data of user if found, None otherwise
-        """
-        result = list(self.ldap.search("(cn=%s)" % _escape(cn),
-                                       attributes=self.LDAP_ATTR))
-
-        if result:
-            return _filter_data(result[0])
-
-    def find_members(self):
-        """Query ldap for all organisation members.
-
-        Returns:
-            generator: generator of dicts with filtered ldap data.
-        """
-        # Create query: VSETH member and part of any of member ou
-        ou_items = (u"(ou=%s)" % _escape(item) for item in
-                    current_app.config['LDAP_MEMBER_OU_LIST'])
-        query_string = u"(& (ou=VSETH Mitglied) (| %s) )" % ''.join(ou_items)
-
-        results = self.ldap.search(query_string, attributes=self.LDAP_ATTR)
-
-        return (_filter_data(item) for item in results)
-
-    def sync_one(self, cn):
-        """Synrchonize ldap and database for a single user.
-
-        Query ldap by common name (cn).
-
-        If user is found and in our database: Update if necessary.
-        If user is found and not in database: Import.
-
-        Otherwise do nothing.
-
-        cn will be properly excaped for ldap.
-
-        Args:
-            cn (string): Common name of user.
-
-        Returns:
-            dict: Updated user data, None if user not found in ldap.
-        """
-        ldap_data = self.find_user(cn)
-        if ldap_data is None:
-            return
-
-        user = current_app.data.driver.db['users'].find_one({'nethz': cn})
-        if user:
-            user = _compare_and_update(user, ldap_data)
         else:
-            user = _create(ldap_data)
+            user = post_internal('users', ldap_data)[0]
 
-        return user
-
-    def sync_all(self):
-        """Query the ETH LDAP for all our members. Adds nonexisting ones to db.
-
-        Updates existing ones if ldap data has changed.
-
-        Returns:
-            tuple: First element is the number of new users,
-                Second element the number of updated users
-        """
-        ldap_data = self.find_members()
-        ldap_dict = {member['nethz']: member for member in ldap_data}
-
-        # Find users already in database
-        users = current_app.data.driver.db['users']
-        query = {'nethz': {'$in': list(ldap_dict.keys())}}
-        projection = {
-            'firstname': 1,
-            'lastname': 1,
-            'nethz': 1,
-            'legi': 1,
-            'gender': 1,
-            'department': 1,
-            'membership': 1,
-        }
-        existing_users = users.find(query, projection)
-        synced_users = []
-
-        for user in existing_users:
-            # Remove all updated users from ldap dict with pop
-            updated = _compare_and_update(user,
-                                          ldap_dict.pop(user['nethz']))
-            synced_users.append(updated)
-
-        # All entries left in the ldap dict need to be created
-        for _, user in ldap_dict.items():
-            new = _create(user)
-            synced_users.append(new)
-
-        return synced_users
-
-
-ldap_connector = LdapConnector()
-"""The ldap connector.
-
-Import this to query ldap. Don't forget to call ``init_app(app)`` in the
-factory function.
-"""
+    return user
