@@ -14,7 +14,7 @@ from ruamel import yaml
 
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
-from amivapi.ldap import ldap_connector
+from amivapi import ldap
 from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR, STORAGE_DIR
 
 
@@ -56,11 +56,11 @@ def ldap_sync(config, sync_all, nethz):
     else:
         with app.test_request_context():
             if sync_all:
-                res = ldap_connector.sync_all()
+                res = ldap.sync_all()
                 echo("Synchronized %i users." % len(res))
             else:
                 for user in nethz:
-                    if ldap_connector.sync_one(user) is not None:
+                    if ldap.sync_one(user) is not None:
                         echo("Succesfully synchronized '%s'." % user)
                     else:
                         echo("Could not synchronize '%s'." % user)
