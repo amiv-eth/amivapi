@@ -29,37 +29,40 @@ class LdapTest(WebTestNoAuth):
 
     def test_init_app(self):
         """Test that init app uses correct credentials stored connector."""
-        self.app.config['LDAP_USER'] = 'test'
-        self.app.config['LDAP_PASS'] = 'T3ST'
+        ldap_user = 'test'
+        ldap_pass = 'T3ST'
+        initialized_ldap = 'I totally am an ldap instance.'
+
+        self.app.config['LDAP_USER'] = ldap_user
+        self.app.config['LDAP_PASS'] = ldap_pass
         to_patch = 'amivapi.ldap.AuthenticatedLdap'
-        with patch(to_patch, return_value='initialized') as init:
+
+        with patch(to_patch, return_value=initialized_ldap) as init:
             ldap.init_app(self.app)
 
-            init.assert_called_with('test', 'T3ST')
-            self.assertEqual(self.app.config['ldap_connector'], 'initialized')
+            init.assert_called_with(ldap_user, ldap_pass)
+            self.assertEqual(self.app.config['ldap_connector'],
+                             initialized_ldap)
 
     def test_ldap_auth(self):
         """Test that ldap can authenticate a user."""
+        nethz = "Pablo"
+        login_data = {'username': nethz, 'password': 'p4bl0'}
         # Auth without ldap doesnt succeed
         self.mock_ldap.authenticate = MagicMock(return_value=False)
-        self.api.post("/sessions",
-                      data={'username': 'Pablo', 'password': 'p4bl0'},
-                      status_code=401)
+        self.api.post("/sessions", data=login_data, status_code=401)
 
+        # Auth with ldap succeeds
         self.mock_ldap.authenticate = MagicMock(return_value=True)
-
         # We patch sync one to return an existing user
         # sync one is tested separately
         sync = 'amivapi.ldap.sync_one'
         _id = {'_id': self.new_object('users')["_id"]}
         with patch(sync, return_value=_id) as patched_sync:
-            # Auth with ldap succeeds
-            self.api.post("/sessions",
-                          data={'username': 'Pablo', 'password': 'p4bl0'},
-                          status_code=201)
+            self.api.post("/sessions", data=login_data, status_code=201)
 
             # But we will assert that sync_one is called for successful auth
-            patched_sync.assert_called()
+            patched_sync.assert_called_with(nethz)
 
     def test_escape(self):
         """Test proper escaping of all characters."""
@@ -133,18 +136,18 @@ class LdapTest(WebTestNoAuth):
         with self.app.app_context():
             # ou must contain 'VSETH Mitglied' and any of the specified 'ou'
             # values
-            self.app.config['LDAP_MEMBER_OU_LIST'] = [
-                'test_value', 'other_value'
-            ]
+            ou_1 = 'An example study program assigned to our organisation'
+            ou_2 = 'this is another example'
+            self.app.config['LDAP_MEMBER_OU_LIST'] = [ou_1, ou_2]
 
             tests = (
                 # (ou, expected result)
-                (['VSETH Mitglied', 'test_value'], 'regular'),
-                (['VSETH Mitglied', 'other_value'], 'regular'),
+                (['VSETH Mitglied', ou_1], 'regular'),
+                (['VSETH Mitglied', ou_2], 'regular'),
                 # Something missing
                 (['VSETH Mitglied'], 'none'),
-                (['test_value'], 'none'),
-                (['other_value'], 'none'),
+                ([ou_1], 'none'),
+                ([ou_2], 'none'),
                 ([], 'none'),
             )
 
