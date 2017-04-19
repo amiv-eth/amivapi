@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """LDAP Tests.
 
-Mock the actual ldap responses, since we can only access ldap in the eth
+Mock the actual ldap responses, since we can only access ldap in the ETH
 network which is not usually possible for testing, e.g. on travis.
 
 There is another file, "ldap_integration.py", which can be used to test
@@ -119,7 +119,7 @@ class LdapTest(WebTestNoAuth):
             self.assertTrue(male_filtered['gender'] == 'male')
 
     def test_filter_department(self):
-        """Test deparment filtering. The 'ou' entry has to be checked."""
+        """Test department filtering. The 'ou' entry has to be checked."""
         with self.app.app_context():
             tests = (
                 ('D-ITET', 'itet'),
@@ -260,8 +260,8 @@ class LdapTest(WebTestNoAuth):
                 mock_create.assert_not_called()
 
     def test_sync_all(self):
-        """Test if sync_all contructs the query correctly and creates users."""
-        # Make ou list shorter
+        """Test if sync_all builds the query correctly and creates users."""
+        # Shorten ou list
         self.app.config['LDAP_MEMBER_OU_LIST'] = ['a', 'b']
         expected_query = '(& (ou=VSETH Mitglied) (| (ou=a)(ou=b)) )'
         search_results = (i for i in [1, 2])
