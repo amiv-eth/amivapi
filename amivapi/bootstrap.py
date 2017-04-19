@@ -20,12 +20,12 @@ from amivapi import (
     events,
     groups,
     joboffers,
+    ldap,
     media,
     studydocs,
     users,
     utils
 )
-from amivapi.ldap import ldap_connector
 from amivapi.settings import DEFAULT_CONFIG_FILENAME
 
 
@@ -62,7 +62,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
-        ldap_connector.init_app(app)
+        ldap.init_app(app)
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)

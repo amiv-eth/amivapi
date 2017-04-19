@@ -15,9 +15,9 @@ from eve.methods.patch import patch_internal
 from eve.utils import config, debug_error_message
 from flask import abort, current_app as app
 
+from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
 from amivapi.cron import periodic
-from amivapi.ldap import ldap_connector
 from amivapi.utils import admin_permissions
 
 
@@ -116,10 +116,9 @@ def process_login(items):
         password = item['password']
 
         # LDAP
-        if (config.ENABLE_LDAP and
-                ldap_connector.authenticate_user(username, password)):
+        if (config.ENABLE_LDAP and ldap.authenticate_user(username, password)):
             # Success, sync user and get token
-            updated = ldap_connector.sync_one(username)
+            updated = ldap.sync_one(username)
             _prepare_token(item, updated['_id'])
             app.logger.info(
                 "User '%s' was authenticated with LDAP" % username)

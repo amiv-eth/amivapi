@@ -8,5 +8,7 @@ click==6.6
 pytz==2016.7
 ruamel.yaml==0.12.14
 freezegun==0.3.8
+# Mock is only available in the standard lib from 3.3 on
+mock==2.0.0
 # Install amivapi in editable mode to enable command line tools
 -e .
