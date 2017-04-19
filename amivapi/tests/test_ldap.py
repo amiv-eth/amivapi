@@ -67,7 +67,7 @@ class LdapTest(WebTestNoAuth):
     def test_escape(self):
         """Test proper escaping of all characters."""
         to_escape = "thisisok*()\\" + chr(0)
-        expected = r"thisisok\\2A\\28\\29\\5C\\00"
+        expected = r"thisisok\2A\28\29\5C\00"
 
         self.assertEqual(ldap._escape(to_escape), expected)
 

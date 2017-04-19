@@ -99,11 +99,11 @@ def _search(query):
 def _escape(query):
     """LDAP-style excape according to the ldap3 documentation."""
     replacements = (
-        ('\\', r'\\5C'),  # Do this first or we'll break the other replacements
-        ('*', r'\\2A'),
-        ('(', r'\\28'),
-        (')', r'\\29'),
-        (chr(0), r'\\00')
+        ('\\', r'\5C'),  # Do this first or we'll break the other replacements
+        ('*', r'\2A'),
+        ('(', r'\28'),
+        (')', r'\29'),
+        (chr(0), r'\00')
     )
     for old, new in replacements:
         query = query.replace(old, new)
