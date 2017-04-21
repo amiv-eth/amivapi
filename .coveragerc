@@ -1,0 +1,5 @@
+[run]
+omit =
+     amivapi/ldap.py
+     amivapi/cli.py
+     amivapi/tests/*
