@@ -281,3 +281,25 @@ class EventValidatorTest(WebTestNoAuth):
         self.api.post('/test', data={'field1': 1}, status_code=201)
         self.api.post('/test', data={'field2': 1}, status_code=201)
         self.api.post('/test', data={'field1': 1, 'field2': 2}, status_code=201)
+
+    def test_validator_order(self):
+        """Test to show issue #176: The later_than validator can crash, as the
+        type of the target may not have been checked."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'datetime',
+                    'later_than': 'field2'
+                },
+                'field2': {
+                    'type': 'datetime'
+                }
+            }
+        })
+
+        resp = self.api.post("/test", data={
+            'field1': '2017-01-01T13:33:37Z',
+            'field2': '2017-00-00T13:33:37Z'
+        }, status_code=422)
+
+        assert 'exception' not in resp.json['_issues']
