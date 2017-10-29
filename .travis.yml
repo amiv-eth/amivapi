@@ -13,7 +13,6 @@ addons:
 env:
   - TOX_ENV=py27
   - TOX_ENV=py35
-  - TOX_ENV=pypy
   - TOX_ENV=flake8
 install: pip install tox coveralls
 script:
