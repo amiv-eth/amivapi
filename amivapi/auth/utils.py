@@ -16,4 +16,4 @@ def gen_safe_token():
         str: A random string containing only urlsafe characters.
     """
     return b64encode(urandom(32)).decode("utf-8").replace("+", "-").replace(
-        "/", "_")
+        "/", "_").rstrip("=")
