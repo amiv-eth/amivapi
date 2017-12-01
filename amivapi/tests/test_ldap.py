@@ -214,7 +214,7 @@ class LdapTest(WebTestNoAuth):
             'sn',
             'swissEduPersonGender',
             'ou'
-            ]
+        ]
         mock_results = [1, 2, 3]
         # Mock ldap query
 

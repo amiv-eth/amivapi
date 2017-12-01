@@ -6,7 +6,7 @@
 """Eve Swagger initialization."""
 
 from eve_swagger import add_documentation, swagger
-from flask import Blueprint, render_template_string
+from flask import Blueprint, render_template_string, request
 
 from amivapi.utils import register_validator
 
@@ -26,11 +26,12 @@ def index():
         '<style> body {margin: 0; padding: 0; } </style>'
         '</head>'
         '<body>'
-        "<redoc spec-url='{{ request.url }}/api-docs'></redoc>"
+        "<redoc spec-url='{{ spec_url }}'></redoc>"
         '<script src="https://rebilly.github.io/ReDoc/releases/latest/'
         'redoc.min.js"> </script>'
         '</body></html>')
-    return render_template_string(redoc_template)
+    spec_url = request.url.rstrip('/') + '/api-docs'
+    return render_template_string(redoc_template, spec_url=spec_url)
 
 
 class DocValidator(object):

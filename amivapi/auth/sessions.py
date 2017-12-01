@@ -4,9 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Sessions endpoint."""
 
-from base64 import b64encode
 import datetime
-from os import urandom
 import textwrap
 
 from bson import ObjectId
@@ -17,6 +15,7 @@ from flask import abort, current_app as app
 
 from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
+from amivapi.auth.utils import gen_safe_token
 from amivapi.cron import periodic
 from amivapi.utils import admin_permissions
 
@@ -152,11 +151,11 @@ def process_login(items):
 
 
 def _prepare_token(item, user_id):
-    token = b64encode(urandom(256)).decode('utf_8')
+    token = gen_safe_token()
 
     # Make sure token is unique
     while app.data.find_one("sessions", None, token=token) is not None:
-        token = b64encode(urandom(256)).decode('utf_8')
+        token = gen_safe_token()
 
     # Remove user and password from document
     del item['username']

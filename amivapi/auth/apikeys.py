@@ -9,13 +9,12 @@ Provides the apikey resource and hooks to handle authorization with a key.
 
 API keys should only be created or modified by admins.
 """
-from base64 import b64encode
 from datetime import datetime as dt
-from os import urandom
 
 from flask import abort, current_app, g
 
 from amivapi.auth.auth import AmivTokenAuth
+from amivapi.auth.utils import gen_safe_token
 from amivapi.utils import register_domain
 
 
@@ -100,7 +99,7 @@ apikeydomain = {
 
 def generate_tokens(items):
     for item in items:
-        item['token'] = b64encode(urandom(256)).decode('utf_8')
+        item['token'] = gen_safe_token()
 
 
 def init_apikeys(app):
