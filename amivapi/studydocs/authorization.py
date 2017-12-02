@@ -8,11 +8,12 @@
 from flask import g
 
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import get_id
 
 
 class StudydocsAuth(AmivTokenAuth):
     def has_item_write_permission(self, user_id, item):
-        return str(item['uploader']) == user_id
+        return str(get_id(item['uploader'])) == user_id
 
     def has_resource_write_permission(self, user_id):
         # All users can create studydocs

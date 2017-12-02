@@ -17,7 +17,7 @@ from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
 from amivapi.auth.utils import gen_safe_token
 from amivapi.cron import periodic
-from amivapi.utils import admin_permissions
+from amivapi.utils import admin_permissions, get_id
 
 
 class SessionAuth(AmivTokenAuth):
@@ -29,7 +29,7 @@ class SessionAuth(AmivTokenAuth):
     def has_item_write_permission(self, user_id, item):
         """Allow users to modify only their own sessions."""
         # item['user'] is Objectid, convert to str
-        return user_id == str(item['user'])
+        return user_id == str(get_id(item['user']))
 
     def create_user_lookup_filter(self, user_id):
         """Allow users to only see their own sessions."""
