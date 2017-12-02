@@ -25,6 +25,14 @@ userdomain = {
 
         'authentication': UserAuth,
 
+        'mongo_indexes': {
+            'legi': ([('legi', 1)], {'background': True}),
+            'nethz': ([('nethz', 1)], {'background': True}),
+            'firstname': ([('firstname', 1)], {'background': True}),
+            'lastname': ([('lastname', 1)], {'background': True}),
+            'email': ([('email', 1)], {'background': True})
+        },
+
         'schema': {
             'nethz': {
                 'type': 'string',
