@@ -1,4 +1,4 @@
--e git+https://github.com/nicolaiarocci/eve.git@0b113059c7a5268f76dd385e043a2f29987b5c21#egg=Eve
+-e git+https://github.com/nicolaiarocci/eve.git@v0.7.4#egg=Eve
 -e git+https://github.com/hermannsblum/eve-swagger.git#egg=Eve_Swagger
 -e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
 Flask==0.10.1
