@@ -194,7 +194,7 @@ class EventAuthTest(WebTest):
                        data={'checked_in': 'True'},
                        headers={'If-Match': etag},
                        status_code=422)
-        
+
         self.api.patch("/eventsignups/%s" % eventsignup_id,
                        token=self.get_root_token(),
                        data={'checked_in': 'True'},
