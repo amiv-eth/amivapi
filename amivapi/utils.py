@@ -48,9 +48,10 @@ def get_id(item):
     Returns:
         ObjectId with the user ID
     """
-    if isinstance(item, dict):
+    try:
+        return ObjectId(item)
+    except TypeError:
         return ObjectId(item['_id'])
-    return ObjectId(item)
 
 
 def mail(sender, to, subject, text):
