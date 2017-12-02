@@ -164,4 +164,3 @@ class EventModelTest(WebTestNoAuth):
             'user': str(user['_id']),
             'additional_fields': "{}"
         }, status_code=422)
-

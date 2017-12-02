@@ -195,10 +195,8 @@ eventdomain = {
             },
 
             'signup_count': {
-                    # TODO:
-                # This needs to be checked to prevent XOR Error
-                # 'readonly': True,
-                # 'type': 'integer'
+                'readonly': True,
+                'type': 'integer'
             },
         },
     },
