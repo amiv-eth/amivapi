@@ -187,6 +187,35 @@ class UserFieldsTest(utils.WebTest):
         assertFields(self.user_token, self.ALL_FIELDS, self.BASIC_FIELDS)
         assertFields(self.root_token, self.ALL_FIELDS, self.ALL_FIELDS)
 
+    def test_embedded_read(self):
+        """Test that hide hooks are also called when embedding into another
+        document."""
+        self.app.register_resource('test', {
+            'schema': {
+                'user': {
+                    'data_relation': {
+                        'resource': 'users',
+                        'embeddable': True
+                    },
+                    'type': 'objectid'
+                }
+            }
+        })
+
+        self.create_users()
+        test_obj = self.new_object('test',
+                                   user=str(self.other_user['_id']))
+
+        resp = self.api.get('/test/%s?embedded={"user":1}' % test_obj['_id'],
+                            token=self.root_token, status_code=200).json
+        self.assertItemsEqual(resp['user'].keys(),
+                              set(self.ALL_FIELDS) - set(['_links']))
+
+        resp = self.api.get('/test/%s?embedded={"user":1}' % test_obj['_id'],
+                            token=self.user_token, status_code=200).json
+        self.assertItemsEqual(resp['user'].keys(),
+                              set(self.BASIC_FIELDS) - set(['_links']))
+
     def test_change_by_user(self):
         """User can change password, email. and rfid."""
         user = self.new_object('users', email='a@b.c',

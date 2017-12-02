@@ -77,4 +77,8 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     cron.init_app(app)
     documentation.init_app(app)
 
+    # Fix that eve doesn't run hooks on embedded documents
+    app.on_fetched_item += utils.run_embedded_hooks_fetched_item
+    app.on_fetched_resource += utils.run_embedded_hooks_fetched_resource
+
     return app
