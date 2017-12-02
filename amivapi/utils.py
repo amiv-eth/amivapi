@@ -5,6 +5,7 @@
 """Utilities."""
 
 
+from bson import ObjectId
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
@@ -33,6 +34,24 @@ def admin_permissions():
     app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
+
+
+def get_id(item):
+    """Get the id of a field in a relation. Depending on the embedding clause
+    a field returned by a mongo query may be an ID or an object. This function
+    will get the ID in both cases.
+
+    Args:
+        item: Either an object from the database as a dict or an object id as
+            str or objectid.
+
+    Returns:
+        ObjectId with the user ID
+    """
+    try:
+        return ObjectId(item)
+    except TypeError:
+        return ObjectId(item['_id'])
 
 
 def mail(sender, to, subject, text):
@@ -68,6 +87,41 @@ def mail(sender, to, subject, text):
             s.quit()
         except smtplib.SMTPException as e:
             app.logger.error("SMTP error trying to send mails: %s" % e)
+
+
+def run_embedded_hooks_fetched_item(resource, item):
+    """Run fetched_* hooks on embedded objects. Eve doesn't execute hooks
+    for those and we depend on it for auth and filtering of hidden fields.
+
+    Args:
+        resource: Name of the resource of the main request.
+        item: Object including embedded objects.
+    """
+    # Find schema for all embedded fields
+    schema = app.config['DOMAIN'][resource]['schema']
+    print(schema)
+    embedded_fields = {field: field_schema
+                       for field, field_schema in schema.items()
+                       if 'data_relation' in field_schema}
+
+    for field, field_schema in embedded_fields.items():
+        rel_resource = field_schema['data_relation']['resource']
+        # Call hooks on every embedded item in the response
+        if field in item and isinstance(item[field], dict):
+            getattr(app, "on_fetched_item")(rel_resource, item[field])
+            getattr(app, "on_fetched_item_%s" % rel_resource)(item[field])
+
+
+def run_embedded_hooks_fetched_resource(resource, response):
+    """Run fetched hooks on embedded resources. Eve doesn't execute hooks
+    for those and we depend on it for auth and filtering of hidden fields.
+
+    Args:
+        resource: Name of the resource of the main request.
+        items: Objects including embedded objects.
+    """
+    for item in response['_items']:
+        run_embedded_hooks_fetched_item(resource, item)
 
 
 class ValidatorAMIV(Validator):

@@ -286,3 +286,19 @@ class GroupMembershipModelTest(WebTest):
     def test_cascade_group_delete(self):
         """Deleting group removes the memberships."""
         self.assertCascade("groups")
+
+    def test_auth_works_with_embeddings(self):
+        """Test that the authorization works with embedded objects. Issue #195
+        """
+        _id = 24 * '0'
+
+        self.load_fixture({
+            'users': [{'_id': _id}],
+            'groups': [{'_id': _id}],
+            'groupmemberships': [{'_id': _id, 'user': _id, 'group': _id}]
+        })
+
+        token = self.get_user_token(_id)
+
+        self.api.get('/groupmemberships/%s?embedded={"user":1,"group":1}'
+                     % _id, token=token, status_code=200)

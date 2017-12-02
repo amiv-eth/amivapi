@@ -68,6 +68,10 @@ def add_methods_to_item_links(resource, item):
         resource (str): The name of the resource
         item (dict): The item, must have a 'links' key.
     """
+    if '_links' not in item:
+        # Embedded objects don't have a _links field
+        return
+
     links = item['_links']
 
     # self

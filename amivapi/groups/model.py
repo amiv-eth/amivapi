@@ -9,6 +9,7 @@ Contains models for groups and group mmeberships.
 from bson import ObjectId
 from flask import current_app
 
+from amivapi.utils import get_id
 from amivapi.auth import AmivTokenAuth
 from amivapi.settings import EMAIL_REGEX
 
@@ -18,8 +19,9 @@ class GroupAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """The group moderator is allowed to change things."""
-        # item['moderator'] is Objectid, convert to str
-        return item.get('moderator') and (user_id == str(item['moderator']))
+        # Return true if a moderator exists and it is equal to the current user
+        return item.get('moderator') and (
+            user_id == str(get_id(item['moderator'])))
 
     def create_user_lookup_filter(self, user_id):
         """Group lookup filter.
@@ -54,7 +56,7 @@ class GroupMembershipAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """The group moderator and the member can change an enrollment."""
-        if user_id == str(item['user']):
+        if user_id == str(get_id(item['user'])):
             # Own membership can be modified
             return True
         else:
@@ -63,7 +65,7 @@ class GroupMembershipAuth(AmivTokenAuth):
             #   Furthermore user_id can't be None so if there is no moderator
             #   we will correctly return False
             collection = current_app.data.driver.db['groups']
-            group = collection.find_one({'_id': item['group']},
+            group = collection.find_one({'_id': get_id(item['group'])},
                                         {'moderator': 1})
             return user_id == str(group.get('moderator'))
 
@@ -115,6 +117,10 @@ groupdomain = {
         'additional_lookup': {
             'url': 'regex("[\w]+")',
             'field': 'name'
+        },
+
+        'mongo_indexes': {
+            'name': ([('name', 1)], {'background': True})
         },
 
         'schema': {
