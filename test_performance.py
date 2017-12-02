@@ -99,10 +99,15 @@ def create_event():
         'show_infoscreen': random.choice([True, False]),
         'show_website': random.choice([True, False]),
         'spots': 0,
-        'time_register_start': datetime(1970, 1, 1).strftime(DATE_FORMAT),
+        'time_register_start': datetime(1970, 6, 1).strftime(DATE_FORMAT),
         'time_register_end': (datetime.utcnow() +
                               timedelta(days=100)).strftime(DATE_FORMAT),
-        'allow_email_signup': True
+        'time_advertising_start': datetime(1970, 1, 1).strftime(DATE_FORMAT),
+        'time_advertising_end': (datetime.utcnow() +
+                                 timedelta(days=20)).strftime(DATE_FORMAT),
+        'allow_email_signup': True,
+        'selection_strategy': 'fcfs',
+        'priority': 5
     }
     return post(BASE_URL + '/events', json=data, auth=(ROOT_PW, '')).json()
 
@@ -110,7 +115,12 @@ def create_event():
 def create_studydoc():
     data = {
         'author': 'einstein',
-        'name': 'doc%i' % next(counter)
+        'title': 'doc%i' % next(counter),
+        'lecture': random.choice(['TIK 3', 'NuS', 'Advanced Analysis',
+                                  'Disruptive Machining Technologies', None]),
+        'semester': random.choice(['1', '2', '3', '4', '5+', None]),
+        'department': random.choice(['itet', 'mavt', 'biol', None]),
+        'professor': random.choice(['troester', 'guzella', 'brofessor', None])
     }
     files = {'files': ('test.txt', BytesIO(b'A' * 10000))}
     return post(BASE_URL + '/studydocuments', data=data,
