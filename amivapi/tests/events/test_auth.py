@@ -169,3 +169,53 @@ class EventAuthTest(WebTest):
                 'event': str(ev['_id']),
                 'user': str(user2['_id'])
             }, token=root_token, status_code=201)
+
+    def test_checkin_without_admin_permissions(self):
+        """Test that no user without admin permissions can check in a user"""
+        user_id = 24 * '1'
+        event_id = 24 * '2'
+
+        self.load_fixture({
+            'users': [{
+                '_id': user_id
+                }],
+            'events': [{
+                '_id': event_id
+                }],
+            })
+
+        eventsignup = self.new_object('eventsignups', event=event_id, user=user_id )
+        etag = eventsignup['_etag']
+        eventsignup_id = eventsignup['_id']
+        
+        self.api.patch("/eventsignups/%s" % eventsignup_id,
+                token=self.get_user_token(user_id),
+                data={'checked_in': 'True'},
+                headers={'If-Match': etag},
+                status_code=422)
+
+    def test_checkin_with_admin_permissions(self):
+        """Test that no user without admin permissions can check in a user"""
+        user_id = 24 * '1'
+        event_id = 24 * '2'
+
+        self.load_fixture({
+            'users': [{
+                '_id': user_id
+                }],
+            'events': [{
+                '_id': event_id
+                }],
+            })
+
+        eventsignup = self.new_object('eventsignups', event= event_id, user= user_id )
+        etag = eventsignup['_etag']
+        eventsignup_id = eventsignup['_id']
+
+        self.api.patch("/eventsignups/%s" % eventsignup_id,
+                token=self.get_root_token(), 
+                data={'checked_in': 'True'}, 
+                headers={'If-Match': etag},
+                status_code=200)
+
+
