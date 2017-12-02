@@ -164,3 +164,50 @@ class EventModelTest(WebTestNoAuth):
             'user': str(user['_id']),
             'additional_fields': "{}"
         }, status_code=422)
+
+    def test_checkin_without_admin_permissions(self):
+        """Test that no user without admin permissions can check in a user"""
+        user_id = 24 * '1'
+        event_id = 24 * '2'
+        eventsignup_id = 24 * '3'
+
+        self.load_fixture({
+            'users': [{
+                '_id': user_id
+                }],
+            'events': [{
+                '_id': event_id
+                }],
+            'eventsignups': [{
+                'event': event_id,
+                'user': user_id,
+                '_id': eventsignup_id
+                }]
+            })
+
+        self.api.patch("/eventsignups/%s" % eventsignup_id,
+                token=self.get_user_token(user_id), data={'checked_in': 'True'}, status_code=403)
+
+    def test_checkin_with_admin_permissions(self):
+        """Test that no user without admin permissions can check in a user"""
+        user_id = 24 * '1'
+        event_id = 24 * '2'
+        eventsignup_id = 24 * '3'
+
+        self.load_fixture({
+            'users': [{
+                '_id': user_id
+                }],
+            'events': [{
+                '_id': event_id
+                }],
+            'eventsignups': [{
+                'event': event_id,
+                'user': user_id,
+                '_id': eventsignup_id
+                }]
+            })
+
+        self.api.patch("/eventsignups/%s" % eventsignup_id,
+                token=self.get_root_token(), data={'checked_in': 'True'}, status_code=403)
+

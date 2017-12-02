@@ -195,8 +195,10 @@ eventdomain = {
             },
 
             'signup_count': {
-                'readonly': True,
-                'type': 'integer'
+                    # TODO:
+                # This needs to be checked to prevent XOR Error
+                # 'readonly': True,
+                # 'type': 'integer'
             },
         },
     },
@@ -236,10 +238,8 @@ eventdomain = {
                 'nullable': False,
                 'unique_combination': ['event'],
                 'description': 'Provide either user or email.'
-
-                # This creates a presence XOR with email
-                # TODO: This needs cerberus > 1.0.1
-                # enable as soon as eve supports it
+                # TODO:
+                # This creates an XOR problem with 'users'
                 # 'required': True,
                 # 'excludes': ['email']
             },
@@ -272,6 +272,10 @@ eventdomain = {
                 'readonly': True
             },
             'accepted': {
+                'type': 'boolean',
+                'admin_only': True
+            },
+            'checked_in': {
                 'type': 'boolean',
                 'admin_only': True
             },
