@@ -236,9 +236,8 @@ eventdomain = {
                 'nullable': False,
                 'unique_combination': ['event'],
                 'description': 'Provide either user or email.'
-                
-                
-                # Ths creates a presence XOR with email
+
+                # This creates a presence XOR with email
                 # TODO: This needs cerberus > 1.0.1
                 # enable as soon as eve supports it
                 # 'required': True,
