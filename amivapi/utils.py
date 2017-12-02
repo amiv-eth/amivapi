@@ -5,6 +5,7 @@
 """Utilities."""
 
 
+from bson import ObjectId
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
@@ -33,6 +34,24 @@ def admin_permissions():
     app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
+
+
+def get_id(item):
+    """Get the id of a field in a relation. Depending on the embedding clause
+    a field returned by a mongo query may be an ID or an object. This function
+    will get the ID in both cases.
+
+    Args:
+        item: Either an object from the database as a dict or an object id as
+            str or objectid.
+
+    Returns:
+        ObjectId with the user ID
+    """
+    try:
+        return ObjectId(item)
+    except TypeError:
+        return ObjectId(item['_id'])
 
 
 def mail(sender, to, subject, text):
