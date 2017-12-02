@@ -169,7 +169,6 @@ class EventModelTest(WebTestNoAuth):
         """Test that no user without admin permissions can check in a user"""
         user_id = 24 * '1'
         event_id = 24 * '2'
-        eventsignup_id = 24 * '3'
 
         self.load_fixture({
             'users': [{
@@ -178,21 +177,22 @@ class EventModelTest(WebTestNoAuth):
             'events': [{
                 '_id': event_id
                 }],
-            'eventsignups': [{
-                'event': event_id,
-                'user': user_id,
-                '_id': eventsignup_id
-                }]
             })
 
+        eventsignup = self.new_object('eventsignups', event=event_id, user=user_id)
+        etag = eventsignup['_etag']
+        eventsignup_id = eventsignup['_id']
+        
         self.api.patch("/eventsignups/%s" % eventsignup_id,
-                token=self.get_user_token(user_id), data={'checked_in': 'True'}, status_code=403)
+                token=self.get_user_token(user_id),
+                data={'checked_in': 'True'},
+                headers={'If-Match': etag},
+                status_code=403)
 
     def test_checkin_with_admin_permissions(self):
         """Test that no user without admin permissions can check in a user"""
         user_id = 24 * '1'
         event_id = 24 * '2'
-        eventsignup_id = 24 * '3'
 
         self.load_fixture({
             'users': [{
@@ -201,13 +201,15 @@ class EventModelTest(WebTestNoAuth):
             'events': [{
                 '_id': event_id
                 }],
-            'eventsignups': [{
-                'event': event_id,
-                'user': user_id,
-                '_id': eventsignup_id
-                }]
             })
 
+        eventsignup = self.new_object('eventsignups', event=event_id, user=user_id)
+        etag = eventsignup['_etag']
+        eventsignup_id = eventsignup['_id']
+
         self.api.patch("/eventsignups/%s" % eventsignup_id,
-                token=self.get_root_token(), data={'checked_in': 'True'}, status_code=403)
+                token=self.get_root_token(), 
+                data={'checked_in': 'True'}, 
+                headers={'If-Match': etag},
+                status_code=403)
 
