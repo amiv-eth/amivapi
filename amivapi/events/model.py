@@ -275,6 +275,10 @@ eventdomain = {
                 'type': 'boolean',
                 'admin_only': True
             },
+            'checked_in': {
+                'type': 'boolean',
+                'admin_only': True
+            },
         }
     }
 }
