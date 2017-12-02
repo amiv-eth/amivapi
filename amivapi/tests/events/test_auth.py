@@ -184,15 +184,16 @@ class EventAuthTest(WebTest):
                 }],
             })
 
-        eventsignup = self.new_object('eventsignups', event=event_id, user=user_id )
+        eventsignup = self.new_object('eventsignups', event=event_id,
+                                      user=user_id)
         etag = eventsignup['_etag']
         eventsignup_id = eventsignup['_id']
-        
+
         self.api.patch("/eventsignups/%s" % eventsignup_id,
-                token=self.get_user_token(user_id),
-                data={'checked_in': 'True'},
-                headers={'If-Match': etag},
-                status_code=422)
+                       token=self.get_user_token(user_id),
+                       data={'checked_in': 'True'},
+                       headers={'If-Match': etag},
+                       status_code=422)
 
     def test_checkin_with_admin_permissions(self):
         """Test that no user without admin permissions can check in a user"""
@@ -208,14 +209,13 @@ class EventAuthTest(WebTest):
                 }],
             })
 
-        eventsignup = self.new_object('eventsignups', event= event_id, user= user_id )
+        eventsignup = self.new_object('eventsignups', event=event_id,
+                                      user=user_id)
         etag = eventsignup['_etag']
         eventsignup_id = eventsignup['_id']
 
         self.api.patch("/eventsignups/%s" % eventsignup_id,
-                token=self.get_root_token(), 
-                data={'checked_in': 'True'}, 
-                headers={'If-Match': etag},
-                status_code=200)
-
-
+                       token=self.get_root_token(),
+                       data={'checked_in': 'True'},
+                       headers={'If-Match': etag},
+                       status_code=200)
