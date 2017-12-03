@@ -276,6 +276,7 @@ eventdomain = {
                 'admin_only': True
             },
             'checked_in': {
+                'default': None,
                 'type': 'boolean',
                 'admin_only': True
             },

@@ -34,6 +34,7 @@ ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 XML = False
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
+MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 
 # File Storage
 STORAGE_DIR = 'amivapi_storage'
@@ -45,6 +46,9 @@ MEDIA_URL = 'string'  # Very important to match url properly
 EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
 DEFAULT_CONFIG_FILENAME = 'config.yaml'
+
+# Timeout for connections to the SMTP server
+SMTP_TIMEOUT = 3
 
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],

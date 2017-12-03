@@ -119,6 +119,10 @@ groupdomain = {
             'field': 'name'
         },
 
+        'mongo_indexes': {
+            'name': ([('name', 1)], {'background': True})
+        },
+
         'schema': {
             'name': {
                 'type': 'string',
