@@ -77,7 +77,7 @@ def mail(sender, to, subject, text):
         msg['To'] = ';'.join(to)
 
         try:
-            s = smtplib.SMTP(config.SMTP_SERVER)
+            s = smtplib.SMTP(config.SMTP_SERVER, timeout=config.SMTP_TIMEOUT)
             try:
                 s.sendmail(msg['From'], to, msg.as_string())
             except smtplib.SMTPRecipientsRefused as e:
