@@ -34,6 +34,7 @@ ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 XML = False
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
+MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 
 # File Storage
 STORAGE_DIR = 'amivapi_storage'

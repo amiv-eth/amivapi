@@ -23,6 +23,13 @@ studydocdomain = {
 
         'authentication': StudydocsAuth,
 
+        'mongo_indexes': {
+            'departement': ([('departement', 1)], {'background': True}),
+            'lecture': ([('lecture', 1)], {'background': True}),
+            'professor': ([('professor', 1)], {'background': True}),
+            'semester': ([('semester', 1)], {'background': True})
+        },
+
         'schema': {
             'uploader': {
                 'type': 'objectid',

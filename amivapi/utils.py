@@ -89,6 +89,41 @@ def mail(sender, to, subject, text):
             app.logger.error("SMTP error trying to send mails: %s" % e)
 
 
+def run_embedded_hooks_fetched_item(resource, item):
+    """Run fetched_* hooks on embedded objects. Eve doesn't execute hooks
+    for those and we depend on it for auth and filtering of hidden fields.
+
+    Args:
+        resource: Name of the resource of the main request.
+        item: Object including embedded objects.
+    """
+    # Find schema for all embedded fields
+    schema = app.config['DOMAIN'][resource]['schema']
+    print(schema)
+    embedded_fields = {field: field_schema
+                       for field, field_schema in schema.items()
+                       if 'data_relation' in field_schema}
+
+    for field, field_schema in embedded_fields.items():
+        rel_resource = field_schema['data_relation']['resource']
+        # Call hooks on every embedded item in the response
+        if field in item and isinstance(item[field], dict):
+            getattr(app, "on_fetched_item")(rel_resource, item[field])
+            getattr(app, "on_fetched_item_%s" % rel_resource)(item[field])
+
+
+def run_embedded_hooks_fetched_resource(resource, response):
+    """Run fetched hooks on embedded resources. Eve doesn't execute hooks
+    for those and we depend on it for auth and filtering of hidden fields.
+
+    Args:
+        resource: Name of the resource of the main request.
+        items: Objects including embedded objects.
+    """
+    for item in response['_items']:
+        run_embedded_hooks_fetched_item(resource, item)
+
+
 class ValidatorAMIV(Validator):
     """Validator subclass adding more validation for special fields."""
 
