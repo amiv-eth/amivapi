@@ -125,7 +125,7 @@ class CronTest(WebTestNoAuth):
 
             self.assertFalse(CronTest.has_run)
 
-            update_scheduled_task(datetime(2017, 1, 1, 2, 20, 0),
+            update_scheduled_task(datetime(2016, 1, 1, 2, 20, 0),
                                   tester,
                                   "new-arg")
 
