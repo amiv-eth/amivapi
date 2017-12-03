@@ -123,10 +123,10 @@ def update_scheduled_task(time, func, *args):
     current_app.data.driver.db['scheduled_tasks'].update_one({
         'function': func_s
     },
-        {
-        'time': time,
-        'args': pickle.dumps(args)
-        })
+        {'$set': {
+                 'time': time,
+                 'args': pickle.dumps(args)
+        }})
 
 
 def schedule_once_soon(func, *args):
