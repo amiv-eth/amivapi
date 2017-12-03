@@ -109,7 +109,8 @@ class CronTest(WebTestNoAuth):
             self.assertEqual(CronTest.run_count, 1)
 
     def test_update_scheduled_task(self):
-        with self.app.app_context():
+        with self.app.app_context(), freeze_time(
+                datetime(2016, 1, 1, 0, 1, 0)):
 
             @schedulable
             def tester(arg):
