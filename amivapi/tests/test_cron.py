@@ -134,7 +134,7 @@ class CronTest(WebTestNoAuth):
 
             self.assertFalse(CronTest.has_run)
 
-            freeze_time.tick(delta=timedelta(hours=3))
+            frozen_time.tick(delta=timedelta(hours=3))
             run_scheduled_tasks()
 
             self.assertTrue(CronTest.has_run)
