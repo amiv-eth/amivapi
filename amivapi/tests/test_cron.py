@@ -110,7 +110,7 @@ class CronTest(WebTestNoAuth):
 
     def test_update_scheduled_task(self):
         with self.app.app_context(), freeze_time(
-                datetime(2016, 1, 1, 0, 1, 0)) as frozen_time:
+                "2016-01-01 00:00:00") as frozen_time:
 
             @schedulable
             def tester(arg):
