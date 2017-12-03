@@ -110,7 +110,7 @@ class CronTest(WebTestNoAuth):
 
     def test_update_scheduled_task(self):
         with self.app.app_context(), freeze_time(
-                datetime(2016, 1, 1, 0, 1, 0)):
+                datetime(2016, 1, 1, 0, 1, 0)) as frozen_time:
 
             @schedulable
             def tester(arg):
@@ -129,7 +129,7 @@ class CronTest(WebTestNoAuth):
                                   tester,
                                   "new-arg")
 
-            freeze_time.tick(delta=timedelta(years=1))
+            frozen_time.tick(delta=timedelta(years=1))
             run_scheduled_tasks()
 
             self.assertFalse(CronTest.has_run)
