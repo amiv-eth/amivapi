@@ -16,7 +16,8 @@ from amivapi.cron import (
     run_scheduled_tasks,
     schedulable,
     schedule_once_soon,
-    schedule_task
+    schedule_task,
+    update_scheduled_task
 )
 from amivapi.tests.utils import WebTestNoAuth
 
@@ -91,7 +92,7 @@ class CronTest(WebTestNoAuth):
             with self.assertRaises(NotSchedulable):
                 schedule_task(datetime.utcnow(), test_func)
 
-    def test_schedule_once_works(self):
+    def test_schedule_once_soon_works(self):
         with self.app.app_context():
             CronTest.run_count = 0
 
@@ -106,3 +107,34 @@ class CronTest(WebTestNoAuth):
             run_scheduled_tasks()
 
             self.assertEqual(CronTest.run_count, 1)
+
+    def test_update_scheduled_task(self):
+        with self.app.app_context():
+
+            @schedulable
+            def tester(arg):
+                CronTest.has_run = True
+                CronTest.received_arg = arg
+
+            schedule_task(datetime(2016, 1, 2, 4, 20, 0),
+                          tester,
+                          "arg")
+
+            run_scheduled_tasks()
+
+            self.assertFalse(CronTest.has_run)
+
+            update_scheduled_task(datetime(2017, 1, 2, 4, 20, 0),
+                                  tester,
+                                  "new-arg")
+
+            freeze_time.tick(delta=timedelta(years=1))
+            run_scheduled_tasks()
+
+            self.assertFalse(CronTest.has_run)
+
+            freeze_time.tick(delta=timedelta(months=5))
+            run_scheduled_tasks()
+
+            self.assertTrue(CronTest.has_run)
+            self.assertEqual(CronTest.received_arg, "new-arg")
