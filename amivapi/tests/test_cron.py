@@ -117,7 +117,7 @@ class CronTest(WebTestNoAuth):
                 CronTest.has_run = True
                 CronTest.received_arg = arg
 
-            schedule_task(datetime(2016, 1, 2, 4, 20, 0),
+            schedule_task(datetime(2016, 1, 1, 1, 1, 0),
                           tester,
                           "arg")
 
@@ -125,16 +125,16 @@ class CronTest(WebTestNoAuth):
 
             self.assertFalse(CronTest.has_run)
 
-            update_scheduled_task(datetime(2017, 1, 2, 4, 20, 0),
+            update_scheduled_task(datetime(2017, 1, 1, 2, 20, 0),
                                   tester,
                                   "new-arg")
 
-            frozen_time.tick(delta=timedelta(years=1))
+            frozen_time.tick(delta=timedelta(hours=1))
             run_scheduled_tasks()
 
             self.assertFalse(CronTest.has_run)
 
-            freeze_time.tick(delta=timedelta(months=5))
+            freeze_time.tick(delta=timedelta(hours=3))
             run_scheduled_tasks()
 
             self.assertTrue(CronTest.has_run)
