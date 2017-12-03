@@ -9,7 +9,6 @@ from io import BytesIO
 from os.path import dirname, join
 from werkzeug.datastructures import FileStorage
 
-from amivapi.media import ignore_not_found
 from amivapi.tests.utils import WebTestNoAuth
 
 lenaname = "lena.png"
@@ -95,18 +94,6 @@ class MediaTest(WebTestNoAuth):
                           status_code=201).json
         content_type = r['test_file']['content_type']
         self.assertEqual(content_type, 'application/octet-stream')
-
-    def test_ignore_file_not_found(self):
-        """Test that file not found is suppressed and nothing else."""
-        with ignore_not_found():
-            # This will raise file not found, nothing should happen
-            open("")
-
-        # Is raised for any other OSError or IOError
-        for exc in (OSError, IOError):
-            with self.assertRaises(exc):
-                with ignore_not_found():
-                    raise exc
 
     def test_validator(self):
         """Test that the validator correctly accepts formats."""

@@ -21,7 +21,6 @@ from amivapi import (
     groups,
     joboffers,
     ldap,
-    media,
     studydocs,
     users,
     utils
@@ -57,8 +56,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     config.update(kwargs)
 
     app = Eve(settings=config,
-              validator=utils.ValidatorAMIV,
-              media=media.FileSystemStorage)
+              validator=utils.ValidatorAMIV)
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
@@ -72,7 +70,6 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     joboffers.init_app(app)
     beverages.init_app(app)
     studydocs.init_app(app)
-    media.init_app(app)
     cascade.init_app(app)
     cron.init_app(app)
     documentation.init_app(app)
