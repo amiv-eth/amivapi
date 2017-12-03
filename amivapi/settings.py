@@ -47,6 +47,9 @@ EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
 DEFAULT_CONFIG_FILENAME = 'config.yaml'
 
+# Timeout for connections to the SMTP server
+SMTP_TIMEOUT = 3
+
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
 
