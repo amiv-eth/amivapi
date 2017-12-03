@@ -15,7 +15,7 @@ from ruamel import yaml
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
-from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR, STORAGE_DIR
+from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR
 
 
 @group()
@@ -127,10 +127,6 @@ def no_ldap_prompts(ctx, param, value):
         prompt="MongoDB database name",
         help="MongoDB database name.")
 # Storage settings
-@option("--storage-dir", "STORAGE_DIR", default=STORAGE_DIR,
-        type=Path(file_okay=False, resolve_path=True),
-        prompt="Directory to store all file uploads",
-        help="File storage directory.")
 @option("--forward-dir", "FORWARD_DIR", default=FORWARD_DIR,
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store mailing list files",

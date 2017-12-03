@@ -37,9 +37,7 @@ X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 
 # File Storage
-STORAGE_DIR = 'amivapi_storage'
 FORWARD_DIR = 'amivapi_forwards'
-FILENAME_RANDOM_BYTES = 128
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True
 MEDIA_URL = 'string'  # Very important to match url properly

@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
 import smtplib
+from imghdr import what
 
 from eve.io.mongo import Validator
 from eve.utils import config
@@ -215,6 +216,31 @@ class ValidatorAMIV(Validator):
                     return
             self._error(field, "May only be provided, if any of %s is set"
                         % ", ".join(any_of_fields))
+
+    def _validate_filetype(self, filetype, field, value):
+        """Validate filetype. Can validate images and pdfs.
+
+        pdf: Check if first 4 characters are '%PDF' because that marks
+        a PDF
+        Image: Use imghdr library function what()
+
+        Cannot validate others formats.
+
+        Important: what() returns 'jpeg', NOT 'jpg', so 'jpg' will never be
+        recognized!
+
+        Args:
+            filetype (list): filetypes, e.g. ['pdf', 'png']
+            field (string): field name.
+            value: field value.
+        """
+        is_pdf = value.read(4) == br'%PDF'
+        value.seek(0)  # Go back to beginning for what()
+        t = 'pdf' if is_pdf else what(value)
+
+        if not(t in filetype):
+            self._error(field, "filetype '%s' not supported, has to be in: "
+                        "%s" % (t, filetype))
 
 
 def register_domain(app, domain):
