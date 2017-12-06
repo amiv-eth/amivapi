@@ -77,6 +77,12 @@ def mail(sender, to, subject, text):
 
         try:
             s = smtplib.SMTP(config.SMTP_SERVER, timeout=config.SMTP_TIMEOUT)
+            status_code, _ = s.starttls()
+
+            if status_code != 220:
+                app.logger.error("Failed to create secure SMTP connection!")
+                return
+
             try:
                 s.sendmail(msg['From'], to, msg.as_string())
             except smtplib.SMTPRecipientsRefused as e:
@@ -98,7 +104,6 @@ def run_embedded_hooks_fetched_item(resource, item):
     """
     # Find schema for all embedded fields
     schema = app.config['DOMAIN'][resource]['schema']
-    print(schema)
     embedded_fields = {field: field_schema
                        for field, field_schema in schema.items()
                        if 'data_relation' in field_schema}
