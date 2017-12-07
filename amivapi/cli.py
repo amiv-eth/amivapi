@@ -107,6 +107,15 @@ def no_ldap_prompts(ctx, param, value):
 @option("--smtp", "SMTP_SERVER", default="localhost",
         prompt="STMP server for outgoing mails",
         help="SMTP server.")
+@option("--smtp", "SMTP_PORT", default="0",
+        prompt="STMP server port",
+        help="SMTP server port.")
+@option("--smtp", "SMTP_USERNAME", default="",
+        prompt="STMP username",
+        help="SMTP username.")
+@option("--smtp", "SMTP_PASSWORD", default="",
+        prompt="STMP password",
+        help="SMTP password.")
 @option("--mail", "API_MAIL", default="api@amiv.ethz.ch",
         prompt="E-mail address for outgoing mails",
         help="Api mail address.")

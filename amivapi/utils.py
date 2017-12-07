@@ -76,20 +76,25 @@ def mail(sender, to, subject, text):
         msg['To'] = ';'.join(to)
 
         try:
-            s = smtplib.SMTP(config.SMTP_SERVER, timeout=config.SMTP_TIMEOUT)
-            status_code, _ = s.starttls()
+            with smtplib.SMTP(config.SMTP_SERVER,
+                              port=config.SMTP_PORT,
+                              timeout=config.SMTP_TIMEOUT) as smtp:
+                status_code, _ = smtp.starttls()
+                if status_code != 220:
+                    app.logger.error("Failed to create secure "
+                                     "SMTP connection!")
+                    return
 
-            if status_code != 220:
-                app.logger.error("Failed to create secure SMTP connection!")
-                return
+                if config.SMTP_USERNAME and config.SMTP_PASSWORD:
+                    smtp.login(config.SMTP_USERNAME, config.SMTP_PASSWORD)
 
-            try:
-                s.sendmail(msg['From'], to, msg.as_string())
-            except smtplib.SMTPRecipientsRefused as e:
-                app.logger.error(
-                    "Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
-                    % (sender, str(to), subject, text))
-            s.quit()
+                try:
+                    smtp.sendmail(msg['From'], to, msg.as_string())
+                except smtplib.SMTPRecipientsRefused as e:
+                    error = ("Failed to send mail:\n"
+                             "From: %s\nTo: %s\n"
+                             "Subject: %s\n\n%s")
+                    app.logger.error(error % (sender, str(to), subject, text))
         except smtplib.SMTPException as e:
             app.logger.error("SMTP error trying to send mails: %s" % e)
 
