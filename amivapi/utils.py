@@ -87,6 +87,8 @@ def mail(sender, to, subject, text):
 
                 if config.SMTP_USERNAME and config.SMTP_PASSWORD:
                     smtp.login(config.SMTP_USERNAME, config.SMTP_PASSWORD)
+                else:
+                    smtp.ehlo()
 
                 try:
                     smtp.sendmail(msg['From'], to, msg.as_string())

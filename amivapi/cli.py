@@ -107,7 +107,7 @@ def no_ldap_prompts(ctx, param, value):
 @option("--smtp", "SMTP_SERVER", default="localhost",
         prompt="STMP server for outgoing mails",
         help="SMTP server.")
-@option("--smtp", "SMTP_PORT", default="0",
+@option("--smtp", "SMTP_PORT", default="587",
         prompt="STMP server port",
         help="SMTP server port.")
 @option("--smtp", "SMTP_USERNAME", default="",

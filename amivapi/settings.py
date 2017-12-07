@@ -47,7 +47,7 @@ DEFAULT_CONFIG_FILENAME = 'config.yaml'
 
 # SMTP server defaults
 SMTP_HOST = 'localhost'
-SMTP_PORT = 0
+SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 
 PASSWORD_CONTEXT = CryptContext(
