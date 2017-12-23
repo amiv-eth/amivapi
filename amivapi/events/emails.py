@@ -7,12 +7,14 @@
 Needed when external users want to sign up for public events.
 """
 from bson import ObjectId
+from datetime import datetime, timedelta
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 from flask import Blueprint, current_app, redirect, url_for
 from itsdangerous import BadSignature, Signer
 
 from amivapi.events.queue import update_waiting_list
+from amivapi.cron import schedulable, schedule_task, update_scheduled_task
 from amivapi.utils import mail
 
 email_blueprint = Blueprint('emails', __name__)
@@ -57,6 +59,79 @@ def send_confirmmail_to_unregistered_users(item):
 def send_confirmmail_to_unregistered_users_bulk(items):
     for item in items:
         send_confirmmail_to_unregistered_users(item)
+
+
+@schedulable
+def remindermail(item):
+    """Send a reminder email to all participants registered to an event
+
+    Args:
+        item: The item, which was just inserted into the database
+    """
+    event = item
+
+    # Fetch all the infos needed for the content
+    if event['title_en'] is not "":
+        title = event['title_en']
+    else:
+        title = event['title_de']
+
+    if event['location'] is not "":
+        location = event['location']
+    else:
+        location = ""
+
+    if event['time_start'] is not None:
+        date_time_event = event['time_start'].strftime(' %d %B %Y at %-H:%M ')
+    else:
+        date_time_event = " NaN "
+
+    fields = {
+        'location': location,
+        'datetime': date_time_event,
+        'title': title
+    }
+
+    # Populate content text with fetched infos
+    email_content = current_app.config['REMINDER_EMAIL_TEXT'] % fields
+
+    # Fetch the related eventsignups to get the emails.
+    eventsignups = current_app.data.find(
+        'eventsignups',
+        **{current_app.config['event']: item['event']})
+
+    participants_list = list()
+    for signup in eventsignups:
+        participants_list.append(signup['email'])
+
+    mail(current_app.config['API_MAIL'],
+         participants_list,
+         'Reminder for AMIV event %s' % title,
+         email_content)
+
+
+def add_scheduled_remindermail(item):
+    time_start_event = datetime.strptime(item['time_start'],
+                                         '%Y-%m-%dT%H:%M:%SZ')
+    datetime_reminder = time_start_event - \
+        timedelta(
+                  days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
+    schedule_task(datetime_reminder,
+                  remindermail,
+                  item,
+                  "remindermail_"+str(item['_id']))
+
+
+def update_scheduled_remindermail(item):
+    time_start_event = datetime.strptime(item['time_start'],
+                                         '%Y-%m-%dT%H:%M:%SZ')
+    datetime_reminder = time_start_event - \
+        timedelta(
+                  days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
+    update_scheduled_task(datetime_reminder,
+                          remindermail,
+                          item,
+                          "remindermail_"+str(item['_id']))
 
 
 def add_confirmed_before_insert(item):
