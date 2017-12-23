@@ -118,8 +118,7 @@ def add_scheduled_remindermail(item):
                   days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
     schedule_task(datetime_reminder,
                   remindermail,
-                  item,
-                  "remindermail_"+str(item['_id']))
+                  item)
 
 
 def add_scheduled_remindermail_bulk(items):
@@ -135,8 +134,7 @@ def update_scheduled_remindermail(item):
                   days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
     update_scheduled_task(datetime_reminder,
                           remindermail,
-                          item,
-                          "remindermail_"+str(item['_id']))
+                          item)
 
 
 def add_confirmed_before_insert(item):
