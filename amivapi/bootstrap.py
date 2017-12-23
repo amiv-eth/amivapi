@@ -26,6 +26,7 @@ from amivapi import (
     utils
 )
 from amivapi.settings import DEFAULT_CONFIG_FILENAME
+from amivapi.validation import ValidatorAMIV
 
 
 def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
@@ -56,7 +57,7 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     config.update(kwargs)
 
     app = Eve(settings=config,
-              validator=utils.ValidatorAMIV)
+              validator=ValidatorAMIV)
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
