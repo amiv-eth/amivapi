@@ -97,9 +97,12 @@ def periodic(period, *args):
     return wrap
 
 
-def schedule_task(time, func, *args):
+def schedule_task(time, func, *args, func_alternative_name = ""):
     """ Schedule a task at some point in the future. """
-    func_s = func_str(func)
+    if alternative_name is not None:
+        func_s = func_alternative_name
+    else:
+        func_s = func_str(func)
 
     if func_s not in schedulable_functions:
         raise NotSchedulable("%s is not schedulable. Did you forget the "
@@ -112,9 +115,12 @@ def schedule_task(time, func, *args):
     })
 
 
-def update_scheduled_task(time, func, *args):
+def update_scheduled_task(time, func, *args, func_alternative_name = ""):
     """ Update a scheduled task that was previously registered. """
-    func_s = func_str(func)
+    if func_alternative_name is not "":
+        func_s = func_alternative_name
+    else:
+        func_s = func_str(func)
 
     if func_s not in schedulable_functions:
         raise NotSchedulable("%s is not schedulable. Did you forget the "
