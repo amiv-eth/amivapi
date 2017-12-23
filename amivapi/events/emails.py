@@ -111,14 +111,19 @@ def remindermail(item):
 
 
 def add_scheduled_remindermail(item):
-    time_start_event = datetime.strptime(item['time_start'],
-                                         '%Y-%m-%dT%H:%M:%SZ')
-    datetime_reminder = time_start_event - \
-        timedelta(
+    """ Schedule the sending of a remindermail by [REMINDER_EMAIL_DAYS2EVENT]
+    days before the event time_start. If no time_start is defined,
+    then no remindermail will be sent.
+    """
+    if 'time_start' in item:
+        time_start_event = datetime.strptime(item['time_start'],
+                                             '%Y-%m-%dT%H:%M:%SZ')
+        datetime_reminder = time_start_event - \
+            timedelta(
                   days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
-    schedule_task(datetime_reminder,
-                  remindermail,
-                  item)
+        schedule_task(datetime_reminder,
+                      remindermail,
+                      item)
 
 
 def add_scheduled_remindermail_bulk(items):
@@ -127,14 +132,18 @@ def add_scheduled_remindermail_bulk(items):
 
 
 def update_scheduled_remindermail(item):
-    time_start_event = datetime.strptime(item['time_start'],
-                                         '%Y-%m-%dT%H:%M:%SZ')
-    datetime_reminder = time_start_event - \
-        timedelta(
+    """ Update the schedule of a remindermal to fit updated time_start
+    or other infos of the event
+    """
+    if 'time_start' in item:
+        time_start_event = datetime.strptime(item['time_start'],
+                                             '%Y-%m-%dT%H:%M:%SZ')
+        datetime_reminder = time_start_event - \
+            timedelta(
                   days=int(current_app.config['REMINDER_EMAIL_DAYS2EVENT']))
-    update_scheduled_task(datetime_reminder,
-                          remindermail,
-                          item)
+        update_scheduled_task(datetime_reminder,
+                              remindermail,
+                              item)
 
 
 def add_confirmed_before_insert(item):
