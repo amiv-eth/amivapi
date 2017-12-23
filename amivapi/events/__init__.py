@@ -18,7 +18,6 @@ from amivapi.events.emails import (
     email_blueprint,
     send_confirmmail_to_unregistered_users,
     send_confirmmail_to_unregistered_users_bulk,
-    update_scheduled_remindermail
 )
 from amivapi.events.model import eventdomain
 from amivapi.events.projections import (
