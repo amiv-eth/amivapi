@@ -122,6 +122,11 @@ def add_scheduled_remindermail(item):
                   "remindermail_"+str(item['_id']))
 
 
+def add_scheduled_remindermail_bulk(items):
+    for item in items:
+        add_scheduled_remindermail(item)
+
+
 def update_scheduled_remindermail(item):
     time_start_event = datetime.strptime(item['time_start'],
                                          '%Y-%m-%dT%H:%M:%SZ')
