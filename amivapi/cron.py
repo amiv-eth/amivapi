@@ -97,10 +97,11 @@ def periodic(period, *args):
     return wrap
 
 
-def schedule_task(time, func, *args, func_alternative_name=""):
+def schedule_task(time, func, *args):
     """ Schedule a task at some point in the future. """
-    if func_alternative_name is not None:
-        func_s = func_alternative_name
+    if func_str(func) is "remindermail":
+        item = pickle.load(args)
+        func_s = "remindermail"+str(item['_id'])
     else:
         func_s = func_str(func)
 
@@ -115,10 +116,11 @@ def schedule_task(time, func, *args, func_alternative_name=""):
     })
 
 
-def update_scheduled_task(time, func, *args, func_alternative_name=""):
+def update_scheduled_task(time, func, *args):
     """ Update a scheduled task that was previously registered. """
-    if func_alternative_name is not "":
-        func_s = func_alternative_name
+    if func_str(func) is "remindermail":
+        item = pickle.load(args)
+        func_s = "remindermail_"+str(item['_id'])
     else:
         func_s = func_str(func)
 
