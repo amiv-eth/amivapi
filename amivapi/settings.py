@@ -35,6 +35,7 @@ XML = False
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
+CACHE_CONTROL = 'no-store, must-revalidate'
 
 # File Storage
 FORWARD_DIR = 'amivapi_forwards'
