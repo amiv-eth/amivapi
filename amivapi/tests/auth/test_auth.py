@@ -263,9 +263,7 @@ class AuthFunctionTest(FakeAuthTest):
                 "bearer",
                 "bearer ",
                 "Bearer"
-                "Bearer ",
-                "Basic",
-                "Basic "):
+                "Bearer "):
 
             with self.app.test_request_context(
                     headers={'Authorization': header}):
