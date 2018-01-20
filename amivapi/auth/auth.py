@@ -217,8 +217,11 @@ def authenticate(*args):
     # Code copied from Eve's TokenAuth - parse different header formats
     if not token and request.headers.get('Authorization'):
         token = request.headers.get('Authorization').strip()
-        if token.lower().startswith(('token', 'bearer')) and ' ' in token:
+        if token.lower().startswith(('token', 'bearer')):
+          if ' ' in token:
             token = token.split(' ')[1]
+          else:
+            token = None
     # End of code copied from Eve
 
     if token:
