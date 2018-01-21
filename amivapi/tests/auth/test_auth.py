@@ -255,33 +255,16 @@ class AuthFunctionTest(FakeAuthTest):
             authenticate()
             self.assertIsNone(g.current_token)
 
-        # All variations of incomplete headers
-        for header in (
-                "token",
-                "token ",
-                "Token",
-                "Token ",
-                "bearer",
-                "bearer ",
-                "Bearer"
-                "Bearer "):
-
-            with self.app.test_request_context(
-                    headers={'Authorization': header}):
-                authenticate()
-                self.assertIsNone(g.current_token)
-
         token = "ThisIsATokenYeahItIsTheContentDoesntReallyMatter"
         # Encoding dance for py 2/3 compatibility
         b64token = b64encode((token + ":").encode('utf-8')).decode('utf-8')
 
-        # All header variations
+        # Header variations
         for header in (
                 token,
-                "token " + token,
                 "Token " + token,
-                "bearer " + token,
                 "Bearer " + token,
+                "SomeotherKeyword " + token,
                 "Basic " + b64token):
 
             with self.app.test_request_context(

@@ -198,8 +198,7 @@ def authenticate(*args):
     Recognized tokens in following formats:
     - Basic auth with token as user and no password
     - "Authorization: <token>"
-    - "Authorization: Token <token>"
-    - "Authorization: Bearer <token>"
+    - "Authorization: Keyword <token>", Keyword can be anything, e.g. "Bearer"
 
     After token parsing, look for sessions and user and set the variables:
 
@@ -211,18 +210,13 @@ def authenticate(*args):
     # Set defaults
     g.current_token = g.current_session = g.current_user = None
 
-    # Get token
-    token = getattr(request.authorization, 'username', None)
-
-    # Code copied from Eve's TokenAuth - parse different header formats
-    if not token and request.headers.get('Authorization'):
-        token = request.headers.get('Authorization').strip()
-        if token.lower().startswith(('token', 'bearer')):
-          if ' ' in token:
-            token = token.split(' ')[1]
-          else:
-            token = None
-    # End of code copied from Eve
+    # Get token: First try basicauth username, else just auth header
+    token = (getattr(request.authorization, 'username', '') or
+             request.headers.get('Authorization', '').strip())
+    if (' ' in token):  # Remove keywords, e.g. "Token (...)" or "Bearer (...)"
+        token = token.split(' ')[1]
+    if not token:  # Set empty token explicitly to "None"
+        token = None
 
     if token:
         g.current_token = token
