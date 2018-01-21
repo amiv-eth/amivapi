@@ -247,7 +247,8 @@ class AuthFunctionTest(FakeAuthTest):
         3. A Authorization Header: 'Bearer <token>' (also lowercase)
         4. Authorization header with only 'token'
 
-        Also test that no auth header or incomplete auth header lead to `g.current_token = None`
+        Also test that no or incomplete auth header results in
+        `g.current_token = None`
         """
         # No Header
         with self.app.test_request_context():
