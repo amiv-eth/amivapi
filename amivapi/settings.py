@@ -33,7 +33,8 @@ RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'PUT', 'DELETE']
 XML = False
 X_DOMAINS = '*'
-X_HEADERS = ['Authorization', 'If-Match', 'Content-Type']
+X_HEADERS = ['Authorization', 'Content-Type', 'Cache-Control',
+             'If-Match', 'If-None-Match', 'If-Modified-Since']
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 CACHE_CONTROL = 'no-store, must-revalidate'
 
