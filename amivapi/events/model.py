@@ -177,7 +177,7 @@ eventdomain = {
                 ' always require these fields: {'
                 '"$schema": "http://json-schema.org/draft-04/schema#",'
                 '"type": "object",'
-                '"additionalProperties": False}'
+                '"additionalProperties": false}'
             },
             'allow_email_signup': {
                 'nullable': False,
