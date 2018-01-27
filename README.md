@@ -54,6 +54,24 @@ for `create_app()`
 
 For `amivapi run` you can also specify a config, see `amivapi run --help`.
 
+## Running The Tests
+
+Install the test requirements:
+
+    pip install pytest tox
+
+To run all tests:
+
+    tox
+
+To run tests based on a keyword:
+
+    tox -- -k <keyword>
+
+To run just one python version:
+
+    tox -e py36
+
 ## Further Information
 
 For information about using the API as a client have a look at docs/User_Guide.md.
