@@ -17,7 +17,7 @@ def init_secret(app):
     The database collection holding this key is called `config`
     """
     with app.app_context():  # App context needed for db connection
-        key = 'TOKEN_SECRET'
+        key = 'TOKEN_SECRET'  # Flask requires this name of the config entry
         db = app.data.driver.db['config']
         result = db.find_one({key: {'$exists': True, '$nin': [None, '']}})
 

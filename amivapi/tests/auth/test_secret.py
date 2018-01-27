@@ -2,10 +2,10 @@
 
 from mock import patch
 
-from amivapi.bootstrap import create_app
 from amivapi.tests.utils import WebTestNoAuth
+from amivapi.auth.utils import init_secret
 
-
+# Flask requires the config entry to be called 'TOKEN_SECRET'
 SECRET_KEY = 'TOKEN_SECRET'
 
 
@@ -56,6 +56,6 @@ class SecretTest(WebTestNoAuth):
                 {'$set': {SECRET_KEY: new_key}},
             )
 
-            # Create new app and check config
-            app = create_app()
-            self.assertEqual(app.config[SECRET_KEY], new_key)
+            # init_secret loads secret token from db, if it exists
+            init_secret(self.app)
+            self.assertEqual(self.app.config[SECRET_KEY], new_key)
