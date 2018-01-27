@@ -148,7 +148,7 @@ class UserFieldsTest(utils.WebTest):
     BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links',
                     'nethz', 'firstname', 'lastname']
     ALL_FIELDS = BASIC_FIELDS + ['membership', 'legi', 'gender',
-                                 'department', 'email', 'rfid']
+                                 'department', 'email', 'rfid', 'password_set']
 
     def test_read_item(self):
         """When reading, all fields are visible for user/admin only.
@@ -215,6 +215,20 @@ class UserFieldsTest(utils.WebTest):
                             token=self.user_token, status_code=200).json
         self.assertItemsEqual(resp['user'].keys(),
                               set(self.BASIC_FIELDS) - set(['_links']))
+
+    def test_password_status(self):
+        user = self.new_object('users', password='abc')
+        user_no_pass = self.new_object('users', password=None)
+
+        root_token = self.get_root_token()
+
+        resp = self.api.get('/users/%s' % user['_id'], token=root_token,
+                            status_code=200).json
+        self.assertTrue(resp['password_set'])
+
+        resp = self.api.get('/users/%s' % user_no_pass['_id'], token=root_token,
+                            status_code=200).json
+        self.assertFalse(resp['password_set'])
 
     def test_change_by_user(self):
         """User can change password, email. and rfid."""
