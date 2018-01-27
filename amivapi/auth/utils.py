@@ -14,7 +14,7 @@ def init_secret(app):
     The secret key is stored in the database to ensure consistency.
     If no secret is in the database yet, create it.
 
-    The database collection holding this key is called `config`
+    The database collection holding this key is called `config`.
     """
     with app.app_context():  # App context needed for db connection
         key = 'TOKEN_SECRET'  # Flask requires this name of the config entry

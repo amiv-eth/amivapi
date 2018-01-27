@@ -22,14 +22,14 @@ class SecretTest(WebTestNoAuth):
             # Now call setup -- no secret will be initialized
             super(SecretTest, self).setUp()
 
-            with self.app.app_context():
-                config_value = self.app.config.get(SECRET_KEY)
-                db_item = self.db['config'].find_one({
-                    SECRET_KEY: {'$exists': True}
-                })
+        self.assertNotIn(SECRET_KEY, self.app.config)
 
-            self.assertIsNone(config_value)
-            self.assertIsNone(db_item)
+        with self.app.app_context():
+            db_item = self.db['config'].find_one({
+                SECRET_KEY: {'$exists': True}
+            })
+
+        self.assertIsNone(db_item)
 
     def test_create_secret(self):
         """Test that init_secret creates a secret token & adds it to the db."""
@@ -38,7 +38,7 @@ class SecretTest(WebTestNoAuth):
         with self.app.app_context():
             config_value = self.app.config.get(SECRET_KEY)
             db_item = self.db['config'].find_one({
-                SECRET_KEY: {'$exists': True}
+                SECRET_KEY: {'$exists': True, '$nin': [None, '']}
             })
 
         self.assertIsNotNone(config_value)
