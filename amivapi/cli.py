@@ -45,13 +45,13 @@ def recreate_mailing_lists(config):
         echo('No directory for mailing lists specified.')
         return
 
-    # Delete exists lists
+    # Delete existing files
     if isdir(directory):
         for filename in listdir(directory):
             if filename.startswith(prefix):
                 remove(join(directory, filename))
 
-    # Create new lists
+    # Create new files
     with app.app_context():
         groups = app.data.driver.db['groups'].find({}, {'_id': 1})
         new_groups(groups)
