@@ -15,6 +15,8 @@ from passlib.context import CryptContext
 
 VERSION = '0.9dev'
 
+# Default user config
+
 # Flask
 
 DEBUG = False
@@ -38,9 +40,12 @@ X_HEADERS = ['Authorization', 'Content-Type', 'Cache-Control',
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 CACHE_CONTROL = 'no-store, must-revalidate'
 
-# Mailing List Files
-MAILING_LIST_DIR = ''  # By default, no forwards are saved
-MAILING_LIST_FILE_PREFIX = '.forward+'
+# MongoDB
+MONGO_DBNAME = 'amivapi'
+MONGO_HOST = 'localhost'
+MONGO_PASSWORD = ''
+MONGO_PORT = 27017
+MONGO_USERNAME = ''
 
 # File Storage
 RETURN_MEDIA_AS_BASE64_STRING = False
@@ -48,13 +53,24 @@ RETURN_MEDIA_AS_URL = True
 MEDIA_URL = 'string'  # Very important to match url properly
 EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
-DEFAULT_CONFIG_FILENAME = 'config.yaml'
+# Mailing Lists
+MAILING_LIST_DIR = ''  # By default, no forwards are saved
+MAILING_LIST_FILE_PREFIX = '.forward+'
 
 # SMTP server defaults
+API_MAIL = 'api@amiv.ethz.ch'
 SMTP_HOST = 'localhost'
 SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 
+# LDAP
+ENABLE_LDAP = False
+LDAP_USER = ''
+LDAP_PASS = ''
+
+# Security
+ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
+SESSION_TIMEOUT = timedelta(days=365)
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
 
@@ -66,11 +82,6 @@ PASSWORD_CONTEXT = CryptContext(
     # min_rounds is used to determine if a hash needs to be upgraded
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )
-
-SESSION_TIMEOUT = timedelta(days=365)
-
-# Default root password
-ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
 
 # Email sent to external users signing up for events
 CONFIRM_EMAIL_TEXT = (
