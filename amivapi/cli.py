@@ -13,6 +13,7 @@ from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
 from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR
+from amivapi.groups.mailing_lists import new_groups
 
 
 @group()
@@ -23,6 +24,16 @@ def cli():
 config_option = option("--config",
                        type=Path(exists=True, dir_okay=False, readable=True),
                        help="use specified config file")
+
+
+@cli.command()
+@config_option
+def recreate_forwards(config):
+    """(Re-)create mailing lists for all groups."""
+    app = create_app(config) if config else create_app()
+    with app.app_context():
+        groups = app.data.driver.db['groups'].find({}, {'_id': 1})
+        new_groups(groups)
 
 
 @cli.command()

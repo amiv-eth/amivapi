@@ -24,9 +24,14 @@ def make_files(group_id):
 
     If the file exists it will be overwritten.
 
+    If `STORAGE_DIR` is not set in the config (or empty), no files are created.
+
     Args:
         group_id (str): The id of the group
     """
+    if not current_app.config.get('FORWARD_DIR'):
+        return
+
     group_objectid = ObjectId(group_id)
 
     # Get group
@@ -62,9 +67,14 @@ def make_files(group_id):
 def remove_files(addresses):
     """Create several mailing list files
 
+    If `STORAGE_DIR` is not set in the config (or empty), nothing happens.
+
     Args:
         addresses (list): email addresses with a forward file to delete
     """
+    if not current_app.config.get('FORWARD_DIR'):
+        return
+
     for address in addresses:
         try:
             remove(_get_filename(address))

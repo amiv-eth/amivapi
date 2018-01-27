@@ -6,12 +6,27 @@
 """Tests for mailing list files."""
 
 from os.path import isfile, join
+from shutil import rmtree
+from tempfile import mkdtemp
+
 
 from amivapi.tests.utils import WebTestNoAuth
 
 
-class GroupModelTest(WebTestNoAuth):
+class MailingListTest(WebTestNoAuth):
     """Test creation and removal of mailing list files."""
+
+    def setUp(self):
+        """Create a temporary directory for mailing lists."""
+        super(MailingListTest, self).setUp()
+        base_dir = mkdtemp(prefix='amivapi_test')
+        self.test_config['FORWARD_DIR'] = join(base_dir, 'forwards')
+
+    def tearDown(self):
+        """Remove temporary directory."""
+        directory = self.app.config['FORWARD_DIR']
+        rmtree(directory, ignore_errors=True)
+        super(MailingListTest, self).tearDown()
 
     def _full_name(self, name):
         forward_path = self.app.config['FORWARD_DIR']
