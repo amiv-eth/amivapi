@@ -86,7 +86,7 @@ def hide_fields(response):
     Nobody can see passwords.
 
     Args:
-        items (list): list of user data to be returned.
+        response: Response object of the request
     """
     # Compatibility with both item and resource hook
     items = response.get('_items', [response])
