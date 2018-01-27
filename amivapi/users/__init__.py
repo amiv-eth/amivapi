@@ -7,13 +7,21 @@
 from amivapi.utils import register_domain
 
 from .model import userdomain
-from .security import hash_on_insert, hash_on_update, hide_fields
+from .security import (
+    hash_on_insert,
+    hash_on_update,
+    hide_fields,
+    project_password_status
+)
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
 
+    # project_password_status must be before hide_fields
+    app.on_fetched_item_users += project_password_status
+    app.on_fetched_resource_users += project_password_status
     app.on_fetched_item_users += hide_fields
     app.on_fetched_resource_users += hide_fields
     app.on_insert_users += hash_on_insert

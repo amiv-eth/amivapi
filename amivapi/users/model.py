@@ -128,6 +128,12 @@ userdomain = {
                 'type': 'boolean',
                 'nullable': True
             },
+            'password_set': {
+                'type': 'boolean',
+                'description': 'True if a password is set. False if '
+                'authentication is currently only possible via LDAP.',
+                'readonly': True
+            }
         }
     }
 }
