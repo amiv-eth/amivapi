@@ -110,6 +110,9 @@ def hide_fields(response):
 def project_password_status(response):
     """Add a boolean field password_state to the response.
 
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
     Args:
         response: Response object of the request
     """

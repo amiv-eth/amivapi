@@ -19,6 +19,7 @@ def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
 
+    # project_password_status must be before hide_fields
     app.on_fetched_item_users += project_password_status
     app.on_fetched_resource_users += project_password_status
     app.on_fetched_item_users += hide_fields
