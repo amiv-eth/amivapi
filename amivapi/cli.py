@@ -42,7 +42,7 @@ def recreate_mailing_lists(config):
     prefix = app.config['MAILING_LIST_FILE_PREFIX']
 
     if not directory:
-        echo('No directory for mailing lists specified.')
+        echo('No directory for mailing lists specified in config.')
         return
 
     # Delete existing files
