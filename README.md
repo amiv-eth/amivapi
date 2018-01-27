@@ -84,6 +84,12 @@ config, see `amivapi <command> --help`, e.g. `amivapi run --help`
 
 ## Running The Tests
 
+Create a test user `test_user` with password `test_pw` in the `test_amviapi`
+database, which will be used for all tests.
+
+    mongo test_amivapi --eval \
+        'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
+
 Install the test requirements:
 
     pip install pytest tox
