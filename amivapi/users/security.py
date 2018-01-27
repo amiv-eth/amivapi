@@ -121,7 +121,6 @@ def project_password_status(response):
 
     for item in items:
         item['password_set'] = item.get('password') is not None
-        print(item)
 
 
 # Password hashing
