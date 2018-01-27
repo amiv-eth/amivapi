@@ -5,6 +5,7 @@
 
 """Auth and session endpoint initialization."""
 from amivapi.auth import apikeys
+from amivapi.auth.utils import init_secret
 from amivapi.auth.auth import (
     abort_if_not_public,
     add_lookup_filter,
@@ -27,6 +28,9 @@ from amivapi.utils import register_domain
 
 def init_app(app):
     """Register sessions resource, add auth and hooks."""
+    # Security functions require a secret token, initialize it first
+    init_secret(app)
+
     # Auth
     app.auth = AmivTokenAuth()
 
