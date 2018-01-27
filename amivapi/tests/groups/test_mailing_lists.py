@@ -20,7 +20,7 @@ class MailingListTest(WebTestNoAuth):
         """Create a temporary directory for mailing lists."""
         super(MailingListTest, self).setUp()
         base_dir = mkdtemp(prefix='amivapi_test')
-        self.test_config['MAILING_LIST_DIR'] = join(base_dir, 'lists')
+        self.app.config['MAILING_LIST_DIR'] = join(base_dir, 'lists')
 
     def tearDown(self):
         """Remove temporary directory."""
