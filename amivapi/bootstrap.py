@@ -5,11 +5,11 @@
 
 """API factory."""
 
-from os import getcwd
+from os import getcwd, getenv
+from os.path import abspath
 
 from eve import Eve
 from flask import Config
-from ruamel import yaml
 
 from amivapi import (
     auth,
@@ -25,19 +25,23 @@ from amivapi import (
     users,
     utils
 )
-from amivapi.settings import DEFAULT_CONFIG_FILENAME
 from amivapi.validation import ValidatorAMIV
 
 
-def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
+def create_app(config_file=None, **kwargs):
     """
     Create a new eve app object and initialize everything.
 
+    User configuration can be loaded in the following order:
+
+    1. Use the `config_file` arg to specify a file
+    2. If `config_file` is `None`, you set the environment variable
+       `AMIVAPI_CONFIG` to the path of your config file
+    3. If no environment variable is set either, `config.py` in the current
+       working directory is used
+
     Args:
-        config (path or dict): If dict, use directly to update config, if its
-            a path load the file and update config.
-            If no config is provided, attemp to find it in the current working
-            directory
+        config (path): Specify config file to use.
         kwargs: All other key-value arguments will be used to update the config
     Returns:
         (Eve): The Eve application
@@ -45,19 +49,20 @@ def create_app(config_file=DEFAULT_CONFIG_FILENAME, **kwargs):
     # Load config
     config = Config(getcwd())
     config.from_object("amivapi.settings")
+
+    # Specified path > environment var > default path; abspath for better log
+    user_config = abspath(config_file or getenv('AMIVAPI_CONFIG', 'config.py'))
     try:
-        with open(config_file, 'r') as f:
-            yaml_data = yaml.load(f)
-    except IOError as e:
-        raise IOError(str(e) + "\nYou can create it by running "
-                      "`amivapi create_config`.")
-    else:
-        config.update(yaml_data)
+        config.from_pyfile(user_config)
+        config_status = "Config loaded: %s" % user_config
+    except IOError:
+        config_status = "No config found."
 
     config.update(kwargs)
 
     app = Eve(settings=config,
               validator=ValidatorAMIV)
+    app.logger.info(config_status)
 
     # Create LDAP connector
     if app.config['ENABLE_LDAP']:
