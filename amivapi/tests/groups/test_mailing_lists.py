@@ -14,7 +14,7 @@ from os.path import isfile, join
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from mock import patch, call
+from unittest.mock import patch, call
 
 from amivapi.tests.utils import WebTestNoAuth, skip_if_false
 

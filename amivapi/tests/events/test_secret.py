@@ -1,6 +1,6 @@
 """Test creation of secret key."""
 
-from mock import patch
+from unittest.mock import patch
 
 from amivapi.tests.utils import WebTestNoAuth
 from amivapi.events.utils import (
