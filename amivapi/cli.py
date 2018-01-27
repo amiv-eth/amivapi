@@ -4,10 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 """A command line interface for AMIVApi."""
-
-from base64 import b64encode
 from datetime import datetime as dt
-from os import urandom
 
 from click import argument, echo, File, group, option, Path
 from ruamel import yaml
@@ -155,8 +152,6 @@ def no_ldap_prompts(ctx, param, value):
 @argument("config_file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
 def create_config(config_file, **data):
     """Generate a config file."""
-    # Add secret for token generation
-    data['TOKEN_SECRET'] = b64encode(urandom(32)).decode('utf_8')
     if 'DEBUG' in data:
         data['TESTING'] = True  # Eve debug info
     if not data['ENABLE_LDAP']:
