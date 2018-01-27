@@ -4,6 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 
 """A command line interface for AMIVApi."""
+from os import listdir, remove
+from os.path import join, isdir
 from datetime import datetime as dt
 
 from click import argument, echo, File, group, option, Path
@@ -12,7 +14,7 @@ from ruamel import yaml
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
-from amivapi.settings import DEFAULT_CONFIG_FILENAME, FORWARD_DIR
+from amivapi.settings import DEFAULT_CONFIG_FILENAME
 from amivapi.groups.mailing_lists import new_groups
 
 
@@ -28,9 +30,28 @@ config_option = option("--config",
 
 @cli.command()
 @config_option
-def recreate_forwards(config):
-    """(Re-)create mailing lists for all groups."""
+def recreate_mailing_lists(config):
+    """(Re-)create mailing lists for all groups.
+
+    1. Delete all mailing list files in mailing list directory.
+
+    2. Create new mailing list files for each group in the database.
+    """
     app = create_app(config) if config else create_app()
+    directory = app.config.get('MAILING_LIST_DIR')
+    prefix = app.config['MAILING_LIST_FILE_PREFIX']
+
+    if not directory:
+        echo('No directory for mailing lists specified.')
+        return
+
+    # Delete exists lists
+    if isdir(directory):
+        for filename in listdir(directory):
+            if filename.startswith(prefix):
+                remove(join(directory, filename))
+
+    # Create new lists
     with app.app_context():
         groups = app.data.driver.db['groups'].find({}, {'_id': 1})
         new_groups(groups)
@@ -144,7 +165,7 @@ def no_ldap_prompts(ctx, param, value):
         prompt="MongoDB database name",
         help="MongoDB database name.")
 # Storage settings
-@option("--forward-dir", "FORWARD_DIR", default=FORWARD_DIR,
+@option("--mailing-list-dir", "MAILING_LIST_DIR", default="mailing_lists",
         type=Path(file_okay=False, resolve_path=True),
         prompt="Directory to store mailing list files",
         help="Forward directory.")

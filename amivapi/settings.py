@@ -38,8 +38,11 @@ X_HEADERS = ['Authorization', 'Content-Type', 'Cache-Control',
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 CACHE_CONTROL = 'no-store, must-revalidate'
 
+# Mailing List Files
+MAILING_LIST_DIR = ''  # By default, no forwards are saved
+MAILING_LIST_FILE_PREFIX = '.forward+'
+
 # File Storage
-FORWARD_DIR = ''  # By default, no forwards are saved
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True
 MEDIA_URL = 'string'  # Very important to match url properly
