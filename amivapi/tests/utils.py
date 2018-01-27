@@ -6,10 +6,7 @@
 
 from itertools import count
 import json
-import os
-from shutil import rmtree
 import sys
-from tempfile import mkdtemp
 import unittest
 
 from bson import ObjectId
@@ -93,8 +90,6 @@ class WebTest(unittest.TestCase, FixtureMixin):
     # Test Config overwrites
     test_config = {
         'MONGO_DBNAME': 'test_amivapi',
-        'STORAGE_DIR': '',
-        'FORWARD_DIR': '',
         'API_MAIL': 'api@test.ch',
         'SMTP_SERVER': '',
         'TESTING': True,
@@ -126,11 +121,6 @@ class WebTest(unittest.TestCase, FixtureMixin):
         if sys.version_info >= (3, 2):
             self.assertItemsEqual = self.assertCountEqual
 
-        # create temporary directory for storage
-        base_dir = mkdtemp(prefix='amivapi_test')
-        self.test_config['STORAGE_DIR'] = os.path.join(base_dir, 'storage')
-        self.test_config['FORWARD_DIR'] = os.path.join(base_dir, 'forwards')
-
         # create eve app and test client
         self.app = bootstrap.create_app(**self.test_config)
         self.app.response_class = TestResponse
@@ -149,11 +139,6 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.connection.drop_database(self.test_config['MONGO_DBNAME'])
         # close database connection
         self.connection.close()
-
-        # remove temporary folders
-        for directory_name in 'STORAGE_DIR', 'FORWARD_DIR':
-            directory = self.app.config[directory_name]
-            rmtree(directory, ignore_errors=True)
 
     # Shortcuts to get a token
     counter = count()

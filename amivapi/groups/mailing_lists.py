@@ -24,9 +24,14 @@ def make_files(group_id):
 
     If the file exists it will be overwritten.
 
+    If `MAILING_LIST_DIR` is not set in the config (or empty), nothing happens.
+
     Args:
         group_id (str): The id of the group
     """
+    if not current_app.config.get('MAILING_LIST_DIR'):
+        return
+
     group_objectid = ObjectId(group_id)
 
     # Get group
@@ -50,33 +55,39 @@ def make_files(group_id):
         # Create all needed forwards
         for listname in group.get('receive_from', []):
             # Check if directory needs to be created
-            forward_path = current_app.config['FORWARD_DIR']
+            forward_path = current_app.config['MAILING_LIST_DIR']
             if not path.isdir(forward_path):
                 makedirs(forward_path)
 
-            with open(_get_filename(listname), 'w') as f:
-                f.write(addresses)
-                f.truncate()  # Needed if old file was bigger
+            with open(_get_filename(listname), 'w') as file:
+                file.write(addresses)
+                file.truncate()  # Needed if old file was bigger
 
 
 def remove_files(addresses):
     """Create several mailing list files
 
+    If `MAILING_LIST_DIR` is not set in the config (or empty), nothing happens.
+
     Args:
         addresses (list): email addresses with a forward file to delete
     """
+    if not current_app.config.get('MAILING_LIST_DIR'):
+        return
+
     for address in addresses:
         try:
             remove(_get_filename(address))
-        except OSError as e:
+        except OSError as error:
             current_app.logger.error(
-                str(e) + "\nCan not remove forward %s ! It seems the "
+                str(error) + "\nCan not remove forward %s ! It seems the "
                 "forward database is inconsistent!" % address)
 
 
 def _get_filename(email):
     """Generate the filename for a mailinglist for itet mail forwarding."""
-    return path.join(current_app.config['FORWARD_DIR'], '.forward+%s' % email)
+    return path.join(current_app.config['MAILING_LIST_DIR'],
+                     current_app.config['MAILING_LIST_FILE_PREFIX'] + email)
 
 
 # Hooks
