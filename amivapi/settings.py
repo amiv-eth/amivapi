@@ -39,7 +39,7 @@ MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 CACHE_CONTROL = 'no-store, must-revalidate'
 
 # File Storage
-FORWARD_DIR = 'amivapi_forwards'
+FORWARD_DIR = ''  # By default, no forwards are saved
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True
 MEDIA_URL = 'string'  # Very important to match url properly
