@@ -14,7 +14,7 @@ You should also use a [virtual environment](http://docs.python-guide.org/en/late
 
 Clone and install AMIV API:
 
-    git clone -b mongo https://github.com/amiv-eth/amivapi.git amivapi
+    git clone https://github.com/amiv-eth/amivapi.git
     cd amivapi
     pip install -r requirements.txt
 
