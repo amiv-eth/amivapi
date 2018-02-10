@@ -2,7 +2,7 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Event Validation.
+"""Group Validation.
 
 Also has method to create group_permissions_jsonschema.
 """
