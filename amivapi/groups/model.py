@@ -167,7 +167,7 @@ groupdomain = {
                 'description': 'If true, the group can be seen by all users and'
                 ' they can subscribe themselves.'
             },
-            'has_zoidberg_share': {
+            'requires_storage': {
                 'type': 'boolean',
                 'default': False,
                 'description': 'If the group has a share in the amiv storage.'
