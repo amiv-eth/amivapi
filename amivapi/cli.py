@@ -6,15 +6,12 @@
 """A command line interface for AMIVApi."""
 from os import listdir, remove
 from os.path import join, isdir
-from datetime import datetime as dt
 
-from click import argument, echo, File, group, option, Path
-from ruamel import yaml
+from click import argument, echo, group, option, Path
 
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
-from amivapi.settings import DEFAULT_CONFIG_FILENAME
 from amivapi.groups.mailing_lists import new_groups
 
 
@@ -37,7 +34,7 @@ def recreate_mailing_lists(config):
 
     2. Create new mailing list files for each group in the database.
     """
-    app = create_app(config) if config else create_app()
+    app = create_app(config_file=config)
     directory = app.config.get('MAILING_LIST_DIR')
     prefix = app.config['MAILING_LIST_FILE_PREFIX']
 
@@ -61,7 +58,7 @@ def recreate_mailing_lists(config):
 @config_option
 def cron(config):
     """Run scheduled tasks."""
-    app = create_app(config) if config else create_app()
+    app = create_app(config_file=config)
     with app.app_context():
         run_scheduled_tasks()
 
@@ -79,7 +76,7 @@ def ldap_sync(config, sync_all, nethz):
 
         amivapi ldap_sync adietmue bconrad blumh
     """
-    app = create_app(config) if config else create_app()
+    app = create_app(config_file=config)
     if not app.config['ENABLE_LDAP']:
         echo("LDAP is not enabled, can't proceed!")
     else:
@@ -99,7 +96,7 @@ def ldap_sync(config, sync_all, nethz):
 @config_option
 def run(config):
     """Start amivapi development server."""
-    app = create_app(config) if config else create_app()
+    app = create_app(config_file=config, DEBUG=True, TESTING=True)
 
     app.run(threaded=True)
 
@@ -119,77 +116,3 @@ def no_ldap_prompts(ctx, param, value):
             if opt.name in ['LDAP_USER', 'LDAP_PASS']:
                 opt.prompt = None
     return value
-
-
-@cli.command()
-# Turn off all prompts (defaults will be used)
-@option("--no-prompts", is_flag=True, is_eager=True, expose_value=False,
-        callback=no_prompts, help="Do not prompt user for input.")
-# Server settings
-@option("--root-password", "ROOT_PASSWORD", default="root",
-        prompt="AMIVAPI root password.",
-        help="Root Password.")
-@option("--debug/--no-debug", "DEBUG", default=False,
-        prompt="Enable debug mode",
-        help="Debug mode on/off.")
-# Email settings
-@option("--smtp", "SMTP_SERVER", default="localhost",
-        prompt="STMP server for outgoing mails",
-        help="SMTP server.")
-@option("--smtp", "SMTP_PORT", default="587",
-        prompt="STMP server port",
-        help="SMTP server port.")
-@option("--smtp", "SMTP_USERNAME", default="",
-        prompt="STMP username",
-        help="SMTP username.")
-@option("--smtp", "SMTP_PASSWORD", default="",
-        prompt="STMP password",
-        help="SMTP password.")
-@option("--mail", "API_MAIL", default="api@amiv.ethz.ch",
-        prompt="E-mail address for outgoing mails",
-        help="Api mail address.")
-# Database settings
-@option("--mongo-host", "MONGO_HOST", default='localhost',
-        prompt="MongoDB hostname",
-        help="MongoDB hostname.")
-@option("--mongo-port", "MONGO_PORT", default=27017,
-        prompt="MongoDB port",
-        help="MongoDB port.")
-@option("--mongo-username", "MONGO_USERNAME", default="",
-        prompt="MongoDB username",
-        help="MongoDB username.")
-@option("--mongo-password", "MONGO_PASSWORD", default="",
-        prompt="MongoDB password",
-        help="MongoDB password.")
-@option("--mongo-dbname", "MONGO_DBNAME", default='amivapi',
-        prompt="MongoDB database name",
-        help="MongoDB database name.")
-# Storage settings
-@option("--mailing-list-dir", "MAILING_LIST_DIR", default="mailing_lists",
-        type=Path(file_okay=False, resolve_path=True),
-        prompt="Directory to store mailing list files",
-        help="Forward directory.")
-# LDAP settings
-@option("--ldap/--no-ldap", "ENABLE_LDAP", default=False,
-        callback=no_ldap_prompts,
-        prompt="Enable LDAP",
-        help="LDAP on/off.")
-@option("--ldap-user", "LDAP_USER",
-        prompt="LDAP username",
-        help="LDAP username.")
-@option("--ldap-pass", "LDAP_PASS",
-        prompt="LDAP password",
-        help="LDAP password.")
-# Specify config file (optional)
-@argument("config_file", type=File('w'), default=DEFAULT_CONFIG_FILENAME)
-def create_config(config_file, **data):
-    """Generate a config file."""
-    if 'DEBUG' in data:
-        data['TESTING'] = True  # Eve debug info
-    if not data['ENABLE_LDAP']:
-        # Don't put those keys in config if disabled
-        del data['LDAP_USER']
-        del data['LDAP_PASS']
-
-    config_file.write("# Automatically generated on %s\n\n" % dt.utcnow())
-    yaml.safe_dump(data, config_file, default_flow_style=False)

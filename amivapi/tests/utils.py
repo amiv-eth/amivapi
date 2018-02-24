@@ -90,6 +90,8 @@ class WebTest(unittest.TestCase, FixtureMixin):
     # Test Config overwrites
     test_config = {
         'MONGO_DBNAME': 'test_amivapi',
+        'MONGO_USERNAME': 'test_user',
+        'MONGO_PASSWORD': 'test_pw',
         'API_MAIL': 'api@test.ch',
         'SMTP_SERVER': '',
         'TESTING': True,
