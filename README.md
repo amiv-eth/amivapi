@@ -5,6 +5,8 @@
 
 AMIV API is a Python-EVE based REST interface to manage members, events, mail forwards, job offers and study documents for a student organisation. It was created by AMIV an der ETH to restructure the existing IT infrastructure. If you are not from AMIV and think this is useful feel free to fork and modify.
 
+[Link to Cheatsheet](docs/Cheatsheet.md)
+
 ## Quickstart
 
 ### Prerequisites
