@@ -53,9 +53,12 @@ RETURN_MEDIA_AS_URL = True
 MEDIA_URL = 'string'  # Very important to match url properly
 EXTENDED_MEDIA_INFO = ['name', 'content_type', 'length', 'upload_date']
 
-# Mailing Lists
-MAILING_LIST_DIR = ''  # By default, no forwards are saved
-MAILING_LIST_FILE_PREFIX = '.forward+'
+# Mailing Lists, local and remote options (by default no storage)
+MAILING_LIST_FILE_PREFIX = '.forward+'  # default file name: .forward+groupname
+MAILING_LIST_DIR = None
+REMOTE_MAILING_LIST_ADDRESS = None
+REMOTE_MAILING_LIST_KEYFILE = None
+REMOTE_MAILING_LIST_DIR = './'  # Use home directory on remote by default
 
 # SMTP server defaults
 API_MAIL = 'api@amiv.ethz.ch'

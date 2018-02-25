@@ -3,14 +3,31 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 
-"""Tests for mailing list files."""
+"""Tests for mailing list files.
 
+To run integration tests for remote files, set the following environment
+variables:
+
+REMOTE_MAILING_LIST_ADDRESS: user@remote.host
+REMOTE_MAILING_LIST_KEYFILE: path to your keyfile, optional
+REMOTE_MAILING_LIST_DIR: storage path on remote server, default is './',
+                         `/tmp/apitest` or similar might be a good idea
+
+"""
+
+import pytest
+
+from os import getenv
 from os.path import isfile, join
 from shutil import rmtree
 from tempfile import mkdtemp
 
+from mock import patch, call
 
 from amivapi.tests.utils import WebTestNoAuth
+
+from amivapi.groups.mailing_lists import (
+    make_files, remove_files, ssh_command, ssh_create, ssh_remove)
 
 
 class MailingListTest(WebTestNoAuth):
@@ -153,3 +170,115 @@ class MailingListTest(WebTestNoAuth):
                        data={'email': "new@amiv.ch"}, status_code=200)
 
         self.assertFileContent('a', ['new@amiv.ch'])
+
+
+class RemoteMailingListTest(WebTestNoAuth):
+    """Test creation and removal of remote mailing list files via ssh.
+
+    The local mailing list tests already ensure that the functions to create
+    and remove files are working properly, these tests only make sure that
+    the ssh functions are called if required:
+
+    Ssh should be the case if the REMOTE_MAILING_LIST_ADDRESS is set.
+    The ssh calls are mocked (separate integration tests for actual conn.)
+    """
+
+    def setUp(self):
+        """Set config key and mock ssh call."""
+        super(RemoteMailingListTest, self).setUp()
+        self.app.config['REMOTE_MAILING_LIST_ADDRESS'] = 'not none!'
+
+    def test_remote_create_called(self):
+        """Test that creating the file over ssh is attempted."""
+        with patch('amivapi.groups.mailing_lists.ssh_create') as create:
+            group_id = 24 * '0'
+            receive_from = ['a', 'b']
+            self.load_fixture({
+                'groups': [{'_id': group_id, 'receive_from': receive_from}]
+            })
+            with self.app.app_context():
+                make_files(group_id)
+                # Both times there will be no content
+                create.assert_has_calls(
+                    [call(address, '') for address in receive_from],
+                    any_order=True
+                )
+
+    def test_remote_remove_called(self):
+        """Test that removing the file over ssh is attempted."""
+        addresses = ['a', 'b']
+        with patch('amivapi.groups.mailing_lists.ssh_remove') as remove:
+            with self.app.app_context():
+                remove_files(addresses)
+                remove.assert_has_calls(
+                    [call(address) for address in addresses],
+                    any_order=True
+                )
+
+
+def skip_without_address(func):
+    """Decorator to mark tests to be skipped if envvar is not set."""
+    if getenv('REMOTE_MAILING_LIST_ADDRESS'):
+        return func
+    else:
+        return pytest.mark.skip(reason="Test")(func)
+
+
+class SSHIntegrationTest(WebTestNoAuth):
+    """Test the actual ssh connection.
+
+    You need to set environment variables to run these tests:
+
+    REMOTE_MAILING_LIST_ADDRESS: user@remote.host
+    REMOTE_MAILING_LIST_KEYFILE: path to your keyfile, optional
+    REMOTE_MAILING_LIST_DIR: storage path on remote server, default is './'
+
+    py.test will inform you if the tests are skipped.
+    """
+    def setUp(self):
+        """Set config keys from environment variables."""
+        super(SSHIntegrationTest, self).setUp()
+        for var in ['ADDRESS', 'KEYFILE', 'DIR']:
+            full_var = 'REMOTE_MAILING_LIST_%s' % var
+            self.app.config[full_var] = getenv(full_var)
+
+    def get_remote_path(self, filename):
+        return join(self.app.config['REMOTE_MAILING_LIST_DIR'],
+                    self.app.config['MAILING_LIST_FILE_PREFIX'] + filename)
+
+    def assert_remote_content(self, filename, content):
+        """Use ssh to verify remote file content."""
+        self.assertEqual(
+             content, ssh_command('cat %s' % self.get_remote_path(filename)))
+
+    def assert_remote_does_not_exist(self, filename):
+        """Use ssh to verify remote file does not exist."""
+        path = self.get_remote_path(filename)
+        # ls <filename> returns the filename (if it exists). Error otherwise.
+        with self.assertRaises(RuntimeError):
+            ssh_command('ls %s' % path)
+
+    @skip_without_address
+    def test_create_and_remove(self):
+        """Test that a file can be created and removed.
+
+        (Both in same test to clean up remote server)
+        """
+        with self.app.app_context():
+            filename = 'test.txt'
+            content = 'test@amiv.ch\ntest2@amiv.ch\n'
+            self.assert_remote_does_not_exist(filename)
+
+            ssh_create(filename, content)
+            self.assert_remote_content(filename, content)
+
+            ssh_remove(filename)
+            self.assert_remote_does_not_exist(filename)
+
+    @skip_without_address
+    def test_remove_does_not_raise(self):
+        """Remove will not raise an exception for missing files."""
+        with self.app.app_context():
+            filename = 'ThisDoesNotExistsIHope.txt'
+            self.assert_remote_does_not_exist(filename)
+            ssh_remove(filename)  # No Exception should crash the test
