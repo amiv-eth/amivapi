@@ -37,9 +37,12 @@ def new_groups(groups):
 
 def updated_group(updates, original):
     """Update group mailing lists if any address changes."""
-    # This is just the simplest solution. Could be more advanced if needed.
+    # Remove no longer needed forwards
+    if 'receive_from' in updates:
+        remove_files(address for address in original.get('receive_from', [])
+                     if address not in updates['receive_from'])
+    # Update remaining forwards
     if ('receive_from' in updates) or ('forward_to' in updates):
-        remove_files(original.get('receive_from', []))
         make_files(original['_id'])
 
 
@@ -168,9 +171,12 @@ def _get_remote_path(email):
 def ssh_create(address, content):
     """Create a file with content remotely over ssh."""
     # Create dir, then use 'cat - ' to listen to stdin
+    # Create temporary file first, if upload is completed replace
     folder = current_app.config['REMOTE_MAILING_LIST_DIR']
     file = _get_remote_path(address)
-    ssh_command('mkdir -p %s; cat - > %s' % (folder, file), input=content)
+    tempfile = file + '.tmp'
+    ssh_command('mkdir -p %s; cat - > %s; mv %s %s;'
+                % (folder, tempfile, tempfile, file), input=content)
 
 
 def ssh_remove(address):
