@@ -12,7 +12,7 @@ from click import argument, echo, group, option, Path
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
-from amivapi.groups.mailing_lists import new_groups
+from amivapi.groups.mailing_lists import update_group
 
 
 @group()
@@ -30,9 +30,11 @@ config_option = option("--config",
 def recreate_mailing_lists(config):
     """(Re-)create mailing lists for all groups.
 
-    1. Delete all mailing list files in mailing list directory.
+    1. Delete all mailing list files.
 
-    2. Create new mailing list files for each group in the database.
+    2. Create new mailing list files.
+
+    For every group, we call the update_group function for this
     """
     app = create_app(config_file=config)
     directory = app.config.get('MAILING_LIST_DIR')
@@ -50,8 +52,9 @@ def recreate_mailing_lists(config):
 
     # Create new files
     with app.app_context():
-        groups = app.data.driver.db['groups'].find({}, {'_id': 1})
-        new_groups(groups)
+        groups = app.data.driver.db['groups'].find({})
+        for g in groups:
+            update_group(g, g)  # Use group as update and original
 
 
 @cli.command()

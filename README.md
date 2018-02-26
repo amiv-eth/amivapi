@@ -57,6 +57,11 @@ Now it's time to configure AMIVAPI. Create a file `config.py`
 
     # Mailing lists for groups (optional, uncomment if needed)
     # MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
+    
+    # Remote mailings list files via ssh (optional)
+    # REMOTE_MAILING_LIST_ADDRESS = 'user@remote.host'
+    # REMOTE_MAILING_LIST_KEYFILE = ''
+    # REMOTE_MAILING_LIST_DIR = './'
 
     # SMTP configuration for mails sent by AMIVAPI (optional)
     # API_MAIL = 'api@amiv.ethz.ch'
