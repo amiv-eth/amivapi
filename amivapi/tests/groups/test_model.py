@@ -108,7 +108,7 @@ class GroupModelTest(WebTest):
         user_token = self.get_user_token(user_id)
         mod_token = self.get_user_token(mod_id)
 
-        patch = {'has_zoidberg_share': True}
+        patch = {'requires_storage': True}
         header = {'If-Match': etag}
 
         self.api.patch("/groups/%s" % group_id, data=patch, headers=header,
