@@ -174,13 +174,13 @@ groupdomain = {
             },
             'permissions': {
                 'type': 'dict',
-                'propertyschema': {'type': 'string',
-                                   'api_resources': True},
+                'keyschema': {'type': 'string',
+                              'api_resources': True},
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'nullable': True,
                 'description': 'permissions the group grants. The value is a '
-                'json object with resources as properties and "read" or '
+                'json object with resources as keys and "read" or '
                 '"readwrite" as a value.'
                 # TODO: Make the schema available as a jsonschema
             }

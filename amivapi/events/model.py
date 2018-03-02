@@ -235,13 +235,11 @@ eventdomain = {
                 'type': 'objectid',
                 'nullable': False,
                 'unique_combination': ['event'],
-                'description': 'Provide either user or email.'
+                'description': 'Provide either user or email.',
 
                 # This creates a presence XOR with email
-                # TODO: This needs cerberus > 1.0.1
-                # enable as soon as eve supports it
-                # 'required': True,
-                # 'excludes': ['email']
+                'required': True,
+                'excludes': ['email']
             },
             'additional_fields': {
                 'nullable': True,
@@ -259,13 +257,11 @@ eventdomain = {
                 'unique_combination': ['event'],
                 'description': 'For registered users, this is just a projection'
                 ' of your general email-address. External users need to provide'
-                ' their email here.'
+                ' their email here.',
 
                 # This creates a presence XOR with user
-                # TODO: This needs cerberus > 1.0.1
-                # enable as soon as eve supports it
-                # 'required': True,
-                # 'excludes': ['user']
+                'required': True,
+                'excludes': ['user']
             },
             'confirmed': {
                 'type': 'boolean',
