@@ -12,7 +12,7 @@ from click import argument, echo, group, option, Path
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
-from amivapi.groups.mailing_lists import update_group
+from amivapi.groups.mailing_lists import updated_group
 
 
 @group()
@@ -54,7 +54,7 @@ def recreate_mailing_lists(config):
     with app.app_context():
         groups = app.data.driver.db['groups'].find({})
         for g in groups:
-            update_group(g, g)  # Use group as update and original
+            updated_group(g, g)  # Use group as update and original
 
 
 @cli.command()
