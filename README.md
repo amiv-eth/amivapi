@@ -7,79 +7,125 @@ AMIV API is a Python-EVE based REST interface to manage members, events, mail fo
 
 [Request Cheatsheet (Filtering etc.)](docs/Cheatsheet.md)
 
+## Deploy using Docker
+
+AMIV API is available as a [docker](https://www.docker.com) container.
+If you do not have mongodb, you can also use docker to quickly start
+a database with the default settings used by AMIV API:
+
+```sh
+docker service create --name mongodb -p 27017:27017 \
+    -e MONGODB_DATABASE=amivapi \
+    -e MONGODB_USERNAME=amivapi \
+    -e MONGODB_PASSWORD=amivapi \
+     bitnami/mongodb
+```
+
+If the database is runnning, you can start the amivapi service:
+
+```sh
+docker service create amiveth/amivapi -p 80:80
+```
+
+[Configuration](#Configuration) can easily be done with a docker secret
+
+```sh
+docker secret create amivapi_config <path-to-config.py>
+
+# Create new API service with secret
+docker service create amiveth/amivapi -p 80:80 --secret amivapi_config
+# Add secret to existing service
+docker service update --secret-add amivapi_config amivapi
+```
+
+If you want to use a different name for the secret (or cannot use secrets
+and have to mount the config manually), you can use the environment
+variable `AMIVAPI_CONFIG` to set the config path in the API container.
+
 ## Installation
 
 You need to have mongodb [installed](https://docs.mongodb.com/manual/installation/) and [running](https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/).
+(Alternatively, use docker to run a mongo container)
 
 You should also use a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
 Clone and install AMIV API:
 
-    git clone https://github.com/amiv-eth/amivapi.git
-    cd amivapi
-    pip install -r requirements.txt
+```sh
+git clone https://github.com/amiv-eth/amivapi.git
+cd amivapi
+pip install -r requirements.txt
+```
 
 This will also install amivapi in editable mode (take a look at
 `requirements.txt` if you are curious) which allows us to use the command
 line interface of amivapi:
 
-    # Run a development server
-    amivapi run
-    # Get help, works for sub-commands as well
-    amivapi --help
-    amivapi run --help
-
+```sh
+# Run a development server
+amivapi run
+# Get help, works for sub-commands as well
+amivapi --help
+amivapi run --help
+```
 
 ## Running in Production
 
 If you want to use AMIV API properly behind a webserver, e.g. Apache or Nginx
 with uwsgi, you need to create a file, e.g. `app.py`, with the following content:
 
-    from amivapi import create_app
+```python
+from amivapi import create_app
 
-    app = create_app()
-
+app = create_app()
+```
 
 ## Configuration
 
 Now it's time to configure AMIVAPI. Create a file `config.py`
 (you can choose any other name as well) with the following content:
 
-    # Root password, *definitely* change this!
-    ROOT_PASSWORD = 'root'
+```python
+# Root password, *definitely* change this!
+ROOT_PASSWORD = 'root'
 
-    # MongoDB Configuration
-    MONGO_HOST = 'localhost'
-    MONGO_PORT = 27017
-    MONGO_DBNAME = 'amivapi'
-    MONGO_USERNAME = ''
-    MONGO_PASSWORD = ''
+# MongoDB Configuration
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27017
+MONGO_DBNAME = 'amivapi'
+MONGO_USERNAME = ''
+MONGO_PASSWORD = ''
 
-    # Mailing lists for groups (optional, uncomment if needed)
-    # MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
+# Mailing lists for groups (optional, uncomment if needed)
+# MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
     
-    # Remote mailings list files via ssh (optional)
-    # REMOTE_MAILING_LIST_ADDRESS = 'user@remote.host'
-    # REMOTE_MAILING_LIST_KEYFILE = ''
-    # REMOTE_MAILING_LIST_DIR = './'
+# Remote mailings list files via ssh (optional)
+# REMOTE_MAILING_LIST_ADDRESS = 'user@remote.host'
+# REMOTE_MAILING_LIST_KEYFILE = ''
+# REMOTE_MAILING_LIST_DIR = './'
 
-    # SMTP configuration for mails sent by AMIVAPI (optional)
-    # API_MAIL = 'api@amiv.ethz.ch'
-    # SMTP_SERVER = 'localhost'
-    # SMTP_PORT = '587'
-    # SMTP_USERNAME = ''
-    # SMTP_PASSWORD = ''
+# SMTP configuration for mails sent by AMIVAPI (optional)
+# API_MAIL = 'api@amiv.ethz.ch'
+# SMTP_SERVER = 'localhost'
+# SMTP_PORT = '587'
+# SMTP_USERNAME = ''
+# SMTP_PASSWORD = ''
+```
 
 AMIV API looks for a configuration in the following order:
 
 1. If using `create_app`, you can name the file explicitly:
 
-    app = create_app(config_file="/path/to/your/config.py")
+   ```python 
+   app = create_app(config_file="/path/to/your/config.py")
+   ```
 
 2. If no file is specified, you can use the `AMIVAPI_CONFIG` environment
    variable:
 
-    $set AMIVAPI_CONFIG path/to/your/config.py
+   ```sh
+   $set AMIVAPI_CONFIG path/to/your/config.py
+   ```
 
 3. If no environment variable is specified either, AMIV API checks for a file
    name `config.py` in the current working directory
@@ -93,25 +139,33 @@ config, see `amivapi <command> --help`, e.g. `amivapi run --help`
 Create a test user `test_user` with password `test_pw` in the `test_amviapi`
 database, which will be used for all tests.
 
-    mongo test_amivapi --eval \
-        'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
+```sh
+mongo test_amivapi --eval \
+'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
+```
 
 Install the test requirements:
 
-    pip install pytest tox
-
+```sh
+pip install pytest tox
+```
 To run all tests:
 
-    tox
+```sh
+tox
+```
 
 To run tests based on a keyword:
 
-    tox -- -k <keyword>
+```sh
+tox -- -k <keyword>
+```
 
 To run just one python version:
 
-    tox -e py36
-
+```sh
+tox -e py36
+```
 
 ## Problems or Questions?
 

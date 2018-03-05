@@ -41,11 +41,11 @@ MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
 CACHE_CONTROL = 'no-store, must-revalidate'
 
 # MongoDB
-MONGO_DBNAME = 'amivapi'
 MONGO_HOST = 'localhost'
-MONGO_PASSWORD = ''
 MONGO_PORT = 27017
-MONGO_USERNAME = ''
+MONGO_DBNAME = 'amivapi'
+MONGO_USERNAME = 'amivapi'
+MONGO_PASSWORD = 'amivapi'
 
 # File Storage
 RETURN_MEDIA_AS_BASE64_STRING = False

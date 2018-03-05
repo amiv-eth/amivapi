@@ -31,19 +31,16 @@ RUN apk del .uwsgi-deps .requirements-deps
 # Create a minimal python file that creates an amivapi app
 RUN printf 'from amivapi import create_app\napp = create_app()' > /api/app.py
 
-
 # Run uwsgi as user amivapi to serve the app on port 80
 CMD ["uwsgi", "--master", \
-# Switch user
+# User Setup
 "--uid", "amivapi", "--gid", "amivapi", \
-# [::] is required to listen for both IPv4 and IPv6
-# 80 is a priviledged port, using 'shared-port' binds before switching user
-# '=0' references the first shared port
+# Per default uwsgi uses preforking, which pymongo does not like -> disable
+"--lazy-apps", \
+# Port 80 requires permission, use shared-socket to bind before dropping root
 "--shared-socket", "[::]:80", \
-"--http", "=0", \
-# More efficient usage of resources
-"--processes", "4", \
-# Exit if app cannot be started, e.g. if config is missing
+"--http-socket", "=0", \
+# Stop uwsgi if app cannot be started
 "--need-app", \
 # Allow accessing the app at / as well as /amivapi for flexible hosting
 "--manage-script-name", \
