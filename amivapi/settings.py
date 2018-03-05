@@ -44,8 +44,8 @@ CACHE_CONTROL = 'no-store, must-revalidate'
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
-MONGO_USERNAME = 'amivapi'
-MONGO_PASSWORD = 'amivapi'
+MONGO_USERNAME = ''
+MONGO_PASSWORD = ''
 
 # File Storage
 RETURN_MEDIA_AS_BASE64_STRING = False

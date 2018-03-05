@@ -14,28 +14,39 @@ If you do not have mongodb, you can also use docker to quickly start
 a database with the default settings used by AMIV API:
 
 ```sh
-docker service create --name mongodb -p 27017:27017 \
+# Create a network s.t. database and api can communicate
+docker network create --driver overlay backend
+docker service create \
+    --name mongodb -p 27017:27017 --network backend\
     -e MONGODB_DATABASE=amivapi \
     -e MONGODB_USERNAME=amivapi \
     -e MONGODB_PASSWORD=amivapi \
-     bitnami/mongodb
+    bitnami/mongodb
 ```
 
-If the database is runnning, you can start the amivapi service:
+Next, create a configuration with (at least) the mongodb credentials and save
+it as `amivapi_config.py` (or choose another name).
 
-```sh
-docker service create amiveth/amivapi -p 80:80
+```python
+MONGO_HOST = 'mongodb'  # Use the name of your mongodb service
+MONGO_PORT = 27017
+MONGO_DBNAME = 'amivapi'
+MONGO_USERNAME = 'amivapi'
+MONGO_PASSWORD = 'amivapi'
 ```
 
-[Configuration](#Configuration) can easily be done with a docker secret
+Finally, create API service and give it access to the config using a docker
+secret:
 
 ```sh
-docker secret create amivapi_config <path-to-config.py>
+# Create secret
+docker secret create amivapi_config <path/to/amivapi_config.py>
 
 # Create new API service with secret
-docker service create amiveth/amivapi -p 80:80 --secret amivapi_config
-# Add secret to existing service
-docker service update --secret-add amivapi_config amivapi
+docker service create \
+    --name amivapi  -p 80:80 --network backend \
+    --secret amivapi_config \
+    amiveth/amivapi
 ```
 
 If you want to use a different name for the secret (or cannot use secrets
@@ -45,7 +56,6 @@ variable `AMIVAPI_CONFIG` to set the config path in the API container.
 ## Installation
 
 You need to have mongodb [installed](https://docs.mongodb.com/manual/installation/) and [running](https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/).
-(Alternatively, use docker to run a mongo container)
 
 You should also use a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
