@@ -43,8 +43,9 @@ secret:
 docker secret create amivapi_config <path/to/amivapi_config.py>
 
 # Create new API service with secret
+# Map port 80 (host) to 8080 (container)
 docker service create \
-    --name amivapi  -p 80:80 --network backend \
+    --name amivapi  -p 80:8080 --network backend \
     --secret amivapi_config \
     amiveth/amivapi
 ```
