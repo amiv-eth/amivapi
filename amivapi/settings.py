@@ -97,6 +97,14 @@ CONFIRM_EMAIL_TEXT = (
 CONFIRM_TEXT = "Your singup was confirmed!"
 SIGNUP_DELETED_TEXT = "Your signup was removed."
 
+# All department affiliations in ldap (departmentnumber) which are assigned to AMIV (by VSETH)
+LDAP_MEMBER_DEPARTMENTNUMBER_LIST = [
+    u'ETH Student D-ITET',
+    u'ETH Studentin D-ITET',
+    u'ETH Student D-MAVT',
+    u'ETH Studentin D-MAVT'
+]
+
 # All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
 LDAP_MEMBER_OU_LIST = [
     u'Biomedical Engineering MSc',

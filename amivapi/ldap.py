@@ -74,10 +74,10 @@ def sync_all():
     Returns:
         list: Data of all updated users.
     """
-    # Create query: VSETH member and part of any of member ou
-    ou_items = ''.join(u"(ou=%s)" % _escape(item) for item in
-                       current_app.config['LDAP_MEMBER_OU_LIST'])
-    query = u"(& (ou=VSETH Mitglied) (| %s) )" % ou_items
+    # Create query: VSETH member and departmentnumber of any member
+    departmentnumber_items = ''.join(u"(departmentnumber=%s)" % _escape(item) for item in
+                       current_app.config['LDAP_MEMBER_DEPARTMENTNUMBER_LIST'])
+    query = u"(& (ou=VSETH Mitglied) (| %s) )" % departmentnumber_items
     ldap_data = _search(query)
 
     return [_create_or_update_user(user) for user in ldap_data]
@@ -91,6 +91,7 @@ def _search(query):
         'givenName',
         'sn',
         'swissEduPersonGender',
+        'departmentnumber',
         'ou'
     ]
     results = current_app.config['ldap_connector'].search(query,
@@ -129,17 +130,20 @@ def _filter_data(data):
     res['gender'] = \
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
-    if 'D-ITET' in data['ou']:
+    if any('D-ITET' in item for item in data['departmentnumber']):
         res['department'] = u"itet"
-    elif 'D-MAVT' in data['ou']:
+    elif any('D-MAVT' in item for item in data['departmentnumber']):
         res['department'] = u"mavt"
     else:
         res['department'] = u"other"
 
-    # ou contains all 'organization units'. This contains fields of study.
-    # Check if it contains any field of study assigned to us
-    ou_list = current_app.config['LDAP_MEMBER_OU_LIST']
-    is_member = bool(set(data['ou']).intersection(set(ou_list)))
+    # departmentnumber contains the list of the current field of study.
+    # Check if is contains any value assined to us
+    department_list = current_app.config['LDAP_MEMBER_DEPARTMENTNUMBER_LIST']
+    is_member = False
+    for search_str in department_list:
+        if any(search_str in item for item in data['departmentnumber']):
+            is_member = True
 
     if ('VSETH Mitglied' in data['ou']) and is_member:
         res['membership'] = u"regular"
