@@ -93,7 +93,7 @@ def _search(query):
         'givenName',
         'sn',
         'swissEduPersonGender',
-        'departmentnumber',
+        'departmentNumber',
         'ou'
     ]
     results = current_app.config['ldap_connector'].search(query,
