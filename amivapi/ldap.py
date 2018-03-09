@@ -12,7 +12,7 @@ The app configuration needs to contain the following ldap entries:
 - `LDAP_PASS'
 
 Possible improvements:
-- The `_filter_data' function is rather complicated. Maybe some parts could
+- The `_process_data' function is rather complicated. Maybe some parts could
   be improved or moved to the nethz module?
 - `_create_or_patch_user' is also not very straightforward, maybe the ldap
   importing logic could be simplified?
@@ -75,9 +75,11 @@ def sync_all():
         list: Data of all updated users.
     """
     # Create query: VSETH member and departmentnumber of any member
-    departmentnumber_items = ''.join(u"(departmentnumber=%s)" % _escape(item) for item in
-                       current_app.config['LDAP_MEMBER_DEPARTMENTNUMBER_LIST'])
-    query = u"(& (ou=VSETH Mitglied) (| %s) )" % departmentnumber_items
+    # since the departmentNumber contains more than just the phrase
+    # we are looking for, include '*'
+    keywords = ''.join(u"(departmentNumber=*%s*)" % _escape(item)
+                       for item in current_app.config['LDAP_DEPARTMENT_MAP'])
+    query = u"(& (ou=VSETH Mitglied) (| %s) )" % keywords
     ldap_data = _search(query)
 
     return [_create_or_update_user(user) for user in ldap_data]
@@ -96,7 +98,7 @@ def _search(query):
     ]
     results = current_app.config['ldap_connector'].search(query,
                                                           attributes=attr)
-    return (_filter_data(res) for res in results)
+    return (_process_data(res) for res in results)
 
 
 def _escape(query):
@@ -114,7 +116,7 @@ def _escape(query):
     return query
 
 
-def _filter_data(data):
+def _process_data(data):
     """Utility to filter ldap data.
 
     It will take all fields relevant for a user update and map them
@@ -130,25 +132,15 @@ def _filter_data(data):
     res['gender'] = \
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
-    if any('D-ITET' in item for item in data['departmentnumber']):
-        res['department'] = u"itet"
-    elif any('D-MAVT' in item for item in data['departmentnumber']):
-        res['department'] = u"mavt"
-    else:
-        res['department'] = u"other"
+    # The departmentNumber field contains certain phrases for each department
+    department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
+    department = (dept for phrase, dept in department_map
+                  if phrase in data['departmentNumber'][0])
+    res['department'] = next(department, None)  # None if no match
 
-    # departmentnumber contains the list of the current field of study.
-    # Check if is contains any value assined to us
-    department_list = current_app.config['LDAP_MEMBER_DEPARTMENTNUMBER_LIST']
-    is_member = False
-    for search_str in department_list:
-        if any(search_str in item for item in data['departmentnumber']):
-            is_member = True
-
-    if ('VSETH Mitglied' in data['ou']) and is_member:
-        res['membership'] = u"regular"
-    else:
-        res['membership'] = u"none"
+    # Membership: One of our departments and VSETH member
+    is_member = res['department'] and ('VSETH Mitglied' in data['ou'])
+    res['membership'] = u"regular" if is_member else u'none'
 
     return res
 

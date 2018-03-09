@@ -90,7 +90,7 @@ def ldap_sync(config, sync_all, nethz):
             else:
                 for user in nethz:
                     if ldap.sync_one(user) is not None:
-                        echo("Succesfully synchronized '%s'." % user)
+                        echo("Successfully synchronized '%s'." % user)
                     else:
                         echo("Could not synchronize '%s'." % user)
 
