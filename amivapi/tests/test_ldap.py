@@ -12,9 +12,13 @@ integration with the real ldap. More info there.
 """
 
 from mock import MagicMock, patch, call
+import warnings
+
+from os import getenv
+from pprint import pformat
 
 from amivapi import ldap
-from amivapi.tests.utils import WebTestNoAuth
+from amivapi.tests.utils import WebTest, WebTestNoAuth, skip_if_false
 
 
 class LdapTest(WebTestNoAuth):
@@ -33,8 +37,8 @@ class LdapTest(WebTestNoAuth):
         ldap_pass = 'T3ST'
         initialized_ldap = 'I totally am an ldap instance.'
 
-        self.app.config['LDAP_USER'] = ldap_user
-        self.app.config['LDAP_PASS'] = ldap_pass
+        self.app.config['LDAP_USERNAME'] = ldap_user
+        self.app.config['LDAP_PASSWORD'] = ldap_pass
         to_patch = 'amivapi.ldap.AuthenticatedLdap'
 
         with patch(to_patch, return_value=initialized_ldap) as init:
@@ -282,3 +286,87 @@ class LdapTest(WebTestNoAuth):
                 mock_search.assert_called_with(expected_query)
                 mock_create.assert_has_calls([call(1), call(2)])
                 self.assertEqual(result, [3, 3])
+
+
+# Integration Tests
+
+# Get data from environment
+LDAP_USERNAME = getenv('LDAP_TEST_USERNAME')
+LDAP_PASSWORD = getenv('LDAP_TEST_PASSWORD')
+LDAP_USER_NETHZ = getenv('LDAP_TEST_USER_NETHZ')
+LDAP_USER_PASSWORD = getenv('LDAP_TEST_USER_PASSWORD')
+
+requires_credentials = skip_if_false(LDAP_USERNAME and LDAP_PASSWORD,
+                                     "LDAP test requires environment "
+                                     "variables 'LDAP_TEST_USERNAME' and "
+                                     "'LDAP_TEST_PASSWORD")
+
+
+class LdapIntegrationTest(WebTest):
+    """Tests for LDAP connection."""
+
+    def setUp(self, *args, **kwargs):
+        """Extended setUp.
+
+        Load environment variables and test general ldap connection.
+        """
+        extra_config = {
+            'LDAP_USERNAME': LDAP_USERNAME,
+            'LDAP_PASSWORD': LDAP_PASSWORD,
+        }
+        extra_config.update(kwargs)
+        super(LdapIntegrationTest, self).setUp(*args, **extra_config)
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ and LDAP_USER_PASSWORD,
+                   "LDAP login test requires environment variables"
+                   "'LDAP_TEST_USER_NETHZ' and 'LDAP_TEST_USER_PASSWORD'")
+    def test_login(self):
+        """Test that post to sessions works."""
+        credentials = {'username': LDAP_USER_NETHZ,
+                       'password': LDAP_USER_PASSWORD}
+        self.api.post('/sessions', data=credentials, status_code=201)
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ and LDAP_USER_PASSWORD,
+                   "LDAP login test requires environment variables"
+                   "'LDAP_TEST_USER_NETHZ' and 'LDAP_TEST_USER_PASSWORD'")
+    def test_authenticate_user(self):
+        """Assert authentication is successful."""
+        with self.app.app_context():
+            self.assertTrue(
+                ldap.authenticate_user(LDAP_USER_NETHZ, LDAP_USER_PASSWORD)
+            )
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ,
+                   "LDAP user test requires environment variable"
+                   "'LDAP_TEST_USER_NETHZ'")
+    def test_sync_one(self):
+        """Assert synchronizing one user works."""
+        with self.app.test_request_context():
+            user = ldap.sync_one(LDAP_USER_NETHZ)
+            data_only = {key: value for (key, value) in user.items()
+                         if not key.startswith('_')}  # no meta fields
+
+            # Double check with database
+            db_user = self.db['users'].find_one({'nethz': LDAP_USER_NETHZ})
+
+            # Compare with database (ignore meta fields)
+            for key in data_only:
+                self.assertEqual(user[key], db_user[key])
+
+            # Display user data for manual verification
+
+            message = 'Manual data check required:\n%s' % pformat(data_only)
+            warnings.warn(UserWarning(message))
+
+    @requires_credentials
+    def test_sync_all(self):
+        """Test sync all imports users by checking the test user."""
+        with self.app.test_request_context():
+            # No users in db
+            self.assertEqual(self.db['users'].find().count(), 0)
+            ldap.sync_all()
+            # Some users in db
+            self.assertNotEqual(self.db['users'].find().count(), 0)

@@ -28,9 +28,10 @@ from amivapi.utils import admin_permissions
 
 def init_app(app):
     """Attach an ldap connection to the app."""
-    user = app.config['LDAP_USER']
-    password = app.config['LDAP_PASS']
-    app.config['ldap_connector'] = AuthenticatedLdap(user, password)
+    user = app.config['LDAP_USERNAME']
+    password = app.config['LDAP_PASSWORD']
+    if user and password:
+        app.config['ldap_connector'] = AuthenticatedLdap(user, password)
 
 
 def authenticate_user(cn, password):
@@ -43,7 +44,8 @@ def authenticate_user(cn, password):
     Returns:
         bool: True if successful, False otherwise
     """
-    return current_app.config['ldap_connector'].authenticate(cn, password)
+    return (current_app.config.get('ldap_connector') and
+            current_app.config['ldap_connector'].authenticate(cn, password))
 
 
 def sync_one(cn):

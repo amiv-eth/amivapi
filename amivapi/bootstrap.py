@@ -65,8 +65,7 @@ def create_app(config_file=None, **kwargs):
     app.logger.info(config_status)
 
     # Create LDAP connector
-    if app.config['ENABLE_LDAP']:
-        ldap.init_app(app)
+    ldap.init_app(app)
 
     # Initialize modules to register resources, validation, hooks, auth, etc.
     users.init_app(app)
