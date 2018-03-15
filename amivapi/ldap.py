@@ -44,8 +44,7 @@ def authenticate_user(cn, password):
     Returns:
         bool: True if successful, False otherwise
     """
-    return (current_app.config.get('ldap_connector') and
-            current_app.config['ldap_connector'].authenticate(cn, password))
+    return current_app.config['ldap_connector'].authenticate(cn, password)
 
 
 def sync_one(cn):

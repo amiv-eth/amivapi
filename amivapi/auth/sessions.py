@@ -115,7 +115,8 @@ def process_login(items):
         password = item['password']
 
         # LDAP
-        if ldap.authenticate_user(username, password):
+        if (app.config.get('ldap_connector') and
+                ldap.authenticate_user(username, password)):
             # Success, sync user and get token
             updated = ldap.sync_one(username)
             _prepare_token(item, updated['_id'])
