@@ -42,7 +42,7 @@ class FakeAuthTest(WebTest):
         - No auth at all for 'fake_nothing'
 
         """
-        super(FakeAuthTest, self).setUp()
+        super().setUp()
 
         self.app.config['DOMAIN']['fake'] = {
             # Its important we use a instance and not the class

@@ -60,7 +60,7 @@ class TestClient(FlaskClient):
         # get the actual response and assert status
         expected_code = kwargs.pop('status_code', None)
 
-        response = super(TestClient, self).open(*args, **kwargs)
+        response = super().open(*args, **kwargs)
 
         status_code = response.status_code
 
@@ -119,7 +119,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.api will be a flask TestClient to make requests
         self.db will be a MongoDB database
         """
-        super(WebTest, self).setUp()
+        super().setUp()
 
         # In 3.2, assertItemsEqual was replaced by assertCountEqual
         # Make assertItemsEqual work in tests for py3 as well
@@ -179,7 +179,7 @@ class WebTestNoAuth(WebTest):
 
     def setUp(self, **extra_config):
         """Use auth hook to always authenticate as root for every request."""
-        super(WebTestNoAuth, self).setUp(**extra_config)
+        super().setUp(**extra_config)
 
         def authenticate_root(resource):
             g.resource_admin = True
