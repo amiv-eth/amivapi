@@ -10,6 +10,7 @@ from itsdangerous import Signer
 from pymongo import ASCENDING
 
 from amivapi.utils import mail
+from amivapi.events.utils import get_token_secret
 
 
 def update_waiting_list(event_id):
@@ -58,7 +59,7 @@ def notify_signup_accepted(event_name, signup):
         name = 'Guest of AMIV'
         email = signup['email']
 
-    token = Signer(current_app.config['TOKEN_SECRET']).sign(
+    token = Signer(get_token_secret()).sign(
         str(signup[id_field]).encode('utf-8'))
 
     if current_app.config.get('SERVER_NAME') is None:

@@ -5,15 +5,31 @@
 """Utilities."""
 
 
+from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
+from os import urandom
 import smtplib
 
 from bson import ObjectId
 from eve.utils import config
 from flask import current_app as app
 from flask import g
+
+
+def token_urlsafe():
+    """Cryptographically random generate a token that can be passed in a URL.
+    The token is created from 256 random bits.
+
+    This function is available as secrets.token_urlsafe in python3.6. We can
+    remove this function when we drop python3.5 support.
+
+    Returns:
+        str: A random string containing only urlsafe characters.
+    """
+    return b64encode(urandom(32)).decode("utf-8").replace("+", "-").replace(
+        "/", "_").rstrip("=")
 
 
 @contextmanager

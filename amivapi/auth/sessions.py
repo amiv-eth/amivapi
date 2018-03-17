@@ -15,9 +15,14 @@ from flask import abort, current_app as app
 
 from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
-from amivapi.auth.utils import gen_safe_token
 from amivapi.cron import periodic
 from amivapi.utils import admin_permissions, get_id
+
+# Change when we drop python3.5 support
+try:
+    from secrets import token_urlsafe
+except ImportError:
+    from amivapi.utils import token_urlsafe
 
 
 class SessionAuth(AmivTokenAuth):
@@ -151,11 +156,7 @@ def process_login(items):
 
 
 def _prepare_token(item, user_id):
-    token = gen_safe_token()
-
-    # Make sure token is unique
-    while app.data.find_one("sessions", None, token=token) is not None:
-        token = gen_safe_token()
+    token = token_urlsafe()
 
     # Remove user and password from document
     del item['username']

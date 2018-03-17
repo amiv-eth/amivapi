@@ -14,8 +14,13 @@ from datetime import datetime as dt
 from flask import abort, current_app, g
 
 from amivapi.auth.auth import AmivTokenAuth
-from amivapi.auth.utils import gen_safe_token
 from amivapi.utils import register_domain
+
+try:
+    from secrets import token_urlsafe
+except ImportError:
+    # Fallback for python3.5
+    from amivapi.utils import token_urlsafe
 
 
 def authorize_apikeys(resource):
@@ -99,7 +104,7 @@ apikeydomain = {
 
 def generate_tokens(items):
     for item in items:
-        item['token'] = gen_safe_token()
+        item['token'] = token_urlsafe()
 
 
 def init_apikeys(app):
