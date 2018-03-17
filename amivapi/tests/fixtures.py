@@ -103,6 +103,13 @@ class FixtureMixin(object):
         """
         added_objects = []
 
+        # Check that all resources are known
+        fixture_resources = set(fixture.keys())
+        all_resources = set(self.app.config['DOMAIN'].keys())
+        if not set(fixture_resources).issubset(all_resources):
+            raise BadFixtureException("Unknown resources: %s"
+                                      % (fixture_resources - all_resources))
+
         # We need to sort in the order of dependencies. It is for example
         # not possible to add sessions before we have users, as we need valid
         # object IDs for the relations.
