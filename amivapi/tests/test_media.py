@@ -33,7 +33,7 @@ class MediaTest(WebTestNoAuth):
     def setUp(self):
         """Add test resource."""
         self.test_config['DOMAIN'] = {'test': test_resource}
-        super(MediaTest, self).setUp()
+        super().setUp()
 
     def _post_file(self):
         """Post file. Use BytesIO to be able to set the filename."""

@@ -33,7 +33,7 @@ class CronTest(WebTestNoAuth):
         CronTest.received_arg = None
         CronTest.run_count = 0
 
-        super(CronTest, self).setUp()
+        super().setUp()
 
     def test_scheduled_function_gets_called(self):
         with self.app.app_context(), freeze_time(

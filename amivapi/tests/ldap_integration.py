@@ -51,7 +51,7 @@ class LdapIntegrationTest(WebTest):
         Load environment variables and test general ldap connection.
         """
         self.test_config['ENABLE_LDAP'] = True
-        super(LdapIntegrationTest, self).setUp(*args, **kwargs)
+        super().setUp(*args, **kwargs)
         self.data = {
             'nethz': getenv('ldap_nethz'),
             'firstname': getenv('ldap_firstname'),

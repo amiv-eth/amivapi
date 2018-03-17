@@ -22,7 +22,7 @@ class SecretTest(WebTestNoAuth):
         # Replace init_secret with a dummy function, which does nothing
         with patch('amivapi.events.create_token_secret_on_startup'):
             # Now call setup -- no secret will be initialized
-            super(SecretTest, self).setUp()
+            super().setUp()
 
         with self.app.app_context():
             db_item = self.db['config'].find_one({
@@ -33,7 +33,7 @@ class SecretTest(WebTestNoAuth):
 
     def test_create_secret(self):
         """Test that init_secret creates a secret token & adds it to the db."""
-        super(SecretTest, self).setUp()
+        super().setUp()
 
         with self.app.app_context():
             db_item = self.db['config'].find_one({
@@ -45,7 +45,7 @@ class SecretTest(WebTestNoAuth):
     def test_existing_secret(self):
         """Test that a secret from the database is not overwritten."""
         # We need to run the setup to be able to use an app context
-        super(SecretTest, self).setUp()
+        super().setUp()
 
         old_secret = 'Trololololo'
         # Set the secret in the database
