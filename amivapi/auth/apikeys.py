@@ -13,7 +13,7 @@ from datetime import datetime as dt
 
 from flask import abort, current_app, g
 
-from amivapi.auth.auth import AmivTokenAuth
+from amivapi.auth.auth import AdminOnlyAuth
 from amivapi.utils import register_domain
 
 try:
@@ -50,16 +50,6 @@ def authorize_apikeys(resource):
                        "permissions.")
 
 
-class ApikeyAuth(AmivTokenAuth):
-    """Do not let (non-admin) users view API keys at all.
-
-    If this hook gets called, the user is not an admin for this resource.
-    Therefore no results should be given. To give a more precise error message,
-    we abort. Otherwise normal users would just see an empty list."""
-    def create_user_lookup_filter(self, user):
-        abort(403)
-
-
 apikeydomain = {
     'apikeys': {
         'description': "API Keys can be used to given permissions to other "
@@ -70,7 +60,7 @@ apikeydomain = {
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        'authentication': ApikeyAuth,
+        'authentication': AdminOnlyAuth,
 
         'schema': {
             'name': {
