@@ -11,7 +11,7 @@ addons:
       - mongodb-org-server
       - mongodb-org-shell
 env:
-  - TOX_ENV=py27
+  - TOX_ENV=py35
   - TOX_ENV=py36
   - TOX_ENV=flake8
 install: pip install tox coveralls
