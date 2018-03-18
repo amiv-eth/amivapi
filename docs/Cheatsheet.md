@@ -13,6 +13,11 @@ https://amivapi/events?where={"$or":{"title_en":"Party","title_de":"Feier"}}
 Supported operators include:
 `$gt` (>), `$gte` (>=), `$lt` (<), `$lte` (<=), `$ne` (!=), `$and`, `$or`, `$in`
 
+To get events which have an image for the inforscreen:
+```
+https://amivapi/events?where={"img_infoscreen":{"$exists":true}}
+```
+
 Time format: `YYYYMMDDThhmmssZ`
 
 **Y**ear, **M**onth, **D**ay, **h**our, **m**inutes, **s**econds, `T` is a required separator
