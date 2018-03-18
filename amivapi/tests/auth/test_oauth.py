@@ -137,7 +137,7 @@ class OAuthTest(WebTest):
     def test_login_wrong_data(self):
         """Test that wrong credentials lead to a redirect to the login form
         again."""
-        user = self.new_object('users', nethz='testuser', password='pass')
+        self.new_object('users', nethz='testuser', password='pass')
 
         # Simulate sending the login form
         response = self.api.post(
