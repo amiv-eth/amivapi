@@ -23,5 +23,6 @@ As OAuth is an open standard, it is very likely that there are libraries to auto
 
 To prevent phishing attacks we use a whitelist of ```client_id``` and ```redirect_uri```. To register a client with the API, a request to the ```oauthclients``` endpoint can be issued, e.g. with the following command:
 
-```curl -X POST -d "client_id=<your client ID>&redirect_uri=<your redirect URI>" -H "Authorization: <admin token>" https://<API URL>/oauthclients
+```
+curl -X POST -d "client_id=<your client ID>&redirect_uri=<your redirect URI>" -H "Authorization: <admin token>" https://<API URL>/oauthclients
 ```
