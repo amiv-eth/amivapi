@@ -143,7 +143,8 @@ def project_password_status_on_updated(updates, original):
     field.
 
     Args:
-        items (list): List of new items as passed by the on_inserted event.
+        updates (dict): dict of changed user data
+        original (dict): dict of user data before the update
     """
     updates['password_set'] = updates.get('password') is not None
 
@@ -188,6 +189,7 @@ def hash_on_update(updates, original):
     it can be none.)
 
     Args:
-        items (list): List of new items as passed by the on_insert event.
+        updates (dict): dict of changed user data
+        original (dict): dict of user data before the update
     """
     _hash_password(updates)
