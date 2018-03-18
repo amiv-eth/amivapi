@@ -78,7 +78,7 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(response):
+def hide_fields(request, payload):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -86,10 +86,11 @@ def hide_fields(response):
     Nobody can see passwords.
 
     Args:
-        response: Response object of the request
+        request: flask request object
+        payload (dict): response payload
     """
     # Compatibility with both item and resource hook
-    items = response.get('_items', [response])
+    items = payload.get('_items', [payload])
 
     for item in items:
         # Always remove password
@@ -103,54 +104,6 @@ def hide_fields(response):
                 if (key[0] != '_' and
                         key not in ('firstname', 'lastname', 'nethz')):
                     item.pop(key)
-
-
-def hide_fields_on_inserted(items):
-    """Show only meta fields, nethz and name from others in response.
-
-    The user can only see his personal data completely.
-
-    Nobody can see passwords.
-
-    Args:
-        items (list): List of new items as passed by the on_insert event.
-    """
-    for item in items:
-        # Always remove password
-        item['password'] = None
-
-        # Remove other fields
-        if not (g.get('resource_admin') or
-                g.get('resource_admin_readonly') or
-                g.get('current_user') == str(item['_id'])):
-            for key in list(item):
-                if (key[0] != '_' and
-                        key not in ('firstname', 'lastname', 'nethz')):
-                    item.pop(key)
-
-
-def hide_fields_on_updated(updates, original):
-    """Show only meta fields, nethz and name from others in response.
-
-    The user can only see his personal data completely.
-
-    Nobody can see passwords.
-
-    Args:
-        updates (dict): dict of changed user data
-        original (dict): dict of user data before the update
-    """
-    # Always remove password
-    updates['password'] = None
-
-    # Remove other fields
-    if not (g.get('resource_admin') or
-            g.get('resource_admin_readonly') or
-            g.get('current_user') == str(original['_id'])):
-        for key in list(updates):
-            if (key[0] != '_' and
-                    key not in ('firstname', 'lastname', 'nethz')):
-                updates.pop(key)
 
 
 # Project password status
