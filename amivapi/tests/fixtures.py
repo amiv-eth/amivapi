@@ -221,7 +221,7 @@ class FixtureMixin(object):
         # to have a signup, so possibly created signups will have something
         # to have relations to
         obj.setdefault('spots', random.randint(50, 500))
-        if obj['spots']:
+        if obj['spots'] is not None:
             if ('time_register_start' not in obj and
                     'time_register_end' not in obj):
                 obj['time_register_start'] = (
