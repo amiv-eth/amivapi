@@ -8,6 +8,8 @@ AMIV API is a Python-EVE based REST interface to manage members, events, mail fo
 [Request Cheatsheet (Filtering etc.)](docs/Cheatsheet.md)
 [Python EVE Documentation](http://python-eve.org/features.html)
 
+[How to use central login](docs/OAuth.md)
+
 ## Deploy using Docker
 
 AMIV API is available as a [docker](https://www.docker.com) container.
