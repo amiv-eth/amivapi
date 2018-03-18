@@ -123,6 +123,31 @@ def project_password_status(response):
         item['password_set'] = item.get('password') is not None
 
 
+def project_password_status_on_inserted(items):
+    """Add a boolean field password_state to the response.
+
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
+    Args:
+        items (list): List of new items as passed by the on_inserted event.
+    """
+    for item in items:
+        item['password_set'] = item.get('password') is not None
+
+
+def project_password_status_on_updated(updates, original):
+    """Add a boolean field password_state to the response.
+
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
+    Args:
+        items (list): List of new items as passed by the on_inserted event.
+    """
+    updates['password_set'] = updates.get('password') is not None
+
+
 # Password hashing
 
 def _hash_password(user):
