@@ -99,7 +99,8 @@ userdomain = {
                 'nullable': True,
                 'default': None,
                 'description': 'Leave empty to use just LDAP authentification. '
-                'People without LDAP should use this field.'
+                'People without LDAP should use this field.',
+                'session_younger_than': 60
             },
             'email': {
                 'type': 'string',

@@ -3,6 +3,7 @@ from imghdr import what
 from eve.io.mongo import Validator
 from flask import current_app as app
 from flask import g, request
+from datetime import datetime
 
 
 class ValidatorAMIV(Validator):
@@ -121,3 +122,22 @@ class ValidatorAMIV(Validator):
         if not(t in filetype):
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (t, filetype))
+
+    def _validate_session_younger_than(self, threshold_time, field, value):
+        """Validation of the used token for special fields
+
+        Validates if the session is not older than threshold_time
+
+        Except admins, they can ignore this
+
+        Args:
+            threshold_time (int): threshold to to compare with in seconds
+            field (string): field name.
+            value: field value.
+        """
+        time_created = g.current_session['_created'].replace(tzinfo=None)
+        time_now = datetime.now()
+
+        if threshold_time > 0 and time_now - time_created > threshold_time:
+            self._error(field, "requires a session younger than %i seconds"
+                        % value)
