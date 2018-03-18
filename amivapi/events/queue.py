@@ -30,12 +30,17 @@ def update_waiting_list(event_id):
         signup_count = current_app.data.driver.db['eventsignups'].find(
             lookup).count()
 
-        if signup_count < event['spots']:
+        if event['spots'] == 0 or signup_count < event['spots']:
             lookup = {'event': event_id, 'accepted': False, 'confirmed': True}
             new_list = current_app.data.driver.db['eventsignups'].find(
                 lookup).sort('_created', ASCENDING)
 
-            for new_accepted in new_list.limit(event['spots'] - signup_count):
+            if event['spots'] > 0:
+                to_accept = new_list.limit(event['spots'] - signup_count)
+            else:
+                to_accept = new_list
+
+            for new_accepted in to_accept:
                 # Set accepted flag
                 current_app.data.update('eventsignups', new_accepted[id_field],
                                         {'accepted': True}, new_accepted)

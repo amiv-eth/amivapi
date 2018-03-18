@@ -43,8 +43,6 @@ class EventsignupQueueTest(WebTestNoAuth):
             'event': str(event['_id'])
         }, status_code=201)
 
-        print(self.api.get('/eventsignups').json)
-
         accepted = self.api.get('/eventsignups?where={"accepted":true}',
                                 status_code=200).json['_items']
         self.assertEqual(len(accepted), 1)
@@ -58,6 +56,24 @@ class EventsignupQueueTest(WebTestNoAuth):
         waiting = self.api.get('/eventsignups?where={"accepted":false}',
                                status_code=200).json['_items']
         self.assertEqual(len(waiting), 0)
+
+    def test_fcfs_users_get_auto_accepted_unlimited_spots(self):
+        """Test that with fcfs the users get automatically accepted on signup
+        for events with unlimited spaces"""
+        event = self.new_object('events', spots=0,
+                                selection_strategy='fcfs')
+
+        user = self.new_object('users')
+        user2 = self.new_object('users')
+
+        self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201)
+
+        accepted = self.api.get('/eventsignups?where={"accepted":true}',
+                                status_code=200).json['_items']
+        self.assertEqual(len(accepted), 1)
 
     def test_removing_from_waitinglist_does_nothing(self):
         """Test that removing someone from the waitinglist, who did not have
