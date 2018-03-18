@@ -13,7 +13,10 @@ from .security import (
     hide_fields,
     project_password_status,
     project_password_status_on_inserted,
-    project_password_status_on_updated
+    project_password_status_on_updated,
+    hide_fields_on_inserted,
+    hide_fields_on_updated,
+    project_password_status
 )
 
 
@@ -30,5 +33,8 @@ def init_app(app):
     app.on_inserted_users += project_password_status_on_inserted
     app.on_update_users += hash_on_update
     app.on_updated_users += project_password_status_on_updated
+    app.on_updated_users += hide_fields_on_updated
     app.on_replace_user += hash_on_update
     app.on_replaced_user += project_password_status_on_updated
+    app.on_inserted_users += hide_fields_on_inserted
+    app.on_replaced_user += hide_fields_on_updated

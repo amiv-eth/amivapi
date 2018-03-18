@@ -105,6 +105,53 @@ def hide_fields(response):
                     item.pop(key)
 
 
+def hide_fields_on_inserted(items):
+    """Show only meta fields, nethz and name from others in response.
+
+    The user can only see his personal data completely.
+
+    Nobody can see passwords.
+
+    Args:
+        response: Response object of the request
+    """
+    for item in items:
+        # Always remove password
+        item['password'] = None
+
+        # Remove other fields
+        if not (g.get('resource_admin') or
+                g.get('resource_admin_readonly') or
+                g.get('current_user') == str(item['_id'])):
+            for key in list(item):
+                if (key[0] != '_' and
+                        key not in ('firstname', 'lastname', 'nethz')):
+                    item.pop(key)
+
+
+def hide_fields_on_updated(updates, original):
+    """Show only meta fields, nethz and name from others in response.
+
+    The user can only see his personal data completely.
+
+    Nobody can see passwords.
+
+    Args:
+        response: Response object of the request
+    """
+    # Always remove password
+    updates['password'] = None
+
+    # Remove other fields
+    if not (g.get('resource_admin') or
+            g.get('resource_admin_readonly') or
+            g.get('current_user') == str(original['_id'])):
+        for key in list(updates):
+            if (key[0] != '_' and
+                    key not in ('firstname', 'lastname', 'nethz')):
+                updates.pop(key)
+
+
 # Project password status
 
 def project_password_status(response):
