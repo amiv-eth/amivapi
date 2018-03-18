@@ -113,7 +113,7 @@ def hide_fields_on_inserted(items):
     Nobody can see passwords.
 
     Args:
-        response: Response object of the request
+        items (list): List of new items as passed by the on_insert event.
     """
     for item in items:
         # Always remove password
@@ -137,7 +137,8 @@ def hide_fields_on_updated(updates, original):
     Nobody can see passwords.
 
     Args:
-        response: Response object of the request
+        updates (dict): dict of changed user data
+        original (dict): dict of user data before the update
     """
     # Always remove password
     updates['password'] = None
