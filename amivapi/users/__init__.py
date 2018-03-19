@@ -32,6 +32,6 @@ def init_app(app):
     app.on_replaced_user += project_password_status_on_updated
 
     # on_post_METHOD, triggered before sending the response by Eve
-    for method in ['GET', 'POST', 'PATCH', 'PUT']:
-        event = getattr(app, 'on_post_' + method + '_users')
+    for method in ['GET', 'POST', 'PATCH']:
+        event = getattr(app, 'on_post_%s_users' % method)
         event += hide_fields

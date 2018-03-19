@@ -19,7 +19,6 @@ import json
 from flask import g, Response
 
 from amivapi.auth.link_methods import (
-    _get_data as get_response_data,
     add_methods_to_item_links,
     add_methods_to_resource_links,
     add_permitted_methods_after_fetch_item,
@@ -30,6 +29,11 @@ from amivapi.auth.link_methods import (
 )
 from amivapi.tests.auth.fake_auth import FakeAuthTest
 from amivapi.tests.utils import WebTest
+
+
+def get_response_data(response):
+    """Helper to check data of response object."""
+    return json.loads(response.get_data(as_text=True))
 
 
 class LinkTest(FakeAuthTest):

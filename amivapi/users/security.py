@@ -10,6 +10,7 @@ from bson import ObjectId
 from flask import current_app, g
 
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import on_post_hook
 
 
 class UserAuth(AmivTokenAuth):
@@ -78,7 +79,8 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(request, payload):
+@on_post_hook
+def hide_fields(request, response, payload):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -86,13 +88,12 @@ def hide_fields(request, payload):
     Nobody can see passwords.
 
     Args:
-        request: flask request object
-        payload (dict): response payload
+        request, response: unused
+        payload (dict): response data
     """
-    # Compatibility with both item and resource hook
-    items = payload.get('_items', [payload])
-
-    for item in items:
+    # Use either the '_items' field (resource requests) or the
+    # whole payload as one item (item requests)
+    for item in payload.get('_items', [payload]):
         # Always remove password
         item.pop('password', None)
 

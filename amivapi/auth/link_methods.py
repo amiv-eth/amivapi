@@ -8,12 +8,11 @@
 Links are only added for resources using AmivTokenAuth.
 """
 
-import json
-
 from eve.auth import resource_auth
 from flask import current_app, g
 
 from amivapi.auth import AmivTokenAuth, authenticate, check_if_admin
+from amivapi.utils import on_post_hook
 
 
 def _get_item_methods(resource, item):
@@ -130,20 +129,8 @@ def add_permitted_methods_after_fetch_resource(resource, response):
         add_methods_to_resource_links(resource, response)
 
 
-def _get_data(response):
-    """Get response data as dict.
-
-    Encoding/Decoding necessary for compatibility with both python 2 and 3.
-    """
-    return json.loads(response.get_data().decode('utf-8'))
-
-
-def _set_data(response, data):
-    """Jsonify dict and set as response data."""
-    response.set_data(json.dumps(data))
-
-
-def add_permitted_methods_after_update(resource, request, response):
+@on_post_hook
+def add_permitted_methods_after_update(resource, request, response, payload):
     """Add link methods with an on_post_PATCH hook.
 
     The on_updated hook doesn't work since it doesn't include the links.
@@ -151,16 +138,12 @@ def add_permitted_methods_after_update(resource, request, response):
     This hook will also be called for errors which do not contain _links.
     => Make sure to only add methods for successful patches (status 200 only)
     """
-    if (response.status_code == 200) and \
-            isinstance(resource_auth(resource), AmivTokenAuth):
-        item_data = _get_data(response)
-
-        add_methods_to_item_links(resource, item_data)
-
-        _set_data(response, item_data)
+    if isinstance(resource_auth(resource), AmivTokenAuth):
+        add_methods_to_item_links(resource, payload)
 
 
-def add_permitted_methods_for_home(resource, request, response):
+@on_post_hook
+def add_permitted_methods_for_home(resource, request, response, payload):
     """Add link methods to home endpoint with an on_post_GET hook.
 
     The home endpoint doesn't call any database hooks and no on_pre_GET hook.
@@ -170,12 +153,10 @@ def add_permitted_methods_for_home(resource, request, response):
     if resource is None:
         authenticate()
 
-        data = _get_data(response)
-
         try:
-            links = data['_links']['child']
+            links = payload['_links']['child']
         except KeyError:
-            # Other endpoints like `schemaendpoint` might end u here, but don't
+            # Other endpoints like `schemaendpoint` end up here, but don't
             # have the same 'link' layout as home, so we can just ignore them
             pass
         else:
@@ -185,5 +166,3 @@ def add_permitted_methods_for_home(resource, request, response):
                 if isinstance(resource_auth(res_name), AmivTokenAuth):
                     check_if_admin(res_name)
                     res_link['methods'] = _get_resource_methods(res_name)
-
-            _set_data(response, data)

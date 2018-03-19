@@ -9,6 +9,8 @@ from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
 import smtplib
+from functools import wraps
+import json
 
 from bson import ObjectId
 from eve.utils import config
@@ -171,3 +173,34 @@ def register_validator(app, validator_class):
     app.validator = type("Adopted_%s" % validator_class.__name__,
                          (validator_class, app.validator),
                          {})
+
+
+def on_post_hook(func):
+    """Wrapper for an Eve `on_post_METHOD_resource` hook.
+
+    The hook receives only a flask response object, which is difficult to
+    manipulate.
+    This wrapper extracts the data as dict and set the data again after the
+    wrapped function has manipulated it.
+    The function is only called for successful requests, otherwise there
+    is no payload.
+
+    The wrapped function can look like this:
+
+        my_hook(payload):
+            ...
+
+    or, for hooks that don't specify the resource:
+
+        my_hook(payload):
+            ...
+    """
+    @wraps(func)
+    def wrapped(*args):
+        """This is the hook eve will see."""
+        response = args[-1]
+        if response.status_code in range(200, 300):
+            payload = json.loads(response.get_data(as_text=True))
+            func(*args, payload)
+            response.set_data(json.dumps(payload))
+    return wrapped
