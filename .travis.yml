@@ -1,5 +1,6 @@
 language: python
 python:
+  - 3.5
   - 3.6
 services:
   - mongodb
@@ -11,14 +12,13 @@ addons:
     packages:
       - mongodb-org-server
       - mongodb-org-shell
-      - python35
 env:
   - TOX_ENV=py35
   - TOX_ENV=py36
   - TOX_ENV=flake8
-install: pip install tox coveralls
+install: pip install tox tox-travis coveralls
 script:
-  - tox -e $TOX_ENV
+  - tox
 before_script:
   - sleep 15  # Travis recommends this to avoid problems
   - mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
