@@ -24,8 +24,6 @@ def init_app(app):
     # project_password_status must be before hide_fields
     app.on_fetched_item_users += project_password_status
     app.on_fetched_resource_users += project_password_status
-    app.on_fetched_item_users += hide_fields
-    app.on_fetched_resource_users += hide_fields
     app.on_insert_users += hash_on_insert
     app.on_inserted_users += project_password_status_on_inserted
     app.on_update_users += hash_on_update
