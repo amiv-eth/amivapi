@@ -64,7 +64,6 @@ class EventsignupQueueTest(WebTestNoAuth):
                                 selection_strategy='fcfs')
 
         user = self.new_object('users')
-        user2 = self.new_object('users')
 
         self.api.post('/eventsignups', data={
             'user': str(user['_id']),
