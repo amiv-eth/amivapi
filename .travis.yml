@@ -1,20 +1,12 @@
 language: python
-python:
-  - 3.5
-  - 3.6
-env:
-  - py35
-  - py36
-  - flake8
 matrix:
-  exclude:
-    - python: 3.5
-      env: py36
-    - python: 3.6
-      env: py35
   include:
+    - python: 3.5
+      env: TOXENV=py35
     - python: 3.6
-      env: flake8
+      env: TOXENV=py36
+    - python: 3.6
+      env: TOXENV=flake8
 services:
   - mongodb
 addons:
@@ -27,7 +19,7 @@ addons:
       - mongodb-org-shell
 install: pip install tox coveralls
 script:
-  - tox
+  - tox -e $TOXENV
 before_script:
   - sleep 15  # Travis recommends this to avoid problems
   - mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
