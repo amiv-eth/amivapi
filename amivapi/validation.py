@@ -4,6 +4,7 @@ from eve.io.mongo import Validator
 from flask import current_app as app
 from flask import g, request
 from datetime import datetime
+from pytz import timezone
 
 
 class ValidatorAMIV(Validator):
@@ -123,7 +124,7 @@ class ValidatorAMIV(Validator):
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (t, filetype))
 
-    def _validate_session_younger_than(self, threshold_time, field, value):
+    def _validate_session_younger_than_s(self, threshold_time, field, value):
         """Validation of the used token for special fields
 
         Validates if the session is not older than threshold_time
@@ -131,13 +132,14 @@ class ValidatorAMIV(Validator):
         Except admins, they can ignore this
 
         Args:
-            threshold_time (int): threshold to to compare with in seconds
+            threshold_time (int): threshold to compare with in seconds
             field (string): field name.
             value: field value.
         """
-        time_created = g.current_session['_created'].replace(tzinfo=None)
-        time_now = datetime.now()
+        if not g.get('resource_admin'):
+            time_created = g.current_session['_created']
+            time_now = datetime.now(timezone('UTC'))
 
-        if threshold_time > 0 and time_now - time_created > threshold_time:
-            self._error(field, "requires a session younger than %i seconds"
-                        % value)
+            if threshold_time > 0 and time_now - time_created > threshold_time:
+                self._error(field, "If your session is too old, using this field is not allowed"
+                            % threshold_time)
