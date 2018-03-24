@@ -2,7 +2,7 @@
 
 To use the central login, you must follow the OAuth 2.0 implicit grant flow. This basically means the following:
 
-1. To get a user token you redirect the client's browser to the central login page, ```/oauth/authorize``` of the AMIV API. You need to provide the following query parameters:
+1. To get a user token you redirect the client's browser to the central login page, ```/oauth``` of the AMIV API. You need to provide the following query parameters:
 
 * ```response_type```: Must be ```token```.
 * ```client_id```: Name of your application (displayed to the user)

@@ -21,7 +21,7 @@ class OAuthTest(WebTest):
         """Test that the oauth authorize endpoint only accepts requests
         made from correct clients."""
         self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=token'
             '&client_id=TestClient'
             '&redirect_uri=https://bla.org/tool?a=b'
@@ -29,7 +29,7 @@ class OAuthTest(WebTest):
 
         # Check the response type must be token
         self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=asdf'
             '&client_id=TestClient'
             '&redirect_uri=https://bla.org/tool'
@@ -37,7 +37,7 @@ class OAuthTest(WebTest):
 
         # Check the whitelist for clients checks the client_id
         self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=token'
             '&client_id=OtherClient'
             '&redirect_uri=https://bla.org/tool'
@@ -45,7 +45,7 @@ class OAuthTest(WebTest):
 
         # Check only a correct URL is whitelisted
         self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=token'
             '&client_id=TestClient'
             '&redirect_uri=https://bla.zomg/no'
@@ -59,7 +59,7 @@ class OAuthTest(WebTest):
 
         self.api.set_cookie('localhost', 'token', token)
         login_page = self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=token'
             '&client_id=TestClient'
             '&redirect_uri=https://bla.org/tool?a=b'
@@ -67,36 +67,37 @@ class OAuthTest(WebTest):
 
         # As we have a valid token already it should not ask for a username
         # and password
-        assert b'Username: ' not in login_page.data
+        self.assertNotIn(b'Username: ', login_page.data)
 
         # Simulate sending the login form
+        # The token is sent as cookie
         response = self.api.post(
-            '/oauth/login', data={
-                'response_type': 'token',
-                'client_id': 'TestClient',
-                'redirect_uri': 'https://bla.org/tool?a=b',
-                'state': 'xyz'
-            }, headers={'content-type': 'application/x-www-form-urlencoded'},
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={'submit': 'confirm'},
+            headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=302)
 
         parsed_url = urlsplit(response.location)
-        assert parsed_url.scheme == 'https'
-        assert parsed_url.netloc == 'bla.org'
-        assert parsed_url.path == '/tool'
+        self.assertEqual(parsed_url.scheme, 'https')
+        self.assertEqual(parsed_url.netloc, 'bla.org')
+        self.assertEqual(parsed_url.path, '/tool')
 
         query_params = dict(parse_qsl(parsed_url.query))
-        assert query_params['a'] == 'b'
-        assert query_params['access_token'] == token
-        assert query_params['token_type'] == 'bearer'
-        assert query_params['state'] == 'xyz'
+        self.assertEqual(query_params['a'], 'b')
+        self.assertEqual(query_params['access_token'], token)
+        self.assertEqual(query_params['token_type'], 'bearer')
+        self.assertEqual(query_params['state'], 'xyz')
 
     def test_login(self):
         """Test that a user can login with username and password."""
-        user = self.new_object('users', nethz='testuser', password='pass')
-        token = self.get_user_token(user['_id'])
+        self.new_object('users', nethz='testuser', password='pass')
 
         login_page = self.api.get(
-            '/oauth/authorize?'
+            '/oauth?'
             'response_type=token'
             '&client_id=TestClient'
             '&redirect_uri=https://bla.org/tool?a=b'
@@ -104,51 +105,148 @@ class OAuthTest(WebTest):
 
         # As we have a valid token already it should not ask for a username
         # and password
-        assert b'Username: ' in login_page.data
+        self.assertIn(b'username', login_page.data)
 
         # Simulate sending the login form
         response = self.api.post(
-            '/oauth/login', data={
-                'response_type': 'token',
-                'client_id': 'TestClient',
-                'redirect_uri': 'https://bla.org/tool?a=b',
-                'state': 'xyz',
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
                 'username': 'testuser',
                 'password': 'pass'
-            }, headers={'content-type': 'application/x-www-form-urlencoded'},
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=302)
 
         parsed_url = urlsplit(response.location)
-        assert parsed_url.scheme == 'https'
-        assert parsed_url.netloc == 'bla.org'
-        assert parsed_url.path == '/tool'
+        self.assertEqual(parsed_url.scheme, 'https')
+        self.assertEqual(parsed_url.netloc, 'bla.org')
+        self.assertEqual(parsed_url.path, '/tool')
 
         query_params = dict(parse_qsl(parsed_url.query))
-        assert query_params['a'] == 'b'
-        assert query_params['token_type'] == 'bearer'
-        assert query_params['state'] == 'xyz'
+        self.assertEqual(query_params['a'], 'b')
+        self.assertEqual(query_params['token_type'], 'bearer')
+        self.assertEqual(query_params['state'], 'xyz')
 
         # Check the token works
         token = query_params['access_token']
         resp = self.api.get('/sessions?where={"token":"%s"}' % token,
                             token=token, status_code=200).json
-        assert len(resp['_items']) == 1
+        self.assertEqual(len(resp['_items']), 1)
 
     def test_login_wrong_data(self):
-        """Test that wrong credentials lead to a redirect to the login form
-        again."""
+        """Test that wrong credentials lead back to oauth page."""
         self.new_object('users', nethz='testuser', password='pass')
 
         # Simulate sending the login form
-        response = self.api.post(
-            '/oauth/login', data={
-                'response_type': 'token',
-                'client_id': 'TestClient',
-                'redirect_uri': 'https://bla.org/tool?a=b',
-                'state': 'xyz',
+        self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
                 'username': 'testuser',
                 'password': 'wrongpass'
-            }, headers={'content-type': 'application/x-www-form-urlencoded'},
-            status_code=302)
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=200)  # No redirect
 
-        assert '/oauth/authorize' in response.location
+    def test_remember(self):
+        """Test that the token is saved as cookie if requested."""
+        self.new_object('users', nethz='testuser', password='pass')
+
+        # By default, the token is not remembered
+        response = self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
+                'username': 'testuser',
+                'password': 'pass',
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=302)  # Expect redirect (successful auth)
+
+        self.assertNotIn('Set-Cookie', response.headers)
+
+        # If 'remember' is checked in the form, the token is saved as cookie
+        response = self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
+                'username': 'testuser',
+                'password': 'pass',
+                'remember': 'remember',
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=302)  # Expect redirect (successful auth)
+
+        # Get token from response
+        query_params = dict(parse_qsl(urlsplit(response.location).query))
+        token = query_params['access_token']
+
+        # Verif
+        self.assertTrue(response.headers['Set-Cookie']
+                        .startswith('token=%s;' % token))
+
+    def test_logout(self):
+        """If a logout is submitted, the cookie is removed (set to '')"""
+        response = self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
+                'submit': 'testuser',
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=200)  # Go back to original page
+
+        self.assertTrue(response.headers['Set-Cookie'].startswith('token=;'))
+
+    def test_personal_greeting(self):
+        """test that a logged in user will be greeted by firstname."""
+        user = self.new_object('users', firstname='Pablito')
+        token = self.get_user_token(user['_id'])
+
+        self.api.set_cookie('localhost', 'token', token)
+        login_page = self.api.get(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz', status_code=200)
+
+        self.assertIn(b'Hi Pablito!', login_page.data)
+
+    def test_unpersonal_greeting(self):
+        """Test that a not logged in user will be greeted generically."""
+        login_page = self.api.get(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz', status_code=200)
+
+        self.assertIn(b'Hello!', login_page.data)
+
+    def test_client_id(self):
+        """Test that the client id will be shown on the login page."""
+        login_page = self.api.get(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz', status_code=200)
+
+        self.assertIn(b'TestClient', login_page.data)
