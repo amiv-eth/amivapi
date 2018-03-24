@@ -7,9 +7,11 @@ already), the user is referred back to the client application.
 """
 
 from urllib.parse import urlencode
+from bson import ObjectId
 
 from eve.methods.post import post_internal
 from flask import (
+    make_response,
     abort,
     Blueprint,
     current_app,
@@ -17,7 +19,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    url_for
 )
 from werkzeug.exceptions import Unauthorized
 
@@ -54,7 +55,6 @@ def validate_oauth_authorization_request(response_type, client_id,
     Returns:
         The actual URL the client should be redirected to.
     """
-
     check_str_nonempty(response_type, "Missing response_type")
     check_str_nonempty(client_id, "Missing client_id")
 
@@ -76,58 +76,39 @@ def validate_oauth_authorization_request(response_type, client_id,
     return redirect_uri
 
 
-@oauth_blueprint.route('/oauth/login', methods=['POST'])
-def oauth_login():
-    """Endpoint to receive user input from the login form."""
-    response_type = request.form.get('response_type')
-    client_id = request.form.get('client_id')
-    redirect_uri = request.form.get('redirect_uri')
-    scope = request.form.get('scope')
-    state = request.form.get('state')
+def oauth_redirect(redirect_uri, state):
+    """Process login and redirect user.
 
-    # Check this is a proper oauth client
-    redirect_uri = validate_oauth_authorization_request(
-        response_type, client_id, redirect_uri)
+    Loads and validates all inputs from request. First check if the request
+    contains a cookie with token to use, otherwise check for login data in
+    form.
 
-    # Check we have login data
+    Returns:
+        flask.Response: Flask redirect response
+
+    Raises:
+        werkzeug.exceptions.Unauthorized: If the user cannot be authorized
+    """
+    # First check for token in cookie
     token = request.cookies.get('token')
-    try:
-        if token:
-            # In this case the user was logged in already and just accepted
-            # the request.
-            authenticate_token(token)
-            if g.current_user is None:
-                # Session ended since we served the login page. Back to login.
-                # This is caught by the except below.
-                abort(401)
-
-        else:
-            resp = post_internal(
-                'sessions',
-                {
-                    'username': request.form.get('username'),
-                    'password': request.form.get('password')
-                }
-            )[0]
-            if 'token' not in resp:
-                abort(401, "post_internal to sessions failed: %s" % resp)
-            token = resp['token']
-
-    except Unauthorized as e:
-        # Login failed. Redirect back to the login page.
-        error_msg = ("Login failed! If you think there is an error, please "
-                     "contact AMIV with the exact time of your login.")
-        current_app.logger.info("Login failed with error: %s" % e)
-        login_url = url_for('.oauth_authorize',
-                            response_type=response_type,
-                            client_id=client_id,
-                            redirect_url=redirect_uri,
-                            scope=scope,
-                            state=state,
-                            error_msg=error_msg)
-        response = current_app.make_response(redirect(login_url))
-        response.set_cookie('token', '', expires=0)
-        return response
+    if token:
+        authenticate_token(token)
+        if g.current_user is None:
+            # Session ended since we served the login page. Back to login.
+            # This is caught by the except below.
+            abort(401, "Your session has expired, please log in again.")
+    # Otherwise check for login data
+    else:
+        resp = post_internal(
+            'sessions',
+            {
+                'username': request.form.get('username'),
+                'password': request.form.get('password')
+            }
+        )[0]
+        if 'token' not in resp:
+            abort(401, "post_internal to sessions failed: %s" % resp)
+        token = resp['token']
 
     # We have a valid token! Let's bring the user back to the oauth client.
     redirect_uri = append_url_params(redirect_uri, {
@@ -136,42 +117,67 @@ def oauth_login():
         'scope': 'amiv',
         'state': state
     })
-    response = current_app.make_response(redirect(redirect_uri))
 
-    # Also save the token in the amivapi cookies, so fur further logins the
-    # user only has to accept and not enter his credentials.
-    response.set_cookie('token', token)
+    # If the user wants to be remembered, save the token as cookie
+    # so the next time only 'confirm' needs to be pressed
+    response = current_app.make_response(redirect(redirect_uri))
+    if request.form.get('remember'):
+        response.set_cookie('token', token)
     return response
 
 
-@oauth_blueprint.route('/oauth/authorize')
-def oauth_authorize():
+@oauth_blueprint.route('/oauth', methods=['GET', 'POST'])
+def oauth():
     """Endpoint for OAuth login. OAuth clients redirect users here."""
     response_type = request.args.get('response_type')
     client_id = request.args.get('client_id')
     redirect_uri = request.args.get('redirect_uri')
-    scope = request.args.get('scope')
     state = request.args.get('state')
-    error_msg = request.args.get('error_msg')
+    token = request.cookies.get('token', '')
+    error_msg = ''
 
     # Check this is a request by a proper client
     redirect_uri = validate_oauth_authorization_request(
         response_type, client_id, redirect_uri)
 
     # Check if the user already has a token
-    token = request.cookies.get('token')
     authenticate_token(token)
-    need_login = g.current_user is None
+    if g.current_user is None:
+        user = None
+    else:
+        # Get first name for personal greeting
+        query = {'_id': ObjectId(g.current_user)}
+        projection = {'firstname': 1}  # Firstame is a required field for users
+        data = current_app.data.driver.db['users'].find_one(query, projection)
+        user = data['firstname']
 
-    # Serve the login page
-    return render_template("loginpage.html",
-                           response_type=response_type,
-                           client_id=client_id,
-                           redirect_uri=redirect_uri,
-                           scope=scope,
-                           state=state,
-                           need_login=need_login,
-                           error_msg=error_msg)
+    # Handle POST: Logout or Login+Redirect
+    if request.method == 'POST':
+        # Check if the user wants to log out
+        logout = request.form.get('submit') == 'logout'
+        if logout:
+            # Reset token and user
+            token = user = ''
+        else:
+            try:
+                return oauth_redirect(redirect_uri, state)
+            except Unauthorized as error:
+                # Login failed. Set error message and reset token
+                token = ''
+                error_msg = ("Login failed! If you think there is an error, "
+                             "please contact AMIV with the exact time of your "
+                             "login.")
+                current_app.logger.info("Login failed with error: %s" % error)
+
+    # Serve the login page (reset cookie if needed)
+    logo = current_app.config['LOGO_SVG']
+    response = make_response(render_template("loginpage.html",
+                                             client_id=client_id,
+                                             logo=logo,
+                                             user=user,
+                                             error_msg=error_msg))
+    response.set_cookie('token', token)
+    return response
 
 
 oauthclients_domain = {

@@ -1,23 +1,66 @@
-<html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMIV API Login</title>
+    <style type="text/css">
+      {% include "style.css" %}
+    </style>
+  </head>
   <body>
-    <h1>{{client_id}} requests access to your AMIV account.</h1>
     {% if error_msg %}
+    <dialog open>
       <p>{{ error_msg }}</p>
+      <button onclick="this.parentNode.close()">close</button>
+    </dialog>
     {% endif %}
-    <form action="/oauth/login" method="POST">
-      <input type="hidden" name="response_type" value="{{ response_type }}">
-      <input type="hidden" name="client_id" value="{{ client_id }}">
-      <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
-      <input type="hidden" name="scope" value="{{ scope }}">
-      <input type="hidden" name="state" value="{{ state }}">
 
-      {% if need_login %}
-        Username: <input type="text" name="username"><br />
-        Password: <input type="text" name="password"><br />
-        <input type="submit" name="submit" value="Login">
-      {% else %}
-        <input type="submit" name="submit" value="Accept">
-      {% endif %}
-    </form>  
+    <aside>
+      {{logo|safe}}
+    </aside>
+
+    <main>
+      <h1>
+        {% if user %}
+        Hi {{user}}!
+        {% else %}
+        Hello!
+        {% endif %}
+      </h1>
+      <p>
+        <em>{{client_id}}</em> requests access to your account.
+        {% if user %}
+        Is that ok?
+        {% else %}
+        Please login to confirm.
+        {% endif %}
+      </p>
+
+      <form method="POST">
+        {% if user %}
+          <input type="submit" name="submit" value="logout">
+          <input type="submit" name="submit" value="confirm">
+        {% else %}
+          <fieldset class="text">
+            <input id="username" minlength="1" type="text" name="username"
+                   required autofocus>
+            <label for="username">nethz or email</label>
+          </fieldset>
+          <fieldset class="text">
+            <input id="password" minlength="1" type="password" name="password"
+                   required>
+            <label for="password">password</label>
+          </fieldset>
+          <br/>
+          <fieldset class="checkbox">
+            <input type="checkbox" id="remember" 
+                   name="remember" value="remember"></input>
+            <label for="remember">remember me</label>
+          </fieldset>
+          <input type="submit" name="submit" value="login">
+        {% endif %}
+      </form>
+    </main>
+
   </body>
 </html>
