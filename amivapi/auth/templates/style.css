@@ -16,10 +16,10 @@ body {
   font-family: 'Roboto', sans-serif;
   /* Grid for easy layout */
   display: grid;
-  grid-template-columns: [container-start] 20%
+  grid-template-columns: [container-start] 15%
                          [logo-start error-start] 1fr
                          [logo-end main-start] 2fr
-                         [main-end error-end] 20% [container-end];
+                         [main-end error-end] 15% [container-end];
   grid-template-rows: [error-start] auto [error-end] 1fr
                       [main-start logo-start] auto
                       [main-end logo-end] 1fr [container-end];
@@ -33,7 +33,7 @@ aside {
   grid-row: logo-start / logo-end;
   justify-self: stretch;
   align-self: center;
-  padding-right: 2em;
+  padding-right: 5em;
 }
 aside svg {
   width: 100%;
@@ -43,7 +43,7 @@ main {
   grid-column: main-start / main-end;
   grid-row: main-start / main-end;
   border-left: 3px solid LightGrey;  
-  padding-left: 2em;
+  padding: 2em 2em 2em 5em;
   align-self: center;
 }
 
@@ -71,11 +71,11 @@ main {
 
   main {
     border-left: none;
-    padding-left: 1em;
+    padding: 1em;
   }
 
   aside {
-    padding: 0 6em 4em 6em;
+    padding: 0 6em 6em 6em;
   }
 }
 
@@ -96,7 +96,7 @@ main {
   }
 
   aside {
-    padding: 0 4em 2em 4em;
+    padding: 0 4em 4em 4em;
   }
 }
 
@@ -169,11 +169,13 @@ h1 {
   font-size: 2em;
   font-style: italic;
   font-weight: 100;
+  padding-bottom: 1em;
 }
 p {
   font-size: 1.5em;
   line-height: 1.5;
   font-weight: 100;
+  padding-bottom: 2em;
 }
 em {
   color: rgb(32, 45, 84);
@@ -259,7 +261,7 @@ and create a new one using the label*/
   display: inline-block;
   position: absolute;
   left: 0em;
-  top: 0.9em;
+  top: 0.95em;
   height: 1em;
   width: 1em;
   
