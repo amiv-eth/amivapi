@@ -109,8 +109,8 @@ body::before {
   content: "";
   grid-column: container-start / container-end;
   grid-row: error-start / error-start;
-  background: LightGrey;
-  box-shadow: 0em -1em 1em -1em Grey inset;
+  background: rgb(230, 230, 230);
+  box-shadow: 0em -1em 1em -1em rgb(110,110,110) inset;
 }
 dialog {
   grid-column: error-start / error-end;
@@ -150,7 +150,7 @@ dialog button {
   border-radius: 4px;
   background: none;
 
-  color: Grey;
+  color: rgb(110,110,110);
   text-transform: uppercase;
   font-size: 1.4em;
 
@@ -211,7 +211,7 @@ fieldset {
   outline: none;
   border: none;
   background: none;
-  border-bottom: 1px solid Grey;
+  border-bottom: 1px solid rgb(110,110,110);
   padding: 0.5em;
   font-size: 1.25em;
   transition: 0.2s ease all;  
@@ -225,7 +225,7 @@ fieldset {
   padding: 0.5em;
   font-size: 1.25em;
   z-index: -1;
-  color: Grey;
+  color: rgb(110,110,110);
   transition: 0.2s ease all;
 }
 .text input:focus + label,
@@ -248,7 +248,7 @@ and create a new one using the label*/
   box-sizing: border-box;
   margin: 0.5em;
   padding: 1em 0.5em 0.5em 1em;
-  color: Grey;
+  color: rgb(110,110,110);
 }
 /* Hide the checkbox, but without display: none (for keyboard use) */
 .checkbox input {
@@ -265,7 +265,7 @@ and create a new one using the label*/
   height: 1em;
   width: 1em;
   
-  border: 2px solid Grey;
+  border: 2px solid rgb(110,110,110);
   border-radius: 4px;   
 }
 .checkbox label::after {
