@@ -85,6 +85,15 @@ PASSWORD_CONTEXT = CryptContext(
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )
 
+# OAuth
+
+# See https://tools.ietf.org/html/rfc6749#section-3.1.2
+# The redirect URL must be absolute, may include query params and must not
+# include a fragment.
+# We also require https, because we do not want to send tokens over
+# unencrypted connections.
+REDIRECT_URI_REGEX = '^https://[^#]+$'
+
 # Email sent to external users signing up for events
 CONFIRM_EMAIL_TEXT = (
     "Hello from AMIV!\n\nYou have signed up for %(title)s with your E-Mail "
