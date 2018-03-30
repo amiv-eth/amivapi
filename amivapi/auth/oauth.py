@@ -61,13 +61,7 @@ def validate_oauth_authorization_request(response_type, client_id,
         'redirect_uri': {
             'type': 'string',
             'nullable': True,
-            # 'anyof': [{
             'regex': REDIRECT_URI_REGEX
-            # }, {
-            #     # It is fine to give no URL
-            #     'nullable': True,
-            #     'allowed': ''
-            # }]
         },
         'scope': {
             'nullable': True,
@@ -98,7 +92,7 @@ def validate_oauth_authorization_request(response_type, client_id,
         redirect_uri = client['redirect_uri']
 
     if not redirect_uri.startswith(client['redirect_uri']):
-        abort(422, "Redirect URI is not whitelisted!")
+        abort(422, "Redirect URI is not whitelisted for client_id!")
 
     return redirect_uri
 
