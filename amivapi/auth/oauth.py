@@ -30,20 +30,11 @@ from amivapi.check_utils import check_str_nonempty
 oauth_blueprint = Blueprint('oauth', __name__, template_folder='templates')
 
 
-def append_url_params(url, params):
-    """Add parameters to a url.
-
-    Args:
-        url(str): Existing URL.
-        **params: Parameters to append.
-    """
+def _append_url_params(url, **params):
+    """Helper to add addtional parameters to an url query string."""
     if '?' not in url:
         url += '?'
-
-    if url[-1] not in ['?', '&']:
-        url += '&'
-
-    return url + urlencode(params)
+    return '%s&%s' % (url, urlencode(params))
 
 
 def validate_oauth_authorization_request(response_type, client_id,
@@ -111,12 +102,11 @@ def oauth_redirect(redirect_uri, state):
         token = resp['token']
 
     # We have a valid token! Let's bring the user back to the oauth client.
-    redirect_uri = append_url_params(redirect_uri, {
-        'access_token': token,
-        'token_type': 'bearer',
-        'scope': 'amiv',
-        'state': state
-    })
+    redirect_uri = _append_url_params(redirect_uri,
+                                      access_token=token,
+                                      token_type='bearer',
+                                      scope='amiv',
+                                      state=state)
 
     # If the user wants to be remembered, save the token as cookie
     # so the next time only 'confirm' needs to be pressed
