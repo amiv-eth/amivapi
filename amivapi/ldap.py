@@ -16,6 +16,22 @@ Possible improvements:
   be improved or moved to the nethz module?
 - `_create_or_patch_user' is also not very straightforward, maybe the ldap
   importing logic could be simplified?
+
+
+Note on department info in ldap:
+
+We can discover a users department by looking at the `departmentNumber` field.
+Contrary to it's name, it does not contain a number, but entries like this:
+
+- `ETH Studentin D-ITET, Elektrotechnik und Interformationstechnologie Bsc.`
+- `ETH Student D-MAVT, Doktorand`
+
+and similar. For regular, mobility and phd students the starting part is
+always the same, and the second part of the string contains further details.
+
+We therefore match the first part of the `departmentNumber` field to
+check for the department. In the app settings, we define which substring
+is mapped to which deparment.
 """
 
 from eve.methods.patch import patch_internal
@@ -30,7 +46,7 @@ def init_app(app):
     """Attach an ldap connection to the app."""
     user = app.config['LDAP_USERNAME']
     password = app.config['LDAP_PASSWORD']
-    if user and password:
+    if None not in (user, password):
         app.config['ldap_connector'] = AuthenticatedLdap(user, password)
 
 
@@ -75,9 +91,7 @@ def sync_all():
     Returns:
         list: Data of all updated users.
     """
-    # Create query: VSETH member and departmentnumber of any member
-    # since the departmentNumber contains more than just the phrase
-    # we are looking for, include '*'
+    # See file docstring for explanation of `deparmentNumber` field
     keywords = ''.join(u"(departmentNumber=*%s*)" % _escape(item)
                        for item in current_app.config['LDAP_DEPARTMENT_MAP'])
     query = u"(& (ou=VSETH Mitglied) (| %s) )" % keywords
@@ -133,15 +147,16 @@ def _process_data(data):
     res['gender'] = \
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
-    # The departmentNumber field contains certain phrases for each department
+    # See file docstring for explanation of `deparmentNumber` field
     department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
     department = (dept for phrase, dept in department_map
                   if phrase in data['departmentNumber'][0])
     res['department'] = next(department, None)  # None if no match
 
     # Membership: One of our departments and VSETH member
-    is_member = res['department'] and ('VSETH Mitglied' in data['ou'])
-    res['membership'] = u"regular" if is_member else u'none'
+    is_member = ((res['department'] is not None) and
+                 ('VSETH Mitglied' in data['ou']))
+    res['membership'] = u"regular" if is_member else u"none"
 
     return res
 

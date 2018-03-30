@@ -67,8 +67,8 @@ SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 
 # LDAP
-LDAP_USERNAME = ''
-LDAP_PASSWORD = ''
+LDAP_USERNAME = None
+LDAP_PASSWORD = None
 
 # Security
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
