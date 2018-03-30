@@ -9,6 +9,7 @@ already), the user is referred back to the client application.
 from urllib.parse import urlencode
 from bson import ObjectId
 
+from cerberus import Validator
 from eve.methods.post import post_internal
 from flask import (
     make_response,
@@ -23,8 +24,8 @@ from flask import (
 from werkzeug.exceptions import Unauthorized
 
 from amivapi.auth.auth import AdminOnlyAuth, authenticate_token
+from amivapi.settings import REDIRECT_URI_REGEX
 from amivapi.utils import register_domain
-from amivapi.check_utils import check_str_nonempty
 
 
 oauth_blueprint = Blueprint('oauth', __name__, template_folder='templates')
@@ -38,7 +39,7 @@ def _append_url_params(url, **params):
 
 
 def validate_oauth_authorization_request(response_type, client_id,
-                                         redirect_uri):
+                                         redirect_uri, scope, state):
     """Validate an OAuth authentication request for an implicit grant.
 
     See https://tools.ietf.org/html/rfc6749#section-4.2.1
@@ -46,15 +47,50 @@ def validate_oauth_authorization_request(response_type, client_id,
     Returns:
         str: The actual URL the client should be redirected to.
     """
-    check_str_nonempty(response_type, "Missing response_type")
-    check_str_nonempty(client_id, "Missing client_id")
-
-    if response_type != 'token':
-        abort(422, "response_type is not supported.")
+    oauth_schema = {
+        'response_type': {
+            'required': True,
+            'type': 'string',
+            'allowed': ['token']
+        },
+        'client_id': {
+            'required': True,
+            'type': 'string',
+            'empty': False
+        },
+        'redirect_uri': {
+            'type': 'string',
+            'nullable': True,
+            # 'anyof': [{
+            'regex': REDIRECT_URI_REGEX
+            # }, {
+            #     # It is fine to give no URL
+            #     'nullable': True,
+            #     'allowed': ''
+            # }]
+        },
+        'scope': {
+            'nullable': True,
+            'type': 'string'
+        },
+        'state': {
+            'nullable': True,
+            'type': 'string'
+        }
+    }
+    validator = Validator(oauth_schema)
+    valid = validator.validate({
+        'response_type': response_type,
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'scope': scope,
+        'state': state
+    })
+    if not valid:
+        abort(422, 'Invalid parameters: %s' % validator.errors)
 
     db = current_app.data.driver.db['oauthclients']
     client = db.find_one({'client_id': client_id})
-
     if not client:
         abort(422, "Unknown client_id")
 
@@ -78,7 +114,7 @@ def oauth_redirect(redirect_uri, state):
         flask.Response: Flask redirect response
 
     Raises:
-        werkzeug.exceptions.Unauthorized: If the user cannot be authorized
+        werkzeug.exceptions.Unauthorized: If the user cannot be authenticated
     """
     # First check for token in cookie
     token = request.cookies.get('token')
@@ -122,13 +158,14 @@ def oauth():
     response_type = request.args.get('response_type')
     client_id = request.args.get('client_id')
     redirect_uri = request.args.get('redirect_uri')
+    scope = request.args.get('scope')
     state = request.args.get('state')
     token = request.cookies.get('token', '')
     error_msg = ''
 
     # Check this is a request by a proper client
     redirect_uri = validate_oauth_authorization_request(
-        response_type, client_id, redirect_uri)
+        response_type, client_id, redirect_uri, scope, state)
 
     # Check if the user already has a token
     authenticate_token(token)
@@ -195,14 +232,13 @@ oauthclients_domain = {
             'redirect_uri': {
                 'type': 'string',
                 'required': True,
-                'nullable': False,
-                'empty': False,
                 'unique': True,
+                'regex': REDIRECT_URI_REGEX,
                 'description': "Pattern for URLs this client may use for "
                 "redirects. All URLs must start with this pattern, or the "
                 "login will be denied. Make sure URLs that can be accepted do "
                 "not allow further redirects to prevent phishing attacks that "
-                "forward through your tool."
+                "forward through your tool. Must use HTTPS."
             }
         }
     }

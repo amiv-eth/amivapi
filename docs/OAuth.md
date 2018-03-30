@@ -19,6 +19,8 @@ To use the central login, you must follow the OAuth 2.0 implicit grant flow. Thi
 
 As OAuth is an open standard, it is very likely that there are libraries to automate this workflow in your preferred programming language. These libraries might expect more parameters, which we don't use. If you need to enter a token refresh URL or a ```client_secret```, make sure you are using the implicit grant authorization type. By the standard an authorization request can also supply a requested ```scope```. AMIVAPI will ignore this parameter, if you supply it.
 
+The ```redirect_uri``` must be an https URL and must not contain a fragment (anything after ```#```).
+
 # Whitelisting of OAuth clients
 
 To prevent phishing attacks we use a whitelist of ```client_id``` and ```redirect_uri```. To register a client with the API, a request to the ```oauthclients``` endpoint can be issued, e.g. with the following command:
