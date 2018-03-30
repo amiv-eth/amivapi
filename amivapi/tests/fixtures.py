@@ -103,7 +103,7 @@ class FixtureMixin(object):
         """
         added_objects = []
 
-        # Check that all resources are known
+        # Check that all resources are valid
         fixture_resources = set(fixture.keys())
         all_resources = set(self.app.config['DOMAIN'].keys())
         if not set(fixture_resources).issubset(all_resources):

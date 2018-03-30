@@ -18,17 +18,24 @@ from flask import current_app as app
 from flask import g
 
 
-def token_urlsafe():
+def token_urlsafe(nbytes=None):
     """Cryptographically random generate a token that can be passed in a URL.
-    The token is created from 256 random bits.
 
     This function is available as secrets.token_urlsafe in python3.6. We can
     remove this function when we drop python3.5 support.
 
+    Args:
+        nbytes: Number of random bytes used to generate the token. Note that
+        this is not the resulting length of the token, just the amount of
+        randomness.
+
     Returns:
         str: A random string containing only urlsafe characters.
     """
-    return b64encode(urandom(32)).decode("utf-8").replace("+", "-").replace(
+    if nbytes is None:
+        nbytes = 16
+
+    return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
         "/", "_").rstrip("=")
 
 
