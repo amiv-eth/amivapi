@@ -155,6 +155,32 @@ class OAuthTest(WebTest):
             headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=200)  # No redirect
 
+        self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
+                'username': 'notuser',
+                'password': 'pass'
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=200)  # No redirect
+
+        self.api.post(
+            '/oauth?'
+            'response_type=token'
+            '&client_id=TestClient'
+            '&redirect_uri=https://bla.org/tool?a=b'
+            '&state=xyz',
+            data={
+                'username': '',
+                'password': ''
+            },
+            headers={'content-type': 'application/x-www-form-urlencoded'},
+            status_code=200)  # No redirect
+
     def test_remember(self):
         """Test that the token is saved as cookie if requested."""
         self.new_object('users', nethz='testuser', password='pass')
