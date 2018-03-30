@@ -81,12 +81,14 @@ def validate_oauth_authorization_request(response_type, client_id,
         'state': state
     })
     if not valid:
-        abort(422, 'Invalid parameters: %s' % validator.errors)
+        abort(422, 'Invalid parameters. Please contact the author of the page '
+                   'that sent you here. Errors: %s' % validator.errors)
 
     db = current_app.data.driver.db['oauthclients']
     client = db.find_one({'client_id': client_id})
     if not client:
-        abort(422, "Unknown client_id")
+        abort(422, 'Unknown client_id. Please contact the author of the page '
+                   'that sent you here.')
 
     if not redirect_uri:
         redirect_uri = client['redirect_uri']
