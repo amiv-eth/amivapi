@@ -53,7 +53,7 @@ def validate_oauth_authorization_request(response_type, client_id,
     See https://tools.ietf.org/html/rfc6749#section-4.2.1
 
     Returns:
-        The actual URL the client should be redirected to.
+        str: The actual URL the client should be redirected to.
     """
     check_str_nonempty(response_type, "Missing response_type")
     check_str_nonempty(client_id, "Missing client_id")

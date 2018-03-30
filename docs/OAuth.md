@@ -26,3 +26,5 @@ To prevent phishing attacks we use a whitelist of ```client_id``` and ```redirec
 ```
 curl -X POST -d "client_id=<your client ID>&redirect_uri=<your redirect URI>" -H "Authorization: <admin token>" https://<API URL>/oauthclients
 ```
+
+The admin token needs to have readWrite access to the ```oauthclients``` resource.
