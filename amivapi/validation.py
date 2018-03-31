@@ -2,9 +2,8 @@ from imghdr import what
 
 from eve.io.mongo import Validator
 from flask import current_app as app
-from flask import g, request
-from datetime import datetime
-from pytz import timezone
+from flask import abort, g, request
+from datetime import datetime, timedelta, timezone
 
 
 class ValidatorAMIV(Validator):
@@ -124,7 +123,7 @@ class ValidatorAMIV(Validator):
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (t, filetype))
 
-    def _validate_session_younger_than_s(self, threshold_time, field, value):
+    def _validate_session_younger_than(self, threshold_timedelta, field, value):
         """Validation of the used token for special fields
 
         Validates if the session is not older than threshold_time
@@ -132,14 +131,21 @@ class ValidatorAMIV(Validator):
         Except admins, they can ignore this
 
         Args:
-            threshold_time (int): threshold to compare with in seconds
+            threshold_timedelta (timedelta): threshold to compare with
             field (string): field name.
             value: field value.
         """
+        if threshold_timedelta < timedelta(seconds=0):
+            # Use abort to actually give a stacktrace and break tests.
+            abort(500, "Invalid field definition: %s: %s, "
+                  "session_younger_than must be positive."
+                  % (self.resource, field))
+
         if not g.get('resource_admin'):
             time_created = g.current_session['_created']
-            time_now = datetime.now(timezone('UTC'))
+            time_now = datetime.now(timezone.utc)
 
-            if threshold_time > 0 and time_now - time_created > threshold_time:
-                self._error(field, "If your session is too old, using this field is not allowed"
-                            % threshold_time)
+            if time_now - time_created > threshold_timedelta:
+                self._error(field, "Your session is too old. Using this field "
+                            "is not allowed if your session is older than %s."
+                            % threshold_timedelta)

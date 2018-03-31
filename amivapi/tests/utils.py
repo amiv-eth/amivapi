@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """General testing utilities."""
 
+from datetime import datetime, timezone
 from itertools import count
 import json
 import sys
@@ -145,7 +146,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
     # Shortcuts to get a token
     counter = count()
 
-    def get_user_token(self, user_id):
+    def get_user_token(self, user_id, created=None):
         """Create session for a user and return a token.
 
         Args:
@@ -154,9 +155,13 @@ class WebTest(unittest.TestCase, FixtureMixin):
         Returns:
             str: Token that can be used to authenticate user.
         """
+        if created is None:
+            created = datetime.now(timezone.utc)
+
         token = "test_token_" + str(next(self.counter))
         self.db['sessions'].insert({u'user': ObjectId(user_id),
-                                    u'token': token})
+                                    u'token': token,
+                                    u'_created': created})
         return token
 
     def get_root_token(self):

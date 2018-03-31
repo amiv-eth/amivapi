@@ -5,46 +5,46 @@
 
 """Test general purpose validators."""
 
-import json
-from bson import ObjectId
+from datetime import datetime, timedelta, timezone
 
+from amivapi.auth.auth import AmivTokenAuth
 from amivapi.tests.utils import WebTest
 
 
 class ValidatorAMIVTest(WebTest):
     """Unit test class for general purpose validators."""
 
-    def test_session_younger_than_s(self):
-        """Test the session_younger_than_s validator."""
+    def test_session_younger_than(self):
+        """Test the session_younger_than validator."""
+        user = self.new_object("users")
 
-        # TODO implement test
+        token = self.get_user_token(user['_id'])
+        old_token = self.get_user_token(
+            user['_id'],
+            created=datetime.now(timezone.utc) - timedelta(minutes=2))
+
+        class AllowEverythingAuth(AmivTokenAuth):
+            def has_resource_write_permission(*_):
+                return True
+
+            def has_item_write_permission(*_):
+                return True
+
         self.app.register_resource('test', {
+            'authentication': AllowEverythingAuth,
+
             'schema': {
                 'field1': {
                     'type': 'string',
-                    'session_younger_than_s': 60
+                    'session_younger_than': timedelta(minutes=1)
                 }
             }
         })
 
         self.api.post("/test", data={
             'field1': 'teststring'
-        }, status_code=201)
+        }, token=old_token, status_code=422)
 
         self.api.post("/test", data={
             'field1': 'teststring',
-        }, status_code=422)
-
-    def get_user_token(self, user_id, created):
-        """Create session for a user and return a token.
-
-        Args:
-            user_id (str): user_id as string.
-
-        Returns:
-            str: Token that can be used to authenticate user.
-        """
-        token = "test_token_" + str(next(self.counter))
-        self.db['sessions'].insert({u'user': ObjectId(user_id),
-                                    u'token': token})
-        return token
+        }, token=token, status_code=201)
