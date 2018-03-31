@@ -11,7 +11,9 @@ from .security import (
     hash_on_insert,
     hash_on_update,
     hide_fields,
-    project_password_status
+    project_password_status,
+    project_password_status_on_inserted,
+    project_password_status_on_updated
 )
 
 
@@ -25,5 +27,8 @@ def init_app(app):
     app.on_fetched_item_users += hide_fields
     app.on_fetched_resource_users += hide_fields
     app.on_insert_users += hash_on_insert
+    app.on_inserted_users += project_password_status_on_inserted
     app.on_update_users += hash_on_update
+    app.on_updated_users += project_password_status_on_updated
     app.on_replace_user += hash_on_update
+    app.on_replaced_user += project_password_status_on_updated
