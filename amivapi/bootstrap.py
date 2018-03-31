@@ -28,7 +28,7 @@ from amivapi import (
 from amivapi.validation import ValidatorAMIV
 
 
-def create_app(config_file=None, **kwargs):
+def create_app(config_file: str = None, **kwargs) -> Eve:
     """
     Create a new eve app object and initialize everything.
 
@@ -41,10 +41,10 @@ def create_app(config_file=None, **kwargs):
        working directory is used
 
     Args:
-        config (path): Specify config file to use.
+        config: Specify config file path to use.
         kwargs: All other key-value arguments will be used to update the config
     Returns:
-        (Eve): The Eve application
+        The Eve application
     """
     # Load config
     config = Config(getcwd())

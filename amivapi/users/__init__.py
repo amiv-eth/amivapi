@@ -3,6 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 """User module initialization."""
+from eve import Eve
 
 from amivapi.utils import register_domain
 
@@ -15,7 +16,7 @@ from .security import (
 )
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
 

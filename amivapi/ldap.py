@@ -18,6 +18,9 @@ Possible improvements:
   importing logic could be simplified?
 """
 
+from typing import Iterator, List, Optional
+
+from eve import Eve
 from eve.methods.patch import patch_internal
 from eve.methods.post import post_internal
 from flask import current_app
@@ -26,37 +29,37 @@ from nethz.ldap import AuthenticatedLdap
 from amivapi.utils import admin_permissions
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Attach an ldap connection to the app."""
     user = app.config['LDAP_USER']
     password = app.config['LDAP_PASS']
     app.config['ldap_connector'] = AuthenticatedLdap(user, password)
 
 
-def authenticate_user(cn, password):
+def authenticate_user(cn: str, password: str) -> bool:
     """Try to authenticate a user with ldap.
 
     Args:
-        cn (string): the common name to search ldap for -> the nethz name
-        password (string): the user password (plaintext)
+        cn: the common name to search ldap for -> the nethz name
+        password: the user password (plaintext)
 
     Returns:
-        bool: True if successful, False otherwise
+        True if successful, False otherwise
     """
     return current_app.config['ldap_connector'].authenticate(cn, password)
 
 
-def sync_one(cn):
+def sync_one(cn: str) -> Optional[dict]:
     """Synchronize ldap and database for a single user.
 
     The cn will be escaped for ldap, no need to worry about this.
 
     Args:
-        cn (string): Common name of user.
+        cn: Common name of user.
 
     Returns:
-        dict: Data of updated or newly created user in database,
-              None if user not found in ldap.
+        Data of updated or newly created user in database,
+        None if user not found in ldap.
     """
     query = "(cn=%s)" % _escape(cn)
     ldap_data = next(_search(query), None)
@@ -65,14 +68,14 @@ def sync_one(cn):
         return _create_or_update_user(ldap_data)
 
 
-def sync_all():
+def sync_all() -> List[dict]:
     """Query the ETH LDAP for all our members. Adds non-existing ones to db.
 
     Updates existing ones if ldap data has changed.
     Depending on the system, this can take 30 seconds or longer.
 
     Returns:
-        list: Data of all updated users.
+        Data of all updated users.
     """
     # Create query: VSETH member and part of any of member ou
     ou_items = ''.join(u"(ou=%s)" % _escape(item) for item in
@@ -83,8 +86,15 @@ def sync_all():
     return [_create_or_update_user(user) for user in ldap_data]
 
 
-def _search(query):
-    """Search the LDAP. Returns filtered data (iterable) for string query."""
+def _search(query: str) -> Iterator[dict]:
+    """Search the LDAP. Returns filtered user objects for string query.
+
+    Args:
+        query: LDAP encoded query string.
+
+    Returns:
+        User objects converted to AMIVAPI field names.
+    """
     attr = [
         'cn',
         'swissEduPersonMatriculationNumber',
@@ -98,7 +108,7 @@ def _search(query):
     return (_filter_data(res) for res in results)
 
 
-def _escape(query):
+def _escape(query: str) -> str:
     """LDAP-style escape according to the ldap3 documentation."""
     replacements = (
         ('\\', r'\5C'),  # Do this first or we'll break the other replacements
@@ -113,7 +123,7 @@ def _escape(query):
     return query
 
 
-def _filter_data(data):
+def _filter_data(data: dict) -> dict:
     """Utility to filter ldap data.
 
     It will take all fields relevant for a user update and map them
@@ -149,7 +159,7 @@ def _filter_data(data):
     return res
 
 
-def _create_or_update_user(ldap_data):
+def _create_or_update_user(ldap_data: dict) -> dict:
     """Try to find user in database. Update if it exists, create otherwise."""
     query = {'nethz': ldap_data['nethz']}
     db_data = current_app.data.driver.db['users'].find_one(query)

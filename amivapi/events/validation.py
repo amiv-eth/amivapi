@@ -6,6 +6,7 @@
 """Event Validation."""
 from datetime import datetime
 import json
+from typing import Any, Optional
 
 from flask import current_app, g, request
 from jsonschema import Draft4Validator, SchemaError
@@ -15,7 +16,7 @@ import pytz
 class EventValidator(object):
     """Custom Validator for event validation rules."""
 
-    def _validate_type_json_event_field(self, field, value):
+    def _validate_type_json_event_field(self, field: str, value: str) -> None:
         """Validate data in json format with event data.
 
         1.  Is it JSON?
@@ -23,7 +24,7 @@ class EventValidator(object):
         3.  Validate schema and get all errors with prefix 'additional_fields:'
 
         Args:
-            field (string): field name.
+            field: field name.
             value: field value.
         """
         try:
@@ -61,7 +62,8 @@ class EventValidator(object):
 
         # if event id is not valid another validator will fail anyway
 
-    def _validate_signup_requirements(self, signup_possible, field, event_id):
+    def _validate_signup_requirements(self, signup_possible: bool, field: str,
+                                      event_id: str) -> None:
         """Validate if signup requirements are met.
 
         Used for an event_id field - checks if the value "spots" is
@@ -77,8 +79,8 @@ class EventValidator(object):
         errors as if additional_fields would be in the schema
 
         Args:
-            singup_possible (bool); validates nothing if set to false
-            field (string): field name.
+            singup_possible; validates nothing if set to false
+            field: field name.
             value: field value.
         """
         if signup_possible:
@@ -109,7 +111,8 @@ class EventValidator(object):
                 self._validate_type_json_event_field('additional_fields',
                                                      None)
 
-    def _validate_email_signup_must_be_allowed(self, enabled, field, value):
+    def _validate_email_signup_must_be_allowed(self, enabled: bool, field: str,
+                                               value: Any) -> None:
         """Validation for an event field in eventsignups.
 
         Validates if the event allows self enrollment.
@@ -117,8 +120,8 @@ class EventValidator(object):
         Except event moderator and admins, they can ignore this
 
         Args:
-            enabled (bool): validates nothing if set to false
-            field (string): field name.
+            enabled: validates nothing if set to false
+            field: field name.
             value: field value.
         """
         if enabled:
@@ -138,7 +141,7 @@ class EventValidator(object):
     General purpose validators
     """
 
-    def _validate_type_json_schema_object(self, field, value):
+    def _validate_type_json_schema_object(self, field: str, value: str) -> None:
         """Validate a cerberus schema saved as JSON.
 
         1.  Is it JSON?
@@ -146,7 +149,7 @@ class EventValidator(object):
         3.  Is it a valid json-schema?
 
         Args:
-            field (string): field name.
+            field: field name.
             value: field value.
         """
         try:
@@ -183,7 +186,7 @@ class EventValidator(object):
     # Eve doesn't handle time zones properly. Its always UTC but sometimes
     # the timezone is included, sometimes it isn't.
 
-    def _get_time(self, fieldname):
+    def _get_time(self, fieldname: str) -> Optional[datetime]:
         """Retrieve time field from document or _original_document."""
         # Try to pick the value from document first, fall back to original
         time = self.document.get(fieldname)
@@ -196,7 +199,8 @@ class EventValidator(object):
 
         return time.replace(tzinfo=None)
 
-    def _validate_later_than(self, later_than, field, value):
+    def _validate_later_than(self, later_than: str, field: str,
+                             value: datetime) -> None:
         """Validate time dependecy.
 
         Value must be at the same time or later than a the value of later_than
@@ -209,7 +213,8 @@ class EventValidator(object):
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
-    def _validate_earlier_than(self, earlier_than, field, value):
+    def _validate_earlier_than(self, earlier_than: str, field: str,
+                               value: datetime) -> None:
         """Validate time dependecy.
 
         Value must be at the same time or later than a the value of later_than
@@ -222,13 +227,13 @@ class EventValidator(object):
             self._error(field, "Must be at a point in time before %s" %
                         earlier_than)
 
-    def _validate_only_if_not_null(self, only_if_not_null,
-                                   field, value):
+    def _validate_only_if_not_null(self, only_if_not_null: str,
+                                   field: str, value: Any) -> None:
         """The field may only be set if another field is not None.
 
         Args:
-            only_if_not_null (string): The field, that may not be None
-            field (string): name of the validated field
+            only_if_not_null: The field, that may not be None
+            field: name of the validated field
             value: Value of the validated field
         """
         doc = self.document
@@ -240,13 +245,13 @@ class EventValidator(object):
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
 
-    def _validate_required_if_not(self, *args):
+    def _validate_required_if_not(self, *args) -> None:
         """Dummy function for Cerberus.(It complains if it can find the rule).
 
         Functionality is implemented in the requierd field validation.
         """
 
-    def _validate_required_fields(self, document):
+    def _validate_required_fields(self, document: dict) -> None:
         """Extend the parsing of to support requirements depending on fields.
 
         Needed for language fields, where either german or english is needed.

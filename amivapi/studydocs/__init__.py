@@ -8,6 +8,8 @@
 Contains settings for eve resource, special validation and email_confirmation
 logic needed for signup of non members to events.
 """
+from eve import Eve
+
 from amivapi.studydocs.authorization import (
     add_uploader_on_bulk_insert,
     add_uploader_on_insert
@@ -16,7 +18,7 @@ from amivapi.studydocs.model import studydocdomain
 from amivapi.utils import register_domain
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, studydocdomain)
 

@@ -11,6 +11,9 @@ from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 from flask import Blueprint, current_app, redirect, url_for
 from itsdangerous import BadSignature, Signer
+from typing import Iterable, Union
+
+from flask import Response
 
 from amivapi.events.queue import update_waiting_list
 from amivapi.events.utils import get_token_secret
@@ -19,7 +22,7 @@ from amivapi.utils import mail
 email_blueprint = Blueprint('emails', __name__)
 
 
-def send_confirmmail_to_unregistered_users(item):
+def send_confirmmail_to_unregistered_users(item: dict) -> None:
     """Send a confirmation email for external signups(email only)
 
     Args:
@@ -55,12 +58,12 @@ def send_confirmmail_to_unregistered_users(item):
              email_content)
 
 
-def send_confirmmail_to_unregistered_users_bulk(items):
+def send_confirmmail_to_unregistered_users_bulk(items: Iterable[dict]) -> None:
     for item in items:
         send_confirmmail_to_unregistered_users(item)
 
 
-def add_confirmed_before_insert(item):
+def add_confirmed_before_insert(item: dict) -> None:
     """Add the confirmed field to a event signup before it is inserted to the
     database. We accept all registered users instantly, others need to click the
     confirmation link first"""
@@ -70,13 +73,13 @@ def add_confirmed_before_insert(item):
         item['confirmed'] = True
 
 
-def add_confirmed_before_insert_bulk(items):
+def add_confirmed_before_insert_bulk(items: Iterable[dict]) -> None:
     for item in items:
         add_confirmed_before_insert(item)
 
 
 @email_blueprint.route('/confirm_email/<token>')
-def on_confirm_email(token):
+def on_confirm_email(token: str) -> Union[Response, str]:
     """Email confirmation endpoint.
 
     We try to confirm the specified signup and redirect to a webpage.
@@ -106,7 +109,7 @@ def on_confirm_email(token):
 
 
 @email_blueprint.route('/delete_signup/<token>')
-def on_delete_signup(token):
+def on_delete_signup(token: str) -> Union[Response, str]:
     """Endpoint to delete signups via email"""
     try:
         s = Signer(get_token_secret())

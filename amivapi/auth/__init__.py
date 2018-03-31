@@ -4,6 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 
 """Auth and session endpoint initialization."""
+from eve import Eve
+
 from amivapi.auth import apikeys, oauth
 from amivapi.auth.auth import (
     abort_if_not_public,
@@ -25,7 +27,7 @@ from amivapi.auth.sessions import process_login, sessiondomain
 from amivapi.utils import register_domain
 
 
-def init_app(app):
+def init_app(app: Eve)-> None:
     """Register sessions resource, add auth and hooks."""
     # Auth
     app.auth = AmivTokenAuth()

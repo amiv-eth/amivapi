@@ -1,5 +1,5 @@
 """Util functions used throughout the Event system."""
-
+from eve import Eve
 from flask import current_app as current_app
 
 try:
@@ -9,7 +9,7 @@ except ImportError:
     from amivapi.utils import token_urlsafe
 
 
-def create_token_secret_on_startup(app):
+def create_token_secret_on_startup(app: Eve) -> None:
     """Create a token secret in the database if it doesn't exist.
 
     The secret key is stored in the database to ensure consistency.
@@ -24,7 +24,7 @@ def create_token_secret_on_startup(app):
             config.insert_one({'TOKEN_SECRET': token_urlsafe()})
 
 
-def get_token_secret():
+def get_token_secret() -> str:
     db = current_app.data.driver.db['config']
     result = db.find_one({'TOKEN_SECRET': {'$exists': True}})
     return result['TOKEN_SECRET']

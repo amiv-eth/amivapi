@@ -7,7 +7,7 @@
 Contains settings for eve resource, special validation and email_confirmation
 logic needed for signup of non members to events.
 """
-
+from eve import Eve
 
 from amivapi.events.authorization import EventAuthValidator
 from amivapi.events.emails import (
@@ -38,7 +38,7 @@ from amivapi.events.utils import create_token_secret_on_startup
 from amivapi.utils import register_domain, register_validator
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     create_token_secret_on_startup(app)
 

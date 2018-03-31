@@ -9,14 +9,16 @@ Links are only added for resources using AmivTokenAuth.
 """
 
 import json
+from typing import List
 
 from eve.auth import resource_auth
-from flask import current_app, g
+from flask import current_app, g, Response
+from werkzeug.wrappers import Request
 
 from amivapi.auth import AmivTokenAuth, authenticate, check_if_admin
 
 
-def _get_item_methods(resource, item):
+def _get_item_methods(resource: str, item: dict) -> List[str]:
     res = current_app.config['DOMAIN'][resource]
     user = g.get('current_user')  # TODO: post_internal_problem
     auth = resource_auth(resource)
@@ -33,7 +35,7 @@ def _get_item_methods(resource, item):
     return list(set(methods))
 
 
-def _get_resource_methods(resource):
+def _get_resource_methods(resource: str) -> List[str]:
     res = current_app.config['DOMAIN'][resource]
     auth = resource_auth(resource)
     user = g.get('current_user')
@@ -57,16 +59,16 @@ def _get_resource_methods(resource):
     return list(set(methods))
 
 
-def _home_link_methods():
+def _home_link_methods() -> List[str]:
     return ['GET', 'HEAD', 'OPTIONS']
 
 
-def add_methods_to_item_links(resource, item):
+def add_methods_to_item_links(resource: str, item: dict) -> None:
     """Add methods to all links of the item.
 
     Args:
-        resource (str): The name of the resource
-        item (dict): The item, must have a 'links' key.
+        resource: The name of the resource
+        item: The item, must have a 'links' key.
     """
     if '_links' not in item:
         # Embedded objects don't have a _links field
@@ -86,13 +88,12 @@ def add_methods_to_item_links(resource, item):
         links['collection']['methods'] = _get_resource_methods(resource)
 
 
-def add_methods_to_resource_links(resource, response):
+def add_methods_to_resource_links(resource: str, response: dict) -> None:
     """Add methods to all links of the item.
 
     Args:
-        resource (str): The name of the resource
-        response (dict): A dict containing the response. Must have the key
-            'links'.
+        resource: The name of the resource
+        response: A dict containing the response. Must have the key 'links'.
     """
     links = response['_links']
 
@@ -106,20 +107,21 @@ def add_methods_to_resource_links(resource, response):
             links[link]['methods'] = res_links
 
 
-def add_permitted_methods_after_insert(resource, items):
+def add_permitted_methods_after_insert(resource: str, items: dict) -> None:
     """Add link methods with an on_inserted hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         for item in items:
             add_methods_to_item_links(resource, item)
 
 
-def add_permitted_methods_after_fetch_item(resource, item):
+def add_permitted_methods_after_fetch_item(resource: str, item: dict) -> None:
     """Add link methods with an on_fetched_item hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         add_methods_to_item_links(resource, item)
 
 
-def add_permitted_methods_after_fetch_resource(resource, response):
+def add_permitted_methods_after_fetch_resource(resource: str,
+                                               response: dict) -> None:
     """Add link methods with an on_fetched_resource hook."""
     if isinstance(resource_auth(resource), AmivTokenAuth):
         # Item links
@@ -130,20 +132,18 @@ def add_permitted_methods_after_fetch_resource(resource, response):
         add_methods_to_resource_links(resource, response)
 
 
-def _get_data(response):
-    """Get response data as dict.
-
-    Encoding/Decoding necessary for compatibility with both python 2 and 3.
-    """
-    return json.loads(response.get_data().decode('utf-8'))
+def _get_data(response: Response) -> dict:
+    """Get response data as dict."""
+    return json.loads(response.get_data(as_text=True))
 
 
-def _set_data(response, data):
+def _set_data(response: Response, data: dict) -> None:
     """Jsonify dict and set as response data."""
     response.set_data(json.dumps(data))
 
 
-def add_permitted_methods_after_update(resource, request, response):
+def add_permitted_methods_after_update(resource: str, request: Request,
+                                       response: Response) -> None:
     """Add link methods with an on_post_PATCH hook.
 
     The on_updated hook doesn't work since it doesn't include the links.
@@ -160,7 +160,8 @@ def add_permitted_methods_after_update(resource, request, response):
         _set_data(response, item_data)
 
 
-def add_permitted_methods_for_home(resource, request, response):
+def add_permitted_methods_for_home(resource: str, request: Request,
+                                   response: Response) -> None:
     """Add link methods to home endpoint with an on_post_GET hook.
 
     The home endpoint doesn't call any database hooks and no on_pre_GET hook.

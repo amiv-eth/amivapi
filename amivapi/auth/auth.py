@@ -73,9 +73,11 @@ Item endpoints:
 
 from datetime import datetime as dt
 from functools import wraps
+from typing import Callable
 
 from eve.auth import BasicAuth, resource_auth
 from flask import abort, current_app, g, request
+from werkzeug.wrappers import Request
 
 
 class AmivTokenAuth(BasicAuth):
@@ -84,7 +86,7 @@ class AmivTokenAuth(BasicAuth):
     Subclass and overwrite functions if you don't want default behaviour.
     """
 
-    def authorized(self, allowed_roles, resource, method):
+    def authorized(self, allowed_roles, resource: str, method: str) -> bool:
         """Authorize Request.
 
         This is the method Eve will call if the endpoint is not public.
@@ -97,50 +99,50 @@ class AmivTokenAuth(BasicAuth):
         g.auth_required = True
         return True
 
-    def has_resource_write_permission(self, user_id):
+    def has_resource_write_permission(self, user_id: str) -> bool:
         """Check if the user is alllowed to write to the resource.
 
         Implement this function for your resource.
         Default behaviour: No user has write permission.
 
         Args:
-            user_id (str): The if of the user
+            user_id: The id of the user
 
         Returns:
-            bool: True if user has permission to write, False otherwise.
+            True if user has permission to write, False otherwise.
         """
         return False
 
-    def has_item_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id: str, item: dict) -> bool:
         """Check if the user is allowed to modify the item.
 
         Implement this function for your resource.
         Default behaviour: No user has write permission.
 
         Args:
-            user (str): The id of the user that wants to access the item
-            item (dict): The item the user wants to change or delete.
+            user: The id of the user that wants to access the item
+            item: The item the user wants to change or delete.
                 Attention! If they are any ObjectIds in here, Eve will not have
                 converted them yet, so be sure to cast them to str if you want
                 to compare them to e.g. g.current_user
 
         Returns:
-            bool: True if user has permission to change the item, False if not.
+            True if user has permission to change the item, False if not.
         """
         return False
 
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         """Create a filter for item lookup in GET, PATCH and DELETE.
 
         Implement this function for your resource.
         Default behaviour: No lookup filter.
 
         Args:
-            user_id (str): The id of the user
+            user_id: The id of the user
 
         Returns:
-            dict: The filter, will be combined with other filters in the hook.
-                Return None or empty dict if no filters should be applied.
+            The filter, will be combined with other filters in the hook.
+            Return None or empty dict if no filters should be applied.
         """
         return None
 
@@ -148,7 +150,7 @@ class AmivTokenAuth(BasicAuth):
 class AdminOnlyAuth(AmivTokenAuth):
     """Auth class to use if no access at all is given for non admins of a
     resource."""
-    def create_user_lookup_filter(self, user):
+    def create_user_lookup_filter(self, user: str) -> dict:
         """If this hook gets called, the user is not an admin for this resource.
         Therefore no results should be given. To give a more precise error
         message, we abort. Otherwise normal users would just see an empty list.
@@ -158,7 +160,7 @@ class AdminOnlyAuth(AmivTokenAuth):
 
 # Decorators that will only call a function if auth conditions are met
 
-def only_if_auth_required(func):
+def only_if_auth_required(func: Callable) -> Callable:
     """Call function only if `g.get('auth_required')`."""
     @wraps(func)
     def wrapped(*args):
@@ -167,7 +169,7 @@ def only_if_auth_required(func):
     return wrapped
 
 
-def not_if_admin(func):
+def not_if_admin(func: Callable) -> Callable:
     """Call function only if `g.resource_admin`."""
     @wraps(func)
     def wrapped(*args):
@@ -176,7 +178,7 @@ def not_if_admin(func):
     return wrapped
 
 
-def not_if_admin_or_readonly_admin(func):
+def not_if_admin_or_readonly_admin(func: Callable) -> Callable:
     """Call function if `g.resource_admin` or `g.resource_admin_readonly`."""
     @wraps(func)
     def wrapped(*args):
@@ -185,7 +187,7 @@ def not_if_admin_or_readonly_admin(func):
     return wrapped
 
 
-def only_amiv_token_auth(func):
+def only_amiv_token_auth(func: Callable) -> Callable:
     """Call function only if auth is a subclass of AmivTokenAuth.
 
     Add auth as first function argument.
@@ -201,7 +203,7 @@ def only_amiv_token_auth(func):
 # Function to log in the user with a specific token
 
 
-def authenticate_token(token):
+def authenticate_token(token: str) -> None:
     """Authenticate user and set g.current_token, g.current_session and
     g.current_user.
 
@@ -233,7 +235,7 @@ def authenticate_token(token):
 
 # Hooks begin here
 
-def authenticate(*args):
+def authenticate(*args) -> None:
     """Authenticate user.
 
     This is not part of the auth class because we want authentication for
@@ -262,7 +264,7 @@ def authenticate(*args):
     authenticate_token(token)
 
 
-def check_if_admin(resource, *args):
+def check_if_admin(resource: str, *args) -> None:
     """Check if the current user is admin for the current resource.
 
     This is basically the second, resource specific part of authentication,
@@ -289,7 +291,7 @@ def check_if_admin(resource, *args):
 
 @only_if_auth_required
 @not_if_admin_or_readonly_admin
-def abort_if_not_public(*args):
+def abort_if_not_public(*args) -> None:
     """Abort if the resource is not public and there is no user/admin.
 
     If auth is required and we are no admin, check if a user is logged in.
@@ -305,7 +307,8 @@ def abort_if_not_public(*args):
 @only_if_auth_required
 @not_if_admin_or_readonly_admin
 @only_amiv_token_auth
-def add_lookup_filter(auth, resource, request, lookup):
+def add_lookup_filter(auth: AmivTokenAuth, resource: str, request: Request,
+                      lookup: dict) -> None:
     """Get and add lookup filter for GET, PATCH and DELETE."""
     extra_lookup = auth.create_user_lookup_filter(g.current_user)
 
@@ -318,7 +321,8 @@ def add_lookup_filter(auth, resource, request, lookup):
 @only_if_auth_required
 @not_if_admin
 @only_amiv_token_auth
-def check_resource_write_permission(auth, resource, *args):
+def check_resource_write_permission(auth: AmivTokenAuth, resource: str,
+                                    *args) -> None:
     """Check if the user is allowed to POST to (or DELETE) a resource."""
     user = g.current_user
     if not (user and auth.has_resource_write_permission(user)):
@@ -331,7 +335,8 @@ def check_resource_write_permission(auth, resource, *args):
 @only_if_auth_required
 @not_if_admin
 @only_amiv_token_auth
-def check_item_write_permission(auth, resource, item):
+def check_item_write_permission(auth: AmivTokenAuth, resource: str,
+                                item: dict) -> None:
     """Check if the user is allowed to PATCH or DELETE the item."""
     user = g.current_user
     if not (user and auth.has_item_write_permission(user, item)):

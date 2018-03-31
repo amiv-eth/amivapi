@@ -11,6 +11,9 @@ referencing object. If false, the reference will be set to NULL, when the
 referenced object is deleted.
 """
 
+from typing import Iterable
+
+from eve import Eve
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 from flask import current_app
@@ -19,7 +22,7 @@ from werkzeug.exceptions import NotFound
 from amivapi.utils import admin_permissions
 
 
-def cascade_delete(resource, item):
+def cascade_delete(resource: str, item: dict) -> None:
     """Cascade DELETE.
 
     Hook to delete all objects, which have the 'cascade_delete' option set
@@ -53,13 +56,13 @@ def cascade_delete(resource, item):
                     pass
 
 
-def cascade_delete_collection(resource, items):
+def cascade_delete_collection(resource: str, items: Iterable[dict]) -> None:
     """Hook to propagate the deletion of objects."""
     for item in items:
         cascade_delete(resource, item)
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Add hooks to app."""
     app.on_deleted_item += cascade_delete
     app.on_deleted += cascade_delete_collection

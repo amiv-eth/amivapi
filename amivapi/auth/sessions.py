@@ -6,6 +6,7 @@
 
 import datetime
 import textwrap
+from typing import Iterable
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -31,12 +32,12 @@ class SessionAuth(AmivTokenAuth):
     No resource write check needed since POST is public.
     """
 
-    def has_item_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id: str, item: dict) -> bool:
         """Allow users to modify only their own sessions."""
         # item['user'] is Objectid, convert to str
         return user_id == str(get_id(item['user']))
 
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         """Allow users to only see their own sessions."""
         return {'user': user_id}
 
@@ -101,7 +102,7 @@ sessiondomain = {
 
 # Login Hook
 
-def process_login(items):
+def process_login(items: Iterable[dict]) -> None:
     """Hook to add token on POST to /sessions.
 
     Attempts to first login via LDAP (if enabled), then login via database.
@@ -113,7 +114,7 @@ def process_login(items):
     If the login is unsuccessful, abort(401)
 
     Args:
-        items (list): List of items as passed by EVE to post hooks.
+        items: Items as passed by EVE to post hooks.
     """
     for item in items:
         username = item['username']
@@ -155,7 +156,7 @@ def process_login(items):
         abort(401, description=debug_error_message(status))
 
 
-def _prepare_token(item, user_id):
+def _prepare_token(item: dict, user_id: str) -> None:
     token = token_urlsafe()
 
     # Remove user and password from document
@@ -167,19 +168,19 @@ def _prepare_token(item, user_id):
     item['token'] = token
 
 
-def verify_password(user, plaintext):
+def verify_password(user: dict, plaintext: str) -> bool:
     """Check password of user, rehash if necessary.
 
     It is possible that the password is None, e.g. if the user is authenticated
     via LDAP. In this case default to "not verified".
 
     Args:
-        user (dict): the user in question.
-        plaintext (string): password to check
+        user: the user in question.
+        plaintext: password to check
 
     Returns:
-        bool: True if password matches. False if it doesn't or if there is no
-            password set and/or provided.
+        True if password matches. False if it doesn't or if there is no
+        password set and/or provided.
     """
     password_context = app.config['PASSWORD_CONTEXT']
 
@@ -198,7 +199,7 @@ def verify_password(user, plaintext):
 
 # Regular task to clean up expired sessions
 @periodic(datetime.timedelta(days=1))
-def delete_expired_sessions():
+def delete_expired_sessions() -> None:
     """Delete expired sessions.
 
     Needs an app context to access current_app,

@@ -6,6 +6,7 @@
 
 Also has method to create group_permissions_jsonschema.
 """
+from typing import Iterable, Sequence
 
 from flask import current_app, g
 
@@ -13,7 +14,8 @@ from flask import current_app, g
 class GroupValidator(object):
     """Custom Validator for group validation rules."""
 
-    def _validate_only_self_or_moderator(self, enabled, field, value):
+    def _validate_only_self_or_moderator(self, enabled: bool, field: str,
+                                         value: str) -> None:
         """Validate if the id can be used to enroll for a group.
 
         Users can only sign up themselves
@@ -33,7 +35,8 @@ class GroupValidator(object):
                         field, "You can only enroll yourself. (Your id: "
                         "%s)" % (user_id))
 
-    def _validate_self_enrollment_required(self, enabled, field, value):
+    def _validate_self_enrollment_required(self, enabled: bool, field: str,
+                                           value: str) -> None:
         """Check self_enrollment for group.
 
         Validates if the group allows self enrollment.
@@ -49,13 +52,15 @@ class GroupValidator(object):
                             "Group with id '%s' does not allow self enrollment"
                             " and you are not the group moderator.")
 
-    def _validate_unique_elements(self, enabled, field, value):
+    def _validate_unique_elements(self, enabled: bool, field: str,
+                                  value: Sequence) -> None:
         """Validate that a list does only contain unique elements."""
         if enabled:
             if len(value) > len(set(value)):
                 self._error(field, "All list elements must be unique.")
 
-    def _validate_unique_elements_for_resource(self, enabled, field, value):
+    def _validate_unique_elements_for_resource(self, enabled: bool, field: str,
+                                               value: Iterable) -> None:
         """Validate that no list elements exists in another items list."""
         if enabled:
             # Ignore values already present in original document if updating

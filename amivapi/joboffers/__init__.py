@@ -6,6 +6,7 @@
 
 Since there are no hooks or anything, everything is just in here.
 """
+from eve import Eve
 
 from amivapi.utils import register_domain
 
@@ -69,6 +70,6 @@ jobdomain = {
 }
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, jobdomain)

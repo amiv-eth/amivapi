@@ -11,6 +11,7 @@ And provides a helper function to check group permissions.
 """
 from datetime import datetime, timedelta
 
+from eve import Eve
 from flask import current_app
 
 from amivapi.cron import periodic
@@ -27,7 +28,7 @@ from amivapi.groups.validation import GroupValidator
 from amivapi.utils import register_domain, register_validator
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, groupdomain)
     register_validator(app, GroupValidator)
@@ -47,6 +48,6 @@ def init_app(app):
 
 
 @periodic(timedelta(days=1))
-def remove_expired_group_members():
+def remove_expired_group_members() -> None:
     current_app.data.driver.db['groupmemberships'].remove(
         {'expiry': {'$lte': datetime.utcnow()}})

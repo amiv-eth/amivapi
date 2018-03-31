@@ -6,6 +6,7 @@
 """User Auth class."""
 
 from bson import ObjectId
+from typing import Iterable
 
 from flask import current_app, g
 
@@ -32,7 +33,7 @@ class UserAuth(AmivTokenAuth):
     `has_resource_write_permission` - the default is fine.
     """
 
-    def has_item_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id: str, item: dict) -> bool:
         """Check if *user* is allowed to write *item*.
 
         This includes PATCH and DELETE.
@@ -48,7 +49,7 @@ class UserAuth(AmivTokenAuth):
         """
         return str(item['_id']) == user_id
 
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         """Create a filter for item lookup.
 
         Not a member: Can see only himself
@@ -78,7 +79,7 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(response):
+def hide_fields(response: dict) -> None:
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -107,7 +108,7 @@ def hide_fields(response):
 
 # Project password status
 
-def project_password_status(response):
+def project_password_status(response: dict) -> None:
     """Add a boolean field password_state to the response.
 
     This function must be applied before hide_fields, as it uses the password
@@ -125,7 +126,7 @@ def project_password_status(response):
 
 # Password hashing
 
-def _hash_password(user):
+def _hash_password(user: dict) -> None:
     """Helper function to hash password.
 
     If password key doesn't exist or if value is None do nothing.
@@ -141,7 +142,7 @@ def _hash_password(user):
         user['password'] = password_context.encrypt(user['password'])
 
 
-def hash_on_insert(items):
+def hash_on_insert(items: Iterable[dict]) -> None:
     """Hook for user insert.
 
     Hash the password if it is not None.
@@ -149,13 +150,13 @@ def hash_on_insert(items):
     it can be none.)
 
     Args:
-        items (list): List of new items as passed by the on_insert event.
+        items: List of new items as passed by the on_insert event.
     """
     for user in items:
         _hash_password(user)
 
 
-def hash_on_update(updates, original):
+def hash_on_update(updates: dict, original: dict) -> None:
     """Hook for user update or replace.
 
     Hash the password if it is not None.
@@ -163,6 +164,6 @@ def hash_on_update(updates, original):
     it can be none.)
 
     Args:
-        items (list): List of new items as passed by the on_insert event.
+        items: List of new items as passed by the on_insert event.
     """
     _hash_password(updates)

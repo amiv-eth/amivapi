@@ -7,7 +7,7 @@
 from flask import current_app
 
 
-def add_email_to_signup(item):
+def add_email_to_signup(item: dict) -> None:
     if 'email' not in item:
         if isinstance(item['user'], dict):
             # If user is embedded just copy the email
@@ -19,12 +19,12 @@ def add_email_to_signup(item):
             item['email'] = user['email']
 
 
-def add_email_to_signup_collection(response):
+def add_email_to_signup_collection(response: dict) -> None:
     for item in response['_items']:
         add_email_to_signup(item)
 
 
-def add_position_to_signup(item):
+def add_position_to_signup(item: dict) -> None:
     signup_time = item['_created']
     position = current_app.data.driver.db['eventsignups'].find({
         '_created': {'$lte': signup_time},
@@ -32,18 +32,18 @@ def add_position_to_signup(item):
     item['position'] = position
 
 
-def add_position_to_signup_collection(response):
+def add_position_to_signup_collection(response: dict) -> None:
     for item in response['_items']:
         add_position_to_signup(item)
 
 
-def add_signup_count_to_event(item):
+def add_signup_count_to_event(item: dict) -> None:
     """After an event is fetched from the database we add the current signup
     count"""
     item['signup_count'] = current_app.data.driver.db['eventsignups'].find(
         {'event': item['_id']}).count()
 
 
-def add_signup_count_to_event_collection(items):
-    for item in items['_items']:
+def add_signup_count_to_event_collection(response: dict) -> None:
+    for item in response['_items']:
         add_signup_count_to_event(item)

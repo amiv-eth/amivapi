@@ -5,6 +5,7 @@
 
 """Eve Swagger initialization."""
 
+from eve import Eve
 from eve_swagger import add_documentation, swagger
 from flask import Blueprint, render_template_string, request
 
@@ -14,7 +15,7 @@ redoc = Blueprint('redoc', __name__, static_url_path='/docs')
 
 
 @redoc.route('/docs')
-def index():
+def index() -> str:
     """Output simple html that includes ReDoc's JS and sets style"""
     redoc_template = (
         '<!DOCTYPE html>'
@@ -34,18 +35,18 @@ def index():
     return render_template_string(redoc_template, spec_url=spec_url)
 
 
-class DocValidator(object):
+class DocValidator:
     """Add a schema rule for a 'descriptions field'.
 
     This rule will do nothing, but will stop Cerberus from complaining without
     allowing all unknown fields.
     """
 
-    def _validate_description(*args):
+    def _validate_description(*args) -> None:
         """Do nothing."""
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Create a ReDoc endpoint at /docs."""
     # Generate documentation (i.e. swagger/OpenApi) to be used by any UI
     # will be exposed at /docs/api-docs

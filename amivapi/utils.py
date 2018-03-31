@@ -11,14 +11,16 @@ from copy import deepcopy
 from email.mime.text import MIMEText
 from os import urandom
 import smtplib
+from typing import Iterable, Union
 
 from bson import ObjectId
+from eve import Eve
 from eve.utils import config
 from flask import current_app as app
 from flask import g
 
 
-def token_urlsafe(nbytes=None):
+def token_urlsafe(nbytes: int = None) -> str:
     """Cryptographically random generate a token that can be passed in a URL.
 
     This function is available as secrets.token_urlsafe in python3.6. We can
@@ -30,7 +32,7 @@ def token_urlsafe(nbytes=None):
         randomness.
 
     Returns:
-        str: A random string containing only urlsafe characters.
+        A random string containing only urlsafe characters.
     """
     if nbytes is None:
         nbytes = 16
@@ -58,7 +60,7 @@ def admin_permissions():
         g.resource_admin = old_admin
 
 
-def get_id(item):
+def get_id(item: Union[dict, ObjectId]) -> ObjectId:
     """Get the id of a field in a relation. Depending on the embedding clause
     a field returned by a mongo query may be an ID or an object. This function
     will get the ID in both cases.
@@ -76,14 +78,14 @@ def get_id(item):
         return ObjectId(item['_id'])
 
 
-def mail(sender, to, subject, text):
+def mail(sender: str, to: Iterable[str], subject: str, text: str) -> None:
     """Send a mail to a list of recipients.
 
     Args:
-        from(string): From address
-        to(list of strings): List of recipient addresses
-        subject(string): Subject string
-        text(string): Mail content
+        from: From address
+        to: Recipient addresses
+        subject: Subject string
+        text: Mail content
     """
     if app.config.get('TESTING', False):
         app.test_mails.append({
@@ -124,7 +126,7 @@ def mail(sender, to, subject, text):
             app.logger.error("SMTP error trying to send mails: %s" % e)
 
 
-def run_embedded_hooks_fetched_item(resource, item):
+def run_embedded_hooks_fetched_item(resource: str, item: dict) -> None:
     """Run fetched_* hooks on embedded objects. Eve doesn't execute hooks
     for those and we depend on it for auth and filtering of hidden fields.
 
@@ -146,7 +148,8 @@ def run_embedded_hooks_fetched_item(resource, item):
             getattr(app, "on_fetched_item_%s" % rel_resource)(item[field])
 
 
-def run_embedded_hooks_fetched_resource(resource, response):
+def run_embedded_hooks_fetched_resource(
+        resource: str, response: dict) -> None:
     """Run fetched hooks on embedded resources. Eve doesn't execute hooks
     for those and we depend on it for auth and filtering of hidden fields.
 
@@ -158,7 +161,7 @@ def run_embedded_hooks_fetched_resource(resource, response):
         run_embedded_hooks_fetched_item(resource, item)
 
 
-def register_domain(app, domain):
+def register_domain(app: Eve, domain: dict) -> None:
     """Add all resources in a domain to the app.
 
     The domain has to be deep-copied first because eve will modify it
@@ -169,8 +172,8 @@ def register_domain(app, domain):
     TODO: Make tests better maybe so this is no problem anymore?
 
     Args:
-        app (Eve object): The app to extend
-        domain (dict): The domain to be added to the app, will not be changed
+        app: The app to extend
+        domain: The domain to be added to the app, will not be changed
     """
     domain_copy = deepcopy(domain)
 
@@ -178,7 +181,7 @@ def register_domain(app, domain):
         app.register_resource(resource, settings)
 
 
-def register_validator(app, validator_class):
+def register_validator(app: Eve, validator_class: type) -> None:
     """Extend the validator of the app.
 
     This creates a new validator class with both the new and old validato

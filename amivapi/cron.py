@@ -47,10 +47,12 @@ run every day at the same time, but will drift into the future slowly. This
 might sum up to a missing period, so after a year the function might have been
 called only 364 times.
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 import pickle
+from typing import Callable
 
+from eve import Eve
 from flask import current_app
 
 
@@ -63,7 +65,7 @@ class NotSchedulable(Exception):
     pass
 
 
-def schedulable(func):
+def schedulable(func: Callable) -> Callable:
     """ Registers a function to be in the table of schedulable functions.
     This is necessary, as we can not save references to python functions in the
     database.
@@ -72,7 +74,7 @@ def schedulable(func):
     return func
 
 
-def periodic(period, *args):
+def periodic(period: timedelta, *args) -> Callable:
     """ Decorator to mark a function to be executed periodically.
     Args:
         period: timedelta object describing the time between two calls
@@ -97,7 +99,7 @@ def periodic(period, *args):
     return wrap
 
 
-def schedule_task(time, func, *args):
+def schedule_task(time: datetime, func: Callable, *args) -> None:
     """ Schedule a task at some point in the future. """
     func_s = func_str(func)
 
@@ -112,7 +114,7 @@ def schedule_task(time, func, *args):
     })
 
 
-def update_scheduled_task(time, func, *args):
+def update_scheduled_task(time: datetime, func: Callable, *args) -> None:
     """ Update a scheduled task that was previously registered. """
     func_s = func_str(func)
 
@@ -129,7 +131,7 @@ def update_scheduled_task(time, func, *args):
         }})
 
 
-def schedule_once_soon(func, *args):
+def schedule_once_soon(func: Callable, *args) -> None:
     """ Schedules a function to be run as soon as the scheduler is run the next
     time. Also check, that it is not already scheduled to be run first.
     """
@@ -147,12 +149,12 @@ schedulable_functions = {}
 periodic_functions = []
 
 
-def func_str(func):
+def func_str(func: Callable) -> str:
     """ Return a string describing the function """
     return "%s.%s" % (func.__module__, func.__name__)
 
 
-def run_scheduled_tasks():
+def run_scheduled_tasks() -> None:
     """ Check for scheduled task, which have passed the deadline and run them.
     This needs an app context.
     """
@@ -169,7 +171,7 @@ def run_scheduled_tasks():
         func(*args)
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     # Periodic functions: If no execution is scheduled so far, schedule one
     with app.app_context():  # this is needed to run db queries
         for func in periodic_functions:

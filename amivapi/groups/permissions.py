@@ -10,7 +10,7 @@ from bson import ObjectId
 from flask import current_app, g
 
 
-def check_group_permissions(resource):
+def check_group_permissions(resource: str) -> None:
     """Retrieve groups for current user and apply permissions for resource.
 
     Every group has the permissions field which is a dict of resources.

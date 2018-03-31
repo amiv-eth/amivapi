@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Logic to implement different signup queues
 """
+from typing import Iterable
 
 from flask import current_app, url_for
 from itsdangerous import Signer
@@ -13,7 +14,7 @@ from amivapi.utils import mail
 from amivapi.events.utils import get_token_secret
 
 
-def update_waiting_list(event_id):
+def update_waiting_list(event_id: str) -> None:
     """Fill up missing people in an event with people from the waiting list.
     This gets triggered by different hooks, whenever the list needs to be
     updated.
@@ -46,7 +47,7 @@ def update_waiting_list(event_id):
                 notify_signup_accepted(title, new_accepted)
 
 
-def notify_signup_accepted(event_name, signup):
+def notify_signup_accepted(event_name: str, signup: dict) -> None:
     """Send an email to a user, that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
 
@@ -87,25 +88,26 @@ Hooks that trigger fcfs execution
 """
 
 
-def add_accepted_before_insert(signup):
+def add_accepted_before_insert(signup: dict) -> None:
     """Add the accepted field before inserting signups"""
     signup['accepted'] = False
 
 
-def add_accepted_before_insert_collection(signups):
+def add_accepted_before_insert_collection(signups: Iterable[dict]) -> None:
     """Trigger item hook in loop for collection"""
     for s in signups:
         add_accepted_before_insert(s)
 
 
-def update_waiting_list_after_insert(signup):
+def update_waiting_list_after_insert(signup: dict) -> None:
     """Hook to automatically update the waiting list, when new signups are
     created. This way users get accepted, when fcfs is used and the event is not
     full yet."""
     update_waiting_list(signup['event'])
 
 
-def update_waiting_list_after_insert_collection(signups):
+def update_waiting_list_after_insert_collection(
+        signups: Iterable[dict]) -> None:
     """Call the auto_accept_fcfs_signup hook for bulk inserts. This could be
     optimized if multiple signups are for the same event, however we do not
     know that, so this just loop over them and calls the hook for each item."""
@@ -113,7 +115,7 @@ def update_waiting_list_after_insert_collection(signups):
         update_waiting_list_after_insert(s)
 
 
-def update_waiting_list_after_delete(signup):
+def update_waiting_list_after_delete(signup: dict) -> None:
     """Hook, called when a signup was deleted, to update the waiting list of
     the associated event"""
     if not signup['accepted']:

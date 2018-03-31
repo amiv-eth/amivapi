@@ -21,6 +21,7 @@ files will be regenerated.
 from itertools import chain
 from os import makedirs, path, remove
 from subprocess import Popen, PIPE
+from typing import Iterable, Optional
 
 from bson import ObjectId
 
@@ -29,13 +30,13 @@ from flask import current_app
 
 # Hooks
 
-def new_groups(groups):
+def new_groups(groups: Iterable[dict]) -> None:
     """Create mailing list files for all new groups."""
     for group in groups:
         make_files(group['_id'])
 
 
-def updated_group(updates, original):
+def updated_group(updates: dict, original: dict) -> None:
     """Update group mailing lists if any address changes."""
     # Remove no longer needed forwards
     if 'receive_from' in updates:
@@ -46,12 +47,12 @@ def updated_group(updates, original):
         make_files(original['_id'])
 
 
-def removed_group(group):
+def removed_group(group: dict) -> None:
     """Delete all mailinglist files."""
     remove_files(group.get('receive_from', []))
 
 
-def new_members(new_memberships):
+def new_members(new_memberships: Iterable[dict]) -> None:
     """Post on memberships, recreate files for the groups"""
     # Get group ids without duplicates
     group_ids = set(m['group'] for m in new_memberships)
@@ -60,12 +61,12 @@ def new_members(new_memberships):
         make_files(group_id)
 
 
-def removed_member(member):
+def removed_member(member: dict) -> None:
     """Update files for the group the user was in."""
     make_files(member['group'])
 
 
-def updated_user(updates, original):
+def updated_user(updates: dict, original: dict) -> None:
     """Update group mailing files if a member changes his email."""
     if 'email' in updates:
         memberships = current_app.data.driver.db['groupmemberships'].find(
@@ -77,7 +78,7 @@ def updated_user(updates, original):
 
 # File Handling
 
-def make_files(group_id):
+def make_files(group_id: str) -> None:
     """Create all mailing lists for a group.
 
     If the file exists it will be overwritten.
@@ -85,7 +86,7 @@ def make_files(group_id):
     If `REMOTE_MAILING_LIST_ADDRESS` set in config, create remote file.
 
     Args:
-        group_id (str): The id of the group
+        group_id: The id of the group
     """
     # Check if any file will be created, otherwise avoid db access
     if (current_app.config['MAILING_LIST_DIR'] or
@@ -129,14 +130,14 @@ def make_files(group_id):
                     ssh_create(address, content)
 
 
-def remove_files(addresses):
+def remove_files(addresses: Iterable[str]) -> None:
     """Remove several mailing list files.
 
     If `MAILING_LIST_DIR` set in config, create a local file.
     If `REMOTE_MAILING_LIST_ADDRESS` set in config, create remote file.
 
     Args:
-        addresses (list): email addresses with a forward file to delete
+        addresses: email addresses with a forward file to delete
     """
     for address in addresses:
         # Local
@@ -154,13 +155,13 @@ def remove_files(addresses):
             ssh_remove(address)
 
 
-def _get_local_path(email):
+def _get_local_path(email: str) -> str:
     """Local path for a mailinglist for itet mail forwarding."""
     return path.join(current_app.config['MAILING_LIST_DIR'],
                      current_app.config['MAILING_LIST_FILE_PREFIX'] + email)
 
 
-def _get_remote_path(email):
+def _get_remote_path(email: str) -> str:
     """Remote path for a mailinglist for itet mail forwarding."""
     return path.join(current_app.config['REMOTE_MAILING_LIST_DIR'],
                      current_app.config['MAILING_LIST_FILE_PREFIX'] + email)
@@ -168,7 +169,7 @@ def _get_remote_path(email):
 
 # SSH Helpers (in separate functions for easier testing)
 
-def ssh_create(address, content):
+def ssh_create(address: str, content: str) -> None:
     """Create a file with content remotely over ssh."""
     # Create dir, then use 'cat - ' to listen to stdin
     # Create temporary file first, if upload is completed replace
@@ -179,7 +180,7 @@ def ssh_create(address, content):
                 % (folder, tempfile, tempfile, file), input=content)
 
 
-def ssh_remove(address):
+def ssh_remove(address: str) -> None:
     """Remove a file remotely over ssh."""
     path = _get_remote_path(address)
     try:
@@ -197,17 +198,17 @@ def ssh_remove(address):
             raise e
 
 
-def ssh_command(remote_command, input=None):
+def ssh_command(remote_command: str, input: str = None) -> Optional[str]:
     """Call the given command remotely via ssh with input (if given).
 
     Popen and communicate are used for compatibility with both python 2 and 3.
 
     Args:
-        remote_command(Str): Command to execute on remote server
-        input(Str): Input, is sent to remote process via stdin
+        remote_command: Command to execute on remote server
+        input: Input, is sent to remote process via stdin
 
     Returns:
-        Str: stdout of command
+        stdout of command
 
     Raises:
         RuntimeError: An error with the ssh connection occured.
@@ -232,3 +233,5 @@ def ssh_command(remote_command, input=None):
 
     if out:
         return out.decode()
+
+    return None

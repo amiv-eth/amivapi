@@ -17,13 +17,13 @@ from amivapi.settings import EMAIL_REGEX
 class GroupAuth(AmivTokenAuth):
     """Auth for groups."""
 
-    def has_item_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id: str, item: dict) -> bool:
         """The group moderator is allowed to change things."""
         # Return true if a moderator exists and it is equal to the current user
         return item.get('moderator') and (
             user_id == str(get_id(item['moderator'])))
 
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         """Group lookup filter.
 
         Groups can be seen:
@@ -46,7 +46,7 @@ class GroupAuth(AmivTokenAuth):
 class GroupMembershipAuth(AmivTokenAuth):
     """Auth for group memberships."""
 
-    def has_resource_write_permission(self, user_id):
+    def has_resource_write_permission(self, user_id: str) -> bool:
         """All users can enroll in groups.
 
         Group-specific settings related to the question "who is allowed to
@@ -54,7 +54,7 @@ class GroupMembershipAuth(AmivTokenAuth):
         """
         return True
 
-    def has_item_write_permission(self, user_id, item):
+    def has_item_write_permission(self, user_id: str, item: dict) -> bool:
         """The group moderator and the member can change an enrollment."""
         if user_id == str(get_id(item['user'])):
             # Own membership can be modified
@@ -69,7 +69,7 @@ class GroupMembershipAuth(AmivTokenAuth):
                                         {'moderator': 1})
             return user_id == str(group.get('moderator'))
 
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         """Lookup for group members.
 
         Users can see memberships for groups:

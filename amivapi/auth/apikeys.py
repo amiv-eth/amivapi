@@ -10,7 +10,9 @@ Provides the apikey resource and hooks to handle authorization with a key.
 API keys should only be created or modified by admins.
 """
 from datetime import datetime as dt
+from typing import Iterable
 
+from eve import Eve
 from flask import abort, current_app, g
 
 from amivapi.auth.auth import AdminOnlyAuth
@@ -23,7 +25,7 @@ except ImportError:
     from amivapi.utils import token_urlsafe
 
 
-def authorize_apikeys(resource):
+def authorize_apikeys(resource: str) -> None:
     """Check if user is an apikey, and if it is, do authorization.
 
     Also update 'updated' timestamp everytime a key is accessed
@@ -92,12 +94,12 @@ apikeydomain = {
 }
 
 
-def generate_tokens(items):
+def generate_tokens(items: Iterable[dict]) -> None:
     for item in items:
         item['token'] = token_urlsafe()
 
 
-def init_apikeys(app):
+def init_apikeys(app: Eve) -> None:
     """Register API Key resource and add auth hook."""
     register_domain(app, apikeydomain)
     app.after_auth += authorize_apikeys

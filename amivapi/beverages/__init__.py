@@ -6,12 +6,14 @@
 
 Since there are no hooks or anything everything is just in here.
 """
+from eve import Eve
+
 from amivapi.auth import AmivTokenAuth
 from amivapi.utils import register_domain
 
 
 class BeveragesAuth(AmivTokenAuth):
-    def create_user_lookup_filter(self, user_id):
+    def create_user_lookup_filter(self, user_id: str) -> dict:
         return {'user': user_id}
 
 
@@ -58,6 +60,6 @@ beveragesdomain = {
 }
 
 
-def init_app(app):
+def init_app(app: Eve) -> None:
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, beveragesdomain)

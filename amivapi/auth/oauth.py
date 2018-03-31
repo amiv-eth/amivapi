@@ -10,6 +10,7 @@ from urllib.parse import urlencode
 from bson import ObjectId
 
 from cerberus import Validator
+from eve import Eve
 from eve.methods.post import post_internal
 from flask import (
     make_response,
@@ -20,6 +21,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    Response
 )
 from werkzeug.exceptions import Unauthorized
 
@@ -31,21 +33,22 @@ from amivapi.utils import register_domain
 oauth_blueprint = Blueprint('oauth', __name__, template_folder='templates')
 
 
-def _append_url_params(url, **params):
+def _append_url_params(url: str, **params: str) -> str:
     """Helper to add addtional parameters to an url query string."""
     if '?' not in url:
         url += '?'
     return '%s&%s' % (url, urlencode(params))
 
 
-def validate_oauth_authorization_request(response_type, client_id,
-                                         redirect_uri, scope, state):
+def validate_oauth_authorization_request(response_type: str, client_id: str,
+                                         redirect_uri: str, scope: str,
+                                         state: str) -> str:
     """Validate an OAuth authentication request for an implicit grant.
 
     See https://tools.ietf.org/html/rfc6749#section-4.2.1
 
     Returns:
-        str: The actual URL the client should be redirected to.
+        The actual URL the client should be redirected to.
     """
     oauth_schema = {
         'response_type': {
@@ -99,7 +102,7 @@ def validate_oauth_authorization_request(response_type, client_id,
     return redirect_uri
 
 
-def oauth_redirect(redirect_uri, state):
+def oauth_redirect(redirect_uri: str, state: str) -> Response:
     """Process login and redirect user.
 
     Loads and validates all inputs from request. First check if the request
@@ -107,7 +110,7 @@ def oauth_redirect(redirect_uri, state):
     form.
 
     Returns:
-        flask.Response: Flask redirect response
+        Flask redirect response
 
     Raises:
         werkzeug.exceptions.Unauthorized: If the user cannot be authenticated
@@ -149,7 +152,7 @@ def oauth_redirect(redirect_uri, state):
 
 
 @oauth_blueprint.route('/oauth', methods=['GET', 'POST'])
-def oauth():
+def oauth() -> Response:
     """Endpoint for OAuth login. OAuth clients redirect users here."""
     response_type = request.args.get('response_type')
     client_id = request.args.get('client_id')
@@ -241,7 +244,7 @@ oauthclients_domain = {
 }
 
 
-def init_oauth(app):
+def init_oauth(app: Eve) -> None:
     """Register oauthclient resource."""
     register_domain(app, oauthclients_domain)
     app.register_blueprint(oauth_blueprint)
