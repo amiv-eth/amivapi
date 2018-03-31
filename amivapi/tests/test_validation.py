@@ -41,10 +41,22 @@ class ValidatorAMIVTest(WebTest):
             }
         })
 
+        # Outdated token may not post
         self.api.post("/test", data={
             'field1': 'teststring'
         }, token=old_token, status_code=422)
 
+        # New token can post
         self.api.post("/test", data={
             'field1': 'teststring',
         }, token=token, status_code=201)
+
+        admin_group = self.new_object("groups",
+                                      permissions={'test': 'readwrite'})
+        self.new_object("groupmemberships",
+                        user=user['_id'], group=admin_group['_id'])
+
+        # User is now admin, so can always post
+        self.api.post("/test", data={
+            'field1': 'teststring2'
+        }, token=old_token, status_code=201)
