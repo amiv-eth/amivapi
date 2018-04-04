@@ -20,8 +20,8 @@ Possible improvements:
 
 Note on department info in ldap:
 
-We can discover a users department by looking at the `departmentNumber` field.
-Contrary to it's name, it does not contain a number, but entries like this:
+We can discover a user's department by looking at the `departmentNumber` field.
+Contrary to its name, it does not contain a number, but entries like this:
 
 - `ETH Studentin D-ITET, Elektrotechnik und Interformationstechnologie Bsc.`
 - `ETH Student D-MAVT, Doktorand`
@@ -31,7 +31,7 @@ always the same, and the second part of the string contains further details.
 
 We therefore match the first part of the `departmentNumber` field to
 check for the department. In the app settings, we define which substring
-is mapped to which deparment.
+is mapped to which department.
 """
 
 from eve.methods.patch import patch_internal
@@ -46,8 +46,15 @@ def init_app(app):
     """Attach an ldap connection to the app."""
     user = app.config['LDAP_USERNAME']
     password = app.config['LDAP_PASSWORD']
-    if None not in (user, password):
-        app.config['ldap_connector'] = AuthenticatedLdap(user, password)
+
+    if user is None and password is None:
+        return
+
+    if None in (user, password):
+        raise ValueError("You cannot set only a username or only a password "
+                         "for ldap.")
+
+    app.config['ldap_connector'] = AuthenticatedLdap(user, password)
 
 
 def authenticate_user(cn, password):

@@ -26,11 +26,9 @@ def admin_permissions():
     """
     old_admin = g.get('resource_admin')
     g.resource_admin = True
-    # app.logger.debug("Overwriting g.resource_admin with True.")
 
     yield
 
-    # app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
 
