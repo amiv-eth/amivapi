@@ -67,9 +67,8 @@ SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 
 # LDAP
-ENABLE_LDAP = False
-LDAP_USER = ''
-LDAP_PASS = ''
+LDAP_USERNAME = None
+LDAP_PASSWORD = None
 
 # Security
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
@@ -97,30 +96,19 @@ CONFIRM_EMAIL_TEXT = (
 CONFIRM_TEXT = "Your singup was confirmed!"
 SIGNUP_DELETED_TEXT = "Your signup was removed."
 
-# All organisational units (ou) in ldap which are assigned to AMIV (by VSETH)
-LDAP_MEMBER_OU_LIST = [
-    u'Biomedical Engineering MSc',
-    u'Dr. Informationstechnologie und Elektrotechnik',
-    u'Dr. Maschinenbau und Verfahrenstechnik',
-    u'DZ Elektrotechnik und Informationstechnologie',
-    u'DZ Maschineningenieurwiss. und Verfahrenstechnik',
-    u'Elektrotech. und Informationstechnol. (Mobilität)',
-    u'Elektrotechnik und Informationstechnologie BSc',
-    u'Elektrotechnik und Informationstechnologie MSc',
-    u'Energy Science and Technology MSc',
-    u'Informationstechnologie und Elektrotechnik',
-    u'Maschinenbau und Verfahrenstechnik',
-    u'Maschineningenieurwissenschaften (Mobilität)',
-    u'Maschineningenieurwissenschaften BSc',
-    u'Maschineningenieurwissenschaften MSc',
-    u'Micro- and Nanosystems MSc',
-    u'Nuclear Engineering MSc',
-    u'Nuclear Engineering MSc (EPFL)',
-    u'Robotics, Systems and Control MSc',
-    u'Verfahrenstechnik MSc',
-    u'Doktorat Informationstechnologie & Elektrotechnik',
-    u'Doktorat Maschinenbau und Verfahrenstechnik'
-]
+
+# In LDAP, the 'departmentNumber' field contains the students departments
+# It contains: type of person, e.g. student, department, exact field of study
+# We can use this to discover department of students
+LDAP_DEPARTMENT_MAP = {
+    # (phrase in departmentNumber for our members): department of member
+    u'ETH Student D-ITET': u'itet',  # for BSc, MSc as well as PhD students!
+    u'ETH Studentin D-ITET': u'itet',
+    u'ETH Student D-MAVT': u'mavt',
+    u'ETH Studentin D-MAVT': u'mavt',
+    # All other departments are mapped to 'None' (s.t. None equals 'no member')
+}
+
 
 # All departments at ETH
 DEPARTMENT_LIST = [

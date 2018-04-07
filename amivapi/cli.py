@@ -80,7 +80,7 @@ def ldap_sync(config, sync_all, nethz):
         amivapi ldap_sync adietmue bconrad blumh
     """
     app = create_app(config_file=config)
-    if not app.config['ENABLE_LDAP']:
+    if not app.config['ldap_connector']:
         echo("LDAP is not enabled, can't proceed!")
     else:
         with app.test_request_context():
@@ -90,7 +90,7 @@ def ldap_sync(config, sync_all, nethz):
             else:
                 for user in nethz:
                     if ldap.sync_one(user) is not None:
-                        echo("Succesfully synchronized '%s'." % user)
+                        echo("Successfully synchronized '%s'." % user)
                     else:
                         echo("Could not synchronize '%s'." % user)
 

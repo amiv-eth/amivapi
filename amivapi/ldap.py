@@ -12,10 +12,26 @@ The app configuration needs to contain the following ldap entries:
 - `LDAP_PASS'
 
 Possible improvements:
-- The `_filter_data' function is rather complicated. Maybe some parts could
+- The `_process_data' function is rather complicated. Maybe some parts could
   be improved or moved to the nethz module?
 - `_create_or_patch_user' is also not very straightforward, maybe the ldap
   importing logic could be simplified?
+
+
+Note on department info in ldap:
+
+We can discover a user's department by looking at the `departmentNumber` field.
+Contrary to its name, it does not contain a number, but entries like this:
+
+- `ETH Studentin D-ITET, Elektrotechnik und Interformationstechnologie Bsc.`
+- `ETH Student D-MAVT, Doktorand`
+
+and similar. For regular, mobility and phd students the starting part is
+always the same, and the second part of the string contains further details.
+
+We therefore match the first part of the `departmentNumber` field to
+check for the department. In the app settings, we define which substring
+is mapped to which department.
 """
 
 from eve.methods.patch import patch_internal
@@ -28,8 +44,16 @@ from amivapi.utils import admin_permissions
 
 def init_app(app):
     """Attach an ldap connection to the app."""
-    user = app.config['LDAP_USER']
-    password = app.config['LDAP_PASS']
+    user = app.config['LDAP_USERNAME']
+    password = app.config['LDAP_PASSWORD']
+
+    if user is None and password is None:
+        return
+
+    if None in (user, password):
+        raise ValueError("You cannot set only a username or only a password "
+                         "for ldap.")
+
     app.config['ldap_connector'] = AuthenticatedLdap(user, password)
 
 
@@ -74,10 +98,10 @@ def sync_all():
     Returns:
         list: Data of all updated users.
     """
-    # Create query: VSETH member and part of any of member ou
-    ou_items = ''.join(u"(ou=%s)" % _escape(item) for item in
-                       current_app.config['LDAP_MEMBER_OU_LIST'])
-    query = u"(& (ou=VSETH Mitglied) (| %s) )" % ou_items
+    # See file docstring for explanation of `deparmentNumber` field
+    keywords = ''.join(u"(departmentNumber=*%s*)" % _escape(item)
+                       for item in current_app.config['LDAP_DEPARTMENT_MAP'])
+    query = u"(& (ou=VSETH Mitglied) (| %s) )" % keywords
     ldap_data = _search(query)
 
     return [_create_or_update_user(user) for user in ldap_data]
@@ -91,11 +115,12 @@ def _search(query):
         'givenName',
         'sn',
         'swissEduPersonGender',
+        'departmentNumber',
         'ou'
     ]
     results = current_app.config['ldap_connector'].search(query,
                                                           attributes=attr)
-    return (_filter_data(res) for res in results)
+    return (_process_data(res) for res in results)
 
 
 def _escape(query):
@@ -113,7 +138,7 @@ def _escape(query):
     return query
 
 
-def _filter_data(data):
+def _process_data(data):
     """Utility to filter ldap data.
 
     It will take all fields relevant for a user update and map them
@@ -129,22 +154,16 @@ def _filter_data(data):
     res['gender'] = \
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
-    if 'D-ITET' in data['ou']:
-        res['department'] = u"itet"
-    elif 'D-MAVT' in data['ou']:
-        res['department'] = u"mavt"
-    else:
-        res['department'] = u"other"
+    # See file docstring for explanation of `deparmentNumber` field
+    department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
+    department = (dept for phrase, dept in department_map
+                  if phrase in data['departmentNumber'][0])
+    res['department'] = next(department, None)  # None if no match
 
-    # ou contains all 'organization units'. This contains fields of study.
-    # Check if it contains any field of study assigned to us
-    ou_list = current_app.config['LDAP_MEMBER_OU_LIST']
-    is_member = bool(set(data['ou']).intersection(set(ou_list)))
-
-    if ('VSETH Mitglied' in data['ou']) and is_member:
-        res['membership'] = u"regular"
-    else:
-        res['membership'] = u"none"
+    # Membership: One of our departments and VSETH member
+    is_member = ((res['department'] is not None) and
+                 ('VSETH Mitglied' in data['ou']))
+    res['membership'] = u"regular" if is_member else u"none"
 
     return res
 
