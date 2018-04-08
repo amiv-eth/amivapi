@@ -157,7 +157,7 @@ def _process_data(data):
     # See file docstring for explanation of `deparmentNumber` field
     department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
     department = (dept for phrase, dept in department_map
-                  if phrase in data['departmentNumber'][0])
+                  if phrase in data.get('departmentNumber', []))
     res['department'] = next(department, None)  # None if no match
 
     # Membership: One of our departments and VSETH member
