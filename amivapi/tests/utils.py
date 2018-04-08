@@ -98,7 +98,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'SMTP_SERVER': '',
         'TESTING': True,
         'DEBUG': True,   # This makes eve's error messages more helpful
-        'LDAP_USER': None,  # LDAP test require special treatment
+        'LDAP_USERNAME': None,  # LDAP test require special treatment
         'LDAP_PASSWORD': None,  # LDAP test require special treatment
         'PASSWORD_CONTEXT': CryptContext(
             schemes=["pbkdf2_sha256"],
