@@ -155,9 +155,12 @@ def _process_data(data):
         u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
     # See file docstring for explanation of `deparmentNumber` field
+    # In some rare cases, the departmentNumber field is either empty
+    # or missing -> normalize to empty string
+    department_number = next(iter(data.get('departmentNumber', [])), '')
     department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
     department = (dept for phrase, dept in department_map
-                  if phrase in data.get('departmentNumber', []))
+                  if phrase in department_number)
     res['department'] = next(department, None)  # None if no match
 
     # Membership: One of our departments and VSETH member
