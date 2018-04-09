@@ -5,17 +5,9 @@
 
 """Tests for mailing list files.
 
-To run integration tests for remote files, set the following environment
-variables:
-
-REMOTE_MAILING_LIST_ADDRESS: user@remote.host
-REMOTE_MAILING_LIST_KEYFILE: path to your keyfile, optional
-REMOTE_MAILING_LIST_DIR: storage path on remote server, default is './',
-                         `/tmp/apitest` or similar might be a good idea
-
+To run integration tests for remote files, you need to set some environment
+variables (see below)
 """
-
-import pytest
 
 from os import getenv
 from os.path import isfile, join
@@ -24,7 +16,7 @@ from tempfile import mkdtemp
 
 from mock import patch, call
 
-from amivapi.tests.utils import WebTestNoAuth
+from amivapi.tests.utils import WebTestNoAuth, skip_if_false
 
 from amivapi.groups.mailing_lists import (
     make_files, remove_files, ssh_command, ssh_create, ssh_remove)
@@ -216,12 +208,10 @@ class RemoteMailingListTest(WebTestNoAuth):
                 )
 
 
-def skip_without_address(func):
-    """Decorator to mark tests to be skipped if envvar is not set."""
-    if getenv('REMOTE_MAILING_LIST_ADDRESS'):
-        return func
-    else:
-        return pytest.mark.skip(reason="Test")(func)
+# Decorator to mark tests to be skipped if ssh envvars are missing.
+skip_without_address = skip_if_false(getenv('SSH_TEST_ADDRESS'),
+                                     "SSH test requires environment variable" +
+                                     " 'REMOTE_MAILING_LIST_ADDRESS'")
 
 
 class SSHIntegrationTest(WebTestNoAuth):
@@ -229,18 +219,20 @@ class SSHIntegrationTest(WebTestNoAuth):
 
     You need to set environment variables to run these tests:
 
-    REMOTE_MAILING_LIST_ADDRESS: user@remote.host
-    REMOTE_MAILING_LIST_KEYFILE: path to your keyfile, optional
-    REMOTE_MAILING_LIST_DIR: storage path on remote server, default is './'
+    SSH_TEST_ADDRESS: user@remote.host
+    SSH_TEST_KEYFILE: path to your keyfile, optional
+    SSH_TEST_DIRECTORY: remote path, default: '/tmp/amivapi-test/'
 
     py.test will inform you if the tests are skipped.
     """
     def setUp(self):
         """Set config keys from environment variables."""
         super(SSHIntegrationTest, self).setUp()
-        for var in ['ADDRESS', 'KEYFILE', 'DIR']:
-            full_var = 'REMOTE_MAILING_LIST_%s' % var
-            self.app.config[full_var] = getenv(full_var)
+        config = self.app.config
+        config['REMOTE_MAILING_LIST_ADDRESS'] = getenv('SSH_TEST_ADDRESS')
+        config['REMOTE_MAILING_LIST_KEYFILE'] = getenv('SSH_TEST_KEYFILE')
+        config['REMOTE_MAILING_LIST_DIR'] = getenv('SSH_TEST_DIRECTORY',
+                                                   '/tmp/amivapi-test/')
 
     def get_remote_path(self, filename):
         return join(self.app.config['REMOTE_MAILING_LIST_DIR'],
