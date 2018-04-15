@@ -13,9 +13,11 @@ from amivapi.events.authorization import EventAuthValidator
 from amivapi.events.emails import (
     add_confirmed_before_insert,
     add_confirmed_before_insert_bulk,
+    add_scheduled_remindermail,
+    add_scheduled_remindermail_bulk,
     email_blueprint,
     send_confirmmail_to_unregistered_users,
-    send_confirmmail_to_unregistered_users_bulk
+    send_confirmmail_to_unregistered_users_bulk,
 )
 from amivapi.events.model import eventdomain
 from amivapi.events.projections import (
@@ -70,5 +72,9 @@ def init_app(app):
     app.on_inserted_item_eventsignups += update_waiting_list_after_insert
     app.on_inserted_eventsignups += update_waiting_list_after_insert_collection
     app.on_deleted_item_eventsignups += update_waiting_list_after_delete
+
+    # Schedule sending of reminder email at event creation
+    app.on_inserted_item_events += add_scheduled_remindermail
+    app.on_inserted_events += add_scheduled_remindermail_bulk
 
     app.register_blueprint(email_blueprint)

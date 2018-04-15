@@ -99,7 +99,11 @@ def periodic(period, *args):
 
 def schedule_task(time, func, *args):
     """ Schedule a task at some point in the future. """
-    func_s = func_str(func)
+    if func_str(func) is "remindermail":
+        item = pickle.load(args)
+        func_s = "remindermail"+str(item['_id'])
+    else:
+        func_s = func_str(func)
 
     if func_s not in schedulable_functions:
         raise NotSchedulable("%s is not schedulable. Did you forget the "
@@ -114,7 +118,11 @@ def schedule_task(time, func, *args):
 
 def update_scheduled_task(time, func, *args):
     """ Update a scheduled task that was previously registered. """
-    func_s = func_str(func)
+    if func_str(func) is "remindermail":
+        item = pickle.load(args)
+        func_s = "remindermail_"+str(item['_id'])
+    else:
+        func_s = func_str(func)
 
     if func_s not in schedulable_functions:
         raise NotSchedulable("%s is not schedulable. Did you forget the "
