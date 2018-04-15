@@ -34,11 +34,14 @@ from amivapi.events.queue import (
     update_waiting_list_after_insert_collection
 )
 from amivapi.events.validation import EventValidator
+from amivapi.events.utils import create_token_secret_on_startup
 from amivapi.utils import register_domain, register_validator
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
+    create_token_secret_on_startup(app)
+
     register_domain(app, eventdomain)
     register_validator(app, EventValidator)
     register_validator(app, EventAuthValidator)

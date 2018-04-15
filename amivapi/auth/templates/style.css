@@ -1,0 +1,314 @@
+/* FONT */
+@import url("https://fonts.googleapis.com/css?family=Roboto");
+
+
+/* LAYOUT */
+/* ====== */
+
+body {
+  margin: 0;
+  /* Set the height & width to match that of the viewport. */
+  min-height: 100vh;
+  width: 100vw;
+  /* Text & Color */
+  background-color: GhostWhite;
+  /* color: white; */
+  font-family: 'Roboto', sans-serif;
+  /* Grid for easy layout */
+  display: grid;
+  grid-template-columns: [container-start] 15%
+                         [logo-start error-start] 1fr
+                         [logo-end main-start] 2fr
+                         [main-end error-end] 15% [container-end];
+  grid-template-rows: [error-start] auto [error-end] 1fr
+                      [main-start logo-start] auto
+                      [main-end logo-end] 1fr [container-end];
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+}
+
+/* Logo */
+aside {
+  grid-column: logo-start / logo-end;
+  grid-row: logo-start / logo-end;
+  justify-self: stretch;
+  align-self: center;
+  padding-right: 5em;
+}
+aside svg {
+  width: 100%;
+}
+
+main {
+  grid-column: main-start / main-end;
+  grid-row: main-start / main-end;
+  border-left: 3px solid LightGrey;  
+  padding: 2em 2em 2em 5em;
+  align-self: center;
+}
+
+
+/* MEDIA QUERIES */
+/* ============= */
+
+/* Medium screens: Everything in one column */
+@media (max-width: 1024px) {
+  body {
+    grid-template-columns: [container-start] 15% [logo-start
+                            error-start main-start] 1fr 
+                           [main-end error-end logo-end] 15%
+                           [container-end];
+    grid-template-rows: [error-start] auto [error-end] 1fr
+                        [logo-start] auto
+                        [logo-end main-start] auto
+                        [main-end] 2fr [container-end];
+      
+  }
+
+  dialog p {
+    text-align: left;
+  }
+
+  main {
+    border-left: none;
+    padding: 1em;
+  }
+
+  aside {
+    padding: 0 6em 6em 6em;
+  }
+}
+
+/* Small screens: Smaller margins and font size; */
+@media (max-width: 640px) {
+  html {
+    font-size: 66%;
+  }
+  body {
+    grid-template-columns: [container-start] 5% [logo-start
+                            error-start main-start] 1fr 
+                           [main-end error-end logo-end] 5%
+                           [container-end];
+    grid-template-rows: [error-start] auto [error-end] 1fr
+                        [logo-start] auto
+                        [logo-end main-start] auto
+                        [main-end] 2fr [container-end];
+  }
+
+  aside {
+    padding: 0 4em 4em 4em;
+  }
+}
+
+
+/* Error Dialog */
+/* ============ */
+
+/* Use a ::before element to insert a background for the error dialog */
+body::before {
+  content: "";
+  grid-column: container-start / container-end;
+  grid-row: error-start / error-start;
+  background: rgb(230, 230, 230);
+  box-shadow: 0em -1em 1em -1em rgb(110,110,110) inset;
+}
+dialog {
+  grid-column: error-start / error-end;
+  grid-row: error-start / error-start;
+  display: flex;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.25em;
+  margin: 0em;
+  text-align: center;
+
+  border: none;
+  background: none;
+}
+dialog:not([open]) {
+  display: none;
+}
+
+dialog p {
+  flex-grow: 1;
+  display: inline-block;
+  margin: 0.5em;
+  padding: 0.5em;
+  font-size: 1.25em;
+  color: rgb(232, 31, 32); /* A red matching copperred */
+}
+
+dialog button {
+  cursor: pointer;
+  margin: 0.5em;
+  padding: 0.5em 1em 0.5em 1em;
+  box-sizing: border-box;
+
+  outline: none;
+  border: none;
+  border-radius: 4px;
+  background: none;
+
+  color: rgb(110,110,110);
+  text-transform: uppercase;
+  font-size: 1.4em;
+
+}
+dialog button:focus {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+
+
+/* STYLES */
+/* ====== */
+
+/* Text style */
+h1 {
+  font-size: 2em;
+  font-style: italic;
+  font-weight: 100;
+  padding-bottom: 1em;
+}
+p {
+  font-size: 1.5em;
+  line-height: 1.5;
+  font-weight: 100;
+  padding-bottom: 2em;
+}
+em {
+  color: rgb(32, 45, 84);
+  font-style: normal;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+}
+
+
+/* Input Form */
+form {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-end;
+}
+form br {
+  content: "";
+  width: 100%;
+}
+fieldset {
+  border: none;
+  padding: 0em;
+}
+
+/* Username and Password */
+.text {
+  position: relative;
+  flex: 1 0 18em; /* fixed base width, grow if needed */
+  margin: 1em 1em 1.5em 0em;
+}
+.text input {
+  width: 100%;
+  outline: none;
+  border: none;
+  background: none;
+  border-bottom: 1px solid rgb(110,110,110);
+  padding: 0.5em;
+  font-size: 1.25em;
+  transition: 0.2s ease all;  
+}
+
+.text label {
+  /* Position the label right over the text: 0 height and relative pos */
+  position: absolute;
+  left: 0em;
+  top: 0em;
+  padding: 0.5em;
+  font-size: 1.25em;
+  z-index: -1;
+  color: rgb(110,110,110);
+  transition: 0.2s ease all;
+}
+.text input:focus + label,
+.text input:valid + label {
+  top:-1.5em;
+  font-size: small;
+}
+.text input:focus + label {
+  color: rgb(232, 70, 43);
+}
+.text input:focus {
+  border-bottom: 1px solid rgb(232, 70, 43);  
+}
+
+/* Check Box
+The default text box cannot be sytled, so we make it invisible
+and create a new one using the label*/
+.checkbox {
+  position: relative;
+  box-sizing: border-box;
+  margin: 0.5em;
+  padding: 1em 0.5em 0.5em 1em;
+  color: rgb(110,110,110);
+}
+/* Hide the checkbox, but without display: none (for keyboard use) */
+.checkbox input {
+  opacity: 0;
+  height: 0rem;
+  width: 0rem;
+}
+.checkbox label::before{
+  content: "";
+  display: inline-block;
+  position: absolute;
+  left: 0em;
+  top: 0.95em;
+  height: 1em;
+  width: 1em;
+  
+  border: 2px solid rgb(110,110,110);
+  border-radius: 4px;   
+}
+.checkbox label::after {
+  content: none;
+  display: inline-block;
+  position: absolute;
+  left: 0.3em;
+  top: 1.2em;
+  height: 0.4em;
+  width: 0.6em;
+  /* Checkmark */
+  border-left: 2px solid White;
+  border-bottom: 2px solid White; 
+  transform: rotate(-45deg);
+}
+/*Change color when checked*/
+.checkbox input:checked + label::before {
+  border-color: rgb(232, 70, 43);
+  background: rgb(232, 70, 43);
+}
+.checkbox input:checked + label::after {
+    content: "";
+}
+.checkbox input:focus + label::before {
+  box-shadow: 0em 0em 0em 0.25em LightGrey;
+}
+
+/* Submit Button */
+input[type=submit] {
+  cursor: pointer;
+  margin: 0.5em;
+  padding: 0.5em 1em 0.5em 1em;
+  box-sizing: border-box;
+
+  outline: none;
+  border: none;
+  border-radius: 4px;
+  background: none;
+
+  color: rgb(232, 70, 43);
+  text-transform: uppercase;
+  font-size: 1.4em;
+}
+input[type=submit]:focus {
+  background: rgba(232, 70, 43, 0.12);
+}
