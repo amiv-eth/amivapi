@@ -92,7 +92,9 @@ PASSWORD_CONTEXT = CryptContext(
 # include a fragment.
 # We also require https, because we do not want to send tokens over
 # unencrypted connections.
-REDIRECT_URI_REGEX = '^https://[^#]+$'
+# An expection to this is `localhost`, which can be registered without
+# https to allow testing of local tools (if required)
+REDIRECT_URI_REGEX = '^((http://)?localhost|https://)[^#]+$'
 
 # Email sent to external users signing up for events
 CONFIRM_EMAIL_TEXT = (

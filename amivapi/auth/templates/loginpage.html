@@ -28,11 +28,13 @@
         {% endif %}
       </h1>
       <p>
-        <em>{{client_id}}</em> requests access to your account.
         {% if user %}
+        <em>{{client_id}}</em> requests access to your account.
         Is that ok?
         {% else %}
-        Please login to confirm.
+        this is the AMIV login page.
+        <em>{{client_id}}</em> directed you here and requests access to your
+        account. Please log in to confirm and you will be sent back.
         {% endif %}
       </p>
 
@@ -53,9 +55,9 @@
           </fieldset>
           <br/>
           <fieldset class="checkbox">
-            <input type="checkbox" id="remember" 
+            <input type="checkbox" id="remember"
                    name="remember" value="remember"></input>
-            <label for="remember">remember me</label>
+            <label for="remember">remember me on this device</label>
           </fieldset>
           <input type="submit" name="submit" value="login">
         {% endif %}
