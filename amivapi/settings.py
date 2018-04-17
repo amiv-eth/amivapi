@@ -94,7 +94,7 @@ PASSWORD_CONTEXT = CryptContext(
 # unencrypted connections.
 # An expection to this is `localhost`, which can be registered without
 # https to allow testing of local tools (if required)
-REDIRECT_URI_REGEX = '^((http://)?localhost|https://)[^#]+$'
+REDIRECT_URI_REGEX = '^((http://)?localhost[^#]*|https://[^#]+)$'
 
 # Email sent to external users signing up for events
 CONFIRM_EMAIL_TEXT = (
