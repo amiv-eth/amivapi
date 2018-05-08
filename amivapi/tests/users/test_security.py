@@ -314,7 +314,6 @@ class UserFieldsTest(utils.WebTest):
 
             for query in (python_query, mongo_query, nested_query):
                 url = '/users?where=%s' % query
-                print(url)
                 # User is not allowed
                 self.api.get(url, token=user_token, status_code=status)
 
