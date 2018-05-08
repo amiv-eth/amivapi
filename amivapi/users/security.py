@@ -105,6 +105,22 @@ def hide_fields(response):
                     item.pop(key)
 
 
+def restrict_filters(*_):
+    """If the user is not an admin, restrict the query filters.
+
+    Changing the config modifies subsequent requests, so we need to set
+    it explicitly for each request.
+    """
+    userdomain = current_app.config['DOMAIN']['users']
+    if not (g.get('resource_admin') or g.get('resource_admin_readonly')):
+        userdomain['allowed_filters'] = [
+            '_id', '_etag', '_updated', '_created', '_links'
+            'firstname', 'lastname', 'nethz',
+        ]
+    else:
+        userdomain['allowed_filters'] = ['*']
+
+
 # Project password status
 
 def project_password_status(response):
