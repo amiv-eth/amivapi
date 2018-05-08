@@ -114,7 +114,7 @@ def restrict_filters(*_):
     userdomain = current_app.config['DOMAIN']['users']
     if not (g.get('resource_admin') or g.get('resource_admin_readonly')):
         userdomain['allowed_filters'] = [
-            '_id', '_etag', '_updated', '_created', '_links'
+            '_id', '_etag', '_updated', '_created', '_links',
             'firstname', 'lastname', 'nethz',
         ]
     else:
