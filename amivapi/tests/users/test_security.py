@@ -295,7 +295,10 @@ class UserFieldsTest(utils.WebTest):
 
     def test_query_restricted_fields(self):
         """Only admins can query restricted fields."""
-        for field in self.RESTRICTED_FIELDS:
+        basic = [(field, 200) for field in self.BASIC_FIELDS]
+        restricted = [(field, 400) for field in self.RESTRICTED_FIELDS]
+
+        for field, status in basic + restricted:
             user_id = str(self.new_object('users')['_id'])
             user_token = self.get_user_token(user_id)
             root_token = self.get_root_token()
@@ -305,7 +308,7 @@ class UserFieldsTest(utils.WebTest):
             mongo_query = json.dumps({field: "something"})
             nested_query = json.dumps({
                 '$or': [
-                    {'$and': [{'field': {'$in': ["something"]}}]}
+                    {'$and': [{field: {'$in': ["something"]}}]}
                 ]
             })
 
@@ -313,7 +316,7 @@ class UserFieldsTest(utils.WebTest):
                 url = '/users?where=%s' % query
                 print(url)
                 # User is not allowed
-                self.api.get(url, token=user_token, status_code=400)
+                self.api.get(url, token=user_token, status_code=status)
 
                 # Admin is allowed
                 self.api.get(url, token=root_token, status_code=200)
