@@ -94,6 +94,14 @@ class AuthentificationTest(WebTest):
         self.assertNotIn(other_session['_id'],
                          ids)
 
+    def test_get_session_by_token(self):
+        """Test accesing session via its token."""
+        user = self.new_object('users', password=u"something")
+        token = self.new_object('sessions', username=str(user['_id']),
+                                password=u"something")['token']
+
+        self.api.get('/sessions/%s' % token, token=token, status_code=200)
+
     def test_no_public_get(self):
         """Test that there is no public reading of sessions."""
         # Create a sess
