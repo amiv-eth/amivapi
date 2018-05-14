@@ -96,9 +96,8 @@ class AuthentificationTest(WebTest):
 
     def test_get_session_by_token(self):
         """Test accesing session via its token."""
-        user = self.new_object('users', password=u"something")
-        token = self.new_object('sessions', username=str(user['_id']),
-                                password=u"something")['token']
+        # Create a session (with a generic user id)
+        token = self.get_user_token("0"*24)
 
         self.api.get('/sessions/%s' % token, token=token, status_code=200)
 
