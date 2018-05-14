@@ -62,6 +62,9 @@ sessiondomain = {
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'DELETE'],
 
+        # Allow GET requests with token, i.e. GET /sessions/<token>
+        'additional_lookup': {'field': 'token', 'url': 'string'},
+
         'schema': {
             'username': {
                 'type': 'string',
