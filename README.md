@@ -9,6 +9,8 @@ AMIV API is a Python-EVE based REST interface to manage members, events, mail fo
 
 [Python EVE Documentation](http://python-eve.org/features.html)
 
+[How to use central OAuth2 login](docs/OAuth.md)
+
 ## Deploy using Docker
 
 AMIV API is available as a [docker](https://www.docker.com) container.
@@ -123,6 +125,10 @@ MONGO_PASSWORD = ''
 # SMTP_PORT = '587'
 # SMTP_USERNAME = ''
 # SMTP_PASSWORD = ''
+
+# LDAP connection (special LDAP user required, *not* nethz username & password)
+# LDAP_USERNAME = ''
+# LDAP_PASSWORD = ''
 ```
 
 AMIV API looks for a configuration in the following order:
@@ -179,6 +185,33 @@ To run just one python version:
 ```sh
 tox -e py36
 ```
+
+### Integration Tests
+
+The integration tests for ssh mailing list creation and LDAP require additional
+information to be run, which should not be published.
+By default, these tests are *skipped*, as you can see in the tox summary.
+
+#### SSH
+
+Set the following environment variables:
+
+- `SSH_TEST_ADDRESS`, e.g. `user@remote.host`
+- `SSH_TEST_KEYFILE`(optional): file containing a key that
+  is authorized to access the server 
+- `SSH_TEST_DIRECTORY`(optional): Directory on remote server where test files
+  are stored. Uses  `/tmp/amivapi-test/` by default
+
+#### LDAP
+
+- `LDAP_TEST_USERNAME` and `LDAP_TEST_PASSWORD`
+  (*not* your nethz, special LDAP account required)
+- `LDAP_TEST_USER_NETHZ` (required to test user import)
+  The test will return the imported user data, be sure to verify it
+- `LDAP_TEST_USER_PASSWORD` (required to test user login)
+
+Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached. Furthermore be patient,
+as the LDAP tests take a little time to complete.
 
 ## Problems or Questions?
 

@@ -52,7 +52,7 @@ from eve.methods.post import post_internal
 import pytz
 from werkzeug.datastructures import FileStorage
 
-from amivapi.settings import EMAIL_REGEX
+from amivapi.settings import EMAIL_REGEX, REDIRECT_URI_REGEX
 from amivapi.utils import admin_permissions
 
 
@@ -102,6 +102,13 @@ class FixtureMixin(object):
         })
         """
         added_objects = []
+
+        # Check that all resources are valid
+        fixture_resources = set(fixture.keys())
+        all_resources = set(self.app.config['DOMAIN'].keys())
+        if not set(fixture_resources).issubset(all_resources):
+            raise BadFixtureException("Unknown resources: %s"
+                                      % (fixture_resources - all_resources))
 
         # We need to sort in the order of dependencies. It is for example
         # not possible to add sessions before we have users, as we need valid
@@ -294,17 +301,18 @@ class FixtureMixin(object):
                                     definition.get('maxlength', 100))
 
             if 'regex' in definition:
+                letters_and_digits = string.ascii_letters + string.digits
                 if definition['regex'] == EMAIL_REGEX:
                     return "%s@%s.%s" % (
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(max(1, length - 27))),
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(20)),
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(5)))
+                elif definition['regex'] == REDIRECT_URI_REGEX:
+                    return "https://%s" % ''.join(
+                        random.choice(letters_and_digits) for _ in range(20))
                 raise NotImplementedError
 
             return ''.join(random.choice(string.ascii_letters + string.digits)

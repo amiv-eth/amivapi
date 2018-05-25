@@ -12,9 +12,13 @@ integration with the real ldap. More info there.
 """
 
 from mock import MagicMock, patch, call
+import warnings
+
+from os import getenv
+from pprint import pformat
 
 from amivapi import ldap
-from amivapi.tests.utils import WebTestNoAuth
+from amivapi.tests.utils import WebTest, WebTestNoAuth, skip_if_false
 
 
 class LdapTest(WebTestNoAuth):
@@ -33,8 +37,8 @@ class LdapTest(WebTestNoAuth):
         ldap_pass = 'T3ST'
         initialized_ldap = 'I totally am an ldap instance.'
 
-        self.app.config['LDAP_USER'] = ldap_user
-        self.app.config['LDAP_PASS'] = ldap_pass
+        self.app.config['LDAP_USERNAME'] = ldap_user
+        self.app.config['LDAP_PASSWORD'] = ldap_pass
         to_patch = 'amivapi.ldap.AuthenticatedLdap'
 
         with patch(to_patch, return_value=initialized_ldap) as init:
@@ -75,19 +79,19 @@ class LdapTest(WebTestNoAuth):
         """Produce basic fake ldap data to test filter."""
         data = {
             'cn': ['pablo'],
+            'departmentNumber': ['ETH Studentin D-ITET, SomeFieldOfStudy M'],
             'swissEduPersonMatriculationNumber': '01234567',
             'givenName': ['P'],
             'sn': ['Ablo'],
             'swissEduPersonGender': '0',
-            'ou': ['VSETH Mitglied', 'D-ITET',
-                   'Informationstechnologie und Elektrotechnik'],
+            'ou': ['VSETH Mitglied', 'other unrelated entry'],
             'some_random_field': 'abc',
         }
         data.update(kwargs)
         return data
 
     def fake_filtered_data(self):
-        """Some data that is a valid output of _filter_data."""
+        """Some data that is a valid output of _process_data."""
         return {
             'nethz': 'pablo',
             'email': 'pablo@ethz.ch',  # this will be auto-generated
@@ -99,61 +103,66 @@ class LdapTest(WebTestNoAuth):
             'legi': '01234567'
         }
 
-    def test_filter_data(self):
+    def test_process_data(self):
         """The received LDAP data can look weird. Test that it is filtered."""
         with self.app.app_context():
-            filtered = ldap._filter_data(self.fake_ldap_data())
+            filtered = ldap._process_data(self.fake_ldap_data())
             expected = self.fake_filtered_data()
 
             self.assertEqual(filtered, expected)
 
-    def test_filter_gender(self):
+    def test_process_gender(self):
         """ Test parsing of gender field."""
         with self.app.app_context():
             female_data = self.fake_ldap_data(swissEduPersonGender='0')
-            female_filtered = ldap._filter_data(female_data)
+            female_filtered = ldap._process_data(female_data)
             self.assertTrue(female_filtered['gender'] == 'female')
 
             male_data = self.fake_ldap_data(swissEduPersonGender='1')
-            male_filtered = ldap._filter_data(male_data)
+            male_filtered = ldap._process_data(male_data)
             self.assertTrue(male_filtered['gender'] == 'male')
 
-    def test_filter_department(self):
-        """Test department filtering. The 'ou' entry has to be checked."""
+    def test_process_department(self):
+        """Test department filtering. Relies on 'departmentNUmber' field."""
         with self.app.app_context():
             tests = (
-                ('D-ITET', 'itet'),
-                ('D-MAVT', 'mavt'),
-                ('D-Somethingelse', 'other')
+                ('ETH Studentin D-ITET', 'itet'),
+                ('ETH Student D-ITET', 'itet'),
+                ('ETH Student D-MAVT', 'mavt'),
+                ('ETH Studentin D-MAVT', 'mavt'),
+                ('ETH Student D-ITET and more text that', 'itet'),
+                ('ETH Studentin D-SOMETHINGELSE', None),
+                ('any other text', None),
+                ('', None),
             )
             for ldap_value, api_value in tests:
-                data = self.fake_ldap_data(ou=[ldap_value])
-                filtered = ldap._filter_data(data)
+                data = self.fake_ldap_data(departmentNumber=[ldap_value])
+                filtered = ldap._process_data(data)
                 self.assertTrue(filtered['department'] == api_value)
 
-    def test_filter_membership(self):
-        """Test membership filtering. The 'ou' entry has to be checked."""
+    def test_process_membership(self):
+        """Test membership filtering."""
         with self.app.app_context():
-            # ou must contain 'VSETH Mitglied' and any of the specified 'ou'
-            # values
-            ou_1 = 'An example study program assigned to our organisation'
-            ou_2 = 'this is another example'
-            self.app.config['LDAP_MEMBER_OU_LIST'] = [ou_1, ou_2]
+            # ou must contain 'VSETH Mitglied'
+            # and department must not be None (see other test)
+            our = 'ETH Student D-ITET'
+            other = 'ETH Student D-OTHER'
+            self.app.config['LDAP_DEPARTMENT_MAP'] = {our: 'itet'}
 
             tests = (
-                # (ou, expected result)
-                (['VSETH Mitglied', ou_1], 'regular'),
-                (['VSETH Mitglied', ou_2], 'regular'),
+                # (departmentNUmber, ou, expected result)
+                ([our], ['VSETH Mitglied'], 'regular'),
+                ([our], ['blabla', 'VSETH Mitglied', 'random'], 'regular'),
                 # Something missing
-                (['VSETH Mitglied'], 'none'),
-                ([ou_1], 'none'),
-                ([ou_2], 'none'),
-                ([], 'none'),
+                ([our], ['novseth'], 'none'),
+                ([other], ['VSETH Mitglied'], 'none'),
+                ([other], ['nonono'], 'none'),
+                ([other], [], 'none'),
             )
 
-            for (ou_values, result) in tests:
-                data = self.fake_ldap_data(ou=ou_values)
-                filtered = ldap._filter_data(data)
+            for (dn, ou, result) in tests:
+                data = self.fake_ldap_data(departmentNumber=dn, ou=ou)
+                filtered = ldap._process_data(data)
                 self.assertTrue(filtered['membership'] == result)
 
     def test_create_user(self):
@@ -213,6 +222,7 @@ class LdapTest(WebTestNoAuth):
             'givenName',
             'sn',
             'swissEduPersonGender',
+            'departmentNumber',
             'ou'
         ]
         mock_results = [1, 2, 3]
@@ -220,15 +230,15 @@ class LdapTest(WebTestNoAuth):
 
         mock_search = MagicMock(return_value=mock_results)
         self.app.config['ldap_connector'].search = mock_search
-        # Mock _filter_data to check results
-        with patch('amivapi.ldap._filter_data') as mock_filter:
+        # Mock _process_data to check results
+        with patch('amivapi.ldap._process_data') as mock_filter:
             with self.app.app_context():
                 result = ldap._search(test_query)
 
                 # Verify correct query
                 mock_search.assert_called_with(test_query, attributes=attr)
 
-                # Assert _filter_data is called with ldap results
+                # Assert _process_data is called with ldap results
                 for ind, _ in enumerate(result):
                     mock_filter.assert_called_with(mock_results[ind])
 
@@ -262,8 +272,8 @@ class LdapTest(WebTestNoAuth):
     def test_sync_all(self):
         """Test if sync_all builds the query correctly and creates users."""
         # Shorten ou list
-        self.app.config['LDAP_MEMBER_OU_LIST'] = ['a', 'b']
-        expected_query = '(& (ou=VSETH Mitglied) (| (ou=a)(ou=b)) )'
+        self.app.config['LDAP_DEPARTMENT_MAP'] = {'a': 'itet'}
+        expected_query = '(& (ou=VSETH Mitglied) (| (departmentNumber=*a*)) )'
         search_results = (i for i in [1, 2])
         search = 'amivapi.ldap._search'
         create = 'amivapi.ldap._create_or_update_user'
@@ -276,3 +286,87 @@ class LdapTest(WebTestNoAuth):
                 mock_search.assert_called_with(expected_query)
                 mock_create.assert_has_calls([call(1), call(2)])
                 self.assertEqual(result, [3, 3])
+
+
+# Integration Tests
+
+# Get data from environment
+LDAP_USERNAME = getenv('LDAP_TEST_USERNAME')
+LDAP_PASSWORD = getenv('LDAP_TEST_PASSWORD')
+LDAP_USER_NETHZ = getenv('LDAP_TEST_USER_NETHZ')
+LDAP_USER_PASSWORD = getenv('LDAP_TEST_USER_PASSWORD')
+
+requires_credentials = skip_if_false(LDAP_USERNAME and LDAP_PASSWORD,
+                                     "LDAP test requires environment "
+                                     "variables 'LDAP_TEST_USERNAME' and "
+                                     "'LDAP_TEST_PASSWORD")
+
+
+class LdapIntegrationTest(WebTest):
+    """Tests for LDAP connection."""
+
+    def setUp(self, *args, **kwargs):
+        """Extended setUp.
+
+        Load environment variables and test general ldap connection.
+        """
+        extra_config = {
+            'LDAP_USERNAME': LDAP_USERNAME,
+            'LDAP_PASSWORD': LDAP_PASSWORD,
+        }
+        extra_config.update(kwargs)
+        super(LdapIntegrationTest, self).setUp(*args, **extra_config)
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ and LDAP_USER_PASSWORD,
+                   "LDAP login test requires environment variables"
+                   "'LDAP_TEST_USER_NETHZ' and 'LDAP_TEST_USER_PASSWORD'")
+    def test_login(self):
+        """Test that post to sessions works."""
+        credentials = {'username': LDAP_USER_NETHZ,
+                       'password': LDAP_USER_PASSWORD}
+        self.api.post('/sessions', data=credentials, status_code=201)
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ and LDAP_USER_PASSWORD,
+                   "LDAP login test requires environment variables"
+                   "'LDAP_TEST_USER_NETHZ' and 'LDAP_TEST_USER_PASSWORD'")
+    def test_authenticate_user(self):
+        """Assert authentication is successful."""
+        with self.app.app_context():
+            self.assertTrue(
+                ldap.authenticate_user(LDAP_USER_NETHZ, LDAP_USER_PASSWORD)
+            )
+
+    @requires_credentials
+    @skip_if_false(LDAP_USER_NETHZ,
+                   "LDAP user test requires environment variable"
+                   "'LDAP_TEST_USER_NETHZ'")
+    def test_sync_one(self):
+        """Assert synchronizing one user works."""
+        with self.app.test_request_context():
+            user = ldap.sync_one(LDAP_USER_NETHZ)
+            data_only = {key: value for (key, value) in user.items()
+                         if not key.startswith('_')}  # no meta fields
+
+            # Double check with database
+            db_user = self.db['users'].find_one({'nethz': LDAP_USER_NETHZ})
+
+            # Compare with database (ignore meta fields)
+            for key in data_only:
+                self.assertEqual(user[key], db_user[key])
+
+            # Display user data for manual verification
+
+            message = 'Manual data check required:\n%s' % pformat(data_only)
+            warnings.warn(UserWarning(message))
+
+    @requires_credentials
+    def test_sync_all(self):
+        """Test sync all imports users by checking the test user."""
+        with self.app.test_request_context():
+            # No users in db
+            self.assertEqual(self.db['users'].find().count(), 0)
+            ldap.sync_all()
+            # Some users in db
+            self.assertNotEqual(self.db['users'].find().count(), 0)

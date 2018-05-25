@@ -5,6 +5,8 @@
 """General testing utilities."""
 
 from datetime import datetime, timezone
+import pytest
+
 from itertools import count
 import json
 import sys
@@ -59,7 +61,7 @@ class TestClient(FlaskClient):
         # get the actual response and assert status
         expected_code = kwargs.pop('status_code', None)
 
-        response = super(TestClient, self).open(*args, **kwargs)
+        response = super().open(*args, **kwargs)
 
         status_code = response.status_code
 
@@ -97,7 +99,8 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'SMTP_SERVER': '',
         'TESTING': True,
         'DEBUG': True,   # This makes eve's error messages more helpful
-        'ENABLE_LDAP': False,  # LDAP test require special treatment
+        'LDAP_USERNAME': None,  # LDAP test require special treatment
+        'LDAP_PASSWORD': None,  # LDAP test require special treatment
         'PASSWORD_CONTEXT': CryptContext(
             schemes=["pbkdf2_sha256"],
 
@@ -111,13 +114,13 @@ class WebTest(unittest.TestCase, FixtureMixin):
         )
     }
 
-    def setUp(self):
+    def setUp(self, **extra_config):
         """Set up the testing client and database connection.
 
         self.api will be a flask TestClient to make requests
         self.db will be a MongoDB database
         """
-        super(WebTest, self).setUp()
+        super().setUp()
 
         # In 3.2, assertItemsEqual was replaced by assertCountEqual
         # Make assertItemsEqual work in tests for py3 as well
@@ -125,7 +128,10 @@ class WebTest(unittest.TestCase, FixtureMixin):
             self.assertItemsEqual = self.assertCountEqual
 
         # create eve app and test client
-        self.app = bootstrap.create_app(**self.test_config)
+        config = {}
+        config.update(self.test_config)
+        config.update(extra_config)
+        self.app = bootstrap.create_app(**config)
         self.app.response_class = TestResponse
         self.app.test_client_class = TestClient
         self.app.test_mails = []
@@ -176,11 +182,18 @@ class WebTest(unittest.TestCase, FixtureMixin):
 class WebTestNoAuth(WebTest):
     """WebTest without authentification."""
 
-    def setUp(self):
+    def setUp(self, **extra_config):
         """Use auth hook to always authenticate as root for every request."""
-        super(WebTestNoAuth, self).setUp()
+        super().setUp(**extra_config)
 
         def authenticate_root(resource):
             g.resource_admin = True
 
         self.app.after_auth += authenticate_root
+
+
+def skip_if_false(condition, reason):
+    """Decorator to mark tests to be skipped if condition is false."""
+    def _skip(func):
+        return func if condition else pytest.mark.skip(reason=reason)(func)
+    return _skip

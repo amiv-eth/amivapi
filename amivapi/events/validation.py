@@ -253,7 +253,7 @@ class EventValidator(object):
         The new requirement validator will (in addition to the default
         `required` field) check for a a `required_`
         """
-        super(EventValidator, self)._validate_required_fields(document)
+        super()._validate_required_fields(document)
 
         for field, schema in self.schema.items():
             # If the field is there do nothing
