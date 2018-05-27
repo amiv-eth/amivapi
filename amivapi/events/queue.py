@@ -34,6 +34,7 @@ def update_waiting_list(event_id):
         signup_count = current_app.data.driver.db['eventsignups'].find(
             lookup).count()
 
+        # 0 spots == infinite spots
         if event['spots'] == 0 or signup_count < event['spots']:
             lookup = {'event': event_id, 'accepted': False, 'confirmed': True}
             new_list = current_app.data.driver.db['eventsignups'].find(
@@ -42,6 +43,7 @@ def update_waiting_list(event_id):
             if event['spots'] > 0:
                 to_accept = new_list.limit(event['spots'] - signup_count)
             else:
+                # infinite spots, so just accept everyone
                 to_accept = new_list
 
             for new_accepted in to_accept:
