@@ -12,10 +12,8 @@ logic needed for signup of non members to events.
 from amivapi.events.authorization import EventAuthValidator
 from amivapi.events.emails import (
     add_confirmed_before_insert,
-    add_confirmed_before_insert_bulk,
     email_blueprint,
     send_confirmmail_to_unregistered_users,
-    send_confirmmail_to_unregistered_users_bulk
 )
 from amivapi.events.model import eventdomain
 from amivapi.events.projections import (
@@ -28,10 +26,8 @@ from amivapi.events.projections import (
 )
 from amivapi.events.queue import (
     add_accepted_before_insert,
-    add_accepted_before_insert_collection,
     update_waiting_list_after_delete,
     update_waiting_list_after_insert,
-    update_waiting_list_after_insert_collection
 )
 from amivapi.events.validation import EventValidator
 from amivapi.events.utils import create_token_secret_on_startup
@@ -59,19 +55,15 @@ def init_app(app):
     app.on_fetched_item_events += add_signup_count_to_event
 
     # Add confirmed field to incoming signups
-    app.on_insert_item_eventsignups += add_confirmed_before_insert
-    app.on_insert_eventsignups += add_confirmed_before_insert_bulk
+    app.on_insert_eventsignups += add_confirmed_before_insert
     # Sending confirmation mails
-    app.on_inserted_item_eventsignups += send_confirmmail_to_unregistered_users
-    app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users_bulk
+    app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users
 
     # Auto accept registrations for fcfs system
-    app.on_insert_item_eventsignups += add_accepted_before_insert
-    app.on_insert_eventsignups += add_accepted_before_insert_collection
+    app.on_insert_eventsignups += add_accepted_before_insert
 
     # Update waiting list after insert or delete of signups
-    app.on_inserted_item_eventsignups += update_waiting_list_after_insert
-    app.on_inserted_eventsignups += update_waiting_list_after_insert_collection
+    app.on_inserted_eventsignups += update_waiting_list_after_insert
     app.on_deleted_item_eventsignups += update_waiting_list_after_delete
 
     app.register_blueprint(email_blueprint)
