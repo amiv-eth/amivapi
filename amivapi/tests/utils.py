@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """General testing utilities."""
 
+from datetime import datetime, timezone
 import pytest
 
 from itertools import count
@@ -60,7 +61,7 @@ class TestClient(FlaskClient):
         # get the actual response and assert status
         expected_code = kwargs.pop('status_code', None)
 
-        response = super(TestClient, self).open(*args, **kwargs)
+        response = super().open(*args, **kwargs)
 
         status_code = response.status_code
 
@@ -119,7 +120,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.api will be a flask TestClient to make requests
         self.db will be a MongoDB database
         """
-        super(WebTest, self).setUp()
+        super().setUp()
 
         # In 3.2, assertItemsEqual was replaced by assertCountEqual
         # Make assertItemsEqual work in tests for py3 as well
@@ -151,7 +152,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
     # Shortcuts to get a token
     counter = count()
 
-    def get_user_token(self, user_id):
+    def get_user_token(self, user_id, created=None):
         """Create session for a user and return a token.
 
         Args:
@@ -160,9 +161,13 @@ class WebTest(unittest.TestCase, FixtureMixin):
         Returns:
             str: Token that can be used to authenticate user.
         """
+        if created is None:
+            created = datetime.now(timezone.utc)
+
         token = "test_token_" + str(next(self.counter))
         self.db['sessions'].insert({u'user': ObjectId(user_id),
-                                    u'token': token})
+                                    u'token': token,
+                                    u'_created': created})
         return token
 
     def get_root_token(self):
@@ -179,7 +184,7 @@ class WebTestNoAuth(WebTest):
 
     def setUp(self, **extra_config):
         """Use auth hook to always authenticate as root for every request."""
-        super(WebTestNoAuth, self).setUp(**extra_config)
+        super().setUp(**extra_config)
 
         def authenticate_root(resource):
             g.resource_admin = True

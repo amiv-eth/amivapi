@@ -133,7 +133,10 @@ groupdomain = {
             },
             'moderator': {
                 'type': 'objectid',
-                'data_relation': {'resource': 'users'},
+                'data_relation': {
+                    'resource': 'users',
+                    'embeddable': True,
+                },
                 'nullable': True,
                 'description': 'ID of a user which can add and remove members.'
             },

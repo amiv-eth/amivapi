@@ -4,6 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
+from datetime import timedelta
+
 from amivapi.settings import EMAIL_REGEX
 
 from .security import UserAuth
@@ -99,7 +101,8 @@ userdomain = {
                 'nullable': True,
                 'default': None,
                 'description': 'Leave empty to use just LDAP authentification. '
-                'People without LDAP should use this field.'
+                'People without LDAP should use this field.',
+                'session_younger_than': timedelta(minutes=1)
             },
             'email': {
                 'type': 'string',

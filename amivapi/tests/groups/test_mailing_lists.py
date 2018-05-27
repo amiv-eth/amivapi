@@ -27,7 +27,7 @@ class MailingListTest(WebTestNoAuth):
 
     def setUp(self):
         """Create a temporary directory for mailing lists."""
-        super(MailingListTest, self).setUp()
+        super().setUp()
         base_dir = mkdtemp(prefix='amivapi_test')
         self.app.config['MAILING_LIST_DIR'] = join(base_dir, 'lists')
 
@@ -35,7 +35,7 @@ class MailingListTest(WebTestNoAuth):
         """Remove temporary directory."""
         directory = self.app.config['MAILING_LIST_DIR']
         rmtree(directory, ignore_errors=True)
-        super(MailingListTest, self).tearDown()
+        super().tearDown()
 
     def _full_name(self, name):
         list_path = self.app.config['MAILING_LIST_DIR']
@@ -177,7 +177,7 @@ class RemoteMailingListTest(WebTestNoAuth):
 
     def setUp(self):
         """Set config key and mock ssh call."""
-        super(RemoteMailingListTest, self).setUp()
+        super().setUp()
         self.app.config['REMOTE_MAILING_LIST_ADDRESS'] = 'not none!'
 
     def test_remote_create_called(self):
@@ -227,7 +227,7 @@ class SSHIntegrationTest(WebTestNoAuth):
     """
     def setUp(self):
         """Set config keys from environment variables."""
-        super(SSHIntegrationTest, self).setUp()
+        super().setUp()
         config = self.app.config
         config['REMOTE_MAILING_LIST_ADDRESS'] = getenv('SSH_TEST_ADDRESS')
         config['REMOTE_MAILING_LIST_KEYFILE'] = getenv('SSH_TEST_KEYFILE')
