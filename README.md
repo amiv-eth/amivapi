@@ -215,6 +215,6 @@ as the LDAP tests take a little time to complete.
 
 ## Problems or Questions?
 
-For any comments, bugs, feature requests please use the issue tracker, don't hasitate to create issues, if we don't like your idea we are not offended.
+For any comments, bugs, feature requests please use the issue tracker, don't hesitate to create issues, if we don't like your idea we are not offended.
 
 If you need help deploying the API or creating a client, feel free to message us at api@amiv.ethz.ch
