@@ -52,6 +52,12 @@ docker service create \
     --name amivapi  -p 80:8080 --network backend \
     --secret amivapi_config \
     amiveth/amivapi
+
+# Create new API cron service with secret
+docker service create \
+    --name amivapi-cron  --network backend \
+    --secret amivapi_config \
+    amiveth/amivapi-cron
 ```
 
 If you want to use a different name for the secret (or cannot use secrets
