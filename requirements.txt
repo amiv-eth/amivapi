@@ -11,3 +11,7 @@ freezegun==0.3.8
 mock==2.0.0
 # Install amivapi in editable mode to enable command line tools
 -e .
+
+# TODO: Remove this when updating to Eve 0.8 (Which does not depend on
+# Flask-PyMongo anymore)
+Flask-PyMongo==0.5.2
