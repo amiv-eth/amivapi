@@ -96,6 +96,7 @@ userdomain = {
             # Fields the user can modify himself
             'password': {
                 'type': 'string',
+                'minlength': 7,
                 'maxlength': 100,
                 'empty': False,
                 'nullable': True,
