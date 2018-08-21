@@ -219,7 +219,7 @@ class UserFieldsTest(utils.WebTest):
                               set(self.BASIC_FIELDS) - set(['_links']))
 
     def test_password_status(self):
-        user = self.new_object('users', password='abc')
+        user = self.new_object('users', password='abcdefg')
         user_no_pass = self.new_object('users', password=None)
 
         root_token = self.get_root_token()
