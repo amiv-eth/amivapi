@@ -4,8 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 """Authorization for events and eventsignups resources"""
 
-from flask import g
-
+from flask import g, current_app
+from datetime import datetime, timedelta, timezone
 from amivapi.auth import AmivTokenAuth
 
 
@@ -15,9 +15,20 @@ class EventSignupAuth(AmivTokenAuth):
         return {'user': user_id}
 
     def has_item_write_permission(self, user_id, item):
-        """Users can only see their own signups, so they may change all visible
-        signups"""
-        return True
+        """Users can only see their own signups. They may change their own
+        signups only within the registration window of the event."""
+        if isinstance(item['event'], dict):
+            event = item['event']
+        else:
+            # Event is not embedded, get the event first
+            lookup = {current_app.config['ID_FIELD']: item['event']}
+            event = current_app.data.find_one('events', None, **lookup)
+        time_now = datetime.now(timezone.utc)
+
+        if time_now - event['time_register_start'] > timedelta(seconds=0) and \
+           time_now - event['time_register_end'] < timedelta(seconds=0):
+            return True
+        return False
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators
