@@ -252,16 +252,17 @@ class FixtureMixin(object):
 
     def preprocess_eventsignups(self, schema, obj, fixture):
         """Find random unique combination of user/event"""
-        if 'user' not in obj and 'email' not in obj:
-            users = [u['_id'] for u in self.db['users'].find()]
+        if 'email' not in obj:
+            users = list(obj['user'] if 'user' in obj
+                         else u['_id'] for u in self.db['users'].find())
+            email = None
         else:
-            users = [obj['user']]
+            users = [None]
+            email = self.create_random_value(schema['email'])
 
-        if 'event' not in obj:
-            events = [ev['_id'] for ev in
-                      self.db['events'].find({'spots': {'$ne': None}})]
-        else:
-            events = [obj['event']]
+        events = list(obj['event'] if 'event' in obj
+                      else e['_id'] for e in
+                      self.db['events'].find({'spots': {'$ne': None}}))
 
         random.shuffle(events)
         random.shuffle(users)
@@ -272,6 +273,7 @@ class FixtureMixin(object):
                         {'event': ev, 'user': u}).count() == 0:
                     obj['event'] = ev
                     obj['user'] = u
+                    obj['email'] = email
                     return
 
         raise BadFixtureException("Requested eventsignup creation, but no "

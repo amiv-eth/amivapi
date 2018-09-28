@@ -169,7 +169,8 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_schema_object',
+                'type': 'string',
+                'json_schema': True,
                 'only_if_not_null': 'spots',
                 'description': 'must be provided in form of a JSON-Schema. You'
                 'can add here fields you want to know from people signing up '
@@ -182,7 +183,6 @@ eventdomain = {
             'allow_email_signup': {
                 'nullable': False,
                 'type': 'boolean',
-                'default': False,
                 'only_if_not_null': 'spots',
                 'description': 'If False, only AMIV-Members can sign up for '
                 'this event'
@@ -238,12 +238,16 @@ eventdomain = {
                 'description': 'Provide either user or email.',
 
                 # This creates a presence XOR with email
-                'required': True,
-                'excludes': ['email']
+                # Cerberus <= 1.2: Causes problems with `None` values, which
+                # should be treated as missing fields, which is not yet
+                # possible, causing problems if `None` already exists in db
+                #'required': True,
+                #'excludes': ['email']
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_event_field',
+                'type': 'string',
+                'json_event_field': True,
                 'description': "Data-schema depends on 'additional_fields' "
                 "from the mapped event. Please provide in json-format."
             },
@@ -260,8 +264,9 @@ eventdomain = {
                 ' their email here.',
 
                 # This creates a presence XOR with user
-                'required': True,
-                'excludes': ['user']
+                # see above
+                #'required': True,
+                #'excludes': ['user']
             },
             'confirmed': {
                 'type': 'boolean',
@@ -273,6 +278,7 @@ eventdomain = {
             },
             'checked_in': {
                 'default': None,
+                'nullable': True,
                 'type': 'boolean',
                 'admin_only': True
             },
