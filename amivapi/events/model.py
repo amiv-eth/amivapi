@@ -241,8 +241,8 @@ eventdomain = {
                 # Cerberus <= 1.2: Causes problems with `None` values, which
                 # should be treated as missing fields, which is not yet
                 # possible, causing problems if `None` already exists in db
-                #'required': True,
-                #'excludes': ['email']
+                # 'required': True,
+                # 'excludes': ['email']
             },
             'additional_fields': {
                 'nullable': True,
@@ -265,8 +265,8 @@ eventdomain = {
 
                 # This creates a presence XOR with user
                 # see above
-                #'required': True,
-                #'excludes': ['user']
+                # 'required': True,
+                # 'excludes': ['user']
             },
             'confirmed': {
                 'type': 'boolean',

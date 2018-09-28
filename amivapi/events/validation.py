@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 
 from flask import current_app, g, request
-from jsonschema import Draft4Validator, SchemaError, ValidationError
+from jsonschema import Draft4Validator, SchemaError
 import pytz
 
 
@@ -33,7 +33,7 @@ class EventValidator(object):
 
         try:
             data = json.loads(value) if value else {}  # Do not crash if ''
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             self._error(field,
                         "Must be json, parsing failed with exception: %s" % e)
 
@@ -183,7 +183,6 @@ class EventValidator(object):
                                     "'%s' is required to be set to '%s'"
                                     % (key, val))
 
-
                 # now check if it is entirely valid jsonschema
                 validator = Draft4Validator(json_data)
                 # by default, jsonschema specification allows unknown properties
@@ -195,8 +194,6 @@ class EventValidator(object):
                 except SchemaError as error:
                     self._error(field, "does not contain a valid schema: %s"
                                 % error)
-
-
 
     # Eve doesn't handle time zones properly. Its always UTC but sometimes
     # the timezone is included, sometimes it isn't.

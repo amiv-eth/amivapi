@@ -31,10 +31,8 @@ class ValidatorAMIV(Validator):
         """
         return True
 
-
     types_mapping = Validator.types_mapping.copy()
     types_mapping['timedelta'] = TypeDefinition('timedelta', (timedelta,), ())
-
 
     def _validate_data_relation(self, data_relation, field, value):
         """Extend the arguments for data_relation to include cascading delete.
@@ -51,7 +49,6 @@ class ValidatorAMIV(Validator):
         }
         """
         super()._validate_data_relation(data_relation, field, value)
-
 
     def _validate_api_resources(self, enabled, field, value):
         """Value must be in api domain.
