@@ -66,7 +66,7 @@ eventdomain = {
                 'type': 'string'
             },
             'price': {
-                'min': 0,
+                'min': 1,
                 'nullable': True,
                 'type': 'integer',
                 'description': 'Price of the event as Integer in Rappen.'
