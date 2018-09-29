@@ -61,6 +61,7 @@ def recreate_mailing_lists(config):
 @config_option
 def cron(config):
     """Run scheduled tasks."""
+    echo("Executing scheduled tasks...")
     app = create_app(config_file=config)
     with app.app_context():
         run_scheduled_tasks()

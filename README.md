@@ -53,11 +53,20 @@ docker service create \
     --secret amivapi_config \
     amiveth/amivapi
 
-# Create new API cron service with secret
+# Use the `start_cron` command to start the container in alternative mode:
+# It will not run a webserver, but execute periodic tasks.
+# You can use the `CRON_TIME` environment variable to specify time
+# in typical crontab format (the default is "39 3 * * *" to run early morning)
 docker service create \
     --name amivapi-cron  --network backend \
     --secret amivapi_config \
-    amiveth/amivapi-cron
+    amiveth/amivapi-cron ./start_cron
+
+docker service create \
+    --name amivapi-cron  --network backend \
+    --secret amivapi_config \
+    --env CRON_TIME="12 3 * * *" \
+    amiveth/amivapi-cron ./start_cron
 ```
 
 If you want to use a different name for the secret (or cannot use secrets

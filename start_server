@@ -1,3 +1,5 @@
+#!/usr/local/bin/python3
+
 # wsgi server (used in docker container)
 # [bjoern](https://github.com/jonashaag/bjoern) required.
 
