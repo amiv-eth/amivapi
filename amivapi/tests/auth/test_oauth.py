@@ -94,7 +94,7 @@ class OAuthTest(WebTest):
 
     def test_login(self):
         """Test that a user can login with username and password."""
-        self.new_object('users', nethz='testuser', password='pass')
+        self.new_object('users', nethz='testuser', password='password')
 
         login_page = self.api.get(
             '/oauth?'
@@ -116,7 +116,7 @@ class OAuthTest(WebTest):
             '&state=xyz',
             data={
                 'username': 'testuser',
-                'password': 'pass'
+                'password': 'password'
             },
             headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=302)
@@ -139,7 +139,7 @@ class OAuthTest(WebTest):
 
     def test_login_wrong_data(self):
         """Test that wrong credentials lead back to oauth page."""
-        self.new_object('users', nethz='testuser', password='pass')
+        self.new_object('users', nethz='testuser', password='password')
 
         # Simulate sending the login form
         self.api.post(
@@ -163,7 +163,7 @@ class OAuthTest(WebTest):
             '&state=xyz',
             data={
                 'username': 'notuser',
-                'password': 'pass'
+                'password': 'password'
             },
             headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=200)  # No redirect
@@ -183,7 +183,7 @@ class OAuthTest(WebTest):
 
     def test_remember(self):
         """Test that the token is saved as cookie if requested."""
-        self.new_object('users', nethz='testuser', password='pass')
+        self.new_object('users', nethz='testuser', password='password')
 
         # By default, the token is not remembered
         response = self.api.post(
@@ -194,7 +194,7 @@ class OAuthTest(WebTest):
             '&state=xyz',
             data={
                 'username': 'testuser',
-                'password': 'pass',
+                'password': 'password',
             },
             headers={'content-type': 'application/x-www-form-urlencoded'},
             status_code=302)  # Expect redirect (successful auth)
@@ -210,7 +210,7 @@ class OAuthTest(WebTest):
             '&state=xyz',
             data={
                 'username': 'testuser',
-                'password': 'pass',
+                'password': 'password',
                 'remember': 'remember',
             },
             headers={'content-type': 'application/x-www-form-urlencoded'},
