@@ -24,10 +24,10 @@ class EventSignupAuth(AmivTokenAuth):
             lookup = {current_app.config['ID_FIELD']: item['event']}
             event = current_app.data.find_one('events', None, **lookup)
 
-        time_register_start = event['time_register_start'].replace(tzinfo=tz.utc)
-        time_register_end = event['time_register_end'].replace(tzinfo=tz.utc)
+        time_register_start = event['time_register_start']
+        time_register_end = event['time_register_end']
 
-        return time_register_start <= dt.utcnow() <= time_register_end
+        return time_register_start <= dt.now() <= time_register_end
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators
