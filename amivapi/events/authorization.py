@@ -5,7 +5,7 @@
 """Authorization for events and eventsignups resources"""
 
 from flask import g, current_app
-from datetime import datetime, timedelta, timezone
+from datetime import datetime as dt
 from amivapi.auth import AmivTokenAuth
 
 
@@ -23,12 +23,8 @@ class EventSignupAuth(AmivTokenAuth):
             # Event is not embedded, get the event first
             lookup = {current_app.config['ID_FIELD']: item['event']}
             event = current_app.data.find_one('events', None, **lookup)
-        time_now = datetime.now(timezone.utc)
 
-        if time_now - event['time_register_start'] > timedelta(seconds=0) and \
-           time_now - event['time_register_end'] < timedelta(seconds=0):
-            return True
-        return False
+        return event['time_register_start'] <= dt.utcnow() <= event['time_register_end']
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators
