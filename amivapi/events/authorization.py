@@ -16,7 +16,7 @@ class EventSignupAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """Users can modify their signups within the registration window.
-        
+
         Signups of other users are not visible and thus cannot be changed.
         """
         if isinstance(item['event'], dict):
