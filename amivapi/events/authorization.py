@@ -24,6 +24,7 @@ class EventSignupAuth(AmivTokenAuth):
             lookup = {current_app.config['ID_FIELD']: item['event']}
             event = current_app.data.find_one('events', None, **lookup)
 
+        # Remove tzinfo to compare to utcnow (API only accepts UTC anyways)
         time_register_start = event['time_register_start'].replace(tzinfo=None)
         time_register_end = event['time_register_end'].replace(tzinfo=None)
 
