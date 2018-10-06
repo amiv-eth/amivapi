@@ -11,12 +11,14 @@ from amivapi.auth import AmivTokenAuth
 
 class EventSignupAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
-        """Make only own signups visible"""
+        """Users can see their own signups."""
         return {'user': user_id}
 
     def has_item_write_permission(self, user_id, item):
-        """Users can only see their own signups. They may change their own
-        signups only within the registration window of the event."""
+        """Users can modify their signups within the registration window.
+        
+        Signups of other users are not visible and thus cannot be changed.
+        """
         if isinstance(item['event'], dict):
             event = item['event']
         else:
