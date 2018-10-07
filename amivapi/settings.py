@@ -45,8 +45,8 @@ CACHE_CONTROL = 'no-store, must-revalidate'
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
-MONGO_USERNAME = ''
-MONGO_PASSWORD = ''
+MONGO_USERNAME = 'amivapi'
+MONGO_PASSWORD = 'amivapi'
 
 # File Storage
 RETURN_MEDIA_AS_BASE64_STRING = False
@@ -70,6 +70,9 @@ SMTP_TIMEOUT = 10
 # LDAP
 LDAP_USERNAME = None
 LDAP_PASSWORD = None
+
+# Execution of periodic tasks with `amivapi run cron`
+CRON_INTERVAL = timedelta(minutes=5)  # per default, check tasks every 5 min
 
 # Security
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py

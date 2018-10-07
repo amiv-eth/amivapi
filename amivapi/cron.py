@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
