@@ -160,42 +160,44 @@ class EventValidator(object):
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
-        if enabled:
-            try:
-                json_data = json.loads(value)
-            except json.JSONDecodeError as error:
+        if not enabled:
+            return
+
+        try:
+            json_data = json.loads(value)
+        except json.JSONDecodeError as error:
+            self._error(field,
+                        "Invalid json, parsing failed with exception: %s"
+                        % error)
+            return
+
+        # validate if these fields are included exactly as given
+        # (we, e.g., always require objects so UI can rely on this)
+        enforced_fields = {
+            '$schema': 'http://json-schema.org/draft-04/schema#',
+            'type': 'object',
+            'additionalProperties': False
+        }
+
+        for key, val in enforced_fields.items():
+            if key not in json_data or json_data[key] != val:
                 self._error(field,
-                            "Invalid json, parsing failed with exception: %s"
-                            % error)
+                            "'%s' is required to be set to '%s'"
+                            % (key, val))
 
-            else:
-                # validate if these fields are included exactly as given
-                # (we, e.g., always require objects so UI can rely on this)
-                enforced_fields = {
-                    '$schema': 'http://json-schema.org/draft-04/schema#',
-                    'type': 'object',
-                    'additionalProperties': False
-                }
+        # now check if it is entirely valid jsonschema
+        validator = Draft4Validator(json_data)
+        # by default, jsonschema specification allows unknown properties
+        # We do not allow these.
+        validator.META_SCHEMA['additionalProperties'] = False
 
-                for key, val in enforced_fields.items():
-                    if key not in json_data or json_data[key] != val:
-                        self._error(field,
-                                    "'%s' is required to be set to '%s'"
-                                    % (key, val))
+        try:
+            validator.check_schema(json_data)
+        except SchemaError as error:
+            self._error(field, "does not contain a valid schema: %s"
+                        % error)
 
-                # now check if it is entirely valid jsonschema
-                validator = Draft4Validator(json_data)
-                # by default, jsonschema specification allows unknown properties
-                # We do not allow these.
-                validator.META_SCHEMA['additionalProperties'] = False
-
-                try:
-                    validator.check_schema(json_data)
-                except SchemaError as error:
-                    self._error(field, "does not contain a valid schema: %s"
-                                % error)
-
-    # Eve doesn't handle time zones properly. Its always UTC but sometimes
+    # Eve doesn't handle time zones properly. It's always UTC but sometimes
     # the timezone is included, sometimes it isn't.
 
     def _get_time(self, fieldname):
@@ -279,7 +281,7 @@ class EventValidator(object):
         """
 
     def _BareValidator__validate_required_fields(self, document):
-        """Extend the parsing of to support requirements depending on fields.
+        """Extend the validation of requirements to support `required_if_not`.
 
         Needed for language fields, where either german or english is needed.
         The new requirement validator will (in addition to the default
@@ -288,7 +290,7 @@ class EventValidator(object):
         Note on the weird name:
         Cerberus defines the validation of required fields with double
         underscores. Such variables undergo 'name mangling' in python,
-        and `__func` is replaces by `_classname_func` in the class definition,
+        and `__func` is replaced by `_classname_func` in the class definition,
         a mechanism to avoid name collisions [1].
 
         However, we precisely need to overwrite this function, hence
