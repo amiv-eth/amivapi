@@ -124,6 +124,33 @@ class GroupModelTest(WebTest):
         self.api.delete("/groups/%s" % group_id, headers=header,
                         token=mod_token, status_code=204)
 
+    def test_remove_permissions(self):
+        """Test that permissions for single resources can be removed.
+
+        By default, Eve merged nested documents when patching using
+        dict `update`. As a result, keys cannot be removed.
+
+        This test ensures that Eve is properly configured to *not* merge
+        nested documents.
+        """
+        initial_permissions = {
+            'groups': 'read',
+            'groupmemberships': 'readwrite',
+        }
+        group = self.new_object('groups', permissions=initial_permissions)
+
+        new_permissions = {
+            'groups': 'read',
+            # remove groupmemberships permission
+        }
+        updated = self.api.patch('/groups/%s' % group['_id'],
+                                 data={'permissions': new_permissions},
+                                 headers={'If-Match': group['_etag']},
+                                 token=self.get_root_token(),
+                                 status_code=200)
+
+        self.assertNotIn('groupmemberships', updated.json['permissions'])
+
 
 class GroupMembershipModelTest(WebTest):
     """Test Groupmemberships."""
