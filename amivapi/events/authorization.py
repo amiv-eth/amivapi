@@ -54,8 +54,11 @@ class EventAuthValidator(object):
 
         Args:
             enabled (bool): validates nothing if set to false
-            field (string): field name.
-            value: field value.
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
         if enabled:
             if g.resource_admin or value is None:

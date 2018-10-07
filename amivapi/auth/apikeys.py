@@ -79,8 +79,8 @@ apikeydomain = {
             },
             'permissions': {
                 'type': 'dict',
-                'propertyschema': {'type': 'string',
-                                   'api_resources': True},
+                'keyschema': {'type': 'string',
+                              'api_resources': True},
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'description': 'Permissions the apikey grants. '
