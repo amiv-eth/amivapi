@@ -4,20 +4,33 @@
 #          you to buy us beer if we meet and you like the software.
 """Authorization for events and eventsignups resources"""
 
-from flask import g
-
+from flask import g, current_app
+from datetime import datetime as dt
 from amivapi.auth import AmivTokenAuth
 
 
 class EventSignupAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
-        """Make only own signups visible"""
+        """Users can see their own signups."""
         return {'user': user_id}
 
     def has_item_write_permission(self, user_id, item):
-        """Users can only see their own signups, so they may change all visible
-        signups"""
-        return True
+        """Users can modify their signups within the registration window.
+
+        Signups of other users are not visible and thus cannot be changed.
+        """
+        if isinstance(item['event'], dict):
+            event = item['event']
+        else:
+            # Event is not embedded, get the event first
+            lookup = {current_app.config['ID_FIELD']: item['event']}
+            event = current_app.data.find_one('events', None, **lookup)
+
+        # Remove tzinfo to compare to utcnow (API only accepts UTC anyways)
+        time_register_start = event['time_register_start'].replace(tzinfo=None)
+        time_register_end = event['time_register_end'].replace(tzinfo=None)
+
+        return time_register_start <= dt.utcnow() <= time_register_end
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators

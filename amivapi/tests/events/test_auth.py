@@ -127,7 +127,7 @@ class EventAuthTest(WebTest):
                        token=root_token,
                        status_code=200)
 
-    def test_registration_window(self):
+    def test_registration_window_signup(self):
         """Test that signups out of the registration window are rejected for
         unpriviledged users."""
         t_open = datetime(2016, 1, 1)
@@ -169,6 +169,47 @@ class EventAuthTest(WebTest):
                 'event': str(ev['_id']),
                 'user': str(user2['_id'])
             }, token=root_token, status_code=201)
+
+    def test_registration_window_signoff(self):
+        """Test that signoff out of the registration window are rejected for
+        unpriviledged users."""
+        t_open = datetime(2016, 1, 1)
+        t_close = datetime(2016, 12, 31)
+
+        user = self.new_object("users")
+        token = self.get_user_token(user['_id'])
+        root_token = self.get_root_token()
+
+        ev = self.new_object("events", spots=100,
+                             time_register_start=t_open,
+                             time_register_end=t_close)
+        signup = self.new_object("eventsignups", event=ev['_id'],
+                                 user=user['_id'])
+        etag = {'If-Match': signup['_etag']}
+
+        # Too early
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.delete("/eventsignups/" + str(signup['_id']),
+                            headers=etag, token=token, status_code=403)
+
+        # Too late
+        with freeze_time(datetime(2017, 1, 1)):
+            self.api.delete("/eventsignups/" + str(signup['_id']),
+                            headers=etag, token=token, status_code=403)
+
+        # Correct time
+        with freeze_time(datetime(2016, 6, 1)):
+            self.api.delete("/eventsignups/" + str(signup['_id']),
+                            headers=etag, token=token, status_code=204)
+
+        signup = self.new_object("eventsignups", event=ev['_id'],
+                                 user=user['_id'])
+        etag = {'If-Match': signup['_etag']}
+
+        # Admin can ignore time
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.delete("/eventsignups/" + str(signup['_id']),
+                            headers=etag, token=root_token, status_code=204)
 
     def test_checkin_admin_permissions(self):
         """Test that no user without admin permissions can check in a user"""
