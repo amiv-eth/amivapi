@@ -23,6 +23,7 @@ class EventValidator(object):
         3.  Validate schema and get all errors with prefix 'additional_fields:'
 
         Args:
+            field (string): field name
             value: field value
 
         The rule's arguments are validated against this schema:
@@ -153,6 +154,7 @@ class EventValidator(object):
         3.  Is it a valid json-schema?
 
         Args:
+            field (string): field name
             value: field value
 
         1: https://json-schema.org
