@@ -78,7 +78,7 @@ def run_cron(app):
 def cron(config, continuous):
     """Run scheduled tasks.
 
-    Use --continuous to run them periodically.
+    Use --continuous to keep running and execute tasks periodically.
     """
     app = create_app(config_file=config)
 
@@ -136,11 +136,11 @@ def ldap_sync(config, sync_all, nethz):
 @config_option
 @argument('mode', type=Choice(['prod', 'dev']))
 def run(config, mode):
-    """Prod/dev server or periodic cron jobs.
+    """Run production/development server.
 
-    Three modes of operation are available:
+    Two modes of operation are available:
 
-    - dev: Run a development server (default)
+    - dev: Run a development server
 
     - prod: Run a production server (requires the `bjoern` module)
     """
