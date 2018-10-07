@@ -26,7 +26,7 @@ You only need to install Docker, nothing else is required.
 For development, we recommend to clone the repository and install AMIV API
 manually.
 
-First of all, we advice ussing a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+First of all, we advice using a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
 If your virtual environment is ready, clone and install AMIV API:
 
@@ -114,11 +114,11 @@ MONGO_PASSWORD = 'amivapi'
 
 (These are only the most imporant settings. The config file overwrites
 the default settings, so any value defined in
-[settings.py](amivapi/settings.py) can used if needed.)
+[settings.py](amivapi/settings.py) can be changed if needed.)
 
 ### Run using Docker
 
-Configurations files can be used for services easily using
+Configuration files can be used for services easily using
 [Docker configs](https://docs.docker.com/engine/swarm/configs/):
 
 ```sh
