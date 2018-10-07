@@ -18,7 +18,8 @@ class EventValidatorTest(WebTestNoAuth):
         self.app.register_resource('test', {
             'schema': {
                 'field': {
-                    'type': 'json_schema_object'
+                    'type': 'string',
+                    'json_schema': True,
                 }
             }
         })

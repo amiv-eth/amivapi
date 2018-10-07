@@ -11,7 +11,7 @@ There is another file, "ldap_integration.py", which can be used to test
 integration with the real ldap. More info there.
 """
 
-from mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch, call
 import warnings
 
 from os import getenv

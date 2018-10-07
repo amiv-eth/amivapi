@@ -15,7 +15,7 @@ import pytz
 class EventValidator(object):
     """Custom Validator for event validation rules."""
 
-    def _validate_type_json_event_field(self, field, value):
+    def _validate_json_event_field(self, enabled, field, value):
         """Validate data in json format with event data.
 
         1.  Is it JSON?
@@ -23,28 +23,31 @@ class EventValidator(object):
         3.  Validate schema and get all errors with prefix 'additional_fields:'
 
         Args:
-            field (string): field name.
-            value: field value.
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
+        if not enabled:
+            return
+
         try:
-            if value:
-                data = json.loads(value)
-            else:
-                data = {}  # Do not crash if ''
-        except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception: %s"
-                        % str(e))
+            data = json.loads(value) if value else {}  # Do not crash if ''
+        except json.JSONDecodeError as e:
+            self._error(field,
+                        "Must be json, parsing failed with exception: %s" % e)
 
         id_field = current_app.config['ID_FIELD']
         # At this point we have valid JSON, check for event now.
         # If PATCH, then event_id will not be provided, we have to find it
         if request.method == 'PATCH':
-            lookup = {id_field: self._original_document['event']}
+            lookup = {id_field: self.persisted_document['event']}
         elif 'event' in self.document:
             lookup = {id_field: self.document['event']}
         else:
-            # No event provided, the required validator of the event field
-            # will complain.
+            # No event provided, the `required` validator of the event field
+            # will complain, but we can't continue here
             return
 
         event = current_app.data.find_one('events', None, **lookup)
@@ -53,13 +56,11 @@ class EventValidator(object):
         # json schemas can be written to the database
         if event is not None:
             schema = json.loads(event['additional_fields'])
-            v = Draft4Validator(schema)  # Create a new validator
+            validator = Draft4Validator(schema)
 
             # search for errors and move them into main validator
-            for error in v.iter_errors(data):
+            for error in validator.iter_errors(data):
                 self._error(field, error.message)
-
-        # if event id is not valid another validator will fail anyway
 
     def _validate_signup_requirements(self, signup_possible, field, event_id):
         """Validate if signup requirements are met.
@@ -78,8 +79,11 @@ class EventValidator(object):
 
         Args:
             singup_possible (bool); validates nothing if set to false
-            field (string): field name.
-            value: field value.
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
         if signup_possible:
             # We can assume event_id is valid, as the type validator will abort
@@ -106,10 +110,11 @@ class EventValidator(object):
             # so correct error messages are produced
             if (event.get('additional_fields') and
                     ('additional_fields' not in self.document.keys())):
-                self._validate_type_json_event_field('additional_fields',
-                                                     None)
+                self._validate_json_event_field(True,
+                                                'additional_fields',
+                                                '')
 
-    def _validate_email_signup_must_be_allowed(self, enabled, field, value):
+    def _validate_email_signup_must_be_allowed(self, enabled, field, _):
         """Validation for an event field in eventsignups.
 
         Validates if the event allows self enrollment.
@@ -118,8 +123,11 @@ class EventValidator(object):
 
         Args:
             enabled (bool): validates nothing if set to false
-            field (string): field name.
-            value: field value.
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
         if enabled:
             # Get event
@@ -138,68 +146,84 @@ class EventValidator(object):
     General purpose validators
     """
 
-    def _validate_type_json_schema_object(self, field, value):
-        """Validate a cerberus schema saved as JSON.
+    def _validate_json_schema(self, enabled, field, value):
+        """Validate a json schema[1] string.
 
-        1.  Is it JSON?
+        1.  Is the string valid JSON?
         2.  Does it satisfy our restrictions for jsonschemas?
         3.  Is it a valid json-schema?
 
         Args:
-            field (string): field name.
-            value: field value.
+            field (string): field name
+            value: field value
+
+        1: https://json-schema.org
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
+        if not enabled:
+            return
+
         try:
             json_data = json.loads(value)
-        except Exception as e:
-            self._error(field, "Must be json, parsing failed with exception: %s"
-                        % str(e))
-        else:
-            # validate if these fields are included exactly as given
-            # (we, e.g., always require objects so UI can rely on this)
-            enforced_fields = {
-                '$schema': 'http://json-schema.org/draft-04/schema#',
-                'type': 'object',
-                'additionalProperties': False
-            }
+        except json.JSONDecodeError as error:
+            self._error(field,
+                        "Invalid json, parsing failed with exception: %s"
+                        % error)
+            return
 
-            for key, value in enforced_fields.items():
-                if key not in json_data or json_data[key] != value:
-                    self._error(field,
-                                "'{key}' is required to be set to '{value}'"
-                                .format(key=key, value=value))
+        # validate if these fields are included exactly as given
+        # (we, e.g., always require objects so UI can rely on this)
+        enforced_fields = {
+            '$schema': 'http://json-schema.org/draft-04/schema#',
+            'type': 'object',
+            'additionalProperties': False
+        }
 
-            try:
-                # now check if it is entirely valid jsonschema
-                v = Draft4Validator(json_data)
-                # by default, jsonschema specification allows unknown properties
-                # We do not allow these.
-                v.META_SCHEMA['additionalProperties'] = False
-                v.check_schema(json_data)
-            except SchemaError as e:
-                self._error(field, "does not contain a valid schema: %s"
-                            % str(e))
+        for key, val in enforced_fields.items():
+            if key not in json_data or json_data[key] != val:
+                self._error(field,
+                            "'%s' is required to be set to '%s'"
+                            % (key, val))
 
-    # Eve doesn't handle time zones properly. Its always UTC but sometimes
+        # now check if it is entirely valid jsonschema
+        validator = Draft4Validator(json_data)
+        # by default, jsonschema specification allows unknown properties
+        # We do not allow these.
+        validator.META_SCHEMA['additionalProperties'] = False
+
+        try:
+            validator.check_schema(json_data)
+        except SchemaError as error:
+            self._error(field, "does not contain a valid schema: %s"
+                        % error)
+
+    # Eve doesn't handle time zones properly. It's always UTC but sometimes
     # the timezone is included, sometimes it isn't.
 
     def _get_time(self, fieldname):
-        """Retrieve time field from document or _original_document."""
+        """Retrieve time field from document or original document."""
         # Try to pick the value from document first, fall back to original
         time = self.document.get(fieldname)
         if time is None:
-            time = (self._original_document[fieldname]
-                    if self._original_document else None)
+            time = (self.persisted_document[fieldname]
+                    if self.persisted_document else None)
 
-        if time is None:
-            return None
-
-        return time.replace(tzinfo=None)
+        return time.replace(tzinfo=None) if time is not None else None
 
     def _validate_later_than(self, later_than, field, value):
         """Validate time dependecy.
 
         Value must be at the same time or later than a the value of later_than
+
+        Args:
+            later_than (str): Name of other field for comparison
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
         """
         other_time = self._get_time(later_than)
         if other_time is None:
@@ -213,6 +237,14 @@ class EventValidator(object):
         """Validate time dependecy.
 
         Value must be at the same time or later than a the value of later_than
+
+        Args:
+            earlier_than (str): Name of other field for comparison
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
         """
         other_time = self._get_time(earlier_than)
         if other_time is None:
@@ -222,19 +254,20 @@ class EventValidator(object):
             self._error(field, "Must be at a point in time before %s" %
                         earlier_than)
 
-    def _validate_only_if_not_null(self, only_if_not_null,
-                                   field, value):
+    def _validate_only_if_not_null(self, only_if_not_null, field, _):
         """The field may only be set if another field is not None.
 
         Args:
             only_if_not_null (string): The field, that may not be None
             field (string): name of the validated field
-            value: Value of the validated field
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
         """
         doc = self.document
         exists_in_original = (  # Check original document in case of patches
-            self._original_document is not None and
-            self._original_document.get(only_if_not_null) is not None)
+            self.persisted_document is not None and
+            self.persisted_document.get(only_if_not_null) is not None)
 
         if doc.get(only_if_not_null) is None and not exists_in_original:
             self._error(field, "May only be specified if %s is not null"
@@ -243,17 +276,32 @@ class EventValidator(object):
     def _validate_required_if_not(self, *args):
         """Dummy function for Cerberus.(It complains if it can find the rule).
 
-        Functionality is implemented in the requierd field validation.
+        Functionality is implemented in the required field validation.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
         """
 
-    def _validate_required_fields(self, document):
-        """Extend the parsing of to support requirements depending on fields.
+    def _BareValidator__validate_required_fields(self, document):
+        """Extend the validation of requirements to support `required_if_not`.
 
         Needed for language fields, where either german or english is needed.
         The new requirement validator will (in addition to the default
         `required` field) check for a a `required_`
+
+        Note on the weird name:
+        Cerberus defines the validation of required fields with double
+        underscores. Such variables undergo 'name mangling' in python,
+        and `__func` is replaced by `_classname_func` in the class definition,
+        a mechanism to avoid name collisions [1].
+
+        However, we precisely need to overwrite this function, hence
+        the weird name, as it is defined in the Cerberus `BareValidator` class.
+
+
+        1: https://docs.python.org/3/tutorial/classes.html#tut-private
         """
-        super()._validate_required_fields(document)
+        super()._BareValidator__validate_required_fields(document)
 
         for field, schema in self.schema.items():
             # If the field is there do nothing

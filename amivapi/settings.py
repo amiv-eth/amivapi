@@ -33,7 +33,7 @@ AUTO_COLLAPSE_MULTI_KEYS = True
 AUTO_CREATE_LISTS = True
 RESOURCE_METHODS = ['GET', 'POST']
 ITEM_METHODS = ['GET', 'PATCH', 'DELETE']
-XML = False
+RENDERERS = ['eve.render.JSONRenderer']
 X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'Content-Type', 'Cache-Control',
              'If-Match', 'If-None-Match', 'If-Modified-Since']

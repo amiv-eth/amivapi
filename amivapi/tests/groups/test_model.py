@@ -34,7 +34,7 @@ class GroupModelTest(WebTest):
         data = {
             'name': 'testgroup',
             'moderator': 24 * '0',
-            'receive_from': ['test1@amiv.ch', 'test2@amiv.ch'],
+            'receive_from': ['test1', 'test2'],
             'forward_to': ['test3@amiv.ch', 'test4@amiv.ch'],
         }
         self.api.post("/groups", data=data, token=self.get_root_token(),
