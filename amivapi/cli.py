@@ -6,13 +6,20 @@
 """A command line interface for AMIVApi."""
 from os import listdir, remove
 from os.path import join, isdir
+from datetime import datetime as dt
+from time import sleep
 
-from click import argument, echo, group, option, Path
+from click import argument, echo, group, option, Path, Choice, ClickException
 
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
 from amivapi.groups.mailing_lists import updated_group
+
+try:
+    import bjoern
+except ModuleNotFoundError:
+    bjoern = False
 
 
 @group()
@@ -60,7 +67,10 @@ def recreate_mailing_lists(config):
 @cli.command()
 @config_option
 def cron(config):
-    """Run scheduled tasks."""
+    """Run scheduled tasks once.
+
+    Use `amivapi run cron` to run them periodically.
+    """
     echo("Executing scheduled tasks...")
     app = create_app(config_file=config)
     with app.app_context():
@@ -98,25 +108,47 @@ def ldap_sync(config, sync_all, nethz):
 
 @cli.command()
 @config_option
-def run(config):
-    """Start amivapi development server."""
+@argument('mode', type=Choice(['prod', 'dev', 'cron']))
+def run(config, mode):
+    """Prod/dev server or periodic cron jobs.
+
+    Three modes of operation are available:
+
+    - dev: Run a development server (default)
+
+    - prod: Run a production server (requires the `bjoern` module)
+
+    - cron: Run in 'cron' mode, executing periodic tasks
+    """
     app = create_app(config_file=config, DEBUG=True, TESTING=True)
 
-    app.run(threaded=True)
+    if mode == 'dev':
+        app.run(threaded=True)
 
+    if mode == 'prod':
+        if bjoern:
+            echo('Starting bjoern on port 8080...')
+            bjoern.run(create_app(), '0.0.0.0', 8080)
+        else:
+            raise ClickException('The production server requires `bjoern`, '
+                                 'try installing it with '
+                                 '`pip install bjoern`.')
 
-def no_prompts(ctx, param, value):
-    """Deactivate prompting completely."""
-    if value:  # enable_ldap == False
-        for opt in ctx.command.params:
-            opt.prompt = None
-    return value
+    if mode == 'cron':
+        interval = app.config['CRON_INTERVAL']
 
+        echo('Running scheduled tasks periodically (every %i seconds).'
+             % interval.total_seconds())
 
-def no_ldap_prompts(ctx, param, value):
-    """Deactivate prompting for ldap user and password."""
-    if not value:  # enable_ldap == False
-        for opt in ctx.command.params:
-            if opt.name in ['LDAP_USER', 'LDAP_PASS']:
-                opt.prompt = None
-    return value
+        while True:
+            with app.app_context():
+                checkpoint = dt.utcnow()
+                run_scheduled_tasks()
+                execution_time = dt.utcnow() - checkpoint
+                echo('Tasks executed, total execution time: %.3f seconds.'
+                     % execution_time.total_seconds())
+
+                if execution_time > interval:
+                    echo('Warning: Execution time exceeds interval length.')
+
+                sleep((interval - execution_time).total_seconds())

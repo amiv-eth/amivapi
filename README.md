@@ -11,14 +11,52 @@ AMIV API is a Python-EVE based REST interface to manage members, events, mail fo
 
 [How to use central OAuth2 login](docs/OAuth.md)
 
-## Deploy using Docker
 
-AMIV API is available as a [docker](https://www.docker.com) container.
-If you do not have mongodb, you can also use docker to quickly start
-a database with the default settings used by AMIV API:
+## Installation & Prerequisites
+
+### Docker
+
+AMIV API is available as a [Docker](https://www.docker.com) container with the
+name [amiveth/amivapi](https://hub.docker.com/r/amiveth/amivapi/).
+
+You only need to install Docker, nothing else is required.
+
+### Manual Installation for Development
+
+For development, we recommend to clone the repository and install AMIV API
+manually.
+
+First of all, we advice ussing a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+
+If your virtual environment is ready, clone and install AMIV API:
 
 ```sh
-# Create a network s.t. database and api can communicate
+git clone https://github.com/amiv-eth/amivapi.git
+cd amivapi
+pip install -r requirements.txt
+```
+
+This will also install the `amivapi` command, which you can use to start
+a development server (more below).
+
+### MongoDB
+
+Regardless of your type of installation, AMIV API requires
+[MongoDB](https://docs.mongodb.com). If you have the connection data to your
+database, you are good to go and can skip this section.
+
+If you need to set up a local database for testing or development, you
+can either use the following guides to get it 
+[installed](https://docs.mongodb.com/manual/installation/) and
+[running](https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/)
+or you can use Docker as well.
+
+The following command runs a MongoDB service available on the default port
+(27017), preconfigured with a database `amivapi` with user `amivapi` and
+password `amivapi`.
+
+```sh
+# Create a network s.t. the api service can later be connected to the db
 docker network create --driver overlay backend
 docker service create \
     --name mongodb -p 27017:27017 --network backend\
@@ -28,89 +66,17 @@ docker service create \
     bitnami/mongodb
 ```
 
-Next, create a configuration with (at least) the mongodb credentials and save
-it as `amivapi_config.py` (or choose another name).
-
-```python
-MONGO_HOST = 'mongodb'  # Use the name of your mongodb service
-MONGO_PORT = 27017
-MONGO_DBNAME = 'amivapi'
-MONGO_USERNAME = 'amivapi'
-MONGO_PASSWORD = 'amivapi'
-```
-
-Finally, create API service and give it access to the config using a docker
-secret:
+If you have a local MongoDB running, the following command might be useful
+to set up database and user quickly:
 
 ```sh
-# Create secret
-docker secret create amivapi_config <path/to/amivapi_config.py>
-
-# Create new API service with secret
-# Map port 80 (host) to 8080 (container)
-docker service create \
-    --name amivapi  -p 80:8080 --network backend \
-    --secret amivapi_config \
-    amiveth/amivapi
-
-# Use the `start_cron` command to start the container in alternative mode:
-# It will not run a webserver, but execute periodic tasks.
-# You can use the `CRON_TIME` environment variable to specify time
-# in typical crontab format (the default is "39 3 * * *" to run early morning)
-docker service create \
-    --name amivapi-cron  --network backend \
-    --secret amivapi_config \
-    amiveth/amivapi-cron ./start_cron
-
-docker service create \
-    --name amivapi-cron  --network backend \
-    --secret amivapi_config \
-    --env CRON_TIME="12 3 * * *" \
-    amiveth/amivapi-cron ./start_cron
+mongo amivapi --eval \
+'db.createUser({user:"amivapi",pwd:"amivapi",roles:["readWrite"]});'
 ```
 
-If you want to use a different name for the secret (or cannot use secrets
-and have to mount the config manually), you can use the environment
-variable `AMIVAPI_CONFIG` to set the config path in the API container.
+## Configure and Start AMIV API
 
-## Installation
-
-You need to have mongodb [installed](https://docs.mongodb.com/manual/installation/) and [running](https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/).
-
-You should also use a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
-
-Clone and install AMIV API:
-
-```sh
-git clone https://github.com/amiv-eth/amivapi.git
-cd amivapi
-pip install -r requirements.txt
-```
-
-This will also install amivapi in editable mode (take a look at
-`requirements.txt` if you are curious) which allows us to use the command
-line interface of amivapi:
-
-```sh
-# Run a development server
-amivapi run
-# Get help, works for sub-commands as well
-amivapi --help
-amivapi run --help
-```
-
-## Running in Production
-
-If you want to use AMIV API properly behind a webserver, e.g. Apache or Nginx
-with uwsgi, you need to create a file, e.g. `app.py`, with the following content:
-
-```python
-from amivapi import create_app
-
-app = create_app()
-```
-
-## Configuration
+### Configuration File
 
 Now it's time to configure AMIVAPI. Create a file `config.py`
 (you can choose any other name as well) with the following content:
@@ -120,11 +86,11 @@ Now it's time to configure AMIVAPI. Create a file `config.py`
 ROOT_PASSWORD = 'root'
 
 # MongoDB Configuration
-MONGO_HOST = 'localhost'
+MONGO_HOST = 'mongodb'
 MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
-MONGO_USERNAME = ''
-MONGO_PASSWORD = ''
+MONGO_USERNAME = 'amivapi'
+MONGO_PASSWORD = 'amivapi'
 
 # Mailing lists for groups (optional, uncomment if needed)
 # MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
@@ -146,32 +112,68 @@ MONGO_PASSWORD = ''
 # LDAP_PASSWORD = ''
 ```
 
-AMIV API looks for a configuration in the following order:
+(These are only the most imporant settings. The config file overwrites
+the default settings, so any value defined in
+[settings.py](amivapi/settings.py) can used if needed.)
 
-1. If using `create_app`, you can name the file explicitly:
+### Run using Docker
 
-   ```python 
-   app = create_app(config_file="/path/to/your/config.py")
-   ```
+Configurations files can be used for services easily using
+[Docker configs](https://docs.docker.com/engine/swarm/configs/):
 
-2. If no file is specified, you can use the `AMIVAPI_CONFIG` environment
-   variable:
+```sh
+docker config create amivapi_config config.py
+```
 
-   ```sh
-   $set AMIVAPI_CONFIG path/to/your/config.py
-   ```
+Now start the API service (make sure to put it in the same network as MongoDB
+if you are running a MongoDB service locally).
 
-3. If no environment variable is specified either, AMIV API checks for a file
-   name `config.py` in the current working directory
+```sh
+# Webserver Mode
+# Map port 80 (host) to 8080 (container)
+docker service create \
+    --name amivapi  -p 80:8080 --network backend \
+    --config source=amivapi_config,target=/api/config.py \
+    amiveth/amivapi
 
-For `amivapi run` and all other `amivapi` commands you can also specify a
-config, see `amivapi <command> --help`, e.g. `amivapi run --help`
+# The command `amivapi run cron` starts the container in alternative mode:
+# It will not run a webserver, but execute scheduled tasks periodically.
+docker service create \
+    --name amivapi-cron --network backend \
+    --config source=amivapi_config,target=/api/config.py \
+    amiveth/amivapi amivapi run cron
+```
+
+(If you want to mount the config somewhere else, you can use the environment
+variable `AMIVAPI_CONFIG` to specify the config path in the container.)
+
+### Run locally
+
+If you have installed AMIV API locally, you can use the CLI to start it:
+
+```sh
+# Start development server
+amivapi run dev
+
+# Start production server (requires the `bjoern` package)
+amivapi run prod
+
+# Execute scheduled tasks periodically
+amivapi run cron
+
+# Specify config if its not `config.py` in the current directory
+amivapi --config <path> run dev
+
+# Get help, works for sub-commands as well
+amivapi --help
+amivapi run --help
+```
 
 
-## Running The Tests
+## For Developers: Running The Tests
 
-Create a test user `test_user` with password `test_pw` in the `test_amviapi`
-database, which will be used for all tests.
+First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. You only need
+to do this once to prepare the database.
 
 ```sh
 mongo test_amivapi --eval \
@@ -181,31 +183,32 @@ mongo test_amivapi --eval \
 Install the test requirements:
 
 ```sh
-pip install pytest tox
+pip install tox
 ```
-To run all tests:
+
+Now you can run all tests using tox
 
 ```sh
+# Run everything
 tox
-```
 
-To run tests based on a keyword:
-
-```sh
-tox -- -k <keyword>
-```
-
-To run just one python version:
-
-```sh
+# Select only a single python version
 tox -e py36
+
+# Filter tests by name
+tox -- -k <keyword>
+
+# Combining both is possible too
+tox -e py36 -- -k <keyword>
 ```
 
 ### Integration Tests
 
 The integration tests for ssh mailing list creation and LDAP require additional
 information to be run, which should not be published.
-By default, these tests are *skipped*, as you can see in the tox summary.
+Therefore, these tests are automatically *skipped* (as you can see in the tox
+summary), unless the relevant information is provided with environment
+variables.
 
 #### SSH
 
