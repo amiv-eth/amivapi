@@ -136,12 +136,12 @@ docker service create \
     --config source=amivapi_config,target=/api/config.py \
     amiveth/amivapi
 
-# The command `amivapi run cron` starts the container in alternative mode:
+# The command `amivapi cron --continuous` starts the container in alternative mode:
 # It will not run a webserver, but execute scheduled tasks periodically.
 docker service create \
     --name amivapi-cron --network backend \
     --config source=amivapi_config,target=/api/config.py \
-    amiveth/amivapi amivapi run cron
+    amiveth/amivapi amivapi cron --continuous
 ```
 
 (If you want to mount the config somewhere else, you can use the environment
@@ -159,7 +159,7 @@ amivapi run dev
 amivapi run prod
 
 # Execute scheduled tasks periodically
-amivapi run cron
+amivapi cron --continuous
 
 # Specify config if its not `config.py` in the current directory
 amivapi --config <path> run dev

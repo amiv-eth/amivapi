@@ -64,17 +64,43 @@ def recreate_mailing_lists(config):
             updated_group(g, g)  # Use group as update and original
 
 
-@cli.command()
-@config_option
-def cron(config):
-    """Run scheduled tasks once.
-
-    Use `amivapi run cron` to run them periodically.
-    """
+def run_cron(app):
+    """Run scheduled tasks with the given app."""
     echo("Executing scheduled tasks...")
-    app = create_app(config_file=config)
     with app.app_context():
         run_scheduled_tasks()
+
+
+@cli.command()
+@config_option
+@option("--continuous", is_flag=True,
+        help="If set, continue running in a loop.")
+def cron(config, continuous):
+    """Run scheduled tasks.
+
+    Use --continuous to run them periodically.
+    """
+    app = create_app(config_file=config)
+
+    if not continuous:
+        run_cron(app)
+    else:
+        interval = app.config['CRON_INTERVAL']
+
+        echo('Running scheduled tasks periodically (every %i seconds).'
+             % interval.total_seconds())
+
+        while True:
+            checkpoint = dt.utcnow()
+            run_cron(app)
+            execution_time = dt.utcnow() - checkpoint
+            echo('Tasks executed, total execution time: %.3f seconds.'
+                 % execution_time.total_seconds())
+
+            if execution_time > interval:
+                echo('Warning: Execution time exceeds interval length.')
+
+            sleep((interval - execution_time).total_seconds())
 
 
 @cli.command()
@@ -108,7 +134,7 @@ def ldap_sync(config, sync_all, nethz):
 
 @cli.command()
 @config_option
-@argument('mode', type=Choice(['prod', 'dev', 'cron']))
+@argument('mode', type=Choice(['prod', 'dev']))
 def run(config, mode):
     """Prod/dev server or periodic cron jobs.
 
@@ -117,15 +143,13 @@ def run(config, mode):
     - dev: Run a development server (default)
 
     - prod: Run a production server (requires the `bjoern` module)
-
-    - cron: Run in 'cron' mode, executing periodic tasks
     """
     app = create_app(config_file=config, DEBUG=True, TESTING=True)
 
     if mode == 'dev':
         app.run(threaded=True)
 
-    if mode == 'prod':
+    elif mode == 'prod':
         if bjoern:
             echo('Starting bjoern on port 8080...')
             bjoern.run(create_app(), '0.0.0.0', 8080)
@@ -133,22 +157,3 @@ def run(config, mode):
             raise ClickException('The production server requires `bjoern`, '
                                  'try installing it with '
                                  '`pip install bjoern`.')
-
-    if mode == 'cron':
-        interval = app.config['CRON_INTERVAL']
-
-        echo('Running scheduled tasks periodically (every %i seconds).'
-             % interval.total_seconds())
-
-        while True:
-            with app.app_context():
-                checkpoint = dt.utcnow()
-                run_scheduled_tasks()
-                execution_time = dt.utcnow() - checkpoint
-                echo('Tasks executed, total execution time: %.3f seconds.'
-                     % execution_time.total_seconds())
-
-                if execution_time > interval:
-                    echo('Warning: Execution time exceeds interval length.')
-
-                sleep((interval - execution_time).total_seconds())
