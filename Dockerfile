@@ -5,7 +5,7 @@ RUN adduser -Dh /api amivapi
 WORKDIR /api
 # API will run on port 80
 EXPOSE 8080
-# Environment variable for config
+# Environment variable for default config file location
 ENV AMIVAPI_CONFIG=/api/config.py
 
 # Install bjoern and dependencies for install
