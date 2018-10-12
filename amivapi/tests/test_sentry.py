@@ -19,10 +19,7 @@ class SentryIntegrationTest(WebTestNoAuth):
     """Raise an error to check if it gets sent to Sentry."""
 
     def setUp(self, *args, **kwargs):
-        """Extended setUp.
-
-        Move environment variables to config.
-        """
+        """Extended setUp: Move environment variables to config."""
         extra_config = {
             'SENTRY_DSN': SENTRY_DSN,
             'SENTRY_ENVIRONMENT': 'testing',
