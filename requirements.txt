@@ -6,5 +6,6 @@ jsonschema==2.5.1
 click==6.6
 pytz==2016.7
 freezegun==0.3.8
+sentry-sdk[flask]==0.4.1
 # Install amivapi in editable mode to enable command line tools
 -e .

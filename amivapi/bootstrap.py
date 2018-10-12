@@ -11,6 +11,9 @@ from os.path import abspath
 from eve import Eve
 from flask import Config
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
 from amivapi import (
     auth,
     beverages,
@@ -26,6 +29,25 @@ from amivapi import (
     utils
 )
 from amivapi.validation import ValidatorAMIV
+
+
+def init_sentry(app):
+    """Init sentry if DSN *and* environment are provided."""
+    dsn = app.config['SENTRY_DSN']
+    env = app.config['SENTRY_ENVIRONMENT']
+
+    if dsn is None and env is None:
+        return
+
+    if None in (dsn, env):
+        raise ValueError("You need to specify both DSN and environment "
+                         "to use Sentry.")
+
+    sentry_sdk.init(
+        dsn=dsn,
+        integrations=[FlaskIntegration()],
+        environment=env,
+    )
 
 
 def create_app(config_file=None, **kwargs):
@@ -63,6 +85,9 @@ def create_app(config_file=None, **kwargs):
     app = Eve(settings=config,
               validator=ValidatorAMIV)
     app.logger.info(config_status)
+
+    # Set up error logging with sentry
+    init_sentry(app)
 
     # Create LDAP connector
     ldap.init_app(app)

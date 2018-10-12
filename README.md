@@ -92,6 +92,10 @@ MONGO_DBNAME = 'amivapi'
 MONGO_USERNAME = 'amivapi'
 MONGO_PASSWORD = 'amivapi'
 
+# Sentry error logging
+# SENTRY_DSN = "https://<key>@sentry.io/<project>"
+# SENTRY_ENVIRONMENT = 'production'
+
 # Mailing lists for groups (optional, uncomment if needed)
 # MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
     
@@ -230,6 +234,13 @@ Set the following environment variables:
 
 Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached. Furthermore be patient,
 as the LDAP tests take a little time to complete.
+
+
+#### Sentry
+
+- `SENTRY_TEST_DSN`
+
+The test will use the `testing` environment.
 
 ## Problems or Questions?
 
