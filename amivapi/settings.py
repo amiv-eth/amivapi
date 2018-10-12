@@ -15,7 +15,10 @@ from passlib.context import CryptContext
 
 VERSION = '0.9dev'
 
-# Default user config
+# Sentry
+
+SENTRY_DSN = None
+SENTRY_ENVIRONMENT = None
 
 # Flask
 
