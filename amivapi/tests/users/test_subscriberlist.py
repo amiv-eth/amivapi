@@ -7,11 +7,20 @@
 Checks if authorization works and if the correct value is returned.
 """
 
+from base64 import b64encode
+
 from amivapi.tests import utils
 
 
 class SubscriberlistTest(utils.WebTestNoAuth):
     """Basic tests for subscriber list resource."""
+
+    def setUp(self):
+        """Set username and password to enable subscriberlist endpoint."""
+        super().setUp(SUBSCRIBER_LIST_USERNAME='test',
+                      SUBSCRIBER_LIST_PASSWORD='test')
+        basicauth = b64encode(b'test:test').decode('utf-8')
+        self.auth_header = {'Authorization': 'Basic %s' % basicauth}
 
     def test_subscriberlist_response(self):
         entries = [
@@ -55,7 +64,7 @@ class SubscriberlistTest(utils.WebTestNoAuth):
             }
         ]
 
-        users = self.load_fixture({
+        self.load_fixture({
             'users': entries
         })
 
@@ -63,17 +72,22 @@ class SubscriberlistTest(utils.WebTestNoAuth):
         expected = ''
         for u in entries:
             if 'send_newsletter' in u and u['send_newsletter']:
-                expected += '%s\t%s %s\n'%(u['email'], u['firstname'], u['lastname'])
+                expected += ('%s\t%s %s\n' %
+                             (u['email'], u['firstname'], u['lastname']))
 
-        headers = {'Authorization': 'Basic YW1pdmFwaTphbWl2YXBp'}
-        response = self.api.get('subscriberlist', headers=headers, status_code=200).get_data(as_text=True)
+        response = self.api.get('/newslettersubscribers',
+                                headers=self.auth_header,
+                                status_code=200).get_data(as_text=True)
 
         self.assertEqual(response, expected)
 
-
     def test_subscriberlist_auth(self):
-        """Test that authorization works."""
-        self.api.get('subscriberlist', status_code=401)
+        """Test that authorization is required."""
+        self.api.get('/newslettersubscribers', status_code=401)
 
-        headers = {'Authorization': 'Basic YW1pdmFwaTphbWl2YXBp'}
-        self.api.get('subscriberlist', headers=headers, status_code=200)
+        wrong_auth = {'Authorization': "Basic 1234"}
+        self.api.get('/newslettersubscribers', headers=wrong_auth,
+                     status_code=401)
+
+        self.api.get('/newslettersubscribers', headers=self.auth_header,
+                     status_code=200)

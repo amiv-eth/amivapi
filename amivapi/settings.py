@@ -94,9 +94,9 @@ PASSWORD_CONTEXT = CryptContext(
 
 # Users
 
-# Subscriberlist authorization
-SUBSCRIBER_LIST_USERNAME = 'amivapi'
-SUBSCRIBER_LIST_PASSWORD = 'amivapi'
+# Newsletter subscriber list view authorization
+SUBSCRIBER_LIST_USERNAME = None
+SUBSCRIBER_LIST_PASSWORD = None
 
 # OAuth
 
