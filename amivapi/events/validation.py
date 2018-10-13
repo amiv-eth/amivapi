@@ -6,6 +6,7 @@
 """Event Validation."""
 from datetime import datetime
 import json
+from bs4 import BeautifulSoup
 
 from flask import current_app, g, request
 from jsonschema import Draft4Validator, SchemaError
@@ -145,6 +146,23 @@ class EventValidator(object):
     """
     General purpose validators
     """
+
+    def _validate_no_html(self, no_html, field, value):
+        """Validation for a text field.
+
+        Validates that the provided text contains no HTML.
+
+        Args:
+            no_html (bool): if set to true, all text containing HTML will be rejected
+            field (string): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if no_html and bool(BeautifulSoup(value, 'html.parser').find()):
+            self._error(field, "the provided no-html text contains HTML-elements: %s"
+                % value)
 
     def _validate_json_schema(self, enabled, field, value):
         """Validate a json schema[1] string.
