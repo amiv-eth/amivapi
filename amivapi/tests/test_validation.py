@@ -56,7 +56,7 @@ class ValidatorAMIVTest(WebTest):
         self.new_object("groupmemberships",
                         user=user['_id'], group=admin_group['_id'])
 
-        # User is now admin, so can always post
+        # User is now admin, should have same restrictions
         self.api.post("/test", data={
             'field1': 'teststring2'
-        }, token=old_token, status_code=201)
+        }, token=old_token, status_code=422)

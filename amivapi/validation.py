@@ -224,8 +224,6 @@ class ValidatorAMIV(Validator):
 
         Validates if the session is not older than threshold_time
 
-        Except admins, they can ignore this
-
         Args:
             threshold_timedelta (timedelta): threshold to compare with
             field (string): field name
@@ -239,14 +237,13 @@ class ValidatorAMIV(Validator):
                   "session_younger_than must be positive."
                   % (self.resource, field))
 
-        if not g.get('resource_admin'):
-            time_created = g.current_session['_created']
-            time_now = datetime.now(timezone.utc)
+        time_created = g.current_session['_created']
+        time_now = datetime.now(timezone.utc)
 
-            if time_now - time_created > threshold_timedelta:
-                self._error(field, "Your session is too old. Using this field "
-                            "is not allowed if your session is older than %s."
-                            % threshold_timedelta)
+        if time_now - time_created > threshold_timedelta:
+            self._error(field, "Your session is too old. Using this field "
+                        "is not allowed if your session is older than %s."
+                        % threshold_timedelta)
 
 
 # Cerberus uses a different validator for schemas, which is unaware of
