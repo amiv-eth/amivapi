@@ -15,6 +15,8 @@ validate the schema itself.
 from datetime import datetime, timedelta, timezone
 from imghdr import what
 from collections import Hashable
+from PIL import Image
+from io import StringIO
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -218,6 +220,32 @@ class ValidatorAMIV(Validator):
         if filetype not in allowed_types:
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (filetype, allowed_types))
+
+    def _validate_aspect_ratio(self, aspect_ratio, field, value):
+        """Validates aspect ratio of a given image.
+
+        Args:
+            aspect_ratio: a tuple of two numbers
+                specifying the width relative to the height
+            field (str): field name
+            value: field value
+
+        The rule's arguments are validated against this schema:
+        {
+            'type': 'list',
+            'schema': {
+                'type': 'tuple',
+                'items': 2 * ({'type': 'Number'},)
+            }
+        }
+        """
+        ratio = aspect_ratio[0] / aspect_ratio[1]
+        img = Image.open(value.stream)
+        img_ratio = img.size[0] / img.size[1]
+
+        if abs(ratio - img_ratio) > app.config['ASPECT_RATIO_TOLERANCE']:
+            self._error(field, "the provided image is not of the required aspect ratio. "
+            + "The accepted ratio is %s:%s" % (aspect_ratio[0], aspect_ratio[1]))
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields
