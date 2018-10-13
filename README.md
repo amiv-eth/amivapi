@@ -112,9 +112,8 @@ MONGO_PASSWORD = 'amivapi'
 # SMTP_PASSWORD = ''
 
 # Allow accessing a list of newsletter subscribers at /newslettersubscribers
-# Format: One line per user: 'email\tfirstname lastnamer'
-SUBSCRIBER_LIST_USERNAME = ''
-SUBSCRIBER_LIST_PASSWORD = ''
+# SUBSCRIBER_LIST_USERNAME = ''
+# SUBSCRIBER_LIST_PASSWORD = ''
 
 
 # LDAP connection (special LDAP user required, *not* nethz username & password)

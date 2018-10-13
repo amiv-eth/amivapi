@@ -16,8 +16,8 @@ def subscriberlist():
 
     The list has the format:
 
-        email\tfirstname lastname
-        email\tfirstname lastnamer
+        email firstname lastname
+        email firstname lastname
         ...
 
     The endpoint is secured by Basic Auth. Username and password need to be
@@ -29,7 +29,7 @@ def subscriberlist():
     if check_auth():
         collection = current_app.data.driver.db['users']
         subscribers = collection.find({'send_newsletter': True})
-        return "".join('%s\t%s %s\n'
+        return "".join('%s %s %s\n'
                        % (user['email'], user['firstname'], user['lastname'])
                        for user in subscribers)
 

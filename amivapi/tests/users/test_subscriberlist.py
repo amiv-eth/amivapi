@@ -72,7 +72,7 @@ class SubscriberlistTest(utils.WebTestNoAuth):
         expected = ''
         for u in entries:
             if 'send_newsletter' in u and u['send_newsletter']:
-                expected += ('%s\t%s %s\n' %
+                expected += ('%s %s %s\n' %
                              (u['email'], u['firstname'], u['lastname']))
 
         response = self.api.get('/newslettersubscribers',
