@@ -16,6 +16,7 @@ from .security import (
     project_password_status_on_updated,
     restrict_filters,
 )
+from .subscriberlist import init_subscriber_list
 
 
 def init_app(app):
@@ -36,3 +37,5 @@ def init_app(app):
     app.on_updated_users += project_password_status_on_updated
     app.on_replace_user += hash_on_update
     app.on_replaced_user += project_password_status_on_updated
+
+    init_subscriber_list(app)

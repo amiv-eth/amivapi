@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
-VERSION = '0.9dev'
+VERSION = '1.1.0'
 
 # Sentry
 
@@ -91,6 +91,12 @@ PASSWORD_CONTEXT = CryptContext(
     # min_rounds is used to determine if a hash needs to be upgraded
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )
+
+# Users
+
+# Newsletter subscriber list view authorization
+SUBSCRIBER_LIST_USERNAME = None
+SUBSCRIBER_LIST_PASSWORD = None
 
 # OAuth
 
