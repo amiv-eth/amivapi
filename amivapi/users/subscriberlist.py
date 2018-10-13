@@ -32,7 +32,6 @@ def subscriberlist():
         return "".join('%s %s %s\n'
                        % (user['email'], user['firstname'], user['lastname'])
                        for user in subscribers)
-
     abort(401)
 
 
