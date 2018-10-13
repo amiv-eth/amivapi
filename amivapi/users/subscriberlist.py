@@ -29,7 +29,7 @@ def check_token_authorization(token):
     if token and token.username and token.password:
         user = current_app.config['SUBSCRIBER_LIST_USERNAME']
         password = current_app.config['SUBSCRIBER_LIST_PASSWORD']
-        return token.username == user and token.password == password]
+        return token.username == user and token.password == password
     else:
         return False
 
