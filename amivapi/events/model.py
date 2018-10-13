@@ -228,7 +228,8 @@ eventdomain = {
             'user': {
                 'data_relation': {
                     'resource': 'users',
-                    'embeddable': True
+                    'embeddable': True,
+                    'cascade_delete': True,
                 },
                 'not_patchable': True,
                 'only_self_enrollment_for_event': True,
