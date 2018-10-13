@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """User module initialization."""
 
-from amivapi.utils import register_domain
+from amivapi.utils import register_domain, register_validator
 
 from .model import userdomain
 from .security import (
@@ -16,11 +16,13 @@ from .security import (
     project_password_status_on_updated,
     restrict_filters,
 )
+from .validation import UserValidator
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
+    register_validator(app, UserValidator)
 
     # Dynamically restrict filter
     app.on_pre_GET_users += restrict_filters

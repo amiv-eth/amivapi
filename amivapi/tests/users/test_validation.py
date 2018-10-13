@@ -41,15 +41,18 @@ class ValidatorAMIVTest(WebTest):
             }
         })
 
-        # Outdated token may not post
-        self.api.post("/test", data={
+        # Post works
+        response = self.api.post("/test", data={
             'field1': 'teststring'
-        }, token=old_token, status_code=422)
+        }, token=old_token, status_code=201).json
 
-        # New token can post
-        self.api.post("/test", data={
-            'field1': 'teststring',
-        }, token=token, status_code=201)
+        _id = response['_id']
+        headers = {'If-Match': response['_etag']}
+
+        # Outdated token may not patch
+        self.api.patch("/test/%s" % _id, data={
+            'field1': 'teststring'
+        }, token=old_token, headers=headers, status_code=422)
 
         admin_group = self.new_object("groups",
                                       permissions={'test': 'readwrite'})
@@ -57,6 +60,11 @@ class ValidatorAMIVTest(WebTest):
                         user=user['_id'], group=admin_group['_id'])
 
         # User is now admin, should have same restrictions
-        self.api.post("/test", data={
+        self.api.patch("/test/%s" % _id, data={
             'field1': 'teststring2'
-        }, token=old_token, status_code=422)
+        }, token=old_token, headers=headers, status_code=422)
+
+        # New token can patch
+        self.api.patch("/test/%s" % _id, data={
+            'field1': 'teststring',
+        }, token=token, headers=headers, status_code=200)
