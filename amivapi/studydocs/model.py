@@ -46,7 +46,8 @@ studydocdomain = {
                 'empty': False,
                 'nullable': True,
                 'description': 'Original author of the uploaded files'
-                '(Prof, Assistant, copyright owner)'
+                '(Prof, Assistant, copyright owner)',
+                'no_html': True
             },
             'department': {
                 'type': 'string',
@@ -63,17 +64,20 @@ studydocdomain = {
             'lecture': {
                 'maxlength': 100,
                 'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'no_html': True
             },
             'title': {
                 'type': 'string',
                 'empty': False,
                 'maxlength': 100,
+                'no_html': True
             },
             'professor': {
                 'maxlength': 100,
                 'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'no_html': True
             },
             'semester': {
                 'type': 'string',

@@ -31,39 +31,46 @@ eventdomain = {
                 'type': 'string',
                 'maxlength': 100,
                 'dependencies': ['catchphrase_de', 'description_de'],
-                'required_if_not': 'title_en'
+                'required_if_not': 'title_en',
+                'no_html': True
             },
             'title_en': {
                 'nullable': True,
                 'type': 'string',
                 'maxlength': 100,
                 'dependencies': ['catchphrase_en', 'description_en'],
-                'required_if_not': 'title_de'
+                'required_if_not': 'title_de',
+                'no_html': True
             },
             'catchphrase_de': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 500
+                'maxlength': 500,
+                'no_html': True
             },
             'catchphrase_en': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 500
+                'maxlength': 500,
+                'no_html': True
             },
             'description_de': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 10000
+                'maxlength': 10000,
+                'no_html': True
             },
             'description_en': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 10000
+                'maxlength': 10000,
+                'no_html': True
             },
             'location': {
                 'maxlength': 50,
                 'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'no_html': True
             },
             'price': {
                 'min': 1,
@@ -86,21 +93,20 @@ eventdomain = {
 
             # Images
 
-            'img_banner': {
-                'filetype': ['png', 'jpeg'],
-                'type': 'media'
-            },
             'img_infoscreen': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (16, 9)
             },
             'img_poster': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1.41, 1)  # DIN A aspect ratio
             },
             'img_thumbnail': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1, 1)
             },
 
             # Display settings

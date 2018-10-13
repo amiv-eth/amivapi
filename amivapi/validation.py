@@ -15,6 +15,8 @@ validate the schema itself.
 from datetime import datetime, timedelta, timezone
 from imghdr import what
 from collections import Hashable
+from PIL import Image
+from bs4 import BeautifulSoup
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -219,6 +221,33 @@ class ValidatorAMIV(Validator):
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (filetype, allowed_types))
 
+    def _validate_aspect_ratio(self, aspect_ratio, field, value):
+        """Validates aspect ratio of a given image.
+
+        Args:
+            aspect_ratio: a tuple of two numbers
+                specifying the width relative to the height
+            field (str): field name
+            value (file): field value
+
+        The rule's arguments are validated against this schema:
+        {
+            'type': 'list',
+            'schema': {
+                'type': 'tuple',
+                'items': 2 * ({'type': 'Number'},)
+            }
+        }
+        """
+        ratio = aspect_ratio[0] / aspect_ratio[1]
+        img = Image.open(value.stream)
+        img_ratio = img.size[0] / img.size[1]
+
+        if abs(ratio - img_ratio) > app.config['ASPECT_RATIO_TOLERANCE']:
+            self._error(field, "The image does not have the required aspect "
+                               "ratio. The accepted ratio is %s:%s" %
+                               (aspect_ratio[0], aspect_ratio[1]))
+
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields
 
@@ -247,6 +276,25 @@ class ValidatorAMIV(Validator):
                 self._error(field, "Your session is too old. Using this field "
                             "is not allowed if your session is older than %s."
                             % threshold_timedelta)
+
+    def _validate_no_html(self, no_html, field, value):
+        """Validation for a text field.
+
+        Validates that the provided text contains no HTML.
+
+        Args:
+            no_html (bool): if set to true, all text containing HTML will be
+                            rejected
+            field (string): field name
+            value: field value
+
+        Solution from [stack overflow](https://stackoverflow.com/a/24856208).
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if no_html and bool(BeautifulSoup(value, 'html.parser').find()):
+            self._error(field, "The text must not contain html elements.")
 
 
 # Cerberus uses a different validator for schemas, which is unaware of

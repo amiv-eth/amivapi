@@ -119,6 +119,19 @@ class MediaTest(WebTestNoAuth):
         self.api.post("/test", data=data, headers=headers,
                       status_code=422)
 
+    def test_aspect_ratio_validation(self):
+        """Test aspect ratio validation."""
+        schema = self.app.config['DOMAIN']['test']['schema']
+        schema['test_file']['aspect_ratio'] = (1, 1)
+
+        self._post_file()  # Succeeds if lena.png can be posted
+
+        headers = {'content-type': 'multipart/form-data'}
+        lionpath = join(dirname(__file__), "fixtures", 'lion.jpg')
+        with open(lionpath, 'rb') as f:
+            data = {'test_file': f}
+            self.api.post("/test", data=data, headers=headers, status_code=422)
+
     def test_timezone_error(self):
         """Test that #150 is fixed."""
         obj = self.new_object('test',

@@ -129,7 +129,8 @@ groupdomain = {
                 'maxlength': 100,
                 'required': True,
                 'unique': True,
-                'empty': False
+                'empty': False,
+                'no_html': True,
             },
             'moderator': {
                 'type': 'objectid',

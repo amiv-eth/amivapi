@@ -142,10 +142,6 @@ class EventValidator(object):
                             "event %s does not allow signup with email address"
                             % event_id)
 
-    """
-    General purpose validators
-    """
-
     def _validate_json_schema(self, enabled, field, value):
         """Validate a json schema[1] string.
 
