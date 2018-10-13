@@ -45,7 +45,8 @@ userdomain = {
                 'unique': True,
                 'default': None,  # Do multiple none values work?
                 'description': 'Nethz(short ETH name)  of the user. Used for '
-                'identification in LDAP and for login.'
+                'identification in LDAP and for login.',
+                'no_html': True
             },
             'firstname': {
                 'type': 'string',
@@ -53,14 +54,16 @@ userdomain = {
                 'empty': False,
                 'nullable': False,
                 'not_patchable_unless_admin': True,
-                'required': True},
+                'required': True,
+                'no_html': True},
             'lastname': {
                 'type': 'string',
                 'maxlength': 50,
                 'empty': False,
                 'nullable': False,
                 'not_patchable_unless_admin': True,
-                'required': True},
+                'required': True,
+                'no_html': True},
             'membership': {
                 'allowed': ["none", "regular", "extraordinary", "honorary"],
                 'maxlength': 13,
@@ -76,7 +79,8 @@ userdomain = {
                 'nullable': True,
                 'required': False,
                 'type': 'string',
-                'unique': True
+                'unique': True,
+                'no_html': True
             },
             'department': {
                 'type': 'string',
@@ -120,13 +124,15 @@ userdomain = {
                 'unique': True,
                 'description': 'Number on the back of the legi. This is not in '
                 'LDAP, therefore users need to enter it themselves to use the '
-                'vending machines.'
+                'vending machines.',
+                'no_html': True
             },
             'phone': {
                 'type': 'string',
                 'maxlength': 20,
                 'empty': False,
-                'nullable': True
+                'nullable': True,
+                'no_html': True
             },
             'send_newsletter': {
                 'type': 'boolean',

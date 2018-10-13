@@ -143,25 +143,6 @@ class EventValidator(object):
                             "event %s does not allow signup with email address"
                             % event_id)
 
-    def _validate_no_html(self, no_html, field, value):
-        """Validation for a text field.
-
-        Validates that the provided text contains no HTML.
-
-        Args:
-            no_html (bool): if set to true, all text containing HTML will be
-                            rejected
-            field (string): field name
-            value: field value
-
-        Solution from [stack overflow](https://stackoverflow.com/a/24856208).
-
-        The rule's arguments are validated against this schema:
-        {'type': 'boolean'}
-        """
-        if no_html and bool(BeautifulSoup(value, 'html.parser').find()):
-            self._error(field, "The text must not contain html elements.")
-
     def _validate_json_schema(self, enabled, field, value):
         """Validate a json schema[1] string.
 
