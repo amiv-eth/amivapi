@@ -18,7 +18,7 @@ from amivapi.groups.mailing_lists import updated_group
 
 try:
     import bjoern
-except ModuleNotFoundError:
+except ImportError:
     bjoern = False
 
 
