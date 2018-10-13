@@ -64,7 +64,7 @@ studydocdomain = {
             'lecture': {
                 'maxlength': 100,
                 'nullable': True,
-                'type': 'string',,
+                'type': 'string',
                 'no_html': True
             },
             'title': {

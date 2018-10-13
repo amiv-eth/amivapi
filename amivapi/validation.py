@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from imghdr import what
 from collections import Hashable
 from PIL import Image
+from bs4 import BeautifulSoup
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app

@@ -6,7 +6,6 @@
 """Event Validation."""
 from datetime import datetime
 import json
-from bs4 import BeautifulSoup
 
 from flask import current_app, g, request
 from jsonschema import Draft4Validator, SchemaError
