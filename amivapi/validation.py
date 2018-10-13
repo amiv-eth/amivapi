@@ -12,13 +12,12 @@ validate the schema itself.
 [Read more](http://docs.python-cerberus.org/en/stable/customize.html)
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from imghdr import what
 from collections import Hashable
 
 from eve.io.mongo import Validator as Validator
-from flask import current_app as app
-from flask import abort, g, request
+from flask import current_app as app, g, request
 from cerberus import TypeDefinition, utils
 
 
@@ -218,35 +217,6 @@ class ValidatorAMIV(Validator):
         if filetype not in allowed_types:
             self._error(field, "filetype '%s' not supported, has to be in: "
                         "%s" % (filetype, allowed_types))
-
-    def _validate_session_younger_than(self, threshold_timedelta, field, _):
-        """Validation of the used token for special fields
-
-        Validates if the session is not older than threshold_time
-
-        Except admins, they can ignore this
-
-        Args:
-            threshold_timedelta (timedelta): threshold to compare with
-            field (string): field name
-
-        The rule's arguments are validated against this schema:
-        {'type': 'timedelta'}
-        """
-        if threshold_timedelta < timedelta(seconds=0):
-            # Use abort to actually give a stacktrace and break tests.
-            abort(500, "Invalid field definition: %s: %s, "
-                  "session_younger_than must be positive."
-                  % (self.resource, field))
-
-        if not g.get('resource_admin'):
-            time_created = g.current_session['_created']
-            time_now = datetime.now(timezone.utc)
-
-            if time_now - time_created > threshold_timedelta:
-                self._error(field, "Your session is too old. Using this field "
-                            "is not allowed if your session is older than %s."
-                            % threshold_timedelta)
 
 
 # Cerberus uses a different validator for schemas, which is unaware of
