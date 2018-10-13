@@ -13,6 +13,28 @@ from amivapi.tests.utils import WebTestNoAuth
 class EventValidatorTest(WebTestNoAuth):
     """Unit test class for general purpose validators of event module."""
 
+    def test_validate_no_html(self):
+        """Test no-html validator."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field': {
+                    'type': 'string',
+                    'no_html': True
+                }
+            }
+        })
+
+        has_html = '<head><title>I\'m title</title></head>Hello, <b>world</b>'
+        no_has_html = 'ich <3 du und="test" d:> ichht fldf d<'
+
+        self.api.post('/test', data={
+            'field': has_html
+        }, status_code=422)
+
+        self.api.post('/test', data={
+            'field': no_has_html
+        }, status_code=201)
+
     def test_validate_json_schema_object(self):
         """Test cerberus schema validator."""
         self.app.register_resource('test', {
