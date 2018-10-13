@@ -101,6 +101,8 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'DEBUG': True,   # This makes eve's error messages more helpful
         'LDAP_USERNAME': None,  # LDAP test require special treatment
         'LDAP_PASSWORD': None,  # LDAP test require special treatment
+        'SENTRY_DSN': None,
+        'SENTRY_ENVIRONMENT': None,
         'PASSWORD_CONTEXT': CryptContext(
             schemes=["pbkdf2_sha256"],
 

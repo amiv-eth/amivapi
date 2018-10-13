@@ -235,14 +235,9 @@ eventdomain = {
                 'type': 'objectid',
                 'nullable': False,
                 'unique_combination': ['event'],
+                'required': True,
+                'excludes': 'email',
                 'description': 'Provide either user or email.',
-
-                # This creates a presence XOR with email
-                # Cerberus <= 1.2: Causes problems with `None` values, which
-                # should be treated as missing fields, which is not yet
-                # possible, causing problems if `None` already exists in db
-                # 'required': True,
-                # 'excludes': ['email']
             },
             'additional_fields': {
                 'nullable': True,
@@ -259,14 +254,11 @@ eventdomain = {
                 'regex': EMAIL_REGEX,
                 'type': 'string',
                 'unique_combination': ['event'],
+                'required': True,
+                'excludes': 'user',
                 'description': 'For registered users, this is just a projection'
                 ' of your general email-address. External users need to provide'
                 ' their email here.',
-
-                # This creates a presence XOR with user
-                # see above
-                # 'required': True,
-                # 'excludes': ['user']
             },
             'confirmed': {
                 'type': 'boolean',

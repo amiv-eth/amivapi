@@ -11,6 +11,7 @@ from flask.signals import got_request_exception
 
 from amivapi.tests.utils import WebTestNoAuth, skip_if_false
 
+
 # Get test dsn from environment
 SENTRY_DSN = getenv('SENTRY_TEST_DSN')
 
