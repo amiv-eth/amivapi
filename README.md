@@ -19,7 +19,7 @@ AMIV API is a Python-EVE based REST interface to manage members, events, mail fo
 AMIV API is available as a [Docker](https://www.docker.com) container with the
 name [amiveth/amivapi](https://hub.docker.com/r/amiveth/amivapi/).
 
-You only need to install Docker, nothing else is required.
+You only need to install Docker, nothing else is required.cd ..
 
 ### Manual Installation for Development
 
@@ -27,8 +27,10 @@ For development, we recommend to clone the repository and install AMIV API
 manually.
 
 First of all, we advice using a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+*We use python3!*
 
-If your virtual environment is ready, clone and install AMIV API:
+If your virtual environment is ready, clone and install AMIV API (see following code). You can also first clone, then setup the virtualenv inside amivapi.
+After having setup the venv, activate it and then pip install.
 
 ```sh
 git clone https://github.com/amiv-eth/amivapi.git
@@ -138,7 +140,7 @@ if you are running a MongoDB service locally).
 
 ```sh
 # Webserver Mode
-# Map port 80 (host) to 8080 (container)
+# Map port 80 (host) to 8080 (contain	er)
 docker service create \
     --name amivapi  -p 80:8080 --network backend \
     --config source=amivapi_config,target=/api/config.py \
@@ -180,7 +182,7 @@ amivapi run --help
 
 ## For Developers: Running The Tests
 
-First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. You only need
+First, create a test user `test_user` with password `test_pw` in the `test_amivapi` database, which will be used for all tests. You only need
 to do this once to prepare the database.
 
 ```sh

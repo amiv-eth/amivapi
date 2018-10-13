@@ -6,7 +6,7 @@
 
 Since there are no hooks or anything, everything is just in here.
 """
-
+from datetime import datetime, timedelta
 from amivapi.utils import register_domain
 
 
@@ -26,6 +26,15 @@ jobdomain = {
                 'maxlength': 30,
                 'type': 'string',
             },
+            'location': {
+                'type': 'string',
+                'default':'Zürich',
+                'required': True,
+            },
+            'duration': {
+                'type': 'number', # in months
+                'default':'6',
+            },
             'description_de': {
                 'type': 'string',
             },
@@ -42,8 +51,23 @@ jobdomain = {
                 'type': 'media',
                 'required': True
             },
-            'time_end': {
-                'type': 'datetime'
+            'time_advertising_start': { # should be used for verification of time_advertising_end.
+                'type': 'datetime',
+                'dependencies': ['time_advertising_end'],
+                'earlier_than': 'time_advertising_end',
+                'default': datetime.utcnow(),
+                'required': False,
+            },
+            'time_advertising_end': {
+                'type': 'datetime',
+                'dependencies': ['time_advertising_start'],
+                'later_than': 'time_advertising_start',
+                'required': False,
+            },
+            'time_start': {
+                'type': 'datetime',
+                'default': datetime.utcnow(),
+                'required': False,
             },
             'title_de': {
                 'type': 'string',
