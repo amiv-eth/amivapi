@@ -7,13 +7,14 @@
 """Install amivapi. Provide the amivapi command."""
 
 from setuptools import setup, find_packages
+from amivapi.settings import VERSION
 
 with open('LICENSE') as f:
     LICENSE = f.read()
 
 setup(
     name="amivapi",
-    version="0.1-dev",
+    version=VERSION,
     url="https://www.amiv.ethz.ch",
     author="AMIV an der ETH",
     author_email="it@amiv.ethz.ch",

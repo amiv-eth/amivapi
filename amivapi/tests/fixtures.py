@@ -46,6 +46,7 @@ from datetime import date, datetime, timedelta
 from os.path import dirname, join
 import random
 import string
+from contextlib import contextmanager
 
 from bson import ObjectId
 from eve.methods.post import post_internal
@@ -68,6 +69,18 @@ class BadFixtureException(Exception):
 
 class FixtureMixin(object):
     """class to be inherited from to allow fixture loading"""
+    @contextmanager
+    def writeable_id(self, schema):
+        """Make the _id field writeable.
+
+        We often need to manually provide an _id in a fixture, which is
+        otherwise blocked by the readonly property.
+        """
+        _id = self.app.config['ID_FIELD']
+        schema[_id]['readonly'] = False
+        yield
+        schema[_id]['readonly'] = True
+
     def new_object(self, resource, **kwargs):
         """Create one object of the given resource. Fill in necessary values.
 
@@ -122,7 +135,7 @@ class FixtureMixin(object):
 
             # Add it to the database
             with self.app.test_request_context("/" + resource, method='POST'):
-                with admin_permissions():
+                with admin_permissions(), self.writeable_id(schema):
                     response, _, _, return_code, _ = post_internal(resource,
                                                                    obj)
                 if return_code != 201:
@@ -190,6 +203,15 @@ class FixtureMixin(object):
                     "Could not determine password for user %s in fixture with "
                     "unspecified password for session %s"
                     % (obj['username'], obj))
+
+    def preprocess_apikeys(self, schema, obj, fixture):
+        if 'permissions' not in obj:
+            # Create some random permission
+            resource = random.choice(list(self.app.config['DOMAIN'].keys()))
+            permission = (
+                random.choice(schema['permissions']['valueschema']['allowed']))
+
+            obj['permissions'] = {resource: permission}
 
     def preprocess_events(self, schema, obj, fixture):
         """Event validators are pretty complex, so do all thing with custom
