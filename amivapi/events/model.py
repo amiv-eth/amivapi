@@ -101,7 +101,7 @@ eventdomain = {
             'img_poster': {
                 'filetype': ['png', 'jpeg'],
                 'type': 'media',
-                'aspect_ratio': (1.41, 1)
+                'aspect_ratio': (1.41, 1)  # DIN A aspect ratio
             },
             'img_thumbnail': {
                 'filetype': ['png', 'jpeg'],
