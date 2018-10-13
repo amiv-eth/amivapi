@@ -92,6 +92,12 @@ PASSWORD_CONTEXT = CryptContext(
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )
 
+# Users
+
+# Subscriberlist authorization
+SUBSCRIBER_LIST_USERNAME = 'amivapi'
+SUBSCRIBER_LIST_PASSWORD = 'amivapi'
+
 # OAuth
 
 # See https://tools.ietf.org/html/rfc6749#section-3.1.2
