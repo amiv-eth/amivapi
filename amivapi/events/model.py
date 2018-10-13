@@ -86,21 +86,20 @@ eventdomain = {
 
             # Images
 
-            'img_banner': {
-                'filetype': ['png', 'jpeg'],
-                'type': 'media'
-            },
             'img_infoscreen': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (16, 9)
             },
             'img_poster': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1.41, 1)
             },
             'img_thumbnail': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1, 1)
             },
 
             # Display settings
