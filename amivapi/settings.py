@@ -92,8 +92,6 @@ PASSWORD_CONTEXT = CryptContext(
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )
 
-# Users
-
 # Newsletter subscriber list view authorization
 SUBSCRIBER_LIST_USERNAME = None
 SUBSCRIBER_LIST_PASSWORD = None
