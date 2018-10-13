@@ -120,13 +120,11 @@ class MediaTest(WebTestNoAuth):
                       status_code=422)
 
     def test_aspect_ratio_validation(self):
-        """Tests whether the aspect ratio validator accepts the correct
-        ratio and rejects if the ratio is unfitting."""
-
+        """Test aspect ratio validation."""
         schema = self.app.config['DOMAIN']['test']['schema']
         schema['test_file']['aspect_ratio'] = (1, 1)
 
-        self._post_file()
+        self._post_file()  # Succeeds if lena.png can be posted
 
         headers = {'content-type': 'multipart/form-data'}
         lionpath = join(dirname(__file__), "fixtures", 'lion.jpg')

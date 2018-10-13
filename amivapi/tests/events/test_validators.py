@@ -25,14 +25,14 @@ class EventValidatorTest(WebTestNoAuth):
         })
 
         has_html = '<head><title>I\'m title</title></head>Hello, <b>world</b>'
-        no_has_html = 'ich <3 du und="test" d:> ichht fldf d<'
+        has_no_html = 'ich <3 du und="test" d:> ichht fldf d<'
 
         self.api.post('/test', data={
             'field': has_html
         }, status_code=422)
 
         self.api.post('/test', data={
-            'field': no_has_html
+            'field': has_no_html
         }, status_code=201)
 
     def test_validate_json_schema_object(self):

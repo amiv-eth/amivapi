@@ -16,7 +16,6 @@ from datetime import datetime, timedelta, timezone
 from imghdr import what
 from collections import Hashable
 from PIL import Image
-from io import StringIO
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -228,7 +227,7 @@ class ValidatorAMIV(Validator):
             aspect_ratio: a tuple of two numbers
                 specifying the width relative to the height
             field (str): field name
-            value: field value
+            value (file): field value
 
         The rule's arguments are validated against this schema:
         {
@@ -244,8 +243,9 @@ class ValidatorAMIV(Validator):
         img_ratio = img.size[0] / img.size[1]
 
         if abs(ratio - img_ratio) > app.config['ASPECT_RATIO_TOLERANCE']:
-            self._error(field, "the provided image is not of the required aspect ratio. "
-            + "The accepted ratio is %s:%s" % (aspect_ratio[0], aspect_ratio[1]))
+            self._error(field, "The image does not have the required aspect "
+                               "ratio. The accepted ratio is %s:%s" %
+                               (aspect_ratio[0], aspect_ratio[1]))
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields
