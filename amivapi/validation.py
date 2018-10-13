@@ -14,6 +14,7 @@ validate the schema itself.
 
 from datetime import datetime, timedelta, timezone
 from imghdr import what
+from collections import Hashable
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -30,6 +31,29 @@ class ValidatorAMIV(Validator):
         `unique` validators.
         """
         return True
+
+    def _validate_excludes(self, excluded_fields, field, value):
+        """Ignore 'None' for excluded fields.
+
+        Hopefully Cerberus allows this at some point in the future, then
+        we can remove this.
+
+        The rule's arguments are validated against this schema:
+        {'type': ('hashable', 'list'),
+         'schema': {'type': 'hashable'}}
+         """
+        if isinstance(excluded_fields, Hashable):
+            excluded_fields = [excluded_fields]
+
+        # Remove None fields and unrequire them
+        not_none = []
+        for excluded in excluded_fields:
+            if self.document.get(excluded) is None:
+                self._unrequired_by_excludes.add(excluded)
+            else:
+                not_none.append(excluded)
+
+        return super()._validate_excludes(not_none, field, value)
 
     types_mapping = Validator.types_mapping.copy()
     types_mapping['timedelta'] = TypeDefinition('timedelta', (timedelta,), ())

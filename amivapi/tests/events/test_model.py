@@ -33,6 +33,28 @@ class EventModelTest(WebTestNoAuth):
             'user': str(user['_id'])
         }, status_code=422)
 
+    def test_email_or_user(self):
+        """A signup requires email XOR user."""
+        event = str(self.new_object("events",
+                                    spots=0,
+                                    allow_email_signup=True)['_id'])
+        user = str(self.new_object("users")['_id'])
+        email = 'test@test.test'
+
+        # Bad: Nothing or both email and user
+        self.api.post("/eventsignups", data={'event': event},
+                      status_code=422)
+        self.api.post("/eventsignups", data={'event': event,
+                                             'user': user,
+                                             'email': email},
+                      status_code=422)
+
+        # Good: One of both
+        self.api.post("/eventsignups", data={'event': event, 'user': user},
+                      status_code=201)
+        self.api.post("/eventsignups", data={'event': event, 'email': email},
+                      status_code=201)
+
     def test_additional_fields_must_satisfy_constraints(self):
         """Test that the jsonschema constraints must always be met."""
 
