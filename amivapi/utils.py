@@ -90,7 +90,7 @@ def mail(sender, to, subject, text):
             'receivers': to,
             'text': text
         })
-    else:
+    elif config.SMTP_SERVER and config.SMTP_PORT:
         msg = MIMEText(text)
         msg['Subject'] = subject
         msg['From'] = sender
