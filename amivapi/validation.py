@@ -59,6 +59,7 @@ class ValidatorAMIV(Validator):
 
     types_mapping = Validator.types_mapping.copy()
     types_mapping['timedelta'] = TypeDefinition('timedelta', (timedelta,), ())
+    types_mapping['tuple'] = TypeDefinition('tuple', (tuple,), ())
 
     def _validate_data_relation(self, data_relation, field, value):
         """Extend the arguments for data_relation to include cascading delete.
