@@ -235,7 +235,7 @@ class ValidatorAMIV(Validator):
             'type': 'list',
             'schema': {
                 'type': 'tuple',
-                'items': 2 * ({'type': 'Number'},)
+                'items': ({'type': 'Number'}, {'type': 'Number'})
             }
         }
         """
