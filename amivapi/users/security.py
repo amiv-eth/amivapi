@@ -80,12 +80,8 @@ class UserAuth(AmivTokenAuth):
 
 
 @on_post_hook
-def hide_fields(request, response, payload):
-    """Show only meta fields, nethz and name from others in response.
-
-    The user can only see his personal data completely.
-
-    Nobody can see passwords.
+def hide_after_request(request, response, payload):
+    """Hide user fields after all requests to /users.
 
     Args:
         request, response: unused
@@ -94,17 +90,43 @@ def hide_fields(request, response, payload):
     # Use either the '_items' field (resource requests) or the
     # whole payload as one item (item requests)
     for item in payload.get('_items', [payload]):
-        # Always remove password
-        item.pop('password', None)
+        _hide_fields(item)
 
-        # Remove other fields
-        if not (g.get('resource_admin') or
-                g.get('resource_admin_readonly') or
-                g.get('current_user') == str(item['_id'])):
-            for key in list(item):
-                if (key[0] != '_' and
-                        key not in ('firstname', 'lastname', 'nethz')):
-                    item.pop(key)
+
+def hide_after_fetch(item):
+    """Hide user fields after data is fetched.
+
+    This hook exists because the `hide_after_request` hook cannot be called
+    recursively easily, but is necessary to cover all user methods.
+
+    As a result, this hook exists to avoid accessing sensitive data by
+    embedding a users.
+    """
+    _hide_fields(item)
+
+
+def _hide_fields(item):
+    """Show only meta fields, nethz and name from others in response.
+
+    The user can only see his personal data completely.
+
+    Nobody can see passwords.
+
+    Args:
+        item (dict): User data
+    """
+    # Always remove password
+    item.pop('password', None)
+
+    # Remove other fields
+    if not (g.get('resource_admin') or
+            g.get('resource_admin_readonly') or
+            g.get('current_user') == str(item['_id'])):
+        for key in list(item):
+            if (key[0] != '_' and
+                    key not in ('firstname', 'lastname', 'nethz')):
+                item.pop(key)
+
 
 
 # Project password status

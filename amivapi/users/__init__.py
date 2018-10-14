@@ -10,7 +10,8 @@ from .model import userdomain
 from .security import (
     hash_on_insert,
     hash_on_update,
-    hide_fields,
+    hide_after_request,
+    hide_after_fetch,
     project_password_status,
     project_password_status_on_inserted,
     project_password_status_on_updated
@@ -34,4 +35,6 @@ def init_app(app):
     # on_post_METHOD, triggered before sending the response by Eve
     for method in ['GET', 'POST', 'PATCH']:
         event = getattr(app, 'on_post_%s_users' % method)
-        event += hide_fields
+        event += hide_after_request
+
+    app.on_fetched_item_users += hide_after_fetch

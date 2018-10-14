@@ -124,14 +124,6 @@ def run_embedded_hooks_fetched_item(resource, item):
             getattr(app, "on_fetched_item")(rel_resource, item[field])
             getattr(app, "on_fetched_item_%s" % rel_resource)(item[field])
 
-            # Also apply `on_post_` hooks, which require the payload as
-            # a response object
-            # TODO: This does not work, json.dumps can't handle e.g. ObjectId
-            response = Response(json.dumps(item[field]))
-            hook = "on_post_%s" % request.method
-            getattr(app, hook)(rel_resource, request, response)
-            getattr(app, "%s_%s" % (hook, rel_resource))(request, response)
-
 
 def run_embedded_hooks_fetched_resource(resource, response):
     """Run fetched hooks on embedded resources. Eve doesn't execute hooks
