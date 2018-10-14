@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
@@ -133,8 +132,8 @@ def schedule_once_soon(func, *args):
     """ Schedules a function to be run as soon as the scheduler is run the next
     time. Also check, that it is not already scheduled to be run first.
     """
-    if current_app.data.driver.db['scheduled_tasks'].find(
-            {'function': func_str(func)}).count() != 0:
+    if current_app.data.driver.db['scheduled_tasks'].count_documents(
+            {'function': func_str(func)}) != 0:
         return
     schedule_task(datetime.utcnow(), func, *args)
 

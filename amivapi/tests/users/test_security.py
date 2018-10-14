@@ -7,6 +7,7 @@
 Includes item and field permissions as well as password hashing.
 """
 
+import json
 from bson import ObjectId
 
 from passlib.hash import pbkdf2_sha256
@@ -145,10 +146,11 @@ class UserFieldsTest(utils.WebTest):
         self.root_token = self.get_root_token()
 
     # Important: Nobody can see passwords
-    BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links',
-                    'nethz', 'firstname', 'lastname']
-    ALL_FIELDS = BASIC_FIELDS + ['membership', 'legi', 'gender',
-                                 'department', 'email', 'rfid', 'password_set']
+    BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links', 'nethz',
+                    'firstname', 'lastname']
+    RESTRICTED_FIELDS = ['membership', 'legi', 'gender', 'department', 'email',
+                         'rfid', 'password_set']
+    ALL_FIELDS = BASIC_FIELDS + RESTRICTED_FIELDS
 
     def test_read_item(self):
         """When reading, all fields are visible for user/admin only.
@@ -217,7 +219,7 @@ class UserFieldsTest(utils.WebTest):
                               set(self.BASIC_FIELDS) - set(['_links']))
 
     def test_password_status(self):
-        user = self.new_object('users', password='abc')
+        user = self.new_object('users', password='abcdefg')
         user_no_pass = self.new_object('users', password=None)
 
         root_token = self.get_root_token()
@@ -290,3 +292,30 @@ class UserFieldsTest(utils.WebTest):
             response = patch(data, admin_token, user_etag, 200)
             # Since the change is successful we need the new etag
             user_etag = response['_etag']
+
+    def test_query_restricted_fields(self):
+        """Only admins can query restricted fields."""
+        basic = [(field, 200) for field in self.BASIC_FIELDS]
+        restricted = [(field, 400) for field in self.RESTRICTED_FIELDS]
+
+        for field, status in basic + restricted:
+            user_id = str(self.new_object('users')['_id'])
+            user_token = self.get_user_token(user_id)
+            root_token = self.get_root_token()
+
+            # Formulate all kinds of queries Eve accepts
+            python_query = '%s=="something"' % field
+            mongo_query = json.dumps({field: "something"})
+            nested_query = json.dumps({
+                '$or': [
+                    {'$and': [{field: {'$in': ["something"]}}]}
+                ]
+            })
+
+            for query in (python_query, mongo_query, nested_query):
+                url = '/users?where=%s' % query
+                # User is not allowed
+                self.api.get(url, token=user_token, status_code=status)
+
+                # Admin is allowed
+                self.api.get(url, token=root_token, status_code=200)

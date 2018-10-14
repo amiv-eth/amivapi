@@ -18,6 +18,9 @@ class GroupValidator(object):
 
         Users can only sign up themselves
         Moderators and admins can sign up everyone
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
         if enabled and not g.get('resource_admin'):
             # Get moderator id
@@ -38,6 +41,9 @@ class GroupValidator(object):
 
         Validates if the group allows self enrollment.
         Group moderator and admins can enroll anyway.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
         """
         if enabled and not g.get('resource_admin'):
             # Check if moderator
@@ -50,17 +56,25 @@ class GroupValidator(object):
                             " and you are not the group moderator.")
 
     def _validate_unique_elements(self, enabled, field, value):
-        """Validate that a list does only contain unique elements."""
+        """Validate that a list does only contain unique elements.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
         if enabled:
             if len(value) > len(set(value)):
                 self._error(field, "All list elements must be unique.")
 
     def _validate_unique_elements_for_resource(self, enabled, field, value):
-        """Validate that no list elements exists in another items list."""
+        """Validate that no list elements exists in another items list.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
         if enabled:
             # Ignore values already present in original document if updating
-            if self._original_document is not None:
-                old_list = self._original_document.get(field, [])
+            if self.persisted_document is not None:
+                old_list = self.persisted_document.get(field, [])
                 elements = (e for e in value if e not in old_list)
             else:
                 elements = value

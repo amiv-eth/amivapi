@@ -14,13 +14,18 @@ from .security import (
     hide_after_fetch,
     project_password_status,
     project_password_status_on_inserted,
-    project_password_status_on_updated
+    project_password_status_on_updated,
+    restrict_filters,
 )
+from .subscriberlist import init_subscriber_list
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)
+
+    # Dynamically restrict filter
+    app.on_pre_GET_users += restrict_filters
 
     # project_password_status must be before hide_fields
     app.on_fetched_item_users += project_password_status
@@ -38,3 +43,5 @@ def init_app(app):
         event += hide_after_request
 
     app.on_fetched_item_users += hide_after_fetch
+
+    init_subscriber_list(app)

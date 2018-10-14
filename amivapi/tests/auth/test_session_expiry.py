@@ -16,9 +16,9 @@ from amivapi.tests.utils import WebTest
 class TestSessionExpiry(WebTest):
     def test_session_expiry(self):
         with self.app.app_context(), freeze_time() as frozen_time:
-            self.new_object("users", nethz="pablo", password="pass")
+            self.new_object("users", nethz="pablo", password="password")
             self.api.post('/sessions',
-                          data={"username": "pablo", "password": "pass"},
+                          data={"username": "pablo", "password": "password"},
                           status_code=201)
 
             frozen_time.tick(delta=self.app.config['SESSION_TIMEOUT'] -

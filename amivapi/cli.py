@@ -6,13 +6,20 @@
 """A command line interface for AMIVApi."""
 from os import listdir, remove
 from os.path import join, isdir
+from datetime import datetime as dt
+from time import sleep
 
-from click import argument, echo, group, option, Path
+from click import argument, echo, group, option, Path, Choice, ClickException
 
 from amivapi.bootstrap import create_app
 from amivapi.cron import run_scheduled_tasks
 from amivapi import ldap
 from amivapi.groups.mailing_lists import updated_group
+
+try:
+    import bjoern
+except ImportError:
+    bjoern = False
 
 
 @group()
@@ -57,13 +64,43 @@ def recreate_mailing_lists(config):
             updated_group(g, g)  # Use group as update and original
 
 
-@cli.command()
-@config_option
-def cron(config):
-    """Run scheduled tasks."""
-    app = create_app(config_file=config)
+def run_cron(app):
+    """Run scheduled tasks with the given app."""
+    echo("Executing scheduled tasks...")
     with app.app_context():
         run_scheduled_tasks()
+
+
+@cli.command()
+@config_option
+@option("--continuous", is_flag=True,
+        help="If set, continue running in a loop.")
+def cron(config, continuous):
+    """Run scheduled tasks.
+
+    Use --continuous to keep running and execute tasks periodically.
+    """
+    app = create_app(config_file=config)
+
+    if not continuous:
+        run_cron(app)
+    else:
+        interval = app.config['CRON_INTERVAL']
+
+        echo('Running scheduled tasks periodically (every %i seconds).'
+             % interval.total_seconds())
+
+        while True:
+            checkpoint = dt.utcnow()
+            run_cron(app)
+            execution_time = dt.utcnow() - checkpoint
+            echo('Tasks executed, total execution time: %.3f seconds.'
+                 % execution_time.total_seconds())
+
+            if execution_time > interval:
+                echo('Warning: Execution time exceeds interval length.')
+
+            sleep((interval - execution_time).total_seconds())
 
 
 @cli.command()
@@ -80,7 +117,7 @@ def ldap_sync(config, sync_all, nethz):
         amivapi ldap_sync adietmue bconrad blumh
     """
     app = create_app(config_file=config)
-    if not app.config['ENABLE_LDAP']:
+    if not app.config['ldap_connector']:
         echo("LDAP is not enabled, can't proceed!")
     else:
         with app.test_request_context():
@@ -90,32 +127,33 @@ def ldap_sync(config, sync_all, nethz):
             else:
                 for user in nethz:
                     if ldap.sync_one(user) is not None:
-                        echo("Succesfully synchronized '%s'." % user)
+                        echo("Successfully synchronized '%s'." % user)
                     else:
                         echo("Could not synchronize '%s'." % user)
 
 
 @cli.command()
 @config_option
-def run(config):
-    """Start amivapi development server."""
+@argument('mode', type=Choice(['prod', 'dev']))
+def run(config, mode):
+    """Run production/development server.
+
+    Two modes of operation are available:
+
+    - dev: Run a development server
+
+    - prod: Run a production server (requires the `bjoern` module)
+    """
     app = create_app(config_file=config, DEBUG=True, TESTING=True)
 
-    app.run(threaded=True)
+    if mode == 'dev':
+        app.run(threaded=True)
 
-
-def no_prompts(ctx, param, value):
-    """Deactivate prompting completely."""
-    if value:  # enable_ldap == False
-        for opt in ctx.command.params:
-            opt.prompt = None
-    return value
-
-
-def no_ldap_prompts(ctx, param, value):
-    """Deactivate prompting for ldap user and password."""
-    if not value:  # enable_ldap == False
-        for opt in ctx.command.params:
-            if opt.name in ['LDAP_USER', 'LDAP_PASS']:
-                opt.prompt = None
-    return value
+    elif mode == 'prod':
+        if bjoern:
+            echo('Starting bjoern on port 8080...')
+            bjoern.run(create_app(), '0.0.0.0', 8080)
+        else:
+            raise ClickException('The production server requires `bjoern`, '
+                                 'try installing it with '
+                                 '`pip install bjoern`.')

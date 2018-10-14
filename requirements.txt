@@ -1,13 +1,13 @@
-eve==0.7.4
--e git+https://github.com/hermannsblum/eve-swagger.git#egg=Eve_Swagger
+eve==0.8
+-e git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
 -e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
-Flask==0.10.1
 passlib==1.6.5
 jsonschema==2.5.1
 click==6.6
 pytz==2016.7
 freezegun==0.3.8
-# Mock is only available in the standard lib from 3.3 on
-mock==2.0.0
+sentry-sdk[flask]==0.4.1
+bs4==0.0.1
+Pillow==5.3.0
 # Install amivapi in editable mode to enable command line tools
 -e .

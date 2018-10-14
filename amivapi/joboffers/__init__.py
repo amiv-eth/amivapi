@@ -25,12 +25,15 @@ jobdomain = {
             'company': {
                 'maxlength': 30,
                 'type': 'string',
+                'no_html': True
             },
             'description_de': {
                 'type': 'string',
+                'no_html': True
             },
             'description_en': {
-                'type': 'string'
+                'type': 'string',
+                'no_html': True
             },
             'logo': {
                 'filetype': ['png', 'jpeg'],
@@ -48,12 +51,14 @@ jobdomain = {
             'title_de': {
                 'type': 'string',
                 'required_if_not': 'title_en',
-                'dependencies': 'description_de'
+                'dependencies': 'description_de',
+                'no_html': True
             },
             'title_en': {
                 'type': 'string',
                 'required_if_not': 'title_de',
-                'dependencies': 'description_en'
+                'dependencies': 'description_en',
+                'no_html': True
             },
             'show_website': {
                 'type': 'boolean',

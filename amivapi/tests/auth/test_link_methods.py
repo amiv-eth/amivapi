@@ -340,7 +340,7 @@ class LinkIntegrationTest(WebTest):
 
     def setUp(self):
         """Create two test users on setup."""
-        super(LinkIntegrationTest, self).setUp()
+        super().setUp()
 
         self.user = self.new_object('users', membership='regular')
         self.other_user = self.new_object('users', membership='regular')

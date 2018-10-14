@@ -33,6 +33,42 @@ class EventModelTest(WebTestNoAuth):
             'user': str(user['_id'])
         }, status_code=422)
 
+    def test_email_or_user(self):
+        """A signup requires email XOR user."""
+        event = str(self.new_object("events",
+                                    spots=0,
+                                    allow_email_signup=True)['_id'])
+        user = str(self.new_object("users")['_id'])
+        email = 'test@test.test'
+
+        # Bad: Nothing or both email and user
+        self.api.post("/eventsignups", data={'event': event},
+                      status_code=422)
+        self.api.post("/eventsignups", data={'event': event,
+                                             'user': user,
+                                             'email': email},
+                      status_code=422)
+
+        # Good: One of both
+        self.api.post("/eventsignups", data={'event': event, 'user': user},
+                      status_code=201)
+        self.api.post("/eventsignups", data={'event': event, 'email': email},
+                      status_code=201)
+
+    def test_cascade_delete_eventsignups(self):
+        """Deleting a user should delete all related eventsignups."""
+        user = self.new_object("users")
+        event = self.new_object("events", spots=0)
+        signup = self.new_object("eventsignups",
+                                 user=user['_id'],
+                                 event=event['_id'])
+
+        self.api.delete('/users/%s' % user['_id'],
+                        headers={'If-Match': user['_etag']},
+                        status_code=204)
+
+        self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
+
     def test_additional_fields_must_satisfy_constraints(self):
         """Test that the jsonschema constraints must always be met."""
 

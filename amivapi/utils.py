@@ -5,9 +5,11 @@
 """Utilities."""
 
 
+from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
+from os import urandom
 import smtplib
 from functools import wraps
 import json
@@ -16,6 +18,27 @@ from bson import ObjectId
 from eve.utils import config
 from flask import current_app as app, request, Response
 from flask import g
+
+
+def token_urlsafe(nbytes=None):
+    """Cryptographically random generate a token that can be passed in a URL.
+
+    This function is available as secrets.token_urlsafe in python3.6. We can
+    remove this function when we drop python3.5 support.
+
+    Args:
+        nbytes: Number of random bytes used to generate the token. Note that
+        this is not the resulting length of the token, just the amount of
+        randomness.
+
+    Returns:
+        str: A random string containing only urlsafe characters.
+    """
+    if nbytes is None:
+        nbytes = 16
+
+    return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
+        "/", "_").rstrip("=")
 
 
 @contextmanager
@@ -28,11 +51,9 @@ def admin_permissions():
     """
     old_admin = g.get('resource_admin')
     g.resource_admin = True
-    app.logger.debug("Overwriting g.resource_admin with True.")
 
     yield
 
-    app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
 
