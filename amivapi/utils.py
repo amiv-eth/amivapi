@@ -16,7 +16,7 @@ import json
 
 from bson import ObjectId
 from eve.utils import config
-from flask import current_app as app, request, Response
+from flask import current_app as app
 from flask import g
 
 

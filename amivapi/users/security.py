@@ -83,6 +83,8 @@ class UserAuth(AmivTokenAuth):
 def hide_after_request(request, response, payload):
     """Hide user fields after all requests to /users.
 
+    Works with GET, POST as well as PATCH.
+
     Args:
         request, response: unused
         payload (dict): response data
@@ -96,11 +98,11 @@ def hide_after_request(request, response, payload):
 def hide_after_fetch(item):
     """Hide user fields after data is fetched.
 
-    This hook exists because the `hide_after_request` hook cannot be called
-    recursively easily, but is necessary to cover all user methods.
+    While the `hide_after_request` covers all methods for `/users`,
+    it cannot be called recursively easily, as it requires a `Response`
+    object.
 
-    As a result, this hook exists to avoid accessing sensitive data by
-    embedding a users.
+    As a result, this hook is needed to hide fields for embedded users.
     """
     _hide_fields(item)
 
@@ -126,7 +128,6 @@ def _hide_fields(item):
             if (key[0] != '_' and
                     key not in ('firstname', 'lastname', 'nethz')):
                 item.pop(key)
-
 
 
 def restrict_filters(*_):
