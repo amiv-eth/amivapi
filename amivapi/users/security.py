@@ -83,7 +83,8 @@ class UserAuth(AmivTokenAuth):
 def hide_after_request(request, response, payload):
     """Hide user fields after all requests to /users.
 
-    Works with GET, POST as well as PATCH.
+    Wrapper around `hide_fields` to work reliably with GET, POST as well as
+    PATCH.
 
     Args:
         request, response: unused
@@ -92,22 +93,10 @@ def hide_after_request(request, response, payload):
     # Use either the '_items' field (resource requests) or the
     # whole payload as one item (item requests)
     for item in payload.get('_items', [payload]):
-        _hide_fields(item)
+        hide_fields(item)
 
 
-def hide_after_fetch(item):
-    """Hide user fields after data is fetched.
-
-    While the `hide_after_request` covers all methods for `/users`,
-    it cannot be called recursively easily, as it requires a `Response`
-    object.
-
-    As a result, this hook is needed to hide fields for embedded users.
-    """
-    _hide_fields(item)
-
-
-def _hide_fields(item):
+def hide_fields(item):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
