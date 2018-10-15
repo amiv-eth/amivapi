@@ -27,6 +27,11 @@ jobdomain = {
                 'type': 'string',
                 'no_html': True
             },
+            'location': {
+                'type': 'string',
+                'default':'Zürich',
+                'required': True,
+            },
             'description_de': {
                 'type': 'string',
                 'no_html': True
@@ -34,6 +39,23 @@ jobdomain = {
             'description_en': {
                 'type': 'string',
                 'no_html': True
+            },
+            'time_start': {
+                'type': 'datetime',
+                'default':datetime.utcnow(),
+                'required': True,
+            },
+            'time_advertising_start': { # not used
+                'type': 'datetime',
+                'dependencies': ['time_advertising_end'],
+                'earlier_than': 'time_advertising_end',
+                'required': True,
+            },
+            'time_advertising_end': {
+                'type': 'datetime',
+                'dependencies': ['time_advertising_start'],
+                'later_than': 'time_advertising_start',
+                'required': True,
             },
             'logo': {
                 'filetype': ['png', 'jpeg'],
@@ -44,9 +66,6 @@ jobdomain = {
                 'filetype': ['pdf'],
                 'type': 'media',
                 'required': True
-            },
-            'time_end': {
-                'type': 'datetime'
             },
             'title_de': {
                 'type': 'string',
