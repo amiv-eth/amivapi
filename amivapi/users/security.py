@@ -10,6 +10,7 @@ from bson import ObjectId
 from flask import current_app, g
 
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import on_post_hook
 
 
 class UserAuth(AmivTokenAuth):
@@ -78,7 +79,24 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(response):
+@on_post_hook
+def hide_after_request(request, response, payload):
+    """Hide user fields after all requests to /users.
+
+    Wrapper around `hide_fields` to work reliably with GET, POST as well as
+    PATCH.
+
+    Args:
+        request, response: unused
+        payload (dict): response data
+    """
+    # Use either the '_items' field (resource requests) or the
+    # whole payload as one item (item requests)
+    for item in payload.get('_items', [payload]):
+        hide_fields(item)
+
+
+def hide_fields(item):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -86,23 +104,19 @@ def hide_fields(response):
     Nobody can see passwords.
 
     Args:
-        response: Response object of the request
+        item (dict): User data
     """
-    # Compatibility with both item and resource hook
-    items = response.get('_items', [response])
+    # Always remove password
+    item.pop('password', None)
 
-    for item in items:
-        # Always remove password
-        item.pop('password', None)
-
-        # Remove other fields
-        if not (g.get('resource_admin') or
-                g.get('resource_admin_readonly') or
-                g.get('current_user') == str(item['_id'])):
-            for key in list(item):
-                if (key[0] != '_' and
-                        key not in ('firstname', 'lastname', 'nethz')):
-                    item.pop(key)
+    # Remove other fields
+    if not (g.get('resource_admin') or
+            g.get('resource_admin_readonly') or
+            g.get('current_user') == str(item['_id'])):
+        for key in list(item):
+            if (key[0] != '_' and
+                    key not in ('firstname', 'lastname', 'nethz')):
+                item.pop(key)
 
 
 def restrict_filters(*_):
