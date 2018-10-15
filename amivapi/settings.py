@@ -96,8 +96,8 @@ PASSWORD_CONTEXT = CryptContext(
 SUBSCRIBER_LIST_USERNAME = None
 SUBSCRIBER_LIST_PASSWORD = None
 
-# Aspect ratio validator error tolerance in percent (e.g. 0.025 <=> 2.5%)
-ASPECT_RATIO_TOLERANCE = 0.025
+# Aspect ratio tolerance for non-integer ratios (like DIN A)
+ASPECT_RATIO_TOLERANCE = 0.01
 
 # OAuth
 
