@@ -1,3 +1,6 @@
+# Docker
+Dockerfile
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -40,7 +43,6 @@ htmlcov/
 .tox/
 .coverage
 .cache
-.pytest_cache
 nosetests.xml
 coverage.xml
 
@@ -56,13 +58,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
-# AMIV stuff
-*.db
-config.cfg
-
-# Demo Files
-config.yaml
-amivapi/config.yaml
-apikeys.yaml
-amivapi_storage

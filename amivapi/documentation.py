@@ -42,7 +42,11 @@ class DocValidator(object):
     """
 
     def _validate_description(*args):
-        """Do nothing."""
+        """Do nothing.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
+        """
 
 
 def init_app(app):

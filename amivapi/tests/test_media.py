@@ -9,7 +9,6 @@ from io import BytesIO
 from os.path import dirname, join
 from werkzeug.datastructures import FileStorage
 
-from amivapi.media import ignore_not_found
 from amivapi.tests.utils import WebTestNoAuth
 
 lenaname = "lena.png"
@@ -34,7 +33,7 @@ class MediaTest(WebTestNoAuth):
     def setUp(self):
         """Add test resource."""
         self.test_config['DOMAIN'] = {'test': test_resource}
-        super(MediaTest, self).setUp()
+        super().setUp()
 
     def _post_file(self):
         """Post file. Use BytesIO to be able to set the filename."""
@@ -96,18 +95,6 @@ class MediaTest(WebTestNoAuth):
         content_type = r['test_file']['content_type']
         self.assertEqual(content_type, 'application/octet-stream')
 
-    def test_ignore_file_not_found(self):
-        """Test that file not found is suppressed and nothing else."""
-        with ignore_not_found():
-            # This will raise file not found, nothing should happen
-            open("")
-
-        # Is raised for any other OSError or IOError
-        for exc in (OSError, IOError):
-            with self.assertRaises(exc):
-                with ignore_not_found():
-                    raise exc
-
     def test_validator(self):
         """Test that the validator correctly accepts formats."""
         headers = {'content-type': 'multipart/form-data'}
@@ -131,6 +118,19 @@ class MediaTest(WebTestNoAuth):
         data = {'test_file': (BytesIO(b'trololo'), "something")}
         self.api.post("/test", data=data, headers=headers,
                       status_code=422)
+
+    def test_aspect_ratio_validation(self):
+        """Test aspect ratio validation."""
+        schema = self.app.config['DOMAIN']['test']['schema']
+        schema['test_file']['aspect_ratio'] = (1, 1)
+
+        self._post_file()  # Succeeds if lena.png can be posted
+
+        headers = {'content-type': 'multipart/form-data'}
+        lionpath = join(dirname(__file__), "fixtures", 'lion.jpg')
+        with open(lionpath, 'rb') as f:
+            data = {'test_file': f}
+            self.api.post("/test", data=data, headers=headers, status_code=422)
 
     def test_timezone_error(self):
         """Test that #150 is fixed."""

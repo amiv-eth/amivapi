@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
@@ -112,12 +111,29 @@ def schedule_task(time, func, *args):
     })
 
 
+def update_scheduled_task(time, func, *args):
+    """ Update a scheduled task that was previously registered. """
+    func_s = func_str(func)
+
+    if func_s not in schedulable_functions:
+        raise NotSchedulable("%s is not schedulable. Did you forget the "
+                             "@schedulable decorator?" % func.__name__)
+
+    current_app.data.driver.db['scheduled_tasks'].update_one({
+        'function': func_s
+    },
+        {'$set': {
+                 'time': time,
+                 'args': pickle.dumps(args)
+        }})
+
+
 def schedule_once_soon(func, *args):
     """ Schedules a function to be run as soon as the scheduler is run the next
     time. Also check, that it is not already scheduled to be run first.
     """
-    if current_app.data.driver.db['scheduled_tasks'].find(
-            {'function': func_str(func)}).count() != 0:
+    if current_app.data.driver.db['scheduled_tasks'].count_documents(
+            {'function': func_str(func)}) != 0:
         return
     schedule_task(datetime.utcnow(), func, *args)
 

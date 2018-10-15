@@ -145,6 +145,17 @@ class AmivTokenAuth(BasicAuth):
         return None
 
 
+class AdminOnlyAuth(AmivTokenAuth):
+    """Auth class to use if no access at all is given for non admins of a
+    resource."""
+    def create_user_lookup_filter(self, user):
+        """If this hook gets called, the user is not an admin for this resource.
+        Therefore no results should be given. To give a more precise error
+        message, we abort. Otherwise normal users would just see an empty list.
+        """
+        abort(403)
+
+
 # Decorators that will only call a function if auth conditions are met
 
 def only_if_auth_required(func):
@@ -187,39 +198,17 @@ def only_amiv_token_auth(func):
     return wrapped
 
 
-# Hooks begin here
+# Function to log in the user with a specific token
 
-def authenticate(*args):
-    """Authenticate user.
 
-    This is not part of the auth class because we want authentication for
-    public resources as well.
+def authenticate_token(token):
+    """Authenticate user and set g.current_token, g.current_session and
+    g.current_user.
 
-    Recognized tokens in following formats:
-    - Basic auth with token as user and no password
-    - "Authorization: <token>"
-    - "Authorization: Token <token>"
-    - "Authorization: Bearer <token>"
-
-    After token parsing, look for sessions and user and set the variables:
-
-    - `g.current_token` (str): Token of current request, None if not provided.
-    - `g.current_session` (dict): The current session, None if not found.
-    - `g.current_user` (str): The id of the currently logged in user, None if
-      not found.
+    See also the authenticate function.
     """
     # Set defaults
     g.current_token = g.current_session = g.current_user = None
-
-    # Get token
-    token = getattr(request.authorization, 'username', None)
-
-    # Code copied from Eve's TokenAuth - parse different header formats
-    if not token and request.headers.get('Authorization'):
-        token = request.headers.get('Authorization').strip()
-        if token.lower().startswith(('token', 'bearer')):
-            token = token.split(' ')[1]
-    # End of code copied from Eve
 
     if token:
         g.current_token = token
@@ -240,6 +229,37 @@ def authenticate(*args):
             # Save user_id and session with updated timestamp in g
             g.current_session = session
             g.current_user = str(session['user'])  # ObjectId to str
+
+
+# Hooks begin here
+
+def authenticate(*args):
+    """Authenticate user.
+
+    This is not part of the auth class because we want authentication for
+    public resources as well.
+
+    Recognized tokens in following formats:
+    - Basic auth with token as user and no password
+    - "Authorization: <token>"
+    - "Authorization: Keyword <token>", Keyword can be anything, e.g. "Bearer"
+
+    After token parsing, look for sessions and user and set the variables:
+
+    - `g.current_token` (str): Token of current request, None if not provided.
+    - `g.current_session` (dict): The current session, None if not found.
+    - `g.current_user` (str): The id of the currently logged in user, None if
+      not found.
+    """
+    # Get token: First try basicauth username, else just auth header
+    token = (getattr(request.authorization, 'username', '') or
+             request.headers.get('Authorization', '').strip())
+    if (' ' in token):  # Remove keywords, e.g. "Token (...)" or "Bearer (...)"
+        token = token.split(' ')[1]
+    if not token:  # Set empty token explicitly to "None"
+        token = None
+
+    authenticate_token(token)
 
 
 def check_if_admin(resource, *args):

@@ -247,7 +247,8 @@ class AuthFunctionTest(FakeAuthTest):
         3. A Authorization Header: 'Bearer <token>' (also lowercase)
         4. Authorization header with only 'token'
 
-        Also test that no auth header leads to `g.current_token = None`
+        Also test that no or incomplete auth header results in
+        `g.current_token = None`
         """
         # No Header
         with self.app.test_request_context():
@@ -258,13 +259,12 @@ class AuthFunctionTest(FakeAuthTest):
         # Encoding dance for py 2/3 compatibility
         b64token = b64encode((token + ":").encode('utf-8')).decode('utf-8')
 
-        # All header variations
+        # Header variations
         for header in (
                 token,
-                "token " + token,
                 "Token " + token,
-                "bearer " + token,
                 "Bearer " + token,
+                "SomeotherKeyword " + token,
                 "Basic " + b64token):
 
             with self.app.test_request_context(

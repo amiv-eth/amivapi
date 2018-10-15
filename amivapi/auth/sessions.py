@@ -10,14 +10,19 @@ import textwrap
 from bson import ObjectId
 from bson.errors import InvalidId
 from eve.methods.patch import patch_internal
-from eve.utils import config, debug_error_message
+from eve.utils import debug_error_message
 from flask import abort, current_app as app
 
 from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
-from amivapi.auth.utils import gen_safe_token
 from amivapi.cron import periodic
 from amivapi.utils import admin_permissions, get_id
+
+# Change when we drop python3.5 support
+try:
+    from secrets import token_urlsafe
+except ImportError:
+    from amivapi.utils import token_urlsafe
 
 
 class SessionAuth(AmivTokenAuth):
@@ -56,6 +61,9 @@ sessiondomain = {
         'public_item_methods': [],
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'DELETE'],
+
+        # Allow GET requests with token, i.e. GET /sessions/<token>
+        'additional_lookup': {'field': 'token', 'url': 'string'},
 
         'schema': {
             'username': {
@@ -115,7 +123,8 @@ def process_login(items):
         password = item['password']
 
         # LDAP
-        if (config.ENABLE_LDAP and ldap.authenticate_user(username, password)):
+        if (app.config.get('ldap_connector') and
+                ldap.authenticate_user(username, password)):
             # Success, sync user and get token
             updated = ldap.sync_one(username)
             _prepare_token(item, updated['_id'])
@@ -151,11 +160,7 @@ def process_login(items):
 
 
 def _prepare_token(item, user_id):
-    token = gen_safe_token()
-
-    # Make sure token is unique
-    while app.data.find_one("sessions", None, token=token) is not None:
-        token = gen_safe_token()
+    token = token_urlsafe()
 
     # Remove user and password from document
     del item['username']

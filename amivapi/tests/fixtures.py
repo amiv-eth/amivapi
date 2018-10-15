@@ -52,7 +52,7 @@ from eve.methods.post import post_internal
 import pytz
 from werkzeug.datastructures import FileStorage
 
-from amivapi.settings import EMAIL_REGEX
+from amivapi.settings import EMAIL_REGEX, REDIRECT_URI_REGEX
 from amivapi.utils import admin_permissions
 
 
@@ -102,6 +102,13 @@ class FixtureMixin(object):
         })
         """
         added_objects = []
+
+        # Check that all resources are valid
+        fixture_resources = set(fixture.keys())
+        all_resources = set(self.app.config['DOMAIN'].keys())
+        if not set(fixture_resources).issubset(all_resources):
+            raise BadFixtureException("Unknown resources: %s"
+                                      % (fixture_resources - all_resources))
 
         # We need to sort in the order of dependencies. It is for example
         # not possible to add sessions before we have users, as we need valid
@@ -221,7 +228,7 @@ class FixtureMixin(object):
         # to have a signup, so possibly created signups will have something
         # to have relations to
         obj.setdefault('spots', random.randint(50, 500))
-        if obj['spots']:
+        if obj['spots'] is not None:
             if ('time_register_start' not in obj and
                     'time_register_end' not in obj):
                 obj['time_register_start'] = (
@@ -245,16 +252,17 @@ class FixtureMixin(object):
 
     def preprocess_eventsignups(self, schema, obj, fixture):
         """Find random unique combination of user/event"""
-        if 'user' not in obj and 'email' not in obj:
-            users = [u['_id'] for u in self.db['users'].find()]
+        if 'email' not in obj:
+            users = list(obj['user'] if 'user' in obj
+                         else u['_id'] for u in self.db['users'].find())
+            email = None
         else:
-            users = [obj['user']]
+            users = [None]
+            email = self.create_random_value(schema['email'])
 
-        if 'event' not in obj:
-            events = [ev['_id'] for ev in
-                      self.db['events'].find({'spots': {'$ne': None}})]
-        else:
-            events = [obj['event']]
+        events = list(obj['event'] if 'event' in obj
+                      else e['_id'] for e in
+                      self.db['events'].find({'spots': {'$ne': None}}))
 
         random.shuffle(events)
         random.shuffle(users)
@@ -265,6 +273,7 @@ class FixtureMixin(object):
                         {'event': ev, 'user': u}).count() == 0:
                     obj['event'] = ev
                     obj['user'] = u
+                    obj['email'] = email
                     return
 
         raise BadFixtureException("Requested eventsignup creation, but no "
@@ -294,17 +303,18 @@ class FixtureMixin(object):
                                     definition.get('maxlength', 100))
 
             if 'regex' in definition:
+                letters_and_digits = string.ascii_letters + string.digits
                 if definition['regex'] == EMAIL_REGEX:
                     return "%s@%s.%s" % (
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(max(1, length - 27))),
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(20)),
-                        ''.join(random.choice(string.ascii_letters +
-                                              string.digits)
+                        ''.join(random.choice(letters_and_digits)
                                 for _ in range(5)))
+                elif definition['regex'] == REDIRECT_URI_REGEX:
+                    return "https://%s" % ''.join(
+                        random.choice(letters_and_digits) for _ in range(20))
                 raise NotImplementedError
 
             return ''.join(random.choice(string.ascii_letters + string.digits)

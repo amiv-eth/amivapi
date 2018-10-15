@@ -129,11 +129,15 @@ groupdomain = {
                 'maxlength': 100,
                 'required': True,
                 'unique': True,
-                'empty': False
+                'empty': False,
+                'no_html': True,
             },
             'moderator': {
                 'type': 'objectid',
-                'data_relation': {'resource': 'users'},
+                'data_relation': {
+                    'resource': 'users',
+                    'embeddable': True,
+                },
                 'nullable': True,
                 'description': 'ID of a user which can add and remove members.'
             },
@@ -167,20 +171,20 @@ groupdomain = {
                 'description': 'If true, the group can be seen by all users and'
                 ' they can subscribe themselves.'
             },
-            'has_zoidberg_share': {
+            'requires_storage': {
                 'type': 'boolean',
                 'default': False,
                 'description': 'If the group has a share in the amiv storage.'
             },
             'permissions': {
                 'type': 'dict',
-                'propertyschema': {'type': 'string',
-                                   'api_resources': True},
+                'keyschema': {'type': 'string',
+                              'api_resources': True},
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'nullable': True,
                 'description': 'permissions the group grants. The value is a '
-                'json object with resources as properties and "read" or '
+                'json object with resources as keys and "read" or '
                 '"readwrite" as a value.'
                 # TODO: Make the schema available as a jsonschema
             }

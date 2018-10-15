@@ -4,6 +4,8 @@
 #          you to buy us beer if we meet and you like the software.
 """User module."""
 
+from datetime import timedelta
+
 from amivapi.settings import EMAIL_REGEX
 
 from .security import UserAuth
@@ -43,7 +45,8 @@ userdomain = {
                 'unique': True,
                 'default': None,  # Do multiple none values work?
                 'description': 'Nethz(short ETH name)  of the user. Used for '
-                'identification in LDAP and for login.'
+                'identification in LDAP and for login.',
+                'no_html': True
             },
             'firstname': {
                 'type': 'string',
@@ -51,14 +54,16 @@ userdomain = {
                 'empty': False,
                 'nullable': False,
                 'not_patchable_unless_admin': True,
-                'required': True},
+                'required': True,
+                'no_html': True},
             'lastname': {
                 'type': 'string',
                 'maxlength': 50,
                 'empty': False,
                 'nullable': False,
                 'not_patchable_unless_admin': True,
-                'required': True},
+                'required': True,
+                'no_html': True},
             'membership': {
                 'allowed': ["none", "regular", "extraordinary", "honorary"],
                 'maxlength': 13,
@@ -74,7 +79,8 @@ userdomain = {
                 'nullable': True,
                 'required': False,
                 'type': 'string',
-                'unique': True
+                'unique': True,
+                'no_html': True
             },
             'department': {
                 'type': 'string',
@@ -94,12 +100,14 @@ userdomain = {
             # Fields the user can modify himself
             'password': {
                 'type': 'string',
+                'minlength': 7,
                 'maxlength': 100,
                 'empty': False,
                 'nullable': True,
                 'default': None,
                 'description': 'Leave empty to use just LDAP authentification. '
-                'People without LDAP should use this field.'
+                'People without LDAP should use this field.',
+                'session_younger_than': timedelta(minutes=1)
             },
             'email': {
                 'type': 'string',
@@ -116,18 +124,26 @@ userdomain = {
                 'unique': True,
                 'description': 'Number on the back of the legi. This is not in '
                 'LDAP, therefore users need to enter it themselves to use the '
-                'vending machines.'
+                'vending machines.',
+                'no_html': True
             },
             'phone': {
                 'type': 'string',
                 'maxlength': 20,
                 'empty': False,
-                'nullable': True
+                'nullable': True,
+                'no_html': True
             },
             'send_newsletter': {
                 'type': 'boolean',
                 'nullable': True
             },
+            'password_set': {
+                'type': 'boolean',
+                'description': 'True if a password is set. False if '
+                'authentication is currently only possible via LDAP.',
+                'readonly': True
+            }
         }
     }
 }

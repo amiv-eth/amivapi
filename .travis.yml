@@ -1,5 +1,12 @@
 language: python
-python: 3.5
+matrix:
+  include:
+    - python: 3.5
+      env: TOXENV=py35
+    - python: 3.6
+      env: TOXENV=py36
+    - python: 3.6
+      env: TOXENV=flake8
 services:
   - mongodb
 addons:
@@ -10,18 +17,12 @@ addons:
     packages:
       - mongodb-org-server
       - mongodb-org-shell
-env:
-  - TOX_ENV=py27
-  - TOX_ENV=py35
-  - TOX_ENV=flake8
 install: pip install tox coveralls
 script:
-  - tox -e $TOX_ENV
+  - tox -e $TOXENV
 before_script:
   - sleep 15  # Travis recommends this to avoid problems
   - mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
-  - pip install -r requirements.txt  # We need this to create config with cli
-  - amivapi create_config --no-prompts --mongo-username=test_user --mongo-password=test_pw
 branches:
   only:
     - master

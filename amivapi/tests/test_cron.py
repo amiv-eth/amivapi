@@ -16,7 +16,8 @@ from amivapi.cron import (
     run_scheduled_tasks,
     schedulable,
     schedule_once_soon,
-    schedule_task
+    schedule_task,
+    update_scheduled_task
 )
 from amivapi.tests.utils import WebTestNoAuth
 
@@ -32,7 +33,7 @@ class CronTest(WebTestNoAuth):
         CronTest.received_arg = None
         CronTest.run_count = 0
 
-        super(CronTest, self).setUp()
+        super().setUp()
 
     def test_scheduled_function_gets_called(self):
         with self.app.app_context(), freeze_time(
@@ -91,7 +92,7 @@ class CronTest(WebTestNoAuth):
             with self.assertRaises(NotSchedulable):
                 schedule_task(datetime.utcnow(), test_func)
 
-    def test_schedule_once_works(self):
+    def test_schedule_once_soon_works(self):
         with self.app.app_context():
             CronTest.run_count = 0
 
@@ -106,3 +107,35 @@ class CronTest(WebTestNoAuth):
             run_scheduled_tasks()
 
             self.assertEqual(CronTest.run_count, 1)
+
+    def test_update_scheduled_task(self):
+        with self.app.app_context(), freeze_time(
+                "2016-01-01 00:00:00") as frozen_time:
+
+            @schedulable
+            def tester(arg):
+                CronTest.has_run = True
+                CronTest.received_arg = arg
+
+            schedule_task(datetime(2016, 1, 1, 1, 0, 0),
+                          tester,
+                          "arg")
+
+            run_scheduled_tasks()
+
+            self.assertFalse(CronTest.has_run)
+
+            update_scheduled_task(datetime(2016, 1, 1, 3, 20, 0),
+                                  tester,
+                                  "new-arg")
+
+            frozen_time.tick(delta=timedelta(hours=2))
+            run_scheduled_tasks()
+
+            self.assertFalse(CronTest.has_run)
+
+            frozen_time.tick(delta=timedelta(hours=3))
+            run_scheduled_tasks()
+
+            self.assertTrue(CronTest.has_run)
+            self.assertEqual(CronTest.received_arg, "new-arg")

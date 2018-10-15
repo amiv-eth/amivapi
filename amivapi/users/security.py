@@ -10,6 +10,7 @@ from bson import ObjectId
 from flask import current_app, g
 
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import on_post_hook
 
 
 class UserAuth(AmivTokenAuth):
@@ -78,7 +79,24 @@ class UserAuth(AmivTokenAuth):
             return None
 
 
-def hide_fields(response):
+@on_post_hook
+def hide_after_request(request, response, payload):
+    """Hide user fields after all requests to /users.
+
+    Wrapper around `hide_fields` to work reliably with GET, POST as well as
+    PATCH.
+
+    Args:
+        request, response: unused
+        payload (dict): response data
+    """
+    # Use either the '_items' field (resource requests) or the
+    # whole payload as one item (item requests)
+    for item in payload.get('_items', [payload]):
+        hide_fields(item)
+
+
+def hide_fields(item):
     """Show only meta fields, nethz and name from others in response.
 
     The user can only see his personal data completely.
@@ -86,23 +104,79 @@ def hide_fields(response):
     Nobody can see passwords.
 
     Args:
-        items (list): list of user data to be returned.
+        item (dict): User data
+    """
+    # Always remove password
+    item.pop('password', None)
+
+    # Remove other fields
+    if not (g.get('resource_admin') or
+            g.get('resource_admin_readonly') or
+            g.get('current_user') == str(item['_id'])):
+        for key in list(item):
+            if (key[0] != '_' and
+                    key not in ('firstname', 'lastname', 'nethz')):
+                item.pop(key)
+
+
+def restrict_filters(*_):
+    """If the user is not an admin, restrict the query filters.
+
+    Changing the config modifies subsequent requests, so we need to set
+    it explicitly for each request.
+    """
+    userdomain = current_app.config['DOMAIN']['users']
+    if not (g.get('resource_admin') or g.get('resource_admin_readonly')):
+        userdomain['allowed_filters'] = [
+            '_id', '_etag', '_updated', '_created', '_links',
+            'firstname', 'lastname', 'nethz',
+        ]
+    else:
+        userdomain['allowed_filters'] = ['*']
+
+
+# Project password status
+
+def project_password_status(response):
+    """Add a boolean field password_state to the response.
+
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
+    Args:
+        response: Response object of the request
     """
     # Compatibility with both item and resource hook
     items = response.get('_items', [response])
 
     for item in items:
-        # Always remove password
-        item.pop('password', None)
+        item['password_set'] = item.get('password') is not None
 
-        # Remove other fields
-        if not (g.get('resource_admin') or
-                g.get('resource_admin_readonly') or
-                g.get('current_user') == str(item['_id'])):
-            for key in list(item):
-                if (key[0] != '_' and
-                        key not in ('firstname', 'lastname', 'nethz')):
-                    item.pop(key)
+
+def project_password_status_on_inserted(items):
+    """Add a boolean field password_state to the response.
+
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
+    Args:
+        items (list): List of new items as passed by the on_inserted event.
+    """
+    for item in items:
+        item['password_set'] = item.get('password') is not None
+
+
+def project_password_status_on_updated(updates, original):
+    """Add a boolean field password_state to the response.
+
+    This function must be applied before hide_fields, as it uses the password
+    field.
+
+    Args:
+        updates (dict): dict of changed user data
+        original (dict): dict of user data before the update
+    """
+    updates['password_set'] = updates.get('password') is not None
 
 
 # Password hashing
@@ -145,6 +219,7 @@ def hash_on_update(updates, original):
     it can be none.)
 
     Args:
-        items (list): List of new items as passed by the on_insert event.
+        updates (dict): dict of changed user data
+        original (dict): dict of user data before the update
     """
     _hash_password(updates)

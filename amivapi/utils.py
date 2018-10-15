@@ -5,16 +5,40 @@
 """Utilities."""
 
 
-from bson import ObjectId
+from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
+from os import urandom
 import smtplib
+from functools import wraps
+import json
 
-from eve.io.mongo import Validator
+from bson import ObjectId
 from eve.utils import config
 from flask import current_app as app
-from flask import g, request
+from flask import g
+
+
+def token_urlsafe(nbytes=None):
+    """Cryptographically random generate a token that can be passed in a URL.
+
+    This function is available as secrets.token_urlsafe in python3.6. We can
+    remove this function when we drop python3.5 support.
+
+    Args:
+        nbytes: Number of random bytes used to generate the token. Note that
+        this is not the resulting length of the token, just the amount of
+        randomness.
+
+    Returns:
+        str: A random string containing only urlsafe characters.
+    """
+    if nbytes is None:
+        nbytes = 16
+
+    return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
+        "/", "_").rstrip("=")
 
 
 @contextmanager
@@ -27,11 +51,9 @@ def admin_permissions():
     """
     old_admin = g.get('resource_admin')
     g.resource_admin = True
-    app.logger.debug("Overwriting g.resource_admin with True.")
 
     yield
 
-    app.logger.debug("Restoring g.resource_admin.")
     if old_admin is not None:  # None means it wasn't set before..
         g.resource_admin = old_admin
 
@@ -77,14 +99,27 @@ def mail(sender, to, subject, text):
         msg['To'] = ';'.join(to)
 
         try:
-            s = smtplib.SMTP(config.SMTP_SERVER)
-            try:
-                s.sendmail(msg['From'], to, msg.as_string())
-            except smtplib.SMTPRecipientsRefused as e:
-                app.logger.error(
-                    "Failed to send mail:\nFrom: %s\nTo: %s\nSubject: %s\n\n%s"
-                    % (sender, str(to), subject, text))
-            s.quit()
+            with smtplib.SMTP(config.SMTP_SERVER,
+                              port=config.SMTP_PORT,
+                              timeout=config.SMTP_TIMEOUT) as smtp:
+                status_code, _ = smtp.starttls()
+                if status_code != 220:
+                    app.logger.error("Failed to create secure "
+                                     "SMTP connection!")
+                    return
+
+                if config.SMTP_USERNAME and config.SMTP_PASSWORD:
+                    smtp.login(config.SMTP_USERNAME, config.SMTP_PASSWORD)
+                else:
+                    smtp.ehlo()
+
+                try:
+                    smtp.sendmail(msg['From'], to, msg.as_string())
+                except smtplib.SMTPRecipientsRefused as e:
+                    error = ("Failed to send mail:\n"
+                             "From: %s\nTo: %s\n"
+                             "Subject: %s\n\n%s")
+                    app.logger.error(error % (sender, str(to), subject, text))
         except smtplib.SMTPException as e:
             app.logger.error("SMTP error trying to send mails: %s" % e)
 
@@ -99,7 +134,6 @@ def run_embedded_hooks_fetched_item(resource, item):
     """
     # Find schema for all embedded fields
     schema = app.config['DOMAIN'][resource]['schema']
-    print(schema)
     embedded_fields = {field: field_schema
                        for field, field_schema in schema.items()
                        if 'data_relation' in field_schema}
@@ -122,99 +156,6 @@ def run_embedded_hooks_fetched_resource(resource, response):
     """
     for item in response['_items']:
         run_embedded_hooks_fetched_item(resource, item)
-
-
-class ValidatorAMIV(Validator):
-    """Validator subclass adding more validation for special fields."""
-
-    def _validate_api_resources(self, enabled, field, value):
-        """Value must be in api domain."""
-        if enabled and value not in app.config['DOMAIN']:
-            self._error(field, "'%s' is not a api resource." % value)
-
-    def _validate_not_patchable(self, enabled, field, value):
-        """Custom Validator to inhibit patching of the field.
-
-        e.g. eventsignups, userid: required for post, but can not be patched
-
-        Args:
-            enabled (bool): Boolean, should be true
-            field (string): field name.
-            value: field value.
-        """
-        if enabled and (request.method == 'PATCH'):
-            self._error(field, "this field can not be changed with PATCH")
-
-    def _validate_not_patchable_unless_admin(self, enabled, field, value):
-        """Inhibit patching of the field.
-
-        e.g. eventsignups, userid: required for post, but can not be patched
-
-        Args:
-            enabled (bool): Boolean, should be true
-            field (string): field name.
-            value: field value.
-        """
-        if enabled and (request.method == 'PATCH') and not g.resource_admin:
-            self._error(field, "this field can not be changed with PATCH "
-                        "unless you have admin rights.")
-
-    def _validate_admin_only(self, enabled, field, value):
-        """Prohibit anyone except admins from setting this field."""
-        if enabled and not g.resource_admin:
-            self._error(field, "This field can only be set with admin "
-                        "permissions.")
-
-    def _validate_unique_combination(self, unique_combination, field, value):
-        """Validate that a combination of fields is unique.
-
-        e.g. user with id 1 can have several eventsignups for different events,
-        but only 1 eventsignup for event with id 42
-
-        unique_combination should be a list of other fields
-
-        Note: Make sure that other fields actually exists (setting them to
-        required etc)
-
-        Args:
-            unique_combination (list): combination fields
-            field (string): field name.
-            value: field value.
-        """
-        lookup = {field: value}  # self
-        for other_field in unique_combination:
-            lookup[other_field] = self.document.get(other_field)
-
-        # If we are patching the issue is more complicated, some fields might
-        # have to be checked but are not part of the document because they will
-        # not be patched. We have to load them from the database
-        if request.method == 'PATCH':
-            original = self._original_document
-            for key in unique_combination:
-                if key not in self.document.keys():
-                    lookup[key] = original[key]
-
-        # Now check database
-        if app.data.find_one(self.resource, None, **lookup) is not None:
-            self._error(field, "value already exists in the database in " +
-                        "combination with values for: %s" %
-                        unique_combination)
-
-    def _validate_depends_any(self, any_of_fields, field, value):
-        """Validate, that any of the dependent fields is available
-
-        Args:
-            any_of_fields (list of strings): A list of fields. One of those
-                                             fields must be provided.
-            field (string): This fields name
-            value: This fields value
-        """
-        if request.method == 'POST':
-            for possible_field in any_of_fields:
-                if possible_field in self.document:
-                    return
-            self._error(field, "May only be provided, if any of %s is set"
-                        % ", ".join(any_of_fields))
 
 
 def register_domain(app, domain):
@@ -253,3 +194,34 @@ def register_validator(app, validator_class):
     app.validator = type("Adopted_%s" % validator_class.__name__,
                          (validator_class, app.validator),
                          {})
+
+
+def on_post_hook(func):
+    """Wrapper for an Eve `on_post_METHOD_resource` hook.
+
+    The hook receives only a flask response object, which is difficult to
+    manipulate.
+    This wrapper extracts the data as dict and set the data again after the
+    wrapped function has manipulated it.
+    The function is only called for successful requests, otherwise there
+    is no payload.
+
+    The wrapped function can look like this:
+
+        my_hook(payload):
+            ...
+
+    or, for hooks that don't specify the resource:
+
+        my_hook(payload):
+            ...
+    """
+    @wraps(func)
+    def wrapped(*args):
+        """This is the hook eve will see."""
+        response = args[-1]
+        if response.status_code in range(200, 300):
+            payload = json.loads(response.get_data(as_text=True))
+            func(*args, payload)
+            response.set_data(json.dumps(payload))
+    return wrapped

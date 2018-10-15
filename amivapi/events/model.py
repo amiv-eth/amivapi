@@ -31,42 +31,49 @@ eventdomain = {
                 'type': 'string',
                 'maxlength': 100,
                 'dependencies': ['catchphrase_de', 'description_de'],
-                'required_if_not': 'title_en'
+                'required_if_not': 'title_en',
+                'no_html': True
             },
             'title_en': {
                 'nullable': True,
                 'type': 'string',
                 'maxlength': 100,
                 'dependencies': ['catchphrase_en', 'description_en'],
-                'required_if_not': 'title_de'
+                'required_if_not': 'title_de',
+                'no_html': True
             },
             'catchphrase_de': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 500
+                'maxlength': 500,
+                'no_html': True
             },
             'catchphrase_en': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 500
+                'maxlength': 500,
+                'no_html': True
             },
             'description_de': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 10000
+                'maxlength': 10000,
+                'no_html': True
             },
             'description_en': {
                 'nullable': True,
                 'type': 'string',
-                'maxlength': 10000
+                'maxlength': 10000,
+                'no_html': True
             },
             'location': {
                 'maxlength': 50,
                 'nullable': True,
-                'type': 'string'
+                'type': 'string',
+                'no_html': True
             },
             'price': {
-                'min': 0,
+                'min': 1,
                 'nullable': True,
                 'type': 'integer',
                 'description': 'Price of the event as Integer in Rappen.'
@@ -86,21 +93,20 @@ eventdomain = {
 
             # Images
 
-            'img_banner': {
-                'filetype': ['png', 'jpeg'],
-                'type': 'media'
-            },
             'img_infoscreen': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (16, 9)
             },
             'img_poster': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1.41, 1)  # DIN A aspect ratio
             },
             'img_thumbnail': {
                 'filetype': ['png', 'jpeg'],
-                'type': 'media'
+                'type': 'media',
+                'aspect_ratio': (1, 1)
             },
 
             # Display settings
@@ -169,7 +175,8 @@ eventdomain = {
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_schema_object',
+                'type': 'string',
+                'json_schema': True,
                 'only_if_not_null': 'spots',
                 'description': 'must be provided in form of a JSON-Schema. You'
                 'can add here fields you want to know from people signing up '
@@ -177,12 +184,11 @@ eventdomain = {
                 ' always require these fields: {'
                 '"$schema": "http://json-schema.org/draft-04/schema#",'
                 '"type": "object",'
-                '"additionalProperties": False}'
+                '"additionalProperties": false}'
             },
             'allow_email_signup': {
                 'nullable': False,
                 'type': 'boolean',
-                'default': False,
                 'only_if_not_null': 'spots',
                 'description': 'If False, only AMIV-Members can sign up for '
                 'this event'
@@ -228,24 +234,22 @@ eventdomain = {
             'user': {
                 'data_relation': {
                     'resource': 'users',
-                    'embeddable': True
+                    'embeddable': True,
+                    'cascade_delete': True,
                 },
                 'not_patchable': True,
                 'only_self_enrollment_for_event': True,
                 'type': 'objectid',
                 'nullable': False,
                 'unique_combination': ['event'],
-                'description': 'Provide either user or email.'
-
-                # This creates a presence XOR with email
-                # TODO: This needs cerberus > 1.0.1
-                # enable as soon as eve supports it
-                # 'required': True,
-                # 'excludes': ['email']
+                'required': True,
+                'excludes': 'email',
+                'description': 'Provide either user or email.',
             },
             'additional_fields': {
                 'nullable': True,
-                'type': 'json_event_field',
+                'type': 'string',
+                'json_event_field': True,
                 'description': "Data-schema depends on 'additional_fields' "
                 "from the mapped event. Please provide in json-format."
             },
@@ -257,15 +261,11 @@ eventdomain = {
                 'regex': EMAIL_REGEX,
                 'type': 'string',
                 'unique_combination': ['event'],
+                'required': True,
+                'excludes': 'user',
                 'description': 'For registered users, this is just a projection'
                 ' of your general email-address. External users need to provide'
-                ' their email here.'
-
-                # This creates a presence XOR with user
-                # TODO: This needs cerberus > 1.0.1
-                # enable as soon as eve supports it
-                # 'required': True,
-                # 'excludes': ['user']
+                ' their email here.',
             },
             'confirmed': {
                 'type': 'boolean',
@@ -277,6 +277,7 @@ eventdomain = {
             },
             'checked_in': {
                 'default': None,
+                'nullable': True,
                 'type': 'boolean',
                 'admin_only': True
             },

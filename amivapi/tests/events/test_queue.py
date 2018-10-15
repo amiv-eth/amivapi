@@ -15,14 +15,12 @@ class EventsignupQueueTest(WebTestNoAuth):
 
         user = self.new_object('users')
 
-        self.api.post('/eventsignups', data={
+        response = self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event['_id'])
-        }, status_code=201)
+        }, status_code=201).json
 
-        waiting = self.api.get('/eventsignups?where={"accepted":false}',
-                               status_code=200).json['_items']
-        self.assertEqual(len(waiting), 1)
+        self.assertFalse(response['accepted'])
 
     def test_fcfs_users_get_auto_accepted(self):
         """Test that with fcfs the users get automatically accepted on signup
@@ -30,34 +28,47 @@ class EventsignupQueueTest(WebTestNoAuth):
         event = self.new_object('events', spots=1,
                                 selection_strategy='fcfs')
 
-        user = self.new_object('users')
+        user1 = self.new_object('users')
         user2 = self.new_object('users')
 
-        self.api.post('/eventsignups', data={
-            'user': str(user['_id']),
+        user1_signup = self.api.post('/eventsignups', data={
+            'user': str(user1['_id']),
             'event': str(event['_id'])
-        }, status_code=201)
+        }, status_code=201).json
 
-        self.api.post('/eventsignups', data={
+        self.assertTrue(user1_signup['accepted'])
+
+        user2_signup = self.api.post('/eventsignups', data={
             'user': str(user2['_id']),
             'event': str(event['_id'])
-        }, status_code=201)
+        }, status_code=201).json
 
-        print(self.api.get('/eventsignups').json)
-
-        accepted = self.api.get('/eventsignups?where={"accepted":true}',
-                                status_code=200).json['_items']
-        self.assertEqual(len(accepted), 1)
+        self.assertFalse(user2_signup['accepted'])
 
         # delete the accepted signup
-        self.api.delete('/eventsignups/%s' % accepted[0]['_id'],
-                        headers={'If-Match': accepted[0]['_etag']},
+        self.api.delete('/eventsignups/%s' % user1_signup['_id'],
+                        headers={'If-Match': user1_signup['_etag']},
                         status_code=204)
 
-        # Check that the other guy got accepted
-        waiting = self.api.get('/eventsignups?where={"accepted":false}',
-                               status_code=200).json['_items']
-        self.assertEqual(len(waiting), 0)
+        # Check that the other user got accepted
+        user2_signup = self.api.get('/eventsignups/%s' % user2_signup['_id'],
+                                    status_code=200).json
+        self.assertTrue(user2_signup['accepted'])
+
+    def test_fcfs_users_get_auto_accepted_unlimited_spots(self):
+        """Test that with fcfs the users get automatically accepted on signup
+        for events with unlimited spaces"""
+        event = self.new_object('events', spots=0,
+                                selection_strategy='fcfs')
+
+        user = self.new_object('users')
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        self.assertTrue(signup['accepted'])
 
     def test_removing_from_waitinglist_does_nothing(self):
         """Test that removing someone from the waitinglist, who did not have
