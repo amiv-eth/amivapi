@@ -129,8 +129,17 @@ class MediaTest(WebTestNoAuth):
         headers = {'content-type': 'multipart/form-data'}
         lionpath = join(dirname(__file__), "fixtures", 'lion.jpg')
         with open(lionpath, 'rb') as f:
-            data = {'test_file': f}
-            self.api.post("/test", data=data, headers=headers, status_code=422)
+            liondata = f.read()
+
+        data = {'test_file': (BytesIO(liondata), "file")}
+        self.api.post("/test", data=data, headers=headers, status_code=422)
+
+        # If we change the accepted aspect ratio in the schema, everything works
+        # (even if its a non-integer ratio)
+        schema['test_file']['aspect_ratio'] = (1.33, 1)
+
+        data = {'test_file': (BytesIO(liondata), "file")}  # re-create 'file'
+        self.api.post("/test", data=data, headers=headers, status_code=201)
 
     def test_timezone_error(self):
         """Test that #150 is fixed."""

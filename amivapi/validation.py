@@ -59,6 +59,7 @@ class ValidatorAMIV(Validator):
 
     types_mapping = Validator.types_mapping.copy()
     types_mapping['timedelta'] = TypeDefinition('timedelta', (timedelta,), ())
+    types_mapping['tuple'] = TypeDefinition('tuple', (tuple,), ())
 
     def _validate_data_relation(self, data_relation, field, value):
         """Extend the arguments for data_relation to include cascading delete.
@@ -232,21 +233,28 @@ class ValidatorAMIV(Validator):
 
         The rule's arguments are validated against this schema:
         {
-            'type': 'list',
-            'schema': {
-                'type': 'tuple',
-                'items': 2 * ({'type': 'Number'},)
-            }
+            'type': 'tuple',
+            'items': [{'type': 'number'}, {'type': 'number'}],
         }
         """
-        ratio = aspect_ratio[0] / aspect_ratio[1]
+        width, height = aspect_ratio
+        error = False
         img = Image.open(value.stream)
-        img_ratio = img.size[0] / img.size[1]
+        print(img.size, aspect_ratio)
 
-        if abs(ratio - img_ratio) > app.config['ASPECT_RATIO_TOLERANCE']:
+        if isinstance(height, int) and isinstance(width, int):
+            # Strict ratio checking for ints
+            # x/y == a/b is equal to xb == ay, which does not need division
+            error = (img.size[0] * height) != (img.size[1] * width)
+        else:
+            # Non-integer ratios (e.g. DIN standard) need some tolerance
+            diff = (img.size[0] / img.size[1]) - (width / height)
+            error = abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']
+
+        if error:
             self._error(field, "The image does not have the required aspect "
-                               "ratio. The accepted ratio is %s:%s" %
-                               (aspect_ratio[0], aspect_ratio[1]))
+                               "ratio. The accepted ratio is "
+                               "%s:%s" % aspect_ratio)
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields
