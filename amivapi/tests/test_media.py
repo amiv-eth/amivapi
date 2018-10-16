@@ -134,8 +134,11 @@ class MediaTest(WebTestNoAuth):
         data = {'test_file': (BytesIO(liondata), "file")}
         self.api.post("/test", data=data, headers=headers, status_code=422)
 
-        data = {'test_file': (BytesIO(liondata), "file")}  # re-create 'file'
+        # If we change the accepted aspect ratio in the schema, everything works
+        # (even if its a non-integer ratio)
         schema['test_file']['aspect_ratio'] = (1.33, 1)
+
+        data = {'test_file': (BytesIO(liondata), "file")}  # re-create 'file'
         self.api.post("/test", data=data, headers=headers, status_code=201)
 
     def test_timezone_error(self):
