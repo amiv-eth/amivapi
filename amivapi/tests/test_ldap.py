@@ -100,7 +100,8 @@ class LdapTest(WebTestNoAuth):
             'department': 'itet',
             'membership': 'regular',
             'gender': 'female',
-            'legi': '01234567'
+            'legi': '01234567',
+            'send_newsletter': True,
         }
 
     def test_process_data(self):
