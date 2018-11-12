@@ -203,10 +203,22 @@ def oauth():
     return response
 
 
+description = ("""
+Only registered OAuth clients are allowed to use the central login.
+This whitelisting is necessary to prevent phishing attacks.
+[More on OAuth with the API][1].
+
+Only **admins** are allowed to access this resource.
+
+[1]: #section/OAuth
+""")
+
 oauthclients_domain = {
     'oauthclients': {
-        'description': "OAuth clients need to be registered on this resource "
-                       "to be allowed to use the central login.",
+        'resource_title': 'OAuth Clients',
+        'item_title': 'OAuth Client',
+
+        'description': description,
 
         'public_methods': [],
         'public_item_methods': [],
@@ -217,24 +229,31 @@ oauthclients_domain = {
 
         'schema': {
             'client_id': {
+                'description': "Name of the OAuth client service. This is the "
+                               "name displayed to the user on login.",
+                'example': 'Admin Tools',
+
                 'type': 'string',
                 'required': True,
                 'nullable': False,
                 'empty': False,
                 'unique': True,
-                'description': "Name of the OAuth client service. This is the "
-                "name displayed to the user on login."
+                'no_html': True,
+                'maxlength': 100,
             },
             'redirect_uri': {
+                'description': "URL the API uses for redirects. This should "
+                               "be the OAuth endpoint of your application. "
+                               "Avoid further redirection from this URL to"
+                               "prevent phishing attacks. Must use HTTPS "
+                               "(for development, HTTP is allowed for "
+                               "`localhost` URLs).",
+                'example': 'https://admin.organisation.ch',
+
                 'type': 'string',
                 'required': True,
                 'unique': True,
                 'regex': REDIRECT_URI_REGEX,
-                'description': "Pattern for URLs this client may use for "
-                "redirects. All URLs must start with this pattern, or the "
-                "login will be denied. Make sure URLs that can be accepted do "
-                "not allow further redirects to prevent phishing attacks that "
-                "forward through your tool. Must use HTTPS."
             }
         }
     }
