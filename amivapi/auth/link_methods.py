@@ -162,7 +162,7 @@ def add_permitted_methods_for_home(resource, request, response, payload):
         else:
             # Add links for home
             for res_link in links:
-                res_name = res_link['title']  # title equals resource
+                res_name = res_link['href']  # href equals resource
                 if isinstance(resource_auth(res_name), AmivTokenAuth):
                     check_if_admin(res_name)
                     res_link['methods'] = _get_resource_methods(res_name)
