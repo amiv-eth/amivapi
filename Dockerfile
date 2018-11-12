@@ -18,6 +18,7 @@ RUN apk add --no-cache --virtual .deps \
 # Copy files to /api directory, install requirements
 COPY ./ /api
 RUN pip install -r /api/requirements.txt
+RUN pip install -e .
 
 # Cleanup dependencies
 RUN apk del .deps
