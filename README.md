@@ -3,13 +3,26 @@
 [![Build status](https://secure.travis-ci.org/amiv-eth/amivapi.png?branch=master)](https://secure.travis-ci.org/amiv-eth/amivapi)
 [![Coverage Status](https://coveralls.io/repos/amiv-eth/amivapi/badge.svg)](https://coveralls.io/r/amiv-eth/amivapi)
 
-AMIV API is a Python-EVE based REST interface to manage members, events, mail forwards, job offers and study documents for a student organisation. It was created by AMIV an der ETH to restructure the existing IT infrastructure. If you are not from AMIV and think this is useful feel free to fork and modify.
+AMIV API is a [Python-EVE]((http://docs.python-eve.org)) based REST interface
+to manage members, events, mail forwards, job offers and study documents for a
+student organisation. It was created by AMIV an der ETH to restructure the
+existing IT infrastructure. If you are not from AMIV and think this is useful
+feel free to fork and modify.
 
-[Request Cheatsheet (Filtering etc.)](docs/Cheatsheet.md)
+If you only want to use AMIV API, check out the online documentation
+(There's a link in the github description above).
 
-[Python EVE Documentation](http://python-eve.org/features.html)
+If you are an administrator and wish to get AMIV API running, keep reading!
 
-[How to use central OAuth2 login](docs/OAuth.md)
+If you are a developer looking to work on AMIVAPI, it's best to look at the
+code directly. You can start with (bootstrap.py)[amivapi/bootstrap.py],
+where all modules are assembled into a single app object. From there on,
+check out the different sub-modules -- each resource is defined in a dedicated
+sub-directory, some smaller functionality is defined in a single file.
+
+You do not need to install and configure AMIV API to test it. You can skip
+the installation and configuration sections and head right to the bottom
+of the README, where testing is explained.
 
 
 ## Installation & Prerequisites
@@ -34,6 +47,9 @@ If your virtual environment is ready, clone and install AMIV API:
 git clone https://github.com/amiv-eth/amivapi.git
 cd amivapi
 pip install -r requirements.txt
+
+# IMPORTANT: Install amivapi in `editable mode` to get the `amivapi` command
+pip install -e .
 ```
 
 This will also install the `amivapi` command, which you can use to start
