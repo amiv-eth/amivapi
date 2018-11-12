@@ -124,6 +124,26 @@ class GroupModelTest(WebTest):
         self.api.delete("/groups/%s" % group_id, headers=header,
                         token=mod_token, status_code=204)
 
+    def test_permissions_admin_only(self):
+        """Moderators cannot change group permissions."""
+        mod_id = 24 * '1'
+        group_id = 24 * '2'
+
+        self.load_fixture({'users': [{'_id': mod_id}]})
+        group = self.load_fixture({
+            'groups': [{'_id': group_id, 'moderator': mod_id}]
+        })
+
+        etag = group[0]['_etag']
+
+        mod_token = self.get_user_token(mod_id)
+
+        patch = {'permissions': {'groupmemberships': 'readwrite'}}
+        header = {'If-Match': etag}
+
+        self.api.patch("/groups/%s" % group_id, data=patch, headers=header,
+                       token=mod_token, status_code=422)
+
     def test_remove_permissions(self):
         """Test that permissions for single resources can be removed.
 
