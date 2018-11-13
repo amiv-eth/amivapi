@@ -47,7 +47,7 @@ some further constraints are in place:
   not even to admins. Furthermore, showing passwords can not be forced
   by projections.
 
-- **Users** can only view all of their own fields only.
+- **Users** can only view all of their own fields.
   For other users, only `firstname`, `lastname` and `nethz` are visible.
 
 - **Admins** can view the complete fields for all users.
