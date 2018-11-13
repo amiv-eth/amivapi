@@ -5,7 +5,7 @@
 
 AMIV API is a [Python-EVE]((http://docs.python-eve.org)) based REST interface
 to manage members, events, mail forwards, job offers and study documents for a
-student organisation. It was created by [AMIV an der ETH]((http://amiv.ethz.ch)) to restructure the
+student organisation. It was created by [AMIV an der ETH](http://amiv.ethz.ch) to restructure the
 existing IT infrastructure. If you are not from AMIV and think this is useful,
 feel free to fork and modify.
 
@@ -15,7 +15,7 @@ If you only want to use AMIV API, check out the online documentation
 If you are an administrator and wish to get the AMIV API running, keep reading!
 
 If you are a developer looking to work on AMIV API, it's best to look at the
-code directly. You can start with (bootstrap.py)[amivapi/bootstrap.py],
+code directly. You can start with [bootstrap.py](amivapi/bootstrap.py),
 where all modules are assembled into a single app object. From there on,
 check out the different sub-modules. Each resource is defined in a dedicated
 sub-directory, some smaller functionality are defined in a single file.
@@ -265,4 +265,4 @@ The test will use the `testing` environment.
 
 For any comments, bugs, feature requests: please use the issue tracker and don't hasitate to create issues. If we don't like your idea, we will not feel offended.
 
-If you need help deploying the API or creating a client, feel free to message us at [api@amiv.ethz.ch]((mailto:api@amiv.ethz.ch)) .
+If you need help deploying the API or creating a client, feel free to message us at [api@amiv.ethz.ch](mailto:api@amiv.ethz.ch) .
