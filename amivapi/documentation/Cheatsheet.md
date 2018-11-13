@@ -9,7 +9,7 @@ kinds of data to the API, e.g. arrays, objects and files.
 The API is based on the framework [Eve](http://docs.python-eve.org/en/latest/),
 which supports a wide range of filtering, sorting, embedding and pagination
 using the request [query string](https://en.wikipedia.org/wiki/Query_string).
-Below is a short overview over the most important operations, check out
+Below is a short overview over the most important operations. Check out
 the [Eve documentation](http://docs.python-eve.org/en/latest/features.html) for
 further details.
 
@@ -86,24 +86,24 @@ Data can be sent in JSON format or using
 Primarily, data is sent to the API in JSON format. This allows sending
 arrays and objects in fields without problems.
 
-Concretely, a request is send with the header
+Concretely, a request is sent with the header
 `Content-Type: application/json` and a JSON string as body.
 
 In most languages, sending JSON is very easy, e.g. in Javascript the
 [axios library](https://github.com/axios/axios) sends JSON by default and
 in python, the [requests package](http://docs.python-requests.org) can
 send dictionaries as JSON directly, too.
-Other languages have similar libraries available.
+Other languages may have similar libraries available.
 
 However, there is one caveat: With JSON, it is not possible to send files.
 For this reason, the API also accepts forms, in particular the
-multipart/form-data format, wich can be used for sending files.
+*multipart/form-data format*, wich can be used for sending files.
 
 
 ### multipart/form-data
 
 Using multipart/form-data, sending arrays and objects is also possible.
-When files are not required, sending JSON data might be preferrable, though,
+When files are not required, sending JSON data might be preferrable though,
 as it is a bit simpler.
 
 - **File** sending is implemented a bit differently by each library, so it's
