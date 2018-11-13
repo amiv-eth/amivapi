@@ -2,8 +2,8 @@
 # REST Introduction
 
 A [REST](https://en.wikipedia.org/wiki/Representational_state_transfer) API
-is a certain style of web service, following a set of design principles for
-the structure of,  and interaction with data.
+is a certain type of web service, following a set of design principles for
+the structure of, and interaction with data.
 
 
 ## Data structure
@@ -33,7 +33,7 @@ Concretely, this API supports the following methods:
 
 ## Security
 
-Most request are not public, but require authentication & authorization.
+Most resources are not public, but require authentication & authorization.
 The API uses tokens for both, which need to be provided with the
 `Authorization` header:
 
