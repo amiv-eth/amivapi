@@ -16,7 +16,7 @@ A job offer from a company, published by the organization.
 
 Job offers support both german and english titles and descriptions.
 At least one language is required, but if possible, both english and german
-should be included.
+versions should be included.
 
 ## Images
 
@@ -124,7 +124,7 @@ jobdomain = {
 
             'time_end': {
                 'title': 'Advertising End',
-                'description': 'Time when the job offers is no longer '
+                'description': 'Time when the job offer is no longer '
                                'relevant.',
                 'example': '2018-10-10T12:00:00Z',
 
