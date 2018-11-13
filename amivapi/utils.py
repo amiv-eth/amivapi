@@ -192,7 +192,7 @@ def _better_schema_defaults(app, resource, resource_domain):
 
     Finally, Eve ignores all other internal fields (such as _etag).
 
-    This methods provides nice defaults for all internal fields to make the
+    This method provides nice defaults for all internal fields to make the
     schema definition more consistent. Documentation generation also benefits
     from a more complete schema.
 
