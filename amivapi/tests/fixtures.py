@@ -191,15 +191,6 @@ class FixtureMixin(object):
                     "unspecified password for session %s"
                     % (obj['username'], obj))
 
-    def preprocess_apikeys(self, schema, obj, fixture):
-        if 'permissions' not in obj:
-            # Create some random permission
-            resource = random.choice(list(self.app.config['DOMAIN'].keys()))
-            permission = (
-                random.choice(schema['permissions']['valueschema']['allowed']))
-
-            obj['permissions'] = {resource: permission}
-
     def preprocess_events(self, schema, obj, fixture):
         """Event validators are pretty complex, so do all thing with custom
         validators by hand"""
