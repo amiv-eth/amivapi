@@ -39,7 +39,7 @@ You only need to install Docker, nothing else is required.
 For development, we recommend to clone the repository and install AMIV API
 manually.
 
-First of all, we advise using a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+First of all, we advise using a [virtual environment](https://docs.python.org/3/tutorial/venv.html).
 
 If your virtual environment is ready, clone and install AMIV API:
 
