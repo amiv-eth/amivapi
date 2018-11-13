@@ -6,9 +6,9 @@
 
 Eve-Swagger provides a useful baseline, but is missing many details.
 
-Furthermore, development seems slow with multiple open pull requests without
-responses. Thus we have decided to update the documentation manually.
-Should Eve-Swagger development gain traction again, we could try to
+Furthermore, as of this commit, development seems slow with multiple open pull 
+requests without responses. Thus we have decided to update the documentation 
+manually. Should Eve-Swagger development gain traction again, we could try to
 integrate these changes.
 """
 from os import path
