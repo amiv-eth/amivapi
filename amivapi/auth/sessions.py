@@ -47,7 +47,7 @@ by a *token*, which can be sent in the HTTP `Authorization` header.
 The `/sessions` resource is a low-level interface to manage a users sessions.
 
 For web-based applications, a high-level OAuth2 interface exists as well which
-should be used whenenver possible.
+should be used whenever possible.
 
 See [here](http://localhost:5000/docs#section/Authentication-and-Authorization)
 for more information on which way to aquire a token is appropriate for you and
@@ -69,7 +69,7 @@ LDAP and a session will be created if the LDAP login was successful.
 ## API Login
 
 If the user has set a password with the API, login is also possible using this
-password instead of login via LDAP.
+password instead of loging in via LDAP.
 
 In this case, any field that uniquely identifies a user can be sent as
 `username`, i.e. `nethz`, `email` or `_id`.
