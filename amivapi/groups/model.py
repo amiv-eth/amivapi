@@ -126,7 +126,7 @@ also update groups.
 
 A group has a **moderator**, specified by the `moderator` field. The moderator
 has the same permissions as an admin, but only for the moderated group.
-An expection to this are group permissions (see below): These can only be
+An exception to this are group permissions (see below): These can only be
 changed by admins.
 
 <br />
