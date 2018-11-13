@@ -20,7 +20,7 @@ of and join.
 
 Events support both german and english titles, descriptions and catchphrases.
 At least one language is required, but if possible, both english and german
-should be included.
+versions should be included.
 
 
 <br />
@@ -116,7 +116,7 @@ blank (Remember to send this object as a string, as explained above).
 > [Draft 4](https://json-schema.org/specification-links.html#draft-4) and
 > additionally require `additionalProperties` to be `false`.
 
-An event can now probide the following object (again, as a string) with the
+An event can now provide the following object (again, as a string) with the
 signup:
 
 ```
@@ -233,7 +233,7 @@ eventdomain = {
                 'no_html': True,
             },
             'price': {
-                'description': 'Price in *Rappen*, e.g. '
+                'description': 'Price in *Cents*, e.g. '
                                '1000 for 10 CHF.',
                 'example': None,
 
@@ -284,7 +284,7 @@ eventdomain = {
             'img_poster': {
                 'title': 'Poster',
                 'description': 'Event advertisement image for printed posters.'
-                               ' Must have an aspect_ratio of 1.41:1, i.e. '
+                               'Must have an aspect_ratio of 1.41:1, i.e. '
                                'the DIN A aspect ratio. (`.jpeg` or `.png`)',
 
                 'filetype': ['png', 'jpeg'],
@@ -343,7 +343,7 @@ eventdomain = {
 
             'show_announce': {
                 'title': 'Show in Newsletter',
-                'description': 'Advertisement the event in the email '
+                'description': 'Advertisement of the event in the email '
                                'newsletter or not.',
 
                 'nullable': False,
@@ -352,7 +352,7 @@ eventdomain = {
             },
             'show_infoscreen': {
                 'title': 'Show on Infoscreen',
-                'description': 'Advertisement the event on the infoscreen '
+                'description': 'Advertisement of the event on the infoscreen '
                                'or not.',
 
                 'nullable': False,
@@ -361,7 +361,7 @@ eventdomain = {
             },
             'show_website': {
                 'title': 'Show on Website',
-                'description': 'Advertisement the event on the website '
+                'description': 'Advertisement of the event on the website '
                                'or not.',
 
                 'nullable': False,
@@ -377,7 +377,7 @@ eventdomain = {
                                "For no signup, set to `Null`. For signup with "
                                "unlimited spots, set to `0`. Otherwise just "
                                "provide number of spots. If signup is "
-                               " required, you will need to set signup times "
+                               "required, you will need to set signup times "
                                "and a selection strategy, too.",
                 'example': 20,
 
@@ -517,7 +517,7 @@ eventdomain = {
             },
             'email': {
                 "description": "If a user is signed up, this field is "
-                               "read-only and shows the users email. If the "
+                               "read-only and shows the user's email. If the "
                                "event is *public*, this field can be used "
                                "*instead* of the `user` field to sign up "
                                "an unregistered person via email. "
