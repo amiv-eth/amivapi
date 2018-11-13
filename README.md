@@ -5,20 +5,20 @@
 
 AMIV API is a [Python-EVE]((http://docs.python-eve.org)) based REST interface
 to manage members, events, mail forwards, job offers and study documents for a
-student organisation. It was created by AMIV an der ETH to restructure the
-existing IT infrastructure. If you are not from AMIV and think this is useful
+student organisation. It was created by [AMIV an der ETH]((http://amiv.ethz.ch)) to restructure the
+existing IT infrastructure. If you are not from AMIV and think this is useful,
 feel free to fork and modify.
 
 If you only want to use AMIV API, check out the online documentation
 (There's a link in the github description above).
 
-If you are an administrator and wish to get AMIV API running, keep reading!
+If you are an administrator and wish to get the AMIV API running, keep reading!
 
-If you are a developer looking to work on AMIVAPI, it's best to look at the
+If you are a developer looking to work on AMIV API, it's best to look at the
 code directly. You can start with (bootstrap.py)[amivapi/bootstrap.py],
 where all modules are assembled into a single app object. From there on,
-check out the different sub-modules -- each resource is defined in a dedicated
-sub-directory, some smaller functionality is defined in a single file.
+check out the different sub-modules. Each resource is defined in a dedicated
+sub-directory, some smaller functionality are defined in a single file.
 
 You do not need to install and configure AMIV API to test it. You can skip
 the installation and configuration sections and head right to the bottom
@@ -39,7 +39,7 @@ You only need to install Docker, nothing else is required.
 For development, we recommend to clone the repository and install AMIV API
 manually.
 
-First of all, we advice using a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+First of all, we advise using a [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
 If your virtual environment is ready, clone and install AMIV API:
 
@@ -72,7 +72,7 @@ The following command runs a MongoDB service available on the default port
 password `amivapi`.
 
 ```sh
-# Create a network s.t. the api service can later be connected to the db
+# Create a network so that the api service can later be connected to the db
 docker network create --driver overlay backend
 docker service create \
     --name mongodb -p 27017:27017 --network backend\
@@ -83,7 +83,7 @@ docker service create \
 ```
 
 If you have a local MongoDB running, the following command might be useful
-to set up database and user quickly:
+to set up the database and user quickly:
 
 ```sh
 mongo amivapi --eval \
@@ -94,7 +94,7 @@ mongo amivapi --eval \
 
 ### Configuration File
 
-Now it's time to configure AMIVAPI. Create a file `config.py`
+Now it's time to configure AMIV API. Create a file `config.py`
 (you can choose any other name as well) with the following content:
 
 ```python
@@ -142,7 +142,7 @@ the default settings, so any value defined in
 
 ### Run using Docker
 
-Configuration files can be used for services easily using
+Configuration files can be used easily for services using
 [Docker configs](https://docs.docker.com/engine/swarm/configs/):
 
 ```sh
@@ -196,8 +196,8 @@ amivapi run --help
 
 ## For Developers: Running The Tests
 
-First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. You only need
-to do this once to prepare the database.
+First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. 
+You only need to do this once to prepare the database.
 
 ```sh
 mongo test_amivapi --eval \
@@ -252,9 +252,8 @@ Set the following environment variables:
   The test will return the imported user data, be sure to verify it
 - `LDAP_TEST_USER_PASSWORD` (required to test user login)
 
-Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached. Furthermore be patient,
-as the LDAP tests take a little time to complete.
-
+Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached. 
+Furthermore be patient, as the LDAP tests take a little time to complete.
 
 #### Sentry
 
@@ -264,6 +263,6 @@ The test will use the `testing` environment.
 
 ## Problems or Questions?
 
-For any comments, bugs, feature requests please use the issue tracker, don't hasitate to create issues, if we don't like your idea we are not offended.
+For any comments, bugs, feature requests: please use the issue tracker and don't hasitate to create issues. If we don't like your idea, we will not feel offended.
 
-If you need help deploying the API or creating a client, feel free to message us at api@amiv.ethz.ch
+If you need help deploying the API or creating a client, feel free to message us at [api@amiv.ethz.ch]((mailto:api@amiv.ethz.ch)) .
