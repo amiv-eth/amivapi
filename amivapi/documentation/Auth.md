@@ -23,8 +23,8 @@ Providing the token is possible in two ways:
    > Take a look at the [Sessions resource below](#tag/Session) for more info.
 
 
-After you have aquired a token, you must sent it with your requests
-in the `Authorization` header -- the API supports multiple ways of
+After you have acquired a token, you must send it with all your requests
+in the `Authorization` header. The API supports multiple ways of
 providing a token:
 
 ```
@@ -57,12 +57,12 @@ There are two fundamental permissions:
 
 Groups can grant permissions to all their members. Concretely,
 groups contain a `permissions` field, which maps resources to
-the permission the group grants (if any).
+the permissions the group grants (if any).
 
 > Have a look at the [group section](#tag/Group) for more information. 
 
 After you have been authenticated, the API checks the permissions
-of all the groups you are a member of the determine whether you are
+of all the groups you are a member of, to determine whether you are
 *authorized*.
 
 ### Admins and Users
@@ -75,7 +75,7 @@ If you are athenticated, but not an admin, you are considered a **user**.
 ### Item and field level permissions
 
 While the API in general handles permissions per resource, some resources
-implement further restrictions on *per item* or *per field* basis, e.g. you
+implement further restrictions on a *per item* or *per field* basis, e.g. you
 can change only your own password, not that of other users; or you can
 change the details of an event signup, but you may not replace your user with
 someone else.
