@@ -37,7 +37,7 @@ To use the central login, you must follow the OAuth 2.0 implicit grant flow. Thi
    - ```redirect_uri```: URL to return the user to after successful login.
    - ```state```: A random token you generated. Used to prevent CSRF attacks.
 
-2. On the OAuth page, the user will be promted to log in.
+2. On the OAuth page, the user will be prompted to log in.
 
 3. After successful login, the client will be redirected to the URL you provided in the ```redirect_uri``` parameter with the following additional query parameters:
 
@@ -46,9 +46,9 @@ To use the central login, you must follow the OAuth 2.0 implicit grant flow. Thi
    - ```scope```: Will always be ```amiv```. You can ignore it.
    - ```state```: The CSRF token you sent in the authorization request. You must check that it is still equal to your provided value to prevent CSRF attacks.
 
-As OAuth is an open standard, it is very likely that there are libraries to automate this workflow in your preferred programming language. These libraries might expect more parameters, which we don't use. If you need to enter a token refresh URL or a ```client_secret```, make sure you are using the *implicit grant* authorization type. By the standard an authorization request can also supply a requested ```scope```. AMIVAPI will ignore this parameter, if you supply it.
+As OAuth is an open standard, it is very likely that there are libraries to automate this workflow in your preferred programming language. These libraries might expect more parameters, which we don't use. If you need to enter a token refresh URL or a ```client_secret```, make sure you are using the *implicit grant* authorization type. By the standard, an authorization request can also supply a requested ```scope```. AMIVAPI will ignore this parameter if you supply it.
 
-The ```redirect_uri``` must be an https URL and must not contain a fragment
+The ```redirect_uri``` must be an **HTTPS** URL and must not contain a fragment
 (nothing after ```#```).
 
 ## Whitelisting of OAuth clients
