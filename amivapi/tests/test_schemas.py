@@ -30,12 +30,16 @@ class SchemaTest(WebTest):
             for field, definition in domain['schema'].items():
                 if definition.get('readonly'):
                     continue
-
-                if (('required' not in definition) and
+                    
+                # `definition.get('required')` is True if the key exists and
+                # is set to True.
+                # For the default, we need to only check if the key exists
+                # (None or False can be valid defaults)
+                if ((not definition.get('required')) and
                         ('default' not in definition)):
                     no_required_or_default.append((resource, field))
 
-                if ('required' in definition) and ('default' in definition):
+                if definition.get('required') and ('default' in definition):
                     required_and_default.append((resource, field))
 
         self.assertEqual(no_required_or_default, [])
