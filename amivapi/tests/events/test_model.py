@@ -189,7 +189,7 @@ class EventModelTest(WebTestNoAuth):
             self.api.post('/events', data=data, status_code=422)
 
     def test_eventsignup_validators_work_without_event(self):
-        """Test that eventsignup validators crash without an event."""
+        """Test that eventsignup validators do not crash without an event."""
         user = self.new_object('users')
 
         self.api.post('/eventsignups', data={
