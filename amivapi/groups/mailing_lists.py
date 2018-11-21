@@ -39,7 +39,8 @@ def updated_group(updates, original):
     """Update group mailing lists if any address changes."""
     # Remove no longer needed forwards
     if 'receive_from' in updates:
-        remove_files(address for address in original.get('receive_from', [])
+        original_addresses = original.get('receive_from') or []
+        remove_files(address for address in original_addresses
                      if address not in updates['receive_from'])
     # Update remaining forwards
     if ('receive_from' in updates) or ('forward_to' in updates):
@@ -48,7 +49,8 @@ def updated_group(updates, original):
 
 def removed_group(group):
     """Delete all mailinglist files."""
-    remove_files(group.get('receive_from', []))
+    addresses = group.get('receive_from') or []
+    remove_files(addresses)
 
 
 def new_members(new_memberships):
@@ -107,12 +109,12 @@ def make_files(group_id):
 
             # file content: user mails and 'forward_to' entries
             # The empty string (last arg) ensures that the data ends with '\n'
-            content = '\n'.join(chain(group.get('forward_to', []),
+            content = '\n'.join(chain(group.get('forward_to') or [],
                                       user_mails,
                                       ''))
 
             # A file is required for each 'receive_from' entry
-            for address in group.get('receive_from', []):
+            for address in group.get('receive_from') or []:
                 # Local
                 local_dir = current_app.config['MAILING_LIST_DIR']
                 if local_dir:
