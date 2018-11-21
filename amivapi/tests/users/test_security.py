@@ -123,7 +123,8 @@ class UserFieldsTest(utils.WebTest):
                     'department': 'itet',
                     'password': "userpass",
                     'email': "pabla@amiv.ch",
-                    'rfid': "123456"
+                    'rfid': "123456",
+                    'send_newsletter': True,
                 },
                 {
                     'nethz': 'pablomiv',
@@ -135,7 +136,8 @@ class UserFieldsTest(utils.WebTest):
                     'department': 'mavt',
                     'password': "userpass2",
                     'email': "pablo@amiv.ch",
-                    'rfid': "654321"
+                    'rfid': "654321",
+                    'send_newsletter': True,
                 }
             ]
         })
@@ -149,7 +151,7 @@ class UserFieldsTest(utils.WebTest):
     BASIC_FIELDS = ['_id', '_updated', '_created', '_etag', '_links', 'nethz',
                     'firstname', 'lastname']
     RESTRICTED_FIELDS = ['membership', 'legi', 'gender', 'department', 'email',
-                         'rfid', 'password_set']
+                         'rfid', 'password_set', 'send_newsletter', 'phone']
     ALL_FIELDS = BASIC_FIELDS + RESTRICTED_FIELDS
 
     def test_read_item(self):
