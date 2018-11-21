@@ -115,7 +115,7 @@ groupdomain = {
 
         # Additional lookup: Since group name is unique, you can use it as url
         'additional_lookup': {
-            'url': 'regex("[\w]+")',
+            'url': r'regex("[\w]+")',
             'field': 'name'
         },
 
@@ -148,7 +148,7 @@ groupdomain = {
                 'schema': {
                     'type': 'string',
                     'maxlength': 100,
-                    'regex': '[a-z0-9_\.-]+'
+                    'regex': r'[a-z0-9_\.-]+'
                 },
                 'description': 'Email addresses of this group. These addresses '
                 'will forward to all group members and the additional addresses'
