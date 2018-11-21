@@ -224,7 +224,7 @@ groupdomain = {
         # Additional lookup: Since group name is unique, you can use it as url
         'additional_lookup': {
             'url': 'string',
-            'field': 'name'
+            'field': 'name',
         },
 
         'mongo_indexes': {
