@@ -115,7 +115,7 @@ def mail(sender, to, subject, text):
 
                 try:
                     smtp.sendmail(msg['From'], to, msg.as_string())
-                except smtplib.SMTPRecipientsRefused as e:
+                except smtplib.SMTPRecipientsRefused:
                     error = ("Failed to send mail:\n"
                              "From: %s\nTo: %s\n"
                              "Subject: %s\n\n%s")

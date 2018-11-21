@@ -297,10 +297,10 @@ class LinkTest(FakeAuthTest):
 
         # Prepare fake response
         response_data = {'_links': {'child': [
-            {'title': "fake"},
-            {'title': "fake_2"},
-            {'title': "fake_no_amiv"},
-            {'title': "fake_nothing"},
+            {'href': "fake"},
+            {'href': "fake_2"},
+            {'href': "fake_no_amiv"},
+            {'href': "fake_nothing"},
         ]}}
 
         response = Response(json.dumps(response_data))
@@ -354,7 +354,7 @@ class LinkIntegrationTest(WebTest):
     def get_user_methods(self, response):
         """Helper to filter GET to home to get methods for user res."""
         for links in response.json['_links']['child']:
-            if links['title'] == 'users':
+            if links['href'] == 'users':
                 return links['methods']
 
     def test_home_public(self):
