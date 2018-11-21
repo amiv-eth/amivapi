@@ -168,6 +168,10 @@ def _process_data(data):
                  ('VSETH Mitglied' in data['ou']))
     res['membership'] = u"regular" if is_member else u"none"
 
+    # For members, send newsletter to True by default
+    if is_member:
+        res['send_newsletter'] = True
+
     return res
 
 
@@ -179,7 +183,9 @@ def _create_or_update_user(ldap_data):
     with admin_permissions():
         if db_data:
             # Membership will not be downgraded and email not be overwritten
+            # Newletter settings will also not be adjusted
             ldap_data.pop('email', None)
+            ldap_data.pop('send_newsletter', None)
             if db_data.get('membership') != u"none":
                 ldap_data.pop('membership', None)
 
@@ -187,6 +193,8 @@ def _create_or_update_user(ldap_data):
                                   ldap_data,
                                   _id=db_data['_id'])[0]
         else:
+            # For new members,
+
             user = post_internal('users', ldap_data)[0]
 
     return user

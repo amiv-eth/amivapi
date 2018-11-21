@@ -25,7 +25,29 @@ from cerberus import TypeDefinition, utils
 
 
 class ValidatorAMIV(Validator):
-    """Validator subclass adding more validation for special fields."""
+    """Validator subclass adding more validation for special fields.
+
+    In particular, add a set of dummy rules (title, description, example,
+    writeonly) that have no meaning for Cerberus, but allow to describe
+    the schema in an OpenAPI fashion.
+
+    (The documentation sub-module can also use this to generate a nice
+    online documentation)
+    """
+
+    def _validate_title(*_):
+        """{'type': 'string'}"""
+
+    def _validate_description(*_):
+        """{'type': 'string'}"""
+
+    def _validate_example(*_):
+        """{'type': [
+            'number', 'boolean', 'string', 'list', 'dict', 'datetime'
+        ]}"""
+
+    def _validate_writeonly(*_):
+        """{'type': 'boolean'}"""
 
     @property
     def ignore_none_values(self):
@@ -122,7 +144,7 @@ class ValidatorAMIV(Validator):
             self._error(field, "this field can not be changed with PATCH "
                         "unless you have admin rights.")
 
-    def _validate_admin_only(self, enabled, field, _):
+    def _validate_admin_only(self, enabled, field, value):
         """Prohibit anyone except admins from setting this field.
 
         Applies to POST and PATCH.
@@ -134,7 +156,14 @@ class ValidatorAMIV(Validator):
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
-        if enabled and not g.resource_admin:
+        # Due to how cerberus works, this rule is evaluated *after* default
+        # values are set. We have to ensure that defaults are not rejected
+        # on POST
+        default_value = (request.method == 'POST' and
+                         'default' in self.schema[field] and
+                         self.schema[field]['default'] == value)
+
+        if enabled and not g.resource_admin and not default_value:
             self._error(field,
                         "This field can only be set with admin permissions.")
 
