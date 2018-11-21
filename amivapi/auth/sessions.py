@@ -5,7 +5,6 @@
 """Sessions endpoint."""
 
 import datetime
-import textwrap
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -41,15 +40,57 @@ class SessionAuth(AmivTokenAuth):
         return {'user': user_id}
 
 
-DESCRIPTION = textwrap.dedent("""
-    A session is used to authenticate a user after he provided login data.
+DESCRIPTION = (r"""
+A session is used to authenticate a user. A session is uniquely identified
+by a *token*, which can be sent in the HTTP `Authorization` header.
 
-    A POST to /sessions will return a token you can use in further requests as
-    an Authorization header "Authorization: &lt;yourtoken&gt;"
+The `/sessions` resource is a low-level interface to manage a users sessions.
 
-    POST requests take exactly two parameters 'username' and 'password'.
-    The username can be the ID, nethz or email address of a user.
-    """)
+For web-based applications, a high-level OAuth2 interface exists as well which
+should be used whenever possible.
+
+See [here](http://localhost:5000/docs#section/Authentication-and-Authorization)
+for more information on which way to aquire a token is appropriate for you and
+how to send it back to the API.
+
+<br />
+
+## LDAP Login
+
+The API can act as a proxy to the ETH LDAP. If the n.ethz shortname and
+password are sent in a `POST` request, the API will forward them to the ETH
+LDAP and a session will be created if the LDAP login was successful.
+
+> A successful LDAP login will also synchronize the user in the API with the
+> ETH LDAP.
+
+<br />
+
+## API Login
+
+If the user has set a password with the API, login is also possible using this
+password instead of loging in via LDAP.
+
+In this case, any field that uniquely identifies a user can be sent as
+`username`, i.e. `nethz`, `email` or `_id`.
+
+> The API will first attempt to log in a user via LDAP. Only if this fails,
+> it will check the API password.
+
+<br />
+
+## Retrieving User Data on Login
+
+To retrieve user information automatically on a succesful login without a
+separate request, you can use embedding:
+
+```
+POST /sessions?embedded={"users":true}
+```
+
+In the response to your request, the user `_id` will now be replaced with the
+user data.
+""")
 
 
 sessiondomain = {
@@ -67,21 +108,30 @@ sessiondomain = {
 
         'schema': {
             'username': {
+                'description': '`_id`, `nethz` or `email` of a user.',
+                'example': 'pablop',
+
                 'type': 'string',
                 'required': True,
                 'nullable': False,
                 'empty': False,
-                'description': 'Only in POST: _id, nethz or email of a user.'
+                'writeonly': True,
+
             },
             'password': {
+                'description': 'LDAP or API password of the user.',
+                'example': 'Hunter2',
+
                 'type': 'string',
                 'required': True,
                 'nullable': False,
                 'empty': False,
-                'description': 'Only in POST: LDAP or local password of the '
-                               'user.'
+                'writeonly': True,
             },
             'user': {
+                'description': 'The user to whom the session belongs.',
+                'example': '438b9b7e86e7999a6acd9686',
+
                 'type': 'objectid',
                 'data_relation': {
                     'resource': 'users',
@@ -90,12 +140,14 @@ sessiondomain = {
                     'cascade_delete': True
                 },
                 'readonly': True,
-                'description': 'Will be returned for GET requests.'
+
             },
             'token': {
+                'description': 'The token uniquely identifying the session.',
+                'example': 'fMtwSnJr6VRxKvXpBat1pt3TLpY8kefI4czNa1xHXps',
+
                 'type': 'string',
                 'readonly': True,
-                'description': 'Will be returned for GET requests.'
             }
         },
     }
