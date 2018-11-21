@@ -50,10 +50,43 @@ def authorize_apikeys(resource):
                        "permissions.")
 
 
+description = ("""
+API keys can be used to give permissions to other applications.
+
+When creating an API key, permissions have to be provided as an object with
+the resources as keys and the respective permissions as values, e.g.
+
+```
+{
+    "users": "read",
+    "sessions": "readwrite"
+}
+```
+
+(this would grant the API key rights to see all users and see
+and modify/delete all sessions).
+
+> **IMPORTANT: The most powerful permission**
+>
+> If you grant an API key `readwrite` permissions to API keys, this key will
+> be able to create new API keys with any permissions and also modify it's
+> own permissions!
+>
+> As a result, **`readwrite` permissions for api keys should only be assigned
+> with great care**!
+
+Just like [sessions](#tag/Session), API keys return a token which can be
+sent in the header
+[as described above](#section/Authentication-and-Authorization).
+""")
+
+
 apikeydomain = {
     'apikeys': {
-        'description': "API Keys can be used to given permissions to other "
-                       "applications.",
+        'resource_title': 'API Keys',
+        'item_title': 'API Key',
+
+        'description': description,
 
         'public_methods': [],
         'public_item_methods': [],
@@ -64,28 +97,37 @@ apikeydomain = {
 
         'schema': {
             'name': {
+                'description': 'A unique name to identify the key.',
+                'example': 'Beer Machine',
+
                 'type': 'string',
                 'required': True,
                 'nullable': False,
                 'empty': False,
-                'description': 'A name to identify the key.',
                 'unique': True
             },
             'token': {
                 'type': 'string',
                 'readonly': True,
                 'description': 'The token that can be used for auth. '
-                'Will be randomly generated for every new key.'
+                               'Will be randomly generated for every new key.',
+                'example': 'Xfh3abXzLoezpwO9WT7oRw',
             },
             'permissions': {
+                'description': 'The permissions the API key grants. The value '
+                               'is an object with resources as keys and the '
+                               'permissions as a values.',
+                'example': {
+                    'users': 'read',
+                    'beverages': 'readwrite',
+                },
+
                 'type': 'dict',
                 'keyschema': {'type': 'string',
                               'api_resources': True},
                 'valueschema': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
-                'description': 'Permissions the apikey grants. '
-                'Key, value pairs with resource names as keys and either '
-                '"read" or "readwrite" as values.'
+                'required': True,
             }
         },
     }
