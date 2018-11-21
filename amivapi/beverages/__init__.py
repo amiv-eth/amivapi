@@ -12,15 +12,16 @@ from amivapi.utils import register_domain
 
 class BeveragesAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
+        """Users can only access their own consumption."""
         return {'user': user_id}
 
 
 beveragesdomain = {
     'beverages': {
-        'description': 'A beer machine or kaffi machine transaction. Users '
-        'should be able to get beer or kaffi, if their last timestamp is older '
-        'than one day and they are AMIV members. This resource is used to log '
-        'their purchases.',
+        'description': 'A beer- or coffee machine transaction logged with '
+                       'timestamp. Can  be used to decide whether the user '
+                       'can receive a free beverage or not, e.g. because a '
+                       'beverage was already retrieved on the same day.',
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET'],
 
@@ -28,13 +29,16 @@ beveragesdomain = {
 
         'schema': {
             'timestamp': {
+                'description': 'Time when the beverage was retrieved.',
+
                 'nullable': False,
                 'required': True,
                 'type': 'datetime',
                 'unique': False
             },
             'product': {
-                'maxlength': 6,
+                'description': 'Which type of beverage was retrieved.',
+
                 'nullable': False,
                 'required': True,
                 'type': 'string',
@@ -43,6 +47,9 @@ beveragesdomain = {
                 'allowed': ['beer', 'coffee']
             },
             'user': {
+                'description': 'The user retrieving the beverage.',
+                'example': 'dbb46b84d91d4098a1de42ad',
+
                 'nullable': False,
                 'required': True,
                 'type': 'objectid',
@@ -59,5 +66,5 @@ beveragesdomain = {
 
 
 def init_app(app):
-    """Register resources and blueprints, add hooks and validation."""
+    """Register resource."""
     register_domain(app, beveragesdomain)
