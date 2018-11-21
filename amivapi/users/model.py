@@ -5,22 +5,62 @@
 """User module."""
 
 from datetime import timedelta
+from textwrap import dedent
 
 from amivapi.settings import EMAIL_REGEX
 
 from .security import UserAuth
 
+description = dedent("""
+Users are people that may or may not be AMIV members.
+
+<br />
+
+## Synchronization with ETHZ
+
+User data is synchronized with the ETH directory server in two ways:
+
+1. The API periodically updates all members of the organization
+
+2. Whenever you log in, you user data is imported, even if you are not a
+   member
+
+Concretely, the following fields are synchronized:
+
+- `nethz`
+- `firstname`
+- `lastname`
+- `membership`
+- `legi`
+- `department`
+- `gender`
+
+<br />
+
+## Security
+
+In addition to the usual
+[permissions](#section/Authentication-and-Authorization/Authorization),
+some further constraints are in place:
+
+- Passwords are salted and hashed, and they are *never* returned by the API,
+  not even to admins. Furthermore, showing passwords can not be forced
+  by projections.
+
+- **Users** can only view all of their own fields.
+  For other users, only `firstname`, `lastname` and `nethz` are visible.
+
+- **Admins** can view the complete fields for all users.
+
+- All fields synchronized with ETHZ (see above) *cannot be modified* by users.
+""")
+
+
 userdomain = {
     'users': {
-        'description': 'User data will be generated from LDAP-data wherever '
-                       'possible. Users themselves can modify password, email, '
-                       'rfid, phone and send_newsletter. Everything else can '
-                       'be changed by admins. The password is optional for '
-                       'users with an LDAP entry. When querying users without '
-                       'admin permissions, AMIV members can see some metadata '
-                       'about other members. External people can see nothing.',
+        'description': description,
         'additional_lookup': {'field': 'nethz',
-                              'url': 'regex(".*[\\w].*")'},
+                              'url': 'string'},
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
@@ -43,10 +83,13 @@ userdomain = {
                 'maxlength': 30,
                 'not_patchable_unless_admin': True,
                 'unique': True,
-                'default': None,  # Do multiple none values work?
-                'description': 'Nethz(short ETH name)  of the user. Used for '
-                'identification in LDAP and for login.',
-                'no_html': True
+                'default': None,
+                'no_html': True,
+
+                'title': 'n.ethz',
+                'description': 'n.ethz (ETHZ shortname) of the user. Used for '
+                               'identification and login.',
+                'example': "pablop",
             },
             'firstname': {
                 'type': 'string',
@@ -55,7 +98,9 @@ userdomain = {
                 'nullable': False,
                 'not_patchable_unless_admin': True,
                 'required': True,
-                'no_html': True},
+                'no_html': True,
+                'example': 'Pablo',
+            },
             'lastname': {
                 'type': 'string',
                 'maxlength': 50,
@@ -63,14 +108,17 @@ userdomain = {
                 'nullable': False,
                 'not_patchable_unless_admin': True,
                 'required': True,
-                'no_html': True},
+                'no_html': True,
+                'example': 'Pablone',
+            },
             'membership': {
                 'allowed': ["none", "regular", "extraordinary", "honorary"],
-                'maxlength': 13,
                 'not_patchable_unless_admin': True,
                 'required': True,
                 'type': 'string',
-                'unique': False},
+                'unique': False,
+                'example': 'regular',
+            },
 
             # Values only imported by ldap
             'legi': {
@@ -80,21 +128,24 @@ userdomain = {
                 'required': False,
                 'type': 'string',
                 'unique': True,
-                'no_html': True
+                'no_html': True,
+                'description': 'ETHZ legi card number',
+                'example': "18917412",
             },
             'department': {
                 'type': 'string',
                 'allowed': ['itet', 'mavt'],
                 'not_patchable_unless_admin': True,
-                'nullable': True
+                'nullable': True,
+                'default': None,
+                'example': 'itet'
             },
             'gender': {
                 'type': 'string',
                 'allowed': ['male', 'female'],
-                'maxlength': 6,
                 'not_patchable_unless_admin': True,
                 'required': True,
-                'unique': False
+                'example': 'male',
             },
 
             # Fields the user can modify himself
@@ -107,24 +158,31 @@ userdomain = {
                 'default': None,
                 'description': 'Leave empty to use just LDAP authentification. '
                 'People without LDAP should use this field.',
-                'session_younger_than': timedelta(minutes=1)
+                'session_younger_than': timedelta(minutes=1),
+                'example': "Hunter2",
+                'writeonly': True,  # 'writeonly' only affects the docs
             },
             'email': {
                 'type': 'string',
                 'maxlength': 100,
                 'regex': EMAIL_REGEX,
                 'required': True,
-                'unique': True
+                'unique': True,
+                'example': "pablop@ethz.ch"
             },
             'rfid': {
                 'type': 'string',
                 'maxlength': 6,
                 'empty': False,
                 'nullable': True,
+                'default': None,
                 'unique': True,
-                'description': 'Number on the back of the legi. This is not in '
-                'LDAP, therefore users need to enter it themselves to use the '
-                'vending machines.',
+
+                'title': 'RFID',
+                'description': 'Number on the back of the legi. Contrary to'
+                               'the legi number, this information cannot be '
+                               'synchronized with ETHZ and has to be entered '
+                               'manually.',
                 'no_html': True
             },
             'phone': {
@@ -132,17 +190,27 @@ userdomain = {
                 'maxlength': 20,
                 'empty': False,
                 'nullable': True,
-                'no_html': True
+                'default': None,
+                'no_html': True,
+
+                'title': 'Phone Number',
+                'example': '+41 12 345 67 89'
             },
             'send_newsletter': {
                 'type': 'boolean',
-                'nullable': True
+                'default': False,
+
+                'title': 'Newletter Subscription',
+                'description': 'Flag indicating if the user is subscribed '
+                               'to the newsletter.',
+                'example': 'True',
             },
             'password_set': {
                 'type': 'boolean',
                 'description': 'True if a password is set. False if '
-                'authentication is currently only possible via LDAP.',
-                'readonly': True
+                'authentication is only possible via ETHZ.',
+                'readonly': True,
+                'example': 'False',
             }
         }
     }
