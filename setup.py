@@ -7,14 +7,20 @@
 """Install amivapi. Provide the amivapi command."""
 
 from setuptools import setup, find_packages
-from amivapi.settings import VERSION
+import re
 
 with open('LICENSE') as f:
     LICENSE = f.read()
 
+# The single source of version is in the project settings.
+# More: https://packaging.python.org/guides/single-sourcing-package-version/
+# Parsing inspired by: https://github.com/pallets/flask/blob/master/setup.py
+with open('amivapi/settings.py') as f:
+    version = re.search(r'VERSION = [\'\"](.*?)[\'\"]', f.read()).group(1)
+
 setup(
     name="amivapi",
-    version=VERSION,
+    version=version,
     url="https://www.amiv.ethz.ch",
     author="AMIV an der ETH",
     author_email="it@amiv.ethz.ch",
