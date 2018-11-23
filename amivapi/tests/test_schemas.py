@@ -30,7 +30,7 @@ class SchemaTest(WebTest):
             for field, definition in domain['schema'].items():
                 if definition.get('readonly'):
                     continue
-                    
+
                 # `definition.get('required')` is True if the key exists and
                 # is set to True.
                 # For the default, we need to only check if the key exists
