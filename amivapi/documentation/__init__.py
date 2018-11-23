@@ -44,7 +44,8 @@ doc_template = ("""
 @redoc.route('/docs')
 def index():
     """Output simple html that includes ReDoc's JS and sets styles."""
-    spec_url = request.url.rstrip('/') + '/api-docs'
+    spec_url = '/docs/api-docs'
+
     title = current_app.config['SWAGGER_INFO']['title']
     return render_template_string(doc_template,
                                   spec_url=spec_url,

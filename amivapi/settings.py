@@ -173,7 +173,7 @@ SWAGGER_INFO = {
 }
 
 SWAGGER_LOGO = {
-    'url': "/static/logo.png",
+    'url': "/static/logo_padded.png",
     'altText': 'AMIV API online documentation'
 }
 
