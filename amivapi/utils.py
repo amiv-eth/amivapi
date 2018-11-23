@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.text import MIMEText
 from os import urandom
+from binascii import hexlify
 import smtplib
 from functools import wraps
 import json
@@ -20,7 +21,7 @@ from flask import current_app as app
 from flask import g
 
 
-def token_urlsafe(nbytes=None):
+def token_urlsafe(nbytes=32):
     """Cryptographically random generate a token that can be passed in a URL.
 
     This function is available as secrets.token_urlsafe in python3.6. We can
@@ -34,9 +35,6 @@ def token_urlsafe(nbytes=None):
     Returns:
         str: A random string containing only urlsafe characters.
     """
-    if nbytes is None:
-        nbytes = 16
-
     return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
         "/", "_").rstrip("=")
 
@@ -175,7 +173,93 @@ def register_domain(app, domain):
     domain_copy = deepcopy(domain)
 
     for resource, settings in domain_copy.items():
+        # Add default for the resource title:
+        # Capitalize like Eve does with item titles
+        settings.setdefault('resource_title', resource.capitalize())
+
         app.register_resource(resource, settings)
+        _better_schema_defaults(app, resource, settings)
+
+
+def _better_schema_defaults(app, resource, resource_domain):
+    """Use better schema defaults than Eve.
+
+    For some reason, Eve adds the id field to the schema [1].
+
+    However, this does not take into account that we do not support PUT
+    and thus the id is readonly and furthermore is much less descriptive
+    than all other fields in our API, which we augment with description etc.
+
+    Finally, Eve ignores all other internal fields (such as _etag).
+
+    This method provides nice defaults for all internal fields to make the
+    schema definition more consistent. Documentation generation also benefits
+    from a more complete schema.
+
+    Concretely, we improve defaults for:
+    - _id
+    - _etag
+    - _created
+    - _updated
+    - _links
+
+    [1]: https://github.com/pyeve/eve/blob/master/eve/flaskapp.py#L789
+    """
+    schema = resource_domain['schema']
+
+    schema[app.config['ID_FIELD']] = {
+        'type': 'objectid',
+        'readonly': True,
+
+        'title': "ID",
+        'example': str(ObjectId()),
+    }
+    schema[app.config['ETAG']] = {
+        'type': 'string',
+        'readonly': True,
+
+        'title': "ETag",
+        # the etag is just a sha1 hash, which is 20 byte in hex
+        # generate a random example
+        'example': hexlify(urandom(20)).decode(),
+        'description': "Hash of item for concurrency control. "
+                       "Must be provided in the `If-Match` header when "
+                       "modifying the item to avoid accidential overwrites.",
+    }
+
+    schema[app.config['DATE_CREATED']] = {
+        'type': 'datetime',
+        'readonly': True,
+
+        'description': "Timestamp of item creation.",
+    }
+
+    schema[app.config['LAST_UPDATED']] = {
+        'type': 'datetime',
+        'readonly': True,
+
+        'description': "Timestamp of last item modification.",
+    }
+
+    schema[app.config['LINKS']] = {
+        'type': 'dict',
+        'readonly': True,
+
+        'description': "Links to related endpoints. Includes information on "
+                       "available methods. A method is only shown if your "
+                       "permissions allow using it.",
+        'example': {
+            'parent': {'title': 'home',
+                       'href': '/',
+                       'methods': ['GET', 'HEAD', 'OPTIONS']},
+            'self': {'title': resource_domain['item_title'],
+                     'href': '%s/%s' % (resource, str(ObjectId())),
+                     'methods': ['GET', 'OPTIONS', 'HEAD']},
+            'collection': {'title': resource_domain['resource_title'],
+                           'href': resource,
+                           'methods': ['GET', 'OPTIONS', 'HEAD']},
+        },
+    }
 
 
 def register_validator(app, validator_class):
