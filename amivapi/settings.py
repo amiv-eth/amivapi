@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
-VERSION = '2.0.2'
+VERSION = '2.0.3'
 
 # Sentry
 
@@ -173,7 +173,7 @@ SWAGGER_INFO = {
 }
 
 SWAGGER_LOGO = {
-    'url': "/static/logo.png",
+    'url': "/static/logo_padded.png",
     'altText': 'AMIV API online documentation'
 }
 

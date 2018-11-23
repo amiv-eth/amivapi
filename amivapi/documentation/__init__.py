@@ -8,7 +8,7 @@
 We use ReDoc to display an OpenAPI documentation.
 The documenation is produced by Eve-Swagger, which we extend with details.
 """
-from flask import Blueprint, render_template_string, request, current_app
+from flask import Blueprint, render_template_string, current_app
 from eve_swagger import swagger
 
 
@@ -44,7 +44,8 @@ doc_template = ("""
 @redoc.route('/docs')
 def index():
     """Output simple html that includes ReDoc's JS and sets styles."""
-    spec_url = request.url.rstrip('/') + '/api-docs'
+    spec_url = '/docs/api-docs'
+
     title = current_app.config['SWAGGER_INFO']['title']
     return render_template_string(doc_template,
                                   spec_url=spec_url,
