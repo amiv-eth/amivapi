@@ -82,7 +82,8 @@ def create_app(config_file=None, **kwargs):
 
     config.update(kwargs)
 
-    app = Eve(settings=config,
+    app = Eve("amivapi",  # Flask needs this name to find the static folder
+              settings=config,
               validator=ValidatorAMIV)
     app.logger.info(config_status)
 

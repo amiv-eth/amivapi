@@ -146,6 +146,8 @@ class WebTest(unittest.TestCase, FixtureMixin):
 
     def tearDown(self):
         """Tear down after testing."""
+        # Reset domain (otherwise saved between tests which causes errors)
+        self.app.config['DOMAIN'].clear()
         # delete testing database
         self.connection.drop_database(self.test_config['MONGO_DBNAME'])
         # close database connection

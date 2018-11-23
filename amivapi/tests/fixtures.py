@@ -46,6 +46,7 @@ from datetime import date, datetime, timedelta
 from os.path import dirname, join
 import random
 import string
+from contextlib import contextmanager
 
 from bson import ObjectId
 from eve.methods.post import post_internal
@@ -68,6 +69,18 @@ class BadFixtureException(Exception):
 
 class FixtureMixin(object):
     """class to be inherited from to allow fixture loading"""
+    @contextmanager
+    def writeable_id(self, schema):
+        """Make the _id field writeable.
+
+        We often need to manually provide an _id in a fixture, which is
+        otherwise blocked by the readonly property.
+        """
+        _id = self.app.config['ID_FIELD']
+        schema[_id]['readonly'] = False
+        yield
+        schema[_id]['readonly'] = True
+
     def new_object(self, resource, **kwargs):
         """Create one object of the given resource. Fill in necessary values.
 
@@ -122,7 +135,7 @@ class FixtureMixin(object):
 
             # Add it to the database
             with self.app.test_request_context("/" + resource, method='POST'):
-                with admin_permissions():
+                with admin_permissions(), self.writeable_id(schema):
                     response, _, _, return_code, _ = post_internal(resource,
                                                                    obj)
                 if return_code != 201:
