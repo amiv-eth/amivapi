@@ -151,6 +151,14 @@ def oauth_redirect(redirect_uri, state):
 @oauth_blueprint.route('/oauth', methods=['GET', 'POST'])
 def oauth():
     """Endpoint for OAuth login. OAuth clients redirect users here."""
+    response = make_response(render_template("loginpage.html",
+                                             client_id="test",
+                                             user="Alex",
+                                             error_msg=""))
+    return response
+
+
+
     response_type = request.args.get('response_type')
     client_id = request.args.get('client_id')
     redirect_uri = request.args.get('redirect_uri')
@@ -193,10 +201,8 @@ def oauth():
                 current_app.logger.info("Login failed with error: %s" % error)
 
     # Serve the login page (reset cookie if needed)
-    logo = current_app.config['LOGO_SVG']
     response = make_response(render_template("loginpage.html",
                                              client_id=client_id,
-                                             logo=logo,
                                              user=user,
                                              error_msg=error_msg))
     response.set_cookie('token', token)
