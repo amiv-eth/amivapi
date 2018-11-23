@@ -82,6 +82,9 @@ def create_app(config_file=None, **kwargs):
 
     config.update(kwargs)
 
+    # Initialize empty domain to create Eve object, register resources later
+    config['DOMAIN'] = {}
+
     app = Eve("amivapi",  # Flask needs this name to find the static folder
               settings=config,
               validator=ValidatorAMIV)

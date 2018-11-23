@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
-VERSION = '2.0.1'
+VERSION = '2.0.2'
 
 # Sentry
 
@@ -28,7 +28,6 @@ TESTING = False
 # Eve & Amivapi
 
 # AUTH_FIELD = "_author"  # TODO(Alex): If we enable oplog, do we need this?
-DOMAIN = {}  # Empty add first, resource will be added in bootstrap
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 EMAIL_REGEX = '^.+@.+$'
 BANDWIDTH_SAVER = False
