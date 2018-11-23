@@ -18,7 +18,9 @@ RUN apk add --no-cache --virtual .deps \
 # Copy files to /api directory, install requirements
 COPY ./ /api
 RUN pip install -r /api/requirements.txt
-RUN pip install -e .
+
+# Install amivapi to enable CLI commands
+RUN pip install /api
 
 # Cleanup dependencies
 RUN apk del .deps
