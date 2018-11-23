@@ -151,14 +151,6 @@ def oauth_redirect(redirect_uri, state):
 @oauth_blueprint.route('/oauth', methods=['GET', 'POST'])
 def oauth():
     """Endpoint for OAuth login. OAuth clients redirect users here."""
-    response = make_response(render_template("loginpage.html",
-                                             client_id="test",
-                                             user="Alex",
-                                             error_msg=""))
-    return response
-
-
-
     response_type = request.args.get('response_type')
     client_id = request.args.get('client_id')
     redirect_uri = request.args.get('redirect_uri')
