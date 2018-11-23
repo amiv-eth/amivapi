@@ -125,6 +125,7 @@ userdomain = {
                 'maxlength': 8,
                 'not_patchable_unless_admin': True,
                 'nullable': True,
+                'default': None,
                 'required': False,
                 'type': 'string',
                 'unique': True,
