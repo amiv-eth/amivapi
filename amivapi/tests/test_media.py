@@ -42,7 +42,6 @@ class MediaTest(WebTestNoAuth):
                 }
             }
         })
-        print('I WAS HEREEE', 'test' in self.app.config['DOMAIN'])
 
     def _post_file(self):
         """Post file. Use BytesIO to be able to set the filename."""
