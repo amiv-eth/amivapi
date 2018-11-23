@@ -193,10 +193,8 @@ def oauth():
                 current_app.logger.info("Login failed with error: %s" % error)
 
     # Serve the login page (reset cookie if needed)
-    logo = current_app.config['LOGO_SVG']
     response = make_response(render_template("loginpage.html",
                                              client_id=client_id,
-                                             logo=logo,
                                              user=user,
                                              error_msg=error_msg))
     response.set_cookie('token', token)
