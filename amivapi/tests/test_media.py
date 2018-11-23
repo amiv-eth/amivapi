@@ -32,8 +32,17 @@ class MediaTest(WebTestNoAuth):
 
     def setUp(self):
         """Add test resource."""
-        self.test_config['DOMAIN'] = {'test': test_resource}
         super().setUp()
+        self.app.register_resource('test', {
+            'resource_methods': ['POST', 'GET'],
+            'item_methods': ['GET', 'DELETE'],
+            'schema': {
+                'test_file': {
+                    'type': 'media'
+                }
+            }
+        })
+        print('I WAS HEREEE', 'test' in self.app.config['DOMAIN'])
 
     def _post_file(self):
         """Post file. Use BytesIO to be able to set the filename."""

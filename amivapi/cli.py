@@ -144,7 +144,7 @@ def run(config, mode):
 
     - prod: Run a production server (requires the `bjoern` module)
     """
-      if mode == 'dev':
+    if mode == 'dev':
         app = create_app(config_file=config,
                          ENV='development',
                          DEBUG=True,
