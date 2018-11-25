@@ -83,7 +83,7 @@ def _update_definitions(app):
             },
             'filter': {
                 "in": "query",
-                "name": "filter",
+                "name": "where",
                 "type": "object",
                 "description": "Apply a filter."
                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
@@ -122,7 +122,7 @@ def _update_definitions(app):
             },
             'project': {
                 "in": "query",
-                "name": "projections",
+                "name": "projection",
                 "type": "object",
                 "description": "Show/hide fields in response."
                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
