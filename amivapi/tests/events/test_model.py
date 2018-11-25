@@ -164,6 +164,15 @@ class EventModelTest(WebTestNoAuth):
             'event': str(ev['_id'])
         }, status_code=201)
 
+    def test_email_signup_unknown_mail(self):
+        """External signups cannot use email addresses form existing users."""
+        ev = self.new_object("events", spots=100, allow_email_signup=True)
+        self.new_object("users", email='already@taken.ch')
+        self.api.post("/eventsignups", data={
+            'email': 'already@taken.ch',
+            'event': str(ev['_id'])
+        }, status_code=422)
+
     def test_spots_none(self):
         """Test you can set spots to None and this does not require deps."""
         self.api.post('/events', data=self.event_data({
