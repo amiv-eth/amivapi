@@ -525,6 +525,7 @@ eventdomain = {
                 "example": None,
 
                 'email_signup_must_be_allowed': True,
+                'no_user_mail': True,
                 'maxlength': 100,
                 'not_patchable': True,
                 'nullable': False,
