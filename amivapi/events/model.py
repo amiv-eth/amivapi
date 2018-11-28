@@ -297,7 +297,7 @@ eventdomain = {
                 'title': 'Thumbnail',
                 'description': 'Event advertisement image thumbnail, e.g. '
                                'for preview and newsletter. Must have an '
-                               'aspect ratio of 1:9. (`.jpeg` or `.png`)',
+                               'aspect ratio of 1:1. (`.jpeg` or `.png`)',
                 'filetype': ['png', 'jpeg'],
                 'type': 'media',
                 'aspect_ratio': (1, 1),
