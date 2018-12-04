@@ -117,7 +117,7 @@ CONFIRM_EMAIL_TEXT = (
 )
 
 # Signup confirmation without redirct
-CONFIRM_TEXT = "Your singup was confirmed!"
+CONFIRM_TEXT = "Your signup was confirmed!"
 SIGNUP_DELETED_TEXT = "Your signup was removed."
 
 
