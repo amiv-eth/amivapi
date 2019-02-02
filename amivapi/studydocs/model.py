@@ -33,7 +33,20 @@ file uploaders have additional permissions:
   user id in the `uploader` field).
 
 - **Admins** can modify items for all users.
+
+<br />
+
+## Summary
+
+TODO(Alex)
 """)
+
+
+class StudyDocValidator(object):
+    """Custom Validator to register `allow_summary` property."""
+
+    def _validate_allow_summary(self, *args, **kwargs):
+        """{'type': 'boolean'}"""
 
 
 studydocdomain = {
@@ -117,7 +130,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'type': 'string',
-                'no_html': True
+                'no_html': True,
+                'allow_summary': True,
             },
 
             'professor': {
@@ -128,7 +142,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'type': 'string',
-                'no_html': True
+                'no_html': True,
+                'allow_summary': True,
             },
             'semester': {
                 'description': 'The Semester for which the course/lecture/... '
@@ -140,6 +155,7 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'allowed': ['1', '2', '3', '4', '5+'],
+                'allow_summary': True,
 
             },
             'type': {
@@ -148,7 +164,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'allowed': ['exams', 'cheat sheets', 'lecture documents',
-                            'exercises']
+                            'exercises'],
+                'allow_summary': True,
             },
             'course_year': {
                 'type': 'integer',
@@ -157,6 +174,7 @@ studydocdomain = {
                 'default': None,
                 'description': 'The year in which the course *was taken*, '
                                'to separate older from newer files.',
+                'allow_summary': True,
             }
         },
     }
