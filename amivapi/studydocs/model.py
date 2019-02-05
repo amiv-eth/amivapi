@@ -38,7 +38,36 @@ file uploaders have additional permissions:
 
 ## Summary
 
-TODO(Alex)
+For more efficient searching of study documents, a *summary* of available
+metadata fields can be requested with the `summary` keyword in the query string:
+
+```
+/studydocuments?summary
+/studydocuments?where={some filter}&summary
+```
+
+When a summary is requested, the response will contain a new field
+`_summary`, which contains additional information on metadata fields
+listing all distinct values for each field along with the number of documents
+available.
+
+```
+_summary:
+    professor:
+        Prof. Dr. Awesome: 10
+        Prof. Okay: 5
+        ...
+    lecture:
+        ...
+    ...
+```
+
+The summary is only computed for documents matching the current `where` query,
+e.g. when searching for ITET documents, only professors related to ITET
+documents will show up in the summary.
+
+Furthermore, the `author` metadata field is excluded from the summary, as there
+are only very few documents for most authors, thus not much to summarize.
 """)
 
 
@@ -114,14 +143,15 @@ studydocdomain = {
                 'empty': False,
                 'nullable': True,
                 'default': None,
-                'no_html': True
+                'no_html': True,
             },
             'department': {
                 'example': DEPARTMENT_LIST[0],
                 'type': 'string',
                 'nullable': True,
                 'default': None,
-                'allowed': DEPARTMENT_LIST
+                'allowed': DEPARTMENT_LIST,
+                'allow_summary': True,
             },
 
             'lecture': {
