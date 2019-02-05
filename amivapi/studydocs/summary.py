@@ -4,29 +4,21 @@
 #          you to buy us beer if we meet and you like the software.
 """Summarize unique keys to facilitate further studydoc filtering."""
 
-from flask import g, current_app
+import json
 
-
-def save_lookup(request, lookup):
-    """Save the current lookup in the requests globals if summary is requested.
-
-    We can only modify the response later, when we don't have easy access
-    to the lookup anymore (but we need it to filter the summary).
-
-    TODO(Alex): `lookup` is only the path parsed by flask, and does not include
-                the `where` query. How to get the actual filter from Eve?
-    """
-    if True:
-        g.saved_lookup = lookup
-    else:
-        g.saved_lookup = None
+from werkzeug.exceptions import HTTPException
+from flask import current_app, request
+from eve.utils import parse_request
+from eve.io.mongo.parser import parse
 
 
 def add_summary(response):
     """Add summary to response, if requested."""
-    lookup = g.saved_lookup
-    if lookup is None:
+    if request.args.get('summary') is None:
         return
+
+    # Get the where clause to return summary only for matching documents
+    lookup = _get_lookup()
 
     # Compute distinct values per field (remove fields without any values)
     summary = {fieldname: _count_distinct(lookup, fieldname)
@@ -50,3 +42,30 @@ def _count_distinct(lookup, fieldname):
     ])
     return {item['_id']: item['_count'] for item in aggregation
             if item['_id'] is not None}
+
+
+def _get_lookup():
+    """Get the where clause lookup just like Eve does.
+
+    Unfortunately, Eve onlt parses the `where` at a very low level and does not
+    provide any methods to elegantly access it, so we have use the same
+    internal functions as Eve does.
+    (Recently, Eve has at least somewhat exposed the parsing, but this
+    code is part of an official release yet [1])
+
+    As soon as there is some 'official' support, this can be removed,
+    as it is basically copied, with the abort removed for simplicity
+    (as Eve itself will already abort if there's an error).
+
+    [1]: https://github.com/pyeve/eve/blob/master/eve/io/mongo/mongo.py
+    """
+    req = parse_request('studydocuments')
+    if req and req.where:
+        try:
+            # Mongo Syntax
+            return current_app.data._sanitize(json.loads(req.where))
+        except (HTTPException, json.JSONDecodeError):
+            # Python Syntax
+            return parse(req.where)
+
+    return {}  # No where clause
