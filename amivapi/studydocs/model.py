@@ -39,17 +39,10 @@ file uploaders have additional permissions:
 ## Summary
 
 For more efficient searching of study documents, a *summary* of available
-metadata fields can be requested with the `summary` keyword in the query string:
-
-```
-/studydocuments?summary
-/studydocuments?where={some filter}&summary
-```
-
-When a summary is requested, the response will contain a new field
-`_summary`, which contains additional information on metadata fields
-listing all distinct values for each field along with the number of documents
-available.
+metadata fields is returned in a `_summary` field of the response,
+which contains additional information on metadata fields.
+It lists all distinct values for each field along with the number of
+documents available.
 
 ```
 _summary:
