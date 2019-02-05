@@ -13,10 +13,7 @@ from eve.io.mongo.parser import parse
 
 
 def add_summary(response):
-    """Add summary to response, if requested."""
-    if request.args.get('summary') is None:
-        return
-
+    """Add summary to response."""
     # Get the where clause to return summary only for matching documents
     lookup = _get_lookup()
 
