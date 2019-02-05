@@ -65,9 +65,6 @@ _summary:
 The summary is only computed for documents matching the current `where` query,
 e.g. when searching for ITET documents, only professors related to ITET
 documents will show up in the summary.
-
-Furthermore, the `author` metadata field is excluded from the summary, as there
-are only very few documents for most authors, thus not much to summarize.
 """)
 
 
@@ -144,6 +141,7 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'no_html': True,
+                'allow_summary': True,
             },
             'department': {
                 'example': DEPARTMENT_LIST[0],
