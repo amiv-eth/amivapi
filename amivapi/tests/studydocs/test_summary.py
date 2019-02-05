@@ -33,7 +33,7 @@ class StudydocsSummaryTest(WebTestNoAuth):
         """Test returning a summary."""
         self._load_data()
 
-        response = self.api.get("/studydocuments?summary",
+        response = self.api.get("/studydocuments",
                                 status_code=200).json
 
         assert '_summary' in response
@@ -52,7 +52,7 @@ class StudydocsSummaryTest(WebTestNoAuth):
         self._load_data()
         match = json.dumps({'title': {'$in': ['first', 'second']}})
 
-        response = self.api.get("/studydocuments?summary&where=%s" % match,
+        response = self.api.get("/studydocuments?where=%s" % match,
                                 status_code=200).json
 
         assert '_summary' in response
@@ -65,12 +65,3 @@ class StudydocsSummaryTest(WebTestNoAuth):
                 'b': 1,  # The document with title `third` is ignored
             }
         }
-
-    def test_no_default_summary(self):
-        """Test that a summary is only computed if requested."""
-        self._load_data()
-
-        response = self.api.get("/studydocuments",
-                                status_code=200).json
-
-        assert '_summary' not in response
