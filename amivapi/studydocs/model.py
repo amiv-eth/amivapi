@@ -33,7 +33,39 @@ file uploaders have additional permissions:
   user id in the `uploader` field).
 
 - **Admins** can modify items for all users.
+
+<br />
+
+## Summary
+
+For more efficient searching of study documents, a *summary* of available
+metadata fields is returned in a `_summary` field of the response,
+which contains additional information on metadata fields.
+It lists all distinct values for each field along with the number of
+documents available.
+
+```
+_summary:
+    professor:
+        Prof. Dr. Awesome: 10
+        Prof. Okay: 5
+        ...
+    lecture:
+        ...
+    ...
+```
+
+The summary is only computed for documents matching the current `where` query,
+e.g. when searching for ITET documents, only professors related to ITET
+documents will show up in the summary.
 """)
+
+
+class StudyDocValidator(object):
+    """Custom Validator to register `allow_summary` property."""
+
+    def _validate_allow_summary(self, *args, **kwargs):
+        """{'type': 'boolean'}"""
 
 
 studydocdomain = {
@@ -101,14 +133,16 @@ studydocdomain = {
                 'empty': False,
                 'nullable': True,
                 'default': None,
-                'no_html': True
+                'no_html': True,
+                'allow_summary': True,
             },
             'department': {
                 'example': DEPARTMENT_LIST[0],
                 'type': 'string',
                 'nullable': True,
                 'default': None,
-                'allowed': DEPARTMENT_LIST
+                'allowed': DEPARTMENT_LIST,
+                'allow_summary': True,
             },
 
             'lecture': {
@@ -117,7 +151,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'type': 'string',
-                'no_html': True
+                'no_html': True,
+                'allow_summary': True,
             },
 
             'professor': {
@@ -128,7 +163,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'type': 'string',
-                'no_html': True
+                'no_html': True,
+                'allow_summary': True,
             },
             'semester': {
                 'description': 'The Semester for which the course/lecture/... '
@@ -140,6 +176,7 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'allowed': ['1', '2', '3', '4', '5+'],
+                'allow_summary': True,
 
             },
             'type': {
@@ -148,7 +185,8 @@ studydocdomain = {
                 'nullable': True,
                 'default': None,
                 'allowed': ['exams', 'cheat sheets', 'lecture documents',
-                            'exercises']
+                            'exercises'],
+                'allow_summary': True,
             },
             'course_year': {
                 'type': 'integer',
@@ -157,6 +195,7 @@ studydocdomain = {
                 'default': None,
                 'description': 'The year in which the course *was taken*, '
                                'to separate older from newer files.',
+                'allow_summary': True,
             }
         },
     }
