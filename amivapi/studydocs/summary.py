@@ -47,11 +47,11 @@ def _count_distinct(lookup, fieldname):
 def _get_lookup():
     """Get the where clause lookup just like Eve does.
 
-    Unfortunately, Eve onlt parses the `where` at a very low level and does not
+    Unfortunately, Eve only parses the `where` at a very low level and does not
     provide any methods to elegantly access it, so we have use the same
     internal functions as Eve does.
     (Recently, Eve has at least somewhat exposed the parsing, but this
-    code is part of an official release yet [1])
+    code is not part of an official release yet [1])
 
     As soon as there is some 'official' support, this can be removed,
     as it is basically copied, with the abort removed for simplicity
