@@ -7,7 +7,7 @@
 import json
 
 from werkzeug.exceptions import HTTPException
-from flask import current_app, request
+from flask import current_app
 from eve.utils import parse_request
 from eve.io.mongo.parser import parse
 
