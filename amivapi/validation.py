@@ -35,6 +35,30 @@ class ValidatorAMIV(Validator):
     online documentation)
     """
 
+    def _error(self, *args, **kwargs):
+        """Fix annoying Cerberus behaviour.
+
+        - Although it never uses it, Cerberus attaches the validated value
+          silently to every error.
+
+        - Whenever Cerberus collects errors, it deepcopies all of them for some
+          reason.
+
+        Now, if the validated value cannot be deepcopied, e.g. incoming file
+        buffers, this causes Cerberus to crash, even though the value is
+        *never* used during error processing.
+
+        Thus, we remove the value from the error and the world is fine again.
+        Luckily, Cerberus keeps a reference to the most recent created error,
+        so we at least have a way to do that.
+
+        See here:
+        https://github.com/pyeve/cerberus/blob/master/cerberus/validator.py#L232
+        """
+        super()._error(*args, **kwargs)
+        if hasattr(self, 'recent_error') and self.recent_error is not None:
+            self.recent_error.value = None
+
     def _validate_title(*_):
         """{'type': 'string'}"""
 

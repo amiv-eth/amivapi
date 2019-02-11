@@ -126,25 +126,6 @@ class MediaTest(WebTestNoAuth):
         data = {'test_file': (BytesIO(b'trololo'), "something")}
         self.api.post("/test", data=data, headers=headers, status_code=422)
 
-    def test_validation_error(self):
-        """Check that validation returns proper errors.
-
-        Cerberus does some weird deep copy when reporting errors.
-        With file buffers, this can break as they do not support deepcopy.
-
-        This test is to make sure that the validators don't break cerberus.
-        """
-        headers = {'content-type': 'multipart/form-data'}
-        # Add validator
-        schema = self.app.config['DOMAIN']['test']['schema']
-        schema['test_file']['filetype'] = ['pdf', 'png', 'jpeg']
-
-        data = {'test_file': (BytesIO(b'trololo'), "something")}
-        response = self.api.post("/test", data=data, headers=headers,
-                                 status_code=422).json
-
-        assert 'exception' not in response['_issues']
-
     def test_aspect_ratio_validation(self):
         """Test aspect ratio validation."""
         schema = self.app.config['DOMAIN']['test']['schema']
