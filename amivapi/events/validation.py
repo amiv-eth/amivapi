@@ -37,6 +37,7 @@ class EventValidator(object):
         except json.JSONDecodeError as e:
             self._error(field,
                         "Must be json, parsing failed with exception: %s" % e)
+            return
 
         id_field = current_app.config['ID_FIELD']
         # At this point we have valid JSON, check for event now.

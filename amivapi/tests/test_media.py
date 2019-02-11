@@ -120,12 +120,11 @@ class MediaTest(WebTestNoAuth):
         lenapath = join(dirname(__file__), "fixtures", 'lena.jpg')
         with open(lenapath, 'rb') as f:
             data = {'test_file': f}
-            self.api.post("/test", data=data, headers=headers,
-                          status_code=201)
+            self.api.post("/test", data=data, headers=headers, status_code=201)
+
         # Something else will be rejected
         data = {'test_file': (BytesIO(b'trololo'), "something")}
-        self.api.post("/test", data=data, headers=headers,
-                      status_code=422)
+        self.api.post("/test", data=data, headers=headers, status_code=422)
 
     def test_aspect_ratio_validation(self):
         """Test aspect ratio validation."""
