@@ -292,8 +292,9 @@ class ValidatorAMIV(Validator):
         """
         width, height = aspect_ratio
         error = False
-        img = Image.open(value.stream)
-        print(img.size, aspect_ratio)
+        # Load file (and reset stream so it can be saved correctly afterwards)
+        img = Image.open(value)
+        value.seek(0)
 
         if isinstance(height, int) and isinstance(width, int):
             # Strict ratio checking for ints
@@ -308,6 +309,7 @@ class ValidatorAMIV(Validator):
             self._error(field, "The image does not have the required aspect "
                                "ratio. The accepted ratio is "
                                "%s:%s" % aspect_ratio)
+
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields

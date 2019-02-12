@@ -43,16 +43,21 @@ class MediaTest(WebTestNoAuth):
             }
         })
 
-    def _post_file(self):
+    def _post_file(self, data=lenadata, name=lenaname):
         """Post file. Use BytesIO to be able to set the filename."""
         headers = {'content-type': 'multipart/form-data'}
-        data = {'test_file': (BytesIO(lenadata), lenaname)}
-        r = self.api.post("/test", data=data, headers=headers,
+        _data = {'test_file': (BytesIO(data), name)}
+        r = self.api.post("/test", data=_data, headers=headers,
                           status_code=201).json
+
+        # Access file to ensure it's stored correctly
+        stored = self.api.get(r['test_file']['file'], status_code=200).data
+        self.assertEqual(data, stored)
+
         return r
 
     def test_upload(self):
-        """Test if uploading works."""
+        """Test if uploading works and stores data correctly."""
         self._post_file()
 
     def test_delete(self):
@@ -62,12 +67,6 @@ class MediaTest(WebTestNoAuth):
                         headers={'If-Match': r['_etag']},
                         status_code=204)
         self.api.get(r['test_file']['file'], status_code=404)
-
-    def test_download(self):
-        """Test downloading."""
-        r = self._post_file()
-        data = self.api.get(r['test_file']['file'], status_code=200).data
-        self.assertEqual(data, lenadata)
 
     def test_extended_fields_exist(self):
         """Check attributes."""
@@ -94,17 +93,16 @@ class MediaTest(WebTestNoAuth):
 
     def test_default_content_type(self):
         """See if default content type is application/octet-stream."""
-        data = {
-            'test_file': (BytesIO(b'some_content'), "no_extension_to_guess")
-        }
-        headers = {'content-type': 'multipart/form-data'}
-        r = self.api.post("/test", data=data, headers=headers,
-                          status_code=201).json
+        r = self._post_file(data=b'some_content',
+                            name="no_extension_to_guess")
         content_type = r['test_file']['content_type']
         self.assertEqual(content_type, 'application/octet-stream')
 
     def test_validator(self):
-        """Test that the validator correctly accepts formats."""
+        """Test that the validator correctly accepts formats.
+
+        Ensure that the files is saved correctly in any situation.
+        """
         headers = {'content-type': 'multipart/form-data'}
         # Add validator
         schema = self.app.config['DOMAIN']['test']['schema']
@@ -114,8 +112,8 @@ class MediaTest(WebTestNoAuth):
         self._post_file()
         # PDF
         data = {'test_file': (BytesIO(br'%PDF magic'), "some.pdf")}
-        self.api.post("/test", data=data, headers=headers,
-                      status_code=201)
+        r = self.api.post("/test", data=data, headers=headers, status_code=201)
+
         # JPG
         lenapath = join(dirname(__file__), "fixtures", 'lena.jpg')
         with open(lenapath, 'rb') as f:
@@ -146,7 +144,13 @@ class MediaTest(WebTestNoAuth):
         schema['test_file']['aspect_ratio'] = (1.33, 1)
 
         data = {'test_file': (BytesIO(liondata), "file")}  # re-create 'file'
-        self.api.post("/test", data=data, headers=headers, status_code=201)
+        r = self.api.post("/test", data=data, headers=headers, status_code=201)
+        file_url = r.json['test_file']['file']
+
+        # Ensure that the validator does not modify the files, and we are able
+        # to retrieve it correctly
+        stored = self.api.get(file_url).data
+        self.assertEqual(liondata, stored)
 
     def test_timezone_error(self):
         """Test that #150 is fixed."""
