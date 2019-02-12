@@ -310,7 +310,6 @@ class ValidatorAMIV(Validator):
                                "ratio. The accepted ratio is "
                                "%s:%s" % aspect_ratio)
 
-
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields
 

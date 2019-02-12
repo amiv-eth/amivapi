@@ -108,17 +108,16 @@ class MediaTest(WebTestNoAuth):
         schema = self.app.config['DOMAIN']['test']['schema']
         schema['test_file']['filetype'] = ['pdf', 'png', 'jpeg']
 
-        # PNG
+        # PNG with default lena
         self._post_file()
         # PDF
-        data = {'test_file': (BytesIO(br'%PDF magic'), "some.pdf")}
-        r = self.api.post("/test", data=data, headers=headers, status_code=201)
+        self._post_file(data=br'%PDF magic', name='some.pdf')
 
         # JPG
         lenapath = join(dirname(__file__), "fixtures", 'lena.jpg')
         with open(lenapath, 'rb') as f:
-            data = {'test_file': f}
-            self.api.post("/test", data=data, headers=headers, status_code=201)
+            jpg_data = f.read()
+        self._post_file(data=jpg_data, name='lena.jpg')
 
         # Something else will be rejected
         data = {'test_file': (BytesIO(b'trololo'), "something")}
@@ -143,14 +142,7 @@ class MediaTest(WebTestNoAuth):
         # (even if its a non-integer ratio)
         schema['test_file']['aspect_ratio'] = (1.33, 1)
 
-        data = {'test_file': (BytesIO(liondata), "file")}  # re-create 'file'
-        r = self.api.post("/test", data=data, headers=headers, status_code=201)
-        file_url = r.json['test_file']['file']
-
-        # Ensure that the validator does not modify the files, and we are able
-        # to retrieve it correctly
-        stored = self.api.get(file_url).data
-        self.assertEqual(liondata, stored)
+        self._post_file(data=liondata)
 
     def test_timezone_error(self):
         """Test that #150 is fixed."""
