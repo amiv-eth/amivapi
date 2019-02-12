@@ -292,8 +292,9 @@ class ValidatorAMIV(Validator):
         """
         width, height = aspect_ratio
         error = False
-        img = Image.open(value.stream)
-        print(img.size, aspect_ratio)
+        # Load file (and reset stream so it can be saved correctly afterwards)
+        img = Image.open(value)
+        value.seek(0)
 
         if isinstance(height, int) and isinstance(width, int):
             # Strict ratio checking for ints
