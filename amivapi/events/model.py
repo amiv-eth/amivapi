@@ -28,8 +28,8 @@ versions should be included.
 ## Images
 
 While the API generally accepts both `form-data` and JSON-input,
-JSON cannot be used to upload event images.
-You must use [`multipart/form-data`][1] to be able to send files.
+images can only be sent using [`multipart/form-data`][1]. There's a quick
+how-to on sending data in the [cheatsheet](#section/Cheatsheet/Sending-Data).
 
 [1]: https://www.w3.org/TR/html5/sec-forms.html#multipart-form-data
 
@@ -273,7 +273,7 @@ eventdomain = {
                 'title': 'Infoscreen Image',
                 'description': 'Event advertisement image to display on the '
                                'infoscreen. Must have an aspect ratio of '
-                               '16:9. (`.jpeg` or `.png`)',
+                               '16:9 (width:height). (`.jpeg` or `.png`)',
 
                 'filetype': ['png', 'jpeg'],
                 'type': 'media',
@@ -284,14 +284,15 @@ eventdomain = {
             'img_poster': {
                 'title': 'Poster',
                 'description': 'Event advertisement image for printed posters.'
-                               'Must have an aspect_ratio of 1.41:1, i.e. '
-                               'the DIN A aspect ratio. (`.jpeg` or `.png`)',
+                               'Must have an aspect_ratio of 1:1.41 '
+                               '(width:height), i.e. the DIN A aspect ratio. '
+                               '(`.jpeg` or `.png`)',
 
                 'filetype': ['png', 'jpeg'],
                 'type': 'media',
                 'nullable': True,
                 'default': None,
-                'aspect_ratio': (1.41, 1),  # DIN A aspect ratio
+                'aspect_ratio': (1, 1.41),  # DIN A aspect ratio
             },
             'img_thumbnail': {
                 'title': 'Thumbnail',
