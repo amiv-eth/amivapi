@@ -13,7 +13,11 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
+<<<<<<< HEAD
 VERSION = '2.1.3'
+=======
+VERSION = '2.1.4'
+>>>>>>> Use correct ratio (portrait) for event posters, update docs.
 
 # Sentry
 
