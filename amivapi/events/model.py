@@ -28,7 +28,7 @@ versions should be included.
 ## Images
 
 While the API generally accepts both `form-data` and JSON-input,
-images can only be send using [`multipart/form-data`][1]. There's a quick
+images can only be sent using [`multipart/form-data`][1]. There's a quick
 how-to on sending data in the [cheatsheet](#section/Cheatsheet/Sending-Data).
 
 [1]: https://www.w3.org/TR/html5/sec-forms.html#multipart-form-data
