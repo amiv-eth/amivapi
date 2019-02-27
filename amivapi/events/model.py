@@ -233,7 +233,7 @@ eventdomain = {
                 'no_html': True,
             },
             'price': {
-                'description': 'Price in *Cents*, e.g. '
+                'description': 'Price in *Rappen*, e.g. '
                                '1000 for 10 CHF.',
                 'example': None,
 
