@@ -18,6 +18,13 @@ of and join.
 
 <br />
 
+## Moderator
+
+Events can have a *Moderator*. The Moderator can modify the events, and view
+signups for the moderated events.
+
+<br />
+
 ## Internationalization
 
 Events support both german and english titles, descriptions and catchphrases.
