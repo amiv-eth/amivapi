@@ -6,7 +6,6 @@
 
 Needed when external users want to sign up for public events.
 """
-from base64 import b64decode, b64encode
 from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
