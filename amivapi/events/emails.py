@@ -31,7 +31,7 @@ def send_confirmmail_to_unregistered_users(items):
                 'events', None,
                 **{current_app.config['ID_FIELD']: item['event']})
 
-            if 'title_en' in event and event['title_en'] is not None:
+            if event.get('title_en') is not None:
                 title = event['title_en']
             else:
                 title = event['title_de']
