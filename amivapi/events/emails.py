@@ -37,7 +37,7 @@ def send_confirmmail_to_unregistered_users(items):
                 title = event['title_de']
 
             token = Signer(get_token_secret()).sign(
-                str(item['_id']).encode('utf-8'))
+                str(item['_id']).encode('utf-8')).decode('utf-8')
 
             if current_app.config.get('SERVER_NAME') is None:
                 current_app.logger.warning("SERVER_NAME is not set. E-Mail "

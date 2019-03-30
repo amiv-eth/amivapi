@@ -74,7 +74,7 @@ def notify_signup_accepted(event_name, signup):
         email = signup['email']
 
     token = Signer(get_token_secret()).sign(
-        str(signup[id_field]).encode('utf-8'))
+        str(signup[id_field]).encode('utf-8')).decode('utf-8')
 
     if current_app.config.get('SERVER_NAME') is None:
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
