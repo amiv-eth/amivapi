@@ -141,7 +141,7 @@ class AmivTokenAuth(BasicAuth):
         Returns:
             dict: The filter, will be combined with other filters in the hook.
                 Return empty dict if no filters should be applied.
-                Return None if no lookup should be possible at for the user.
+                Return None if no lookup should be possible for the user.
         """
         return {}
 
