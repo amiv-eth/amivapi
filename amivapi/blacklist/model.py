@@ -65,16 +65,17 @@ blacklist = {
             },
             'price': {
                 'description': 'The price the user has to pay to be removed (in'
-                ' CHF) from the blacklist. Normally this is the event price, '
-                'but it can be zero if the user has to do something else, for '
-                'example help at an event. In the case of a free event, the '
-                'price should be 5.-',
-                'example': "5",
+                ' rappen, e.g. 500 for 5 CHF) from the blacklist. Normally, but'
+                ' not necessarily, this is the event price. If there is no '
+                'price to pay, e.g. if the user has to help somewhere instead '
+                'of paying, the value can be set to Null.',
+                'example': "500",
 
                 'type': 'integer',
                 'nullable': True,
                 'required': False,
                 'default': None,
+                'min': 1,
             },
             'start_time': {
                 'description': 'The date on which the user was blacklisted',
