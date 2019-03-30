@@ -499,6 +499,7 @@ eventdomain = {
                 },
                 'not_patchable': True,
                 'only_self_enrollment_for_event': True,
+                'not_blacklisted': True,
                 'type': 'objectid',
                 'nullable': False,
                 'unique_combination': ['event'],
