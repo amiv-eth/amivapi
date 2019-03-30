@@ -24,7 +24,7 @@ class EventAuth(AmivTokenAuth):
 
 class EventSignupAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
-        """Users can see their own signups."""
+        """Users can see own signups and signups for moderated events."""
         # Find events the user moderates
         event_collection = current_app.data.driver.db['events']
         events = event_collection.find({'moderator': ObjectId(user_id)},
