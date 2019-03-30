@@ -360,9 +360,9 @@ class LinkIntegrationTest(WebTest):
             if links['href'] == 'users':
                 return links['methods']
 
-    def test_allowed(self, **args):
+    def check_link_methods(self, token):
         """Test that the allowed methods works, and all others do not."""
-        home_response = self.api.get("/", status_code=200, **args)
+        home_response = self.api.get("/", status_code=200, token=token)
         for link in home_response.json['_links']['child']:
             # options are always allowed
             self.assertIn('OPTIONS', link['methods'])
@@ -372,7 +372,7 @@ class LinkIntegrationTest(WebTest):
             all_methods = ['get', 'head', 'options', 'post', 'patch', 'delete']
 
             for method in all_methods:
-                response = getattr(self.api, method)(resource, **args)
+                response = getattr(self.api, method)(resource, token=token)
                 if method.upper() in allowed_methods:
                     self.assertNotIn(response.status_code, [401, 403, 405])
                 else:
@@ -380,15 +380,15 @@ class LinkIntegrationTest(WebTest):
 
     def test_home_public(self):
         """Test GET on home for public user."""
-        self.test_allowed()
+        self.check_link_methods(None)
 
     def test_home_registered(self):
         """Test GET on home for a registered user."""
-        self.test_allowed(token=self.user_token)
+        self.check_link_methods(self.user_token)
 
     def test_home_admin(self):
         """Test GET on home for an admin."""
-        self.test_allowed(token=self.root_token)
+        self.check_link_methods(self.root_token)
 
     def test_resource_registered(self):
         """Test GET on resource for a registered user."""
