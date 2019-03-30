@@ -291,16 +291,13 @@ class ValidatorAMIV(Validator):
         }
         """
         width, height = aspect_ratio
-        error = False
         # Load file (and reset stream so it can be saved correctly afterwards)
         img = Image.open(value)
         value.seek(0)
 
         # Ratios (e.g. DIN standard) are checked with some tolerance
         diff = (img.size[0] / img.size[1]) - (width / height)
-        error = abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']
-
-        if error:
+        if abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']:
             self._error(field, "The image does not have the required aspect "
                                "ratio. The accepted ratio is "
                                "%s:%s" % aspect_ratio)
