@@ -76,7 +76,7 @@ class UserAuth(AmivTokenAuth):
             return {'_id': user_id}
         else:
             # Can see everyone (fields will be filtered later)
-            return None
+            return {}
 
 
 @on_post_hook

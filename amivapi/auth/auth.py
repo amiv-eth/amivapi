@@ -140,9 +140,10 @@ class AmivTokenAuth(BasicAuth):
 
         Returns:
             dict: The filter, will be combined with other filters in the hook.
-                Return None or empty dict if no filters should be applied.
+                Return empty dict if no filters should be applied.
+                Return None if no lookup should be possible at for the user.
         """
-        return None
+        return {}
 
 
 class AdminOnlyAuth(AmivTokenAuth):
@@ -153,7 +154,7 @@ class AdminOnlyAuth(AmivTokenAuth):
         Therefore no results should be given. To give a more precise error
         message, we abort. Otherwise normal users would just see an empty list.
         """
-        abort(403)
+        return None
 
 
 # Decorators that will only call a function if auth conditions are met
@@ -308,6 +309,9 @@ def abort_if_not_public(*args):
 def add_lookup_filter(auth, resource, request, lookup):
     """Get and add lookup filter for GET, PATCH and DELETE."""
     extra_lookup = auth.create_user_lookup_filter(g.current_user)
+
+    if extra_lookup is None:
+        abort(403)  # No lookup at all
 
     if extra_lookup:
         # Add the additional lookup with an `$and` condition
