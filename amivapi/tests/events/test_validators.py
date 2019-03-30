@@ -5,7 +5,10 @@
 
 """Test general purpose validators of event module."""
 
+from datetime import datetime
 import json
+
+from freezegun import freeze_time
 
 from amivapi.tests.utils import WebTestNoAuth
 
@@ -102,6 +105,39 @@ class EventValidatorTest(WebTestNoAuth):
             'needs_an_option': 1,
             'option2': 1
         }, status_code=201)
+
+    def test_blacklist(self):
+        """Test that users can only sign up if they are not blacklisted"""
+
+        t_open = datetime(2016, 1, 1)
+        t_close = datetime(2016, 12, 31)
+
+        ev = self.new_object("events", spots=100)
+        user1 = self.new_object("users")
+        user2 = self.new_object("users")
+
+        user1_token = self.get_user_token(user1['_id'])
+        user2_token = self.get_user_token(user1['_id'])
+
+        self.new_object("blacklist", user=user1['_id'],
+                        start_time=t_open, end_time=t_close)
+        self.new_object("blacklist", user=user2['_id'],
+                        start_time=t_open)
+
+        with freeze_time(datetime(2016, 6, 1)):
+            self.api.post('eventsignups', data={'user': str(user1['_id']),
+                          'event': str(ev['_id'])}, token=user1_token,
+                          status_code=422)
+
+        with freeze_time(datetime(2017, 6, 1)):
+            self.api.post('eventsignups', data={'user': str(user1['_id']),
+                          'event': str(ev['_id'])}, token=user1_token,
+                          status_code=201)
+
+        with freeze_time(datetime(2017, 6, 1)):
+            self.api.post('eventsignups', data={'user': str(user2['_id']),
+                          'event': str(ev['_id'])}, token=user2_token,
+                          status_code=422)
 
     def test_later_than(self):
         """Test the later_than validator."""

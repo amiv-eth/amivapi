@@ -63,6 +63,21 @@ class EventValidator(object):
             for error in validator.iter_errors(data):
                 self._error(field, error.message)
 
+    def _validate_not_blacklisted(self, enabled, field, user_id):
+        """Validate if the user is not on the blacklist.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        if enabled:
+            count = current_app.data.driver.db['blacklist'].count_documents({
+                        'user': user_id,
+                        '$or': [{'end_time': None},
+                                {'end_time': {'$gte': datetime.utcnow()}}]})
+            if count:
+                self._error(field, "the user with id %s is on the blacklist"
+                            % user_id)
+
     def _validate_signup_requirements(self, signup_possible, field, event_id):
         """Validate if signup requirements are met.
 
