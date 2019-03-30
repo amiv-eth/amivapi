@@ -25,7 +25,7 @@ class BlacklistModelTest(WebTest):
         data = {
             'user': 24 * "0",
             'reason': "Test",
-            'price': 0,
+            'price': None,
             'start_time': "2019-03-29T00:00:00Z",
             'end_time': "2019-03-30T00:00:00Z",
         }
