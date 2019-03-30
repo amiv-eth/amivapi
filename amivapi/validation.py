@@ -296,14 +296,9 @@ class ValidatorAMIV(Validator):
         img = Image.open(value)
         value.seek(0)
 
-        if isinstance(height, int) and isinstance(width, int):
-            # Strict ratio checking for ints
-            # x/y == a/b is equal to xb == ay, which does not need division
-            error = (img.size[0] * height) != (img.size[1] * width)
-        else:
-            # Non-integer ratios (e.g. DIN standard) need some tolerance
-            diff = (img.size[0] / img.size[1]) - (width / height)
-            error = abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']
+        # Ratios (e.g. DIN standard) are checked with some tolerance
+        diff = (img.size[0] / img.size[1]) - (width / height)
+        error = abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']
 
         if error:
             self._error(field, "The image does not have the required aspect "
