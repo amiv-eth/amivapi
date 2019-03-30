@@ -17,11 +17,22 @@ from imghdr import what
 from collections import Hashable
 from PIL import Image
 from bs4 import BeautifulSoup
+from typing import Iterable
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
 from flask import abort, g, request
 from cerberus import TypeDefinition, utils
+
+
+def _not_none_keys(dic: dict) -> set:
+    """Returns the set of keys with a non None value."""
+    return {k for k, v in dic.items() if v is not None}
+
+
+def _none_keys(dic: dict) -> set:
+    """Returns the set of keys with a None value."""
+    return {k for k, v in dic.items() if v is None}
 
 
 class ValidatorAMIV(Validator):
@@ -34,6 +45,37 @@ class ValidatorAMIV(Validator):
     (The documentation sub-module can also use this to generate a nice
     online documentation)
     """
+
+    @property
+    def rerun_on_patch_validators(self):
+        """Names of validators that should be rerun on unchanged fields in
+        PATCH."""
+        return ('depends_all',)
+
+    def validate_update(self, document, document_id, persisted_document=None):
+        """We change that some validators are run on all fields during PATCH.
+
+        We need this to check that dependencies are not lost. If A depends on
+        B, the validators of A need to be called to catch if B is deleted.
+        However we can't run all validators again, because some assume that
+        the document is not yet in the database (e.g. unique).
+        """
+        # After this returns the ErrorHandler hook `end` will already have been
+        # called. This is not optimal, but ok, as we are not using a custom
+        # error handler. There isn't really a better place to hook in our
+        # dependency validators...
+        super().validate_update(document, document_id, persisted_document)
+
+        for field in self._get_present_fields():
+            definition = self.schema.get(field, {})
+            for rule in self.rerun_on_patch_validators:
+                if rule in definition:
+                    validate_fn = getattr(self, '_validate_' + rule)
+                    value = self.document.get(
+                            field, self.persisted_document.get(field))
+                    validate_fn(definition[rule], field, value)
+
+        return not bool(self._errors)
 
     def _error(self, *args, **kwargs):
         """Fix annoying Cerberus behaviour.
@@ -76,8 +118,7 @@ class ValidatorAMIV(Validator):
     @property
     def ignore_none_values(self):
         """Treat None values like missing fields for the `required` and
-        `unique` validators.
-        """
+        `unique` validators."""
         return True
 
     def _validate_excludes(self, excluded_fields, field, value):
@@ -89,7 +130,7 @@ class ValidatorAMIV(Validator):
         The rule's arguments are validated against this schema:
         {'type': ('hashable', 'list'),
          'schema': {'type': 'hashable'}}
-         """
+        """
         if isinstance(excluded_fields, Hashable):
             excluded_fields = [excluded_fields]
 
@@ -150,7 +191,7 @@ class ValidatorAMIV(Validator):
         {'type': 'boolean'}
         """
         if enabled and (request.method == 'PATCH'):
-            self._error(field, "this field can not be changed with PATCH")
+            self._error(field, 'this field can not be changed with PATCH')
 
     def _validate_not_patchable_unless_admin(self, enabled, field, _):
         """Inhibit patching of the field for non-admins.
@@ -165,8 +206,8 @@ class ValidatorAMIV(Validator):
         {'type': 'boolean'}
         """
         if enabled and (request.method == 'PATCH') and not g.resource_admin:
-            self._error(field, "this field can not be changed with PATCH "
-                        "unless you have admin rights.")
+            self._error(field, 'this field can not be changed with PATCH '
+                        'unless you have admin rights.')
 
     def _validate_admin_only(self, enabled, field, value):
         """Prohibit anyone except admins from setting this field.
@@ -189,7 +230,7 @@ class ValidatorAMIV(Validator):
 
         if enabled and not g.resource_admin and not default_value:
             self._error(field,
-                        "This field can only be set with admin permissions.")
+                        'This field can only be set with admin permissions.')
 
     def _validate_unique_combination(self, unique_combination, field, value):
         """Validate that a combination of fields is unique.
@@ -225,27 +266,38 @@ class ValidatorAMIV(Validator):
 
         # Now check database
         if app.data.find_one(self.resource, None, **lookup) is not None:
-            self._error(field, "value already exists in the database in " +
-                        "combination with values for: %s" %
+            self._error(field, 'value already exists in the database in ' +
+                        'combination with values for: %s' %
                         unique_combination)
 
-    def _validate_depends_any(self, any_of_fields, field, _):
-        """Validate, that any of the dependent fields is available
+    def _get_present_fields(self):
+        """Return the set of keys of present fields in the document being
+        created."""
+        fields = set()
+        if request.method == 'PATCH':
+            fields |= _not_none_keys(self.persisted_document)
+        fields |= _not_none_keys(self.document)
+        return fields - _none_keys(self.document)
+
+    def _validate_dependencies(self, all_of_fields: Iterable[str],
+                               field: str, _) -> None:
+        """Validate, that all of the dependent fields are available.
 
         Args:
-            any_of_fields (list of strings): A list of fields. One of those
-                                             fields must be provided.
-            field (string): field name
+            all_of_fields: One of those fields must be provided.
+            field: field name
 
         The rule's arguments are validated against this schema:
         {'type': 'list', 'schema': {'type': 'string'}}
         """
-        if request.method == 'POST':
-            for possible_field in any_of_fields:
-                if possible_field in self.document:
-                    return
-            self._error(field, "May only be provided, if any of %s is set"
-                        % ", ".join(any_of_fields))
+        if request.method not in ['PATCH', 'POST']:
+            return
+
+        missing_fields = set(all_of_fields) - self._get_present_fields()
+        if not missing_fields:
+            return
+        self._error(field, 'May only be provided if fields are also set: %s, '
+                    'Missing: %s' % (all_of_fields, missing_fields))
 
     def _validate_filetype(self, allowed_types, field, value):
         """Validate filetype. Can validate images and pdfs.
@@ -273,7 +325,7 @@ class ValidatorAMIV(Validator):
 
         if filetype not in allowed_types:
             self._error(field, "filetype '%s' not supported, has to be in: "
-                        "%s" % (filetype, allowed_types))
+                        '%s' % (filetype, allowed_types))
 
     def _validate_aspect_ratio(self, aspect_ratio, field, value):
         """Validates aspect ratio of a given image.
@@ -303,7 +355,7 @@ class ValidatorAMIV(Validator):
                                "%s:%s" % aspect_ratio)
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
-        """Validation of the used token for special fields
+        """Validation of the used token for special fields.
 
         Validates if the session is not older than threshold_time
 
@@ -318,8 +370,8 @@ class ValidatorAMIV(Validator):
         """
         if threshold_timedelta < timedelta(seconds=0):
             # Use abort to actually give a stacktrace and break tests.
-            abort(500, "Invalid field definition: %s: %s, "
-                  "session_younger_than must be positive."
+            abort(500, 'Invalid field definition: %s: %s, '
+                  'session_younger_than must be positive.'
                   % (self.resource, field))
 
         if not g.get('resource_admin'):
@@ -327,8 +379,8 @@ class ValidatorAMIV(Validator):
             time_now = datetime.now(timezone.utc)
 
             if time_now - time_created > threshold_timedelta:
-                self._error(field, "Your session is too old. Using this field "
-                            "is not allowed if your session is older than %s."
+                self._error(field, 'Your session is too old. Using this field '
+                            'is not allowed if your session is older than %s.'
                             % threshold_timedelta)
 
     def _validate_no_html(self, no_html, field, value):
@@ -348,7 +400,7 @@ class ValidatorAMIV(Validator):
         {'type': 'boolean'}
         """
         if no_html and bool(BeautifulSoup(value, 'html.parser').find()):
-            self._error(field, "The text must not contain html elements.")
+            self._error(field, 'The text must not contain html elements.')
 
 
 # Cerberus uses a different validator for schemas, which is unaware of
