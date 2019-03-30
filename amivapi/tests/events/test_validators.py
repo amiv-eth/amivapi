@@ -167,6 +167,17 @@ class EventValidatorTest(WebTestNoAuth):
             'field2': '2017-03-19T13:33:37Z'
         }, status_code=201)
 
+        # Wrong date formats do not crash
+        self.api.post("/test", data={
+            'field1': 'blablalba',
+            'field2': '2017-03-19T13:33:37Z'
+        }, status_code=422)
+
+        self.api.post("/test", data={
+            'field1': '2016-10-17T21:11:14Z',
+            'field2': 'wrong as well'
+        }, status_code=422)
+
     def test_earlier_than(self):
         """Test the earlier_than validator."""
         self.app.register_resource('test', {
@@ -340,3 +351,31 @@ class EventValidatorTest(WebTestNoAuth):
         self.api.post('/test', data={'field1': 1}, status_code=201)
         self.api.post('/test', data={'field2': 1}, status_code=201)
         self.api.post('/test', data={'field1': 1, 'field2': 2}, status_code=201)
+
+    def test_date_parsing_is_order_independent(self):
+        """Test to make sure our usage of dates in validators is valid.
+
+        In validator other fields may of may not have been parsed already. This
+        test makes sure that we handle both cases correct. (See issue #176)
+        """
+        # We have two fields, both of which have a later_than validator. The one
+        # being called first will see the other field as an unparsed string. The
+        # second one will see a `Datetime` object. If we don't crash, then both
+        # versions are validated correctly.
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'datetime',
+                    'later_than': 'field2',
+                },
+                'field2': {
+                    'type': 'datetime',
+                    'later_than': 'field1',
+                }
+            }
+        })
+
+        self.api.post("/test", data={
+            'field1': '2017-01-01T13:33:37Z',
+            'field2': '2017-02-02T13:33:37Z',
+        }, status_code=422)
