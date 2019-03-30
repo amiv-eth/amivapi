@@ -108,3 +108,22 @@ class EventMailTest(WebTestNoAuth):
         # Signup should now be accepted
         self.assertTrue(self.api.get('/eventsignups/%s' % signup['_id'],
                                      status_code=200).json['accepted'])
+
+    def test_no_nones_in_emails(self):
+        """Test that there are no 'None' values in any emails."""
+        event = self.new_object('events', spots=100, selection_strategy='fcfs',
+                                allow_email_signup=True)
+
+        self.api.post('/eventsignups', data={
+            'email': 'a@example.com',
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[0]
+        self.assertTrue('None' not in mail['text'])
+
+        token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
+        self.api.get('/confirm_email/%s' % token, status_code=200)
+
+        mail = self.app.test_mails[1]
+        self.assertTrue('None' not in mail['text'])
