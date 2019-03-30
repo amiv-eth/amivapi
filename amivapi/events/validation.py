@@ -222,7 +222,17 @@ class EventValidator(object):
             time = (self.persisted_document[fieldname]
                     if self.persisted_document else None)
 
-        return time.replace(tzinfo=None) if time is not None else None
+        if time is None:
+            return time
+
+        if isinstance(time, datetime):
+            return time.replace(tzinfo=None)
+        else:
+            try:
+                date_format = current_app.config['DATE_FORMAT']
+                return datetime.strptime(time, date_format).replace(tzinfo=None)
+            except ValueError:
+                return None
 
     def _validate_later_than(self, later_than, field, value):
         """Validate time dependecy.
@@ -239,7 +249,7 @@ class EventValidator(object):
         """
         other_time = self._get_time(later_than)
         if other_time is None:
-            return
+            return  # Other time has wrong format, will be caught by validator
 
         if value.replace(tzinfo=None) <= other_time:
             self._error(field, "Must be at a point in time after %s" %
