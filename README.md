@@ -196,6 +196,16 @@ amivapi run --help
 
 ## For Developers: Running The Tests
 
+### Option 1: With Docker
+
+If you have docker installed you can simply run the tests in a Docker instance:
+
+```sh
+./run_tests_in_docker.sh
+```
+
+### Option 2: With your own mongodb and tox
+
 First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. 
 You only need to do this once to prepare the database.
 
