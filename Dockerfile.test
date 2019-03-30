@@ -22,4 +22,4 @@ COPY ./ /api
 # Switch user
 USER amivapi
 
-ENTRYPOINT ["/api/run_tests.sh"]
+ENTRYPOINT ["/api/test_with_db.sh"]

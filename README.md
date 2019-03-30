@@ -62,7 +62,7 @@ Regardless of your type of installation, AMIV API requires
 database, you are good to go and can skip this section.
 
 If you need to set up a local database for testing or development, you
-can either use the following guides to get it 
+can either use the following guides to get it
 [installed](https://docs.mongodb.com/manual/installation/) and
 [running](https://docs.mongodb.com/manual/tutorial/manage-mongodb-processes/)
 or you can use Docker as well.
@@ -114,7 +114,7 @@ MONGO_PASSWORD = 'amivapi'
 
 # Mailing lists for groups (optional, uncomment if needed)
 # MAILING_LIST_DIR = '/directory/to/store/mailing/list/files/'
-    
+
 # Remote mailings list files via ssh (optional)
 # REMOTE_MAILING_LIST_ADDRESS = 'user@remote.host'
 # REMOTE_MAILING_LIST_KEYFILE = ''
@@ -201,12 +201,20 @@ amivapi run --help
 If you have docker installed you can simply run the tests in a Docker instance:
 
 ```sh
-./run_tests_in_docker.sh
+./run_tests.sh
+```
+
+By default, this will start a container with mongodb, and run
+`pytest amivapi/tests`. You can supply your own arguments, e.g. run particular
+tests:
+
+```sh
+./run_tests.sh amivapi/tests/users
 ```
 
 ### Option 2: With your own mongodb and tox
 
-First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests. 
+First, create a test user `test_user` with password `test_pw` in the `test_amviapi` database, which will be used for all tests.
 You only need to do this once to prepare the database.
 
 ```sh
@@ -250,7 +258,7 @@ Set the following environment variables:
 
 - `SSH_TEST_ADDRESS`, e.g. `user@remote.host`
 - `SSH_TEST_KEYFILE`(optional): file containing a key that
-  is authorized to access the server 
+  is authorized to access the server
 - `SSH_TEST_DIRECTORY`(optional): Directory on remote server where test files
   are stored. Uses  `/tmp/amivapi-test/` by default
 
@@ -262,7 +270,7 @@ Set the following environment variables:
   The test will return the imported user data, be sure to verify it
 - `LDAP_TEST_USER_PASSWORD` (required to test user login)
 
-Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached. 
+Additionally, you need to be inside the ETH network, e.g. using a VPN, otherwise the ETH LDAP server can't be reached.
 Furthermore be patient, as the LDAP tests take a little time to complete.
 
 #### Sentry
