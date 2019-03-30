@@ -24,6 +24,7 @@ class StudydocsAuthTest(WebTest):
         doc = self.api.post('/studydocuments', token=token,
                             headers={'content-type': 'multipart/form-data'},
                             data={
+                                'title': 'test',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]
@@ -39,6 +40,7 @@ class StudydocsAuthTest(WebTest):
         doc = self.api.post('/studydocuments', token=token,
                             headers={'content-type': 'multipart/form-data'},
                             data={
+                                'title': 'test',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]
@@ -62,6 +64,7 @@ class StudydocsAuthTest(WebTest):
         doc = self.api.post('/studydocuments', token=token,
                             headers={'content-type': 'multipart/form-data'},
                             data={
+                                'title': 'test',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]

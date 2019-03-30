@@ -25,7 +25,53 @@ from cerberus import TypeDefinition, utils
 
 
 class ValidatorAMIV(Validator):
-    """Validator subclass adding more validation for special fields."""
+    """Validator subclass adding more validation for special fields.
+
+    In particular, add a set of dummy rules (title, description, example,
+    writeonly) that have no meaning for Cerberus, but allow to describe
+    the schema in an OpenAPI fashion.
+
+    (The documentation sub-module can also use this to generate a nice
+    online documentation)
+    """
+
+    def _error(self, *args, **kwargs):
+        """Fix annoying Cerberus behaviour.
+
+        - Although it never uses it, Cerberus attaches the validated value
+          silently to every error.
+
+        - Whenever Cerberus collects errors, it deepcopies all of them for some
+          reason.
+
+        Now, if the validated value cannot be deepcopied, e.g. incoming file
+        buffers, this causes Cerberus to crash, even though the value is
+        *never* used during error processing.
+
+        Thus, we remove the value from the error and the world is fine again.
+        Luckily, Cerberus keeps a reference to the most recent created error,
+        so we at least have a way to do that.
+
+        See here:
+        https://github.com/pyeve/cerberus/blob/master/cerberus/validator.py#L232
+        """
+        super()._error(*args, **kwargs)
+        if hasattr(self, 'recent_error') and self.recent_error is not None:
+            self.recent_error.value = None
+
+    def _validate_title(*_):
+        """{'type': 'string'}"""
+
+    def _validate_description(*_):
+        """{'type': 'string'}"""
+
+    def _validate_example(*_):
+        """{'type': [
+            'number', 'boolean', 'string', 'list', 'dict', 'datetime'
+        ]}"""
+
+    def _validate_writeonly(*_):
+        """{'type': 'boolean'}"""
 
     @property
     def ignore_none_values(self):
@@ -59,6 +105,7 @@ class ValidatorAMIV(Validator):
 
     types_mapping = Validator.types_mapping.copy()
     types_mapping['timedelta'] = TypeDefinition('timedelta', (timedelta,), ())
+    types_mapping['tuple'] = TypeDefinition('tuple', (tuple,), ())
 
     def _validate_data_relation(self, data_relation, field, value):
         """Extend the arguments for data_relation to include cascading delete.
@@ -121,7 +168,7 @@ class ValidatorAMIV(Validator):
             self._error(field, "this field can not be changed with PATCH "
                         "unless you have admin rights.")
 
-    def _validate_admin_only(self, enabled, field, _):
+    def _validate_admin_only(self, enabled, field, value):
         """Prohibit anyone except admins from setting this field.
 
         Applies to POST and PATCH.
@@ -133,7 +180,14 @@ class ValidatorAMIV(Validator):
         The rule's arguments are validated against this schema:
         {'type': 'boolean'}
         """
-        if enabled and not g.resource_admin:
+        # Due to how cerberus works, this rule is evaluated *after* default
+        # values are set. We have to ensure that defaults are not rejected
+        # on POST
+        default_value = (request.method == 'POST' and
+                         'default' in self.schema[field] and
+                         self.schema[field]['default'] == value)
+
+        if enabled and not g.resource_admin and not default_value:
             self._error(field,
                         "This field can only be set with admin permissions.")
 
@@ -232,21 +286,29 @@ class ValidatorAMIV(Validator):
 
         The rule's arguments are validated against this schema:
         {
-            'type': 'list',
-            'schema': {
-                'type': 'tuple',
-                'items': 2 * ({'type': 'Number'},)
-            }
+            'type': 'tuple',
+            'items': [{'type': 'number'}, {'type': 'number'}],
         }
         """
-        ratio = aspect_ratio[0] / aspect_ratio[1]
-        img = Image.open(value.stream)
-        img_ratio = img.size[0] / img.size[1]
+        width, height = aspect_ratio
+        error = False
+        # Load file (and reset stream so it can be saved correctly afterwards)
+        img = Image.open(value)
+        value.seek(0)
 
-        if abs(ratio - img_ratio) > app.config['ASPECT_RATIO_TOLERANCE']:
+        if isinstance(height, int) and isinstance(width, int):
+            # Strict ratio checking for ints
+            # x/y == a/b is equal to xb == ay, which does not need division
+            error = (img.size[0] * height) != (img.size[1] * width)
+        else:
+            # Non-integer ratios (e.g. DIN standard) need some tolerance
+            diff = (img.size[0] / img.size[1]) - (width / height)
+            error = abs(diff) > app.config['ASPECT_RATIO_TOLERANCE']
+
+        if error:
             self._error(field, "The image does not have the required aspect "
-                               "ratio. The accepted ratio is %s:%s" %
-                               (aspect_ratio[0], aspect_ratio[1]))
+                               "ratio. The accepted ratio is "
+                               "%s:%s" % aspect_ratio)
 
     def _validate_session_younger_than(self, threshold_timedelta, field, _):
         """Validation of the used token for special fields

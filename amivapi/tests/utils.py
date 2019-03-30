@@ -71,6 +71,14 @@ class TestClient(FlaskClient):
                 "Response:\n%s\n%s\n%s" % (expected_code, status_code,
                                            response, response.data,
                                            response.status))
+        elif ((expected_code == 422) and
+              ('exception' in response.json.get('_issues', {}))):
+            # The validator swallows exceptions and turns them into 'exception'
+            # validation errors. Ensure that tests do not miss this by raising
+            # them properly.
+            error = response.json['_issues']['exception']
+            raise AssertionError("Expected a validation error but the "
+                                 "validator raised an exception: %s" % error)
 
         return response
 

@@ -144,15 +144,17 @@ def run(config, mode):
 
     - prod: Run a production server (requires the `bjoern` module)
     """
-    app = create_app(config_file=config, DEBUG=True, TESTING=True)
-
     if mode == 'dev':
+        app = create_app(config_file=config,
+                         ENV='development',
+                         DEBUG=True,
+                         TESTING=True)
         app.run(threaded=True)
 
     elif mode == 'prod':
         if bjoern:
             echo('Starting bjoern on port 8080...')
-            bjoern.run(create_app(), '0.0.0.0', 8080)
+            bjoern.run(create_app(config_file=config), '0.0.0.0', 8080)
         else:
             raise ClickException('The production server requires `bjoern`, '
                                  'try installing it with '

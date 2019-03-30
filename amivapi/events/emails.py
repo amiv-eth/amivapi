@@ -10,7 +10,7 @@ from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
 from flask import Blueprint, current_app, redirect, url_for
-from itsdangerous import BadSignature, Signer
+from itsdangerous import BadSignature, URLSafeSerializer
 
 from amivapi.events.queue import update_waiting_list
 from amivapi.events.utils import get_token_secret
@@ -36,8 +36,8 @@ def send_confirmmail_to_unregistered_users(items):
             else:
                 title = event['title_de']
 
-            token = Signer(get_token_secret()).sign(
-                str(item['_id']).encode('utf-8'))
+            s = URLSafeSerializer(get_token_secret())
+            token = s.dumps(str(item['_id']))
 
             if current_app.config.get('SERVER_NAME') is None:
                 current_app.logger.warning("SERVER_NAME is not set. E-Mail "
@@ -74,8 +74,8 @@ def on_confirm_email(token):
     We try to confirm the specified signup and redirect to a webpage.
     """
     try:
-        s = Signer(get_token_secret())
-        signup_id = ObjectId(s.unsign(token).decode('utf-8'))
+        s = URLSafeSerializer(get_token_secret())
+        signup_id = ObjectId(s.loads(token))
     except BadSignature:
         return "Unknown token"
 
@@ -101,8 +101,8 @@ def on_confirm_email(token):
 def on_delete_signup(token):
     """Endpoint to delete signups via email"""
     try:
-        s = Signer(get_token_secret())
-        signup_id = ObjectId(s.unsign(token).decode('utf-8'))
+        s = URLSafeSerializer(get_token_secret())
+        signup_id = ObjectId(s.loads(token))
     except BadSignature:
         return "Unknown token"
 

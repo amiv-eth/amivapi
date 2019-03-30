@@ -12,13 +12,17 @@ from amivapi.studydocs.authorization import (
     add_uploader_on_bulk_insert,
     add_uploader_on_insert
 )
-from amivapi.studydocs.model import studydocdomain
-from amivapi.utils import register_domain
+from amivapi.studydocs.summary import add_summary
+from amivapi.studydocs.model import studydocdomain, StudyDocValidator
+from amivapi.utils import register_domain, register_validator
 
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, studydocdomain)
+    register_validator(app, StudyDocValidator)
 
     app.on_insert_item_studydocuments += add_uploader_on_insert
     app.on_insert_studydocuments += add_uploader_on_bulk_insert
+
+    app.on_fetched_resource_studydocuments += add_summary

@@ -37,6 +37,7 @@ class EventValidator(object):
         except json.JSONDecodeError as e:
             self._error(field,
                         "Must be json, parsing failed with exception: %s" % e)
+            return
 
         id_field = current_app.config['ID_FIELD']
         # At this point we have valid JSON, check for event now.
@@ -268,6 +269,18 @@ class EventValidator(object):
         if doc.get(only_if_not_null) is None and not exists_in_original:
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
+
+    def _validate_no_user_mail(self, enabled, field, value):
+        """Validate that the mail address does not belong to a user.
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        users = current_app.data.driver.db['users']
+        if enabled and users.find({'email': value}).count() > 0:
+            self._error(field, "The email address '%s' "
+                               "is already registered with a user and cannot "
+                               "be used for public signup." % value)
 
     def _validate_required_if_not(self, *args):
         """Dummy function for Cerberus.(It complains if it can find the rule).

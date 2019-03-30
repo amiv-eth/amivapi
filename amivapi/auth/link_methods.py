@@ -43,13 +43,13 @@ def _get_resource_methods(resource):
     if 'GET' in methods:
         methods += ['HEAD']
 
-    # resources may not have public read access, but we still can see the
-    # resource on the home endpoint
-    if user or is_admin or g.get('resource_admin_readonly'):
+    # read for users/admins
+    user_read = user and (auth.create_user_lookup_filter(user) is not None)
+    if user_read or is_admin or g.get('resource_admin_readonly'):
         methods += ['GET', 'HEAD']
 
-    # write methods
-    if is_admin or auth.has_resource_write_permission(user):
+    # write for users/admins
+    if is_admin or (user and auth.has_resource_write_permission(user)):
         methods += res['resource_methods']
 
     # Remove duplicates
@@ -162,7 +162,7 @@ def add_permitted_methods_for_home(resource, request, response, payload):
         else:
             # Add links for home
             for res_link in links:
-                res_name = res_link['title']  # title equals resource
+                res_name = res_link['href']  # href equals resource
                 if isinstance(resource_auth(res_name), AmivTokenAuth):
                     check_if_admin(res_name)
                     res_link['methods'] = _get_resource_methods(res_name)

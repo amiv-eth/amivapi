@@ -164,6 +164,15 @@ class EventModelTest(WebTestNoAuth):
             'event': str(ev['_id'])
         }, status_code=201)
 
+    def test_email_signup_unknown_mail(self):
+        """External signups cannot use email addresses form existing users."""
+        ev = self.new_object("events", spots=100, allow_email_signup=True)
+        self.new_object("users", email='already@taken.ch')
+        self.api.post("/eventsignups", data={
+            'email': 'already@taken.ch',
+            'event': str(ev['_id'])
+        }, status_code=422)
+
     def test_spots_none(self):
         """Test you can set spots to None and this does not require deps."""
         self.api.post('/events', data=self.event_data({
@@ -173,11 +182,14 @@ class EventModelTest(WebTestNoAuth):
     def test_fields_depending_on_signup_not_null(self):
         """Test that signup needs to be not None for fields depending on it."""
         test_data = [
-            {'allow_email_signup': True},
-            {'additional_fields': ''},
+            {'additional_fields': json.dumps({
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "object",
+                "additionalProperties": False,
+                'properties': {}})},
             {'time_register_start': '2016-10-17T21:11:14Z'},
+            {'time_register_end': '2016-10-18T21:11:14Z'}
         ]
-        # No need to test time end, this depends on time start anyway.
 
         for data in test_data:
             data = self.event_data(data)
@@ -186,8 +198,7 @@ class EventModelTest(WebTestNoAuth):
             self.api.post('/events', data=data, status_code=422)
 
     def test_eventsignup_validators_work_without_event(self):
-        """Test that none of the validators of eventsignups crash without an
-        event"""
+        """Test that eventsignup validators do not crash without an event."""
         user = self.new_object('users')
 
         self.api.post('/eventsignups', data={

@@ -6,68 +6,139 @@
 
 Since there are no hooks or anything, everything is just in here.
 """
-
 from amivapi.utils import register_domain
+
+
+description = ("""\
+A job offer from a company, published by the organization.
+
+## Internationalization
+
+Job offers support both german and english titles and descriptions.
+At least one language is required, but if possible, both english and german
+versions should be included.
+
+## Images
+
+While the API generally accepts both `form-data` and JSON-input,
+JSON cannot be used to upload files, such as the company logo.
+You must use [`multipart/form-data`][1] to be able to send files.
+
+[1]: https://www.w3.org/TR/html5/sec-forms.html#multipart-form-data
+""")
 
 
 jobdomain = {
     'joboffers': {
-        'description': 'A Job Offer posts repository Users can post a job offer'
-        ' with the necessary content to fill out a job offer advertisement',
+        'resource_title': "Job Offers",
+        'item_title': "Job Offer",
+
+        'description': description,
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        'public_item_methods': ['GET'],
-        'public_methods': ['GET'],
+        'public_item_methods': ['GET', 'HEAD'],
+        'public_methods': ['GET', 'HEAD'],
 
         'schema': {
             'company': {
+                'description': 'The company offering the job.',
+                'example': 'Popular Products AG',
+
+                'required': True,
                 'maxlength': 30,
                 'type': 'string',
-                'no_html': True
-            },
-            'description_de': {
-                'type': 'string',
-                'no_html': True
-            },
-            'description_en': {
-                'type': 'string',
-                'no_html': True
+                'no_html': True,
             },
             'logo': {
+                'description': 'Company logo (`.jpeg` or `.png`).',
+                'example': '(File)',
+
                 'filetype': ['png', 'jpeg'],
                 'type': 'media',
-                'required': True
+                'required': True,
             },
-            'pdf': {
-                'filetype': ['pdf'],
-                'type': 'media',
-                'required': True
-            },
-            'time_end': {
-                'type': 'datetime'
-            },
+
             'title_de': {
+                'title': 'German Title',
+                'description': 'The title of the job offer. ',
+                'example': 'Rest API Entwickler (100%)',
+
                 'type': 'string',
+                'maxlength': 100,
                 'required_if_not': 'title_en',
                 'dependencies': 'description_de',
-                'no_html': True
+                'no_html': True,
+                'nullable': True,
+                'default': None,
             },
             'title_en': {
+                'title': 'German Title',
+                'description': 'The title of the job offer. ',
+                'example': 'Rest API Developer (100%)',
+
                 'type': 'string',
+                'maxlength': 100,
                 'required_if_not': 'title_de',
                 'dependencies': 'description_en',
-                'no_html': True
+                'no_html': True,
+                'nullable': True,
+                'default': None,
+            },
+            'description_de': {
+                'title': 'German Description',
+                'description': 'German description of the offered job, can '
+                               'include Markdown syntax (without html tags). ',
+                'example': 'Die Popular Products AG sucht Mitarbeiter ...',
+
+                'type': 'string',
+                'maxlength': 10000,
+                'no_html': True,
+                'nullable': True,
+                'default': None,
+            },
+            'description_en': {
+                'title': 'English Description',
+                'description': 'English description of the offered job, can '
+                               'include Markdown syntax (without html tags).',
+                'example': 'The Popular Products AG is hiring ...',
+
+                'type': 'string',
+                'maxlength': 10000,
+                'no_html': True,
+                'nullable': True,
+                'default': None,
+            },
+
+
+            'pdf': {
+                'title': 'File',
+                'description': 'The job offer as `.pdf` to download.',
+
+                'filetype': ['pdf'],
+                'type': 'media',
+                'nullable': True,
+                'default': None,
+            },
+
+            'time_end': {
+                'title': 'Advertising End',
+                'description': 'Time when the job offer is no longer '
+                               'relevant.',
+                'example': '2018-10-10T12:00:00Z',
+
+                'type': 'datetime',
+                'required': True,
             },
             'show_website': {
+                'title': 'Show on Website',
+                'description': 'Whether to display this offer on the website, '
+                               'can be used to hide offers which are not yet '
+                               'complete or similar.',
+
                 'type': 'boolean',
-                # TODO: Activate this, when it is possible to post files and
-                # boolean in the same request
-                # Currently this is not possible and therefore this would
-                # prevent POST to /joboffers
-                # 'required': True,
-                'default': False
+                'default': False,
             }
         }
     }

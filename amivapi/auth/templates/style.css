@@ -35,14 +35,14 @@ aside {
   align-self: center;
   padding-right: 5em;
 }
-aside svg {
+aside img {
   width: 100%;
 }
 
 main {
   grid-column: main-start / main-end;
   grid-row: main-start / main-end;
-  border-left: 3px solid LightGrey;  
+  border-left: 3px solid LightGrey;
   padding: 2em 2em 2em 5em;
   align-self: center;
 }
@@ -55,14 +55,14 @@ main {
 @media (max-width: 1024px) {
   body {
     grid-template-columns: [container-start] 15% [logo-start
-                            error-start main-start] 1fr 
+                            error-start main-start] 1fr
                            [main-end error-end logo-end] 15%
                            [container-end];
     grid-template-rows: [error-start] auto [error-end] 1fr
                         [logo-start] auto
                         [logo-end main-start] auto
                         [main-end] 2fr [container-end];
-      
+
   }
 
   dialog p {
@@ -86,7 +86,7 @@ main {
   }
   body {
     grid-template-columns: [container-start] 5% [logo-start
-                            error-start main-start] 1fr 
+                            error-start main-start] 1fr
                            [main-end error-end logo-end] 5%
                            [container-end];
     grid-template-rows: [error-start] auto [error-end] 1fr
@@ -214,7 +214,7 @@ fieldset {
   border-bottom: 1px solid rgb(110,110,110);
   padding: 0.5em;
   font-size: 1.25em;
-  transition: 0.2s ease all;  
+  transition: 0.2s ease all;
 }
 
 .text label {
@@ -237,7 +237,7 @@ fieldset {
   color: rgb(232, 70, 43);
 }
 .text input:focus {
-  border-bottom: 1px solid rgb(232, 70, 43);  
+  border-bottom: 1px solid rgb(232, 70, 43);
 }
 
 /* Check Box
@@ -264,9 +264,9 @@ and create a new one using the label*/
   top: 0.95em;
   height: 1em;
   width: 1em;
-  
+
   border: 2px solid rgb(110,110,110);
-  border-radius: 4px;   
+  border-radius: 4px;
 }
 .checkbox label::after {
   content: none;
@@ -278,7 +278,7 @@ and create a new one using the label*/
   width: 0.6em;
   /* Checkmark */
   border-left: 2px solid White;
-  border-bottom: 2px solid White; 
+  border-bottom: 2px solid White;
   transform: rotate(-45deg);
 }
 /*Change color when checked*/

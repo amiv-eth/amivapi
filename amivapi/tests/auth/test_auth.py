@@ -53,7 +53,7 @@ class AmivTokenAuthTest(WebTest):
     def test_amiv_token_auth_create_user_lookup_filter(self):
         """Test default lookup filter. Should be None."""
         auth = AmivTokenAuth()
-        self.assertIsNone(auth.create_user_lookup_filter(None))
+        self.assertEquals(auth.create_user_lookup_filter(None), {})
 
     def test_amiv_token_auth_has_item_write_permission(self):
         """Test default write permission. Should be False."""

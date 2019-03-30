@@ -19,6 +19,10 @@ RUN apk add --no-cache --virtual .deps \
 COPY ./ /api
 RUN pip install -r /api/requirements.txt
 
+# Install amivapi to enable CLI commands
+# The -e flag installs links only instead of moving files to /usr/lib
+RUN pip install -e /api
+
 # Cleanup dependencies
 RUN apk del .deps
 
