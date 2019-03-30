@@ -1,5 +1,7 @@
 # Docker
 Dockerfile
+Dockerfile.test
+run_tests.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
