@@ -4,15 +4,37 @@
 #          you to buy us beer if we meet and you like the software.
 """Authorization for events and eventsignups resources"""
 
+from bson import ObjectId
+
 from flask import g, current_app
 from datetime import datetime as dt
 from amivapi.auth import AmivTokenAuth
+from amivapi.utils import get_id
+
+
+class EventAuth(AmivTokenAuth):
+    """Auth for events."""
+
+    def has_item_write_permission(self, user_id, item):
+        """The group moderator is allowed to change things."""
+        # Return true if a moderator exists and it is equal to the current user
+        return item.get('moderator') and (
+                user_id == str(get_id(item['moderator'])))
 
 
 class EventSignupAuth(AmivTokenAuth):
     def create_user_lookup_filter(self, user_id):
         """Users can see their own signups."""
-        return {'user': user_id}
+        # Find events the user moderates
+        event_collection = current_app.data.driver.db['events']
+        events = event_collection.find({'moderator': ObjectId(user_id)},
+                                       {'_id': 1})
+        moderated_events = [event['_id'] for event in events]
+
+        return {'$or': [
+            {'user': user_id},
+            {'event': {'$in': moderated_events}}
+        ]}
 
     def has_item_write_permission(self, user_id, item):
         """Users can modify their signups within the registration window.

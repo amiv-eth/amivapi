@@ -219,11 +219,11 @@ class EventAuthTest(WebTest):
         self.load_fixture({
             'users': [{
                 '_id': user_id
-                }],
+            }],
             'events': [{
                 '_id': event_id
-                }],
-            })
+            }],
+        })
 
         eventsignup = self.new_object('eventsignups', event=event_id,
                                       user=user_id)
@@ -241,3 +241,49 @@ class EventAuthTest(WebTest):
                        data={'checked_in': 'True'},
                        headers={'If-Match': etag},
                        status_code=200)
+
+    def test_event_moderator_can_modify_event(self):
+        """Test that a event moderator can modify the event"""
+        user1 = self.new_object("users")
+        user1_token = self.get_user_token(user1['_id'])
+
+        user2 = self.new_object("users")
+        user2_token = self.get_user_token(user2['_id'])
+
+        ev = self.new_object("events", moderator=user1['_id'])
+
+        self.api.patch("/events/" + str(ev['_id']),
+                       headers={'If-Match': ev['_etag']},
+                       data={
+                           "title_de": "API Event Patch attempt by "
+                                       "unauthorized user"
+                       }, token=user2_token, status_code=403)
+        self.api.patch("/events/" + str(ev['_id']),
+                       headers={'If-Match': ev['_etag']},
+                       data={
+                           "title_de": "API Event Patched by moderator"
+                       }, token=user1_token, status_code=200)
+
+    def test_event_moderator_can_see_event_participant_list(self):
+        """Test that a moderator can see the list of participants """
+        moderator = self.new_object("users")
+        moderator_token = self.get_user_token(moderator['_id'])
+
+        user = self.new_object("users")
+        user_token = self.get_user_token(user['_id'])
+
+        ev = self.new_object("events", moderator=moderator['_id'])
+        # sign up both users
+        self.new_object('eventsignups', user=moderator['_id'])
+        self.new_object('eventsignups', user=user['_id'])
+
+        # user
+        self.assertEqual(self.api.get("/eventsignups?where={\"event\":\""
+                                      + str(ev['_id']) + "\"}",
+                                      token=user_token, status_code=200).
+                         json['_meta']['total'], 1)
+        # moderator
+        self.assertEqual(self.api.get("/eventsignups?where={\"event\":\""
+                                      + str(ev['_id']) + "\"}",
+                                      token=moderator_token, status_code=200).
+                         json['_meta']['total'], 2)
