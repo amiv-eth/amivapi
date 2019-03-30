@@ -131,6 +131,17 @@ class EventValidatorTest(WebTestNoAuth):
             'field2': '2017-03-19T13:33:37Z'
         }, status_code=201)
 
+        # Wrong date formats do not crash
+        self.api.post("/test", data={
+            'field1': 'blablalba',
+            'field2': '2017-03-19T13:33:37Z'
+        }, status_code=422)
+
+        self.api.post("/test", data={
+            'field1': '2016-10-17T21:11:14Z',
+            'field2': 'wrong as well'
+        }, status_code=422)
+
     def test_earlier_than(self):
         """Test the earlier_than validator."""
         self.app.register_resource('test', {
@@ -320,9 +331,7 @@ class EventValidatorTest(WebTestNoAuth):
             }
         })
 
-        resp = self.api.post("/test", data={
+        self.api.post("/test", data={
             'field1': '2017-01-01T13:33:37Z',
-            'field2': '2017-00-00T13:33:37Z'
+            'field2': '2017-02-02T13:33:37Z'
         }, status_code=422)
-
-        assert 'exception' not in resp.json['_issues']
