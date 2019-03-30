@@ -5,7 +5,7 @@
 """Logic to implement different signup queues."""
 
 from flask import current_app, url_for
-from itsdangerous import Signer
+from itsdangerous import URLSafeSerializer
 from pymongo import ASCENDING
 
 from amivapi.utils import mail
@@ -73,8 +73,8 @@ def notify_signup_accepted(event_name, signup):
         name = 'Guest of AMIV'
         email = signup['email']
 
-    token = Signer(get_token_secret()).sign(
-        str(signup[id_field]).encode('utf-8'))
+    s = URLSafeSerializer(get_token_secret())
+    token = s.dumps(str(signup[id_field]))
 
     if current_app.config.get('SERVER_NAME') is None:
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
