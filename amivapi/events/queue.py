@@ -54,8 +54,7 @@ def update_waiting_list(event_id):
                                         {'accepted': True}, new_accepted)
 
                 # Notify user
-                title = event.get('title_en')
-                title = event.get('title_de') if title is None else title
+                title = event.get('title_en') or event.get('title_de')
                 notify_signup_accepted(title, new_accepted)
 
     return accepted_ids
