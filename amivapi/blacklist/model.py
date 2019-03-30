@@ -14,6 +14,17 @@ People normally get blacklisted if they don't appear to an event they signed up
 for, but other cases could be possible (Bad behaviour, etc). Once on the
 blacklist, they shouldn't be able to sign up for any event until they pay
 for that event or do something else the board decides (e.g. help at an event).
+
+An entry on the blacklist always has a reason and a start_date (normally the
+date of the event where the user didn't appear), most often also a price the
+user has to pay to be removed from the blacklist.
+
+One person can have multiple blacklist entries and old entries are not deleted,
+but marked with an end date.
+
+Only users with admin-rights for the blacklist can see all entries and create
+new ones/edit them. A single user only has the right to see his own blacklist
+entries, but he cannot edit them.
 """)
 
 blacklist = {
@@ -46,18 +57,24 @@ blacklist = {
                 'description': 'The reason for the blacklist entry',
                 'example': 'An Event xy nicht erschienen',
 
+                'empty': False,
                 'nullable': False,
                 'type': 'string',
                 'maxlength': 100,
                 'required': True
             },
             'price': {
-                'description': "The price",
+                'description': 'The price the user has to pay to be removed (in'
+                ' CHF) from the blacklist. Normally this is the event price, '
+                'but it can be zero if the user has to do something else, for '
+                'example help at an event. In the case of a free event, the '
+                'price should be 5.-',
                 'example': "5",
 
                 'type': 'integer',
                 'nullable': True,
-                'required': True,
+                'required': False,
+                'default': None,
             },
             'start_time': {
                 'description': 'The date on which the user was blacklisted',
@@ -69,7 +86,10 @@ blacklist = {
             },
             'end_time': {
                 'description':
-                'The date on which the user is deleted from the blacklist',
+                'The date on which this blacklist entry is resolved, i.e. the '
+                'user has paid the price or fulfilled any other task the board '
+                'decided. The user can still have another blacklist entry that '
+                'isn\'t yet resolved',
                 'example': '2018-10-11T00:00:00Z',
 
                 'type': 'datetime',

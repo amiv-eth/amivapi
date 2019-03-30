@@ -70,7 +70,7 @@ class EventValidator(object):
         {'type': 'boolean'}
         """
         if enabled:
-            count = current_app.data.driver.db['blacklist'].count({
+            count = current_app.data.driver.db['blacklist'].count_documents({
                         'user': user_id,
                         '$or': [{'end_time': None},
                                 {'end_time': {'$gte': datetime.utcnow()}}]})
