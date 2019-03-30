@@ -354,7 +354,7 @@ class EventValidatorTest(WebTestNoAuth):
 
     def test_date_parsing_is_order_independent(self):
         """Test to make sure our usage of dates in validators is valid.
-        
+
         In validator other fields may of may not have been parsed already. This
         test makes sure that we handle both cases correct. (See issue #176)
         """
