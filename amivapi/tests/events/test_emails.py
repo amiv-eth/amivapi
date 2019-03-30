@@ -120,10 +120,12 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
-        self.assertTrue('None' not in mail['text'])
+        for field in mail.values():
+            self.assertTrue('None' not in field)
 
         token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
         self.api.get('/confirm_email/%s' % token, status_code=200)
 
         mail = self.app.test_mails[1]
-        self.assertTrue('None' not in mail['text'])
+        for field in mail.values():
+            self.assertTrue('None' not in field)
