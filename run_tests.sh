@@ -8,7 +8,7 @@ mkdir /tmp/test_db
 mongod --dbpath /tmp/test_db --port $MONGO_PORT >/tmp/mongo.log &
 
 # Now is a good time to run flake8, so it can run during the mongo startup.
-# flake8 /api/amivapi || { echo 'Please fix the flake8 errors :)' >&2; exit 1; }
+flake8 /api/amivapi || { echo 'Please fix the flake8 errors :)' >&2; exit 1; }
 
 echo "Waiting 5 seconds for mongodb to start..."
 sleep 5
