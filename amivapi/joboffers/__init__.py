@@ -38,8 +38,8 @@ jobdomain = {
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        'public_item_methods': ['GET'],
-        'public_methods': ['GET'],
+        'public_item_methods': ['GET', 'HEAD'],
+        'public_methods': ['GET', 'HEAD'],
 
         'schema': {
             'company': {
