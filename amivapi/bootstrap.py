@@ -22,6 +22,7 @@ from amivapi import (
     documentation,
     events,
     groups,
+    blacklist,
     joboffers,
     ldap,
     studydocs,
@@ -101,6 +102,7 @@ def create_app(config_file=None, **kwargs):
     auth.init_app(app)
     events.init_app(app)
     groups.init_app(app)
+    blacklist.init_app(app)
     joboffers.init_app(app)
     beverages.init_app(app)
     studydocs.init_app(app)
