@@ -98,7 +98,7 @@ class GroupMembershipAuth(AmivTokenAuth):
         ]}
 
 
-group_description = ("""
+description_group = ("""
 A group is a team within the organization, e.g. the "Vorstand" (board) or
 "Kulturteam" (event team).
 
@@ -201,7 +201,7 @@ and modify/delete all sessions).
 """)
 
 
-groupmembership_description = ("""
+description_groupmembership = ("""
 A membership to a [group][1].
 
 Group members are granted permissions by the group and can be reached via
@@ -214,7 +214,7 @@ mails sent to the group. Check out the group description for more info.
 groupdomain = {
 
     'groups': {
-        'description': group_description,
+        'description': description_group,
 
         'resource_methods': ['POST', 'GET'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
@@ -332,7 +332,7 @@ groupdomain = {
         'resource_title': 'Group Memberships',
         'item_title': 'Group Membership',
 
-        'description': groupmembership_description,
+        'description': description_groupmembership,
 
         'resource_methods': ['POST', 'GET'],
         'item_methods': ['GET', 'DELETE'],  # No patching!
