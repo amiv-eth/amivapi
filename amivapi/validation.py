@@ -25,7 +25,7 @@ from cerberus import TypeDefinition, utils
 
 
 def _not_none_keys(dic):
-    """Returns the set of keys with a non None value."""
+    """Returns the set of keys with a not-None value."""
     return {k for k, v in dic.items() if v is not None}
 
 
@@ -270,7 +270,7 @@ class ValidatorAMIV(Validator):
                         unique_combination)
 
     def _get_present_fields(self):
-        """Get the set of keys (w/ not-None vals.) in the resulting document."""
+        """Get the set of keys (with not-None values) in the final document."""
         if request.method == 'POST':
             # Set of all keys with non-None values
             return _not_none_keys(self.document)
