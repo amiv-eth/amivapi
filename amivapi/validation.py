@@ -17,7 +17,6 @@ from imghdr import what
 from collections import Hashable
 from PIL import Image
 from bs4 import BeautifulSoup
-from typing import Iterable
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -25,12 +24,12 @@ from flask import abort, g, request
 from cerberus import TypeDefinition, utils
 
 
-def _not_none_keys(dic: dict) -> set:
+def _not_none_keys(dic):
     """Returns the set of keys with a non None value."""
     return {k for k, v in dic.items() if v is not None}
 
 
-def _none_keys(dic: dict) -> set:
+def _none_keys(dic):
     """Returns the set of keys with a None value."""
     return {k for k, v in dic.items() if v is None}
 
@@ -271,16 +270,17 @@ class ValidatorAMIV(Validator):
                         unique_combination)
 
     def _get_present_fields(self):
-        """Return the set of keys of present fields in the document being
-        created."""
-        fields = set()
-        if request.method == 'PATCH':
-            fields |= _not_none_keys(self.persisted_document)
-        fields |= _not_none_keys(self.document)
-        return fields - _none_keys(self.document)
+        """Get the set of keys (w/ not-None vals.) in the resulting document."""
+        if request.method == 'POST':
+            # Set of all keys with non-None values
+            return _not_none_keys(self.document)
 
-    def _validate_dependencies(self, all_of_fields: Iterable[str],
-                               field: str, _) -> None:
+        # For patch, return the already existing not-None field keys, combined
+        # with any new not-None field keys minus fields set to None
+        return ((_not_none_keys(self.persisted_document) |
+                 _not_none_keys(self.document)) - _none_keys(self.document))
+
+    def _validate_dependencies(self, all_of_fields, field, _):
         """Validate, that all of the dependent fields are available.
 
         Args:
@@ -290,9 +290,6 @@ class ValidatorAMIV(Validator):
         The rule's arguments are validated against this schema:
         {'type': 'list', 'schema': {'type': 'string'}}
         """
-        if request.method not in ['PATCH', 'POST']:
-            return
-
         missing_fields = set(all_of_fields) - self._get_present_fields()
         if not missing_fields:
             return
