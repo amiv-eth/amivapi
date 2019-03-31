@@ -75,37 +75,6 @@ class EventValidatorTest(WebTestNoAuth):
             })
         }, status_code=201)
 
-    def test_depends_any(self):
-        """Test the depends_any validator."""
-        self.app.register_resource('test', {
-            'resource_methods': ['POST', 'GET'],
-            'item_methods': ['GET'],
-            'schema': {
-                'option1': {
-                    'type': 'integer'
-                },
-                'option2': {
-                    'type': 'integer'
-                },
-                'needs_an_option': {
-                    'type': 'integer',
-                    'depends_any': ['option1', 'option2']
-                }
-            }
-        })
-
-        self.api.post("/test", data={'needs_an_option': 1}, status_code=422)
-
-        self.api.post("/test", data={
-            'needs_an_option': 1,
-            'option1': 1
-        }, status_code=201)
-
-        self.api.post("/test", data={
-            'needs_an_option': 1,
-            'option2': 1
-        }, status_code=201)
-
     def test_blacklist(self):
         """Test that users can only sign up if they are not blacklisted"""
 

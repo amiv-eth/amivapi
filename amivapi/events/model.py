@@ -7,12 +7,21 @@
 Contains mode and function to create schema.
 As soon as we switch to mongo this will only have the schema.
 """
+
 from amivapi.settings import EMAIL_REGEX
-from .authorization import EventSignupAuth
+from .authorization import EventAuth, EventSignupAuth
+
 
 description_events = ("""
 An event is anything happening within the organization you want others to know
 of and join.
+
+<br />
+
+## Moderator
+
+Events can have a *Moderator*. The Moderator can modify the events, and view
+signups for the moderated events.
 
 <br />
 
@@ -130,13 +139,14 @@ description_signups = ("""
 A signup to an [Event](#tag/Event).
 """)
 
-
 eventdomain = {
     'events': {
         'description': description_events,
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
+
+        'authentication': EventAuth,
 
         'public_methods': ['GET', 'HEAD'],
         'public_item_methods': ['GET', 'HEAD'],
@@ -451,10 +461,32 @@ eventdomain = {
             },
 
             'signup_count': {
-                'description': 'Current number of singups',
+                'description': 'Current number of accepted singups.',
 
                 'readonly': True,
                 'type': 'integer'
+            },
+
+            'unaccepted_count': {
+                'description': 'Current number of unaccepted singups. This may'
+                               ' either be participants on the waiting list '
+                               'or unconfirmed email signups.',
+
+                'readonly': True,
+                'type': 'integer'
+            },
+            'moderator': {
+                'description': '`_id` of a user which will be the event '
+                               'moderator, who can modify the event.',
+                'example': 'ed1ac3fa99034762f7b55e5a',
+
+                'type': 'objectid',
+                'data_relation': {
+                    'resource': 'users',
+                    'embeddable': True,
+                },
+                'nullable': True,
+                'default': None,
             },
         },
     },
@@ -468,9 +500,9 @@ eventdomain = {
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        'public_methods': ['POST'],
-
         'authentication': EventSignupAuth,
+
+        'public_methods': ['POST'],
 
         'schema': {
             'event': {
