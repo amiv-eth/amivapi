@@ -52,7 +52,6 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
-        print(mail)
         token = re.search(r'/delete_signup/(.+)\n', mail['text']).group(1)
 
         # With redirect set
