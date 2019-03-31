@@ -36,6 +36,12 @@ file uploaders have additional permissions:
 
 <br />
 
+## Ratings
+
+TODO!
+
+<br />
+
 ## Summary
 
 For more efficient searching of study documents, a *summary* of available
@@ -196,7 +202,73 @@ studydocdomain = {
                 'description': 'The year in which the course *was taken*, '
                                'to separate older from newer files.',
                 'allow_summary': True,
-            }
+            },
+
+            'rating': {
+                'title': 'Study Document Rating',
+                'description': 'The study document rating as a fraction of '
+                               'upvotes divided by all votes. Computed using '
+                               'a confidence interval. Null if no votes have '
+                               'been cast.',
+                'example': '0.9',
+
+                'type': 'float',
+                'readonly': True,
+            },
+        },
+    },
+
+    'studydocratings': {
+        'resource_title': "Study Document Rating",
+        'item_title': "Study Document Rating",
+
+        'description': "Rating for Study documents (TODO)",
+
+        'resource_methods': ['GET', 'POST'],
+        'item_methods': ['GET', 'PATCH', 'DELETE'],
+
+         # TODO
+        'authentication': StudydocsAuth,
+
+        'schema': {
+            'user': {
+                'description': 'The rating user.',
+                'example': '679ff66720812cdc2da4fb4a',
+
+                'type': 'objectid',
+                'data_relation': {
+                    'resource': 'users',
+                    'embeddable': True,
+                    'cascade_delete': True,
+                },
+                'not_patchable': True,
+                'required': True,
+                'unique_combination': ['studydoc'],
+            },
+
+            'studydoc': {
+                'title': 'Study Document',
+                'description': 'The rated study doc.',
+                'example': '10d8e50e303049ecb856ae9b',
+
+                'data_relation': {
+                    'resource': 'studydocuments',
+                    'embeddable': True,
+                    'cascade_delete': True,
+                },
+                'not_patchable': True,
+                'required': True,
+                'type': 'objectid',
+            },
+            'rating': {
+                'description': 'The given rating, can be an up- or downvote.',
+                'example': 'up',
+
+                'type': 'string',
+                'allowed': ['up', 'down'],
+                'required': True
+            },
         },
     }
+
 }

@@ -13,6 +13,7 @@ from amivapi.studydocs.authorization import (
     add_uploader_on_insert
 )
 from amivapi.studydocs.summary import add_summary
+from amivapi.studydocs.rating import add_rating, add_rating_collection
 from amivapi.studydocs.model import studydocdomain, StudyDocValidator
 from amivapi.utils import register_domain, register_validator
 
@@ -22,7 +23,13 @@ def init_app(app):
     register_domain(app, studydocdomain)
     register_validator(app, StudyDocValidator)
 
+    # Uploader
     app.on_insert_item_studydocuments += add_uploader_on_insert
     app.on_insert_studydocuments += add_uploader_on_bulk_insert
 
+    # Rating
+    app.on_fetched_item_studydocuments += add_rating
+    app.on_fetched_resource_studydocuments += add_rating_collection
+
+    # Meta summary
     app.on_fetched_resource_studydocuments += add_summary
