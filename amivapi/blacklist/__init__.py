@@ -10,7 +10,16 @@ Contains settings for eve resource, special validation.
 from amivapi.blacklist.model import blacklist
 from amivapi.utils import register_domain
 
+from amivapi.blacklist.emails import (
+    notify_new_blacklist,
+    notify_patch_blacklist,
+)
+
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, blacklist)
+
+    # Send emails to users who have new/changed blacklist entries
+    app.on_inserted_blacklist += notify_new_blacklist
+    app.on_updated_blacklist += notify_patch_blacklist

@@ -127,6 +127,32 @@ ACCEPT_EMAIL_TEXT = (
     'Best Regards,\nAMIV!'
 )
 
+# Email sent to people who have a new entry on the blacklists
+BLACKLIST_ADDED_EMAIL_W_PRICE = (
+    "You are BLACKLISTED!\n\nReason: %(reason)s\n\nThis means that you cannot "
+    "register for any new amiv events! To get removed from the blacklist, you "
+    "have to pay %(price).2f CHF\n\nIf you think that this is an error, don't "
+    "hesitate to contact bouncer@amiv.ethz.ch\n\nGreetings\nAMIV-Bouncer"
+)
+
+BLACKLIST_ADDED_EMAIL_WO_PRICE = (
+    "You are BLACKLISTED!\n\nReason: %(reason)s\n\nThis means that you cannot "
+    "register for any new amiv events!\n\nIf you think that this is an error, "
+    "don't hesitate to contact bouncer@amiv.ethz.ch\n\nGreetings\nAMIV-Bouncer"
+)
+
+# Email sent to people who are no longer on the blacklist
+BLACKLIST_REMOVED_ALL = (
+    "Congratulations, you are no longer on the blacklist! You can again "
+    "register for events.\n\nGreetings\nAMIV-Bouncer"
+)
+
+# Email sent to people who got one blacklist entry removed
+BLACKLIST_REMOVED = (
+    "Congratulations, your blacklist entry with the following reason has been "
+    "removed: %(reason).\n\nGreetings\nAMIV-Bouncer"
+)
+
 # Signup confirmation without redirct
 CONFIRM_TEXT = "Your signup was confirmed!"
 SIGNUP_DELETED_TEXT = "Your signup was removed."
