@@ -10,10 +10,10 @@ logic needed for signup of non members to events.
 
 
 from amivapi.events.authorization import EventAuthValidator
-from amivapi.events.emails import (
+from amivapi.events.emails import send_confirmmail_to_unregistered_users
+from amivapi.events.email_links import (
     add_confirmed_before_insert,
-    email_blueprint,
-    send_confirmmail_to_unregistered_users,
+    email_blueprint
 )
 from amivapi.events.model import eventdomain
 from amivapi.events.projections import (
