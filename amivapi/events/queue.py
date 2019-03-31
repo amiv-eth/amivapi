@@ -4,13 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Logic to implement different signup queues."""
 
-from flask import current_app, url_for
-from itsdangerous import URLSafeSerializer
+from flask import current_app
 from pymongo import ASCENDING
 
-from amivapi.utils import mail
-from amivapi.events.utils import get_token_secret
-from amivaou.events.emails import notify_signup_accepted
+from amivapi.events.emails import notify_signup_accepted
 
 
 def update_waiting_list(event_id):
