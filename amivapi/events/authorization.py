@@ -52,16 +52,11 @@ class EventSignupAuth(AmivTokenAuth):
         time_register_start = event['time_register_start'].replace(tzinfo=None)
         time_register_end = event['time_register_end'].replace(tzinfo=None)
 
-        # Check if the user_id of the user issuing the request matches
-        # the user in the signup.
-        # Public events can have signups that use the email field
-        # instead of the user field.
-        if ('user' not in item.keys()) & (user_id is None):
-            allow_user = True
-        else:
-            allow_user = (user_id == str(item['user']))
-        return (time_register_start <= dt.utcnow() <= time_register_end) & \
-            allow_user
+        # Only the user itself can modify the item (not moderators), and only
+        # within the signup window
+        return (('user' in item) and
+                (user_id == str(get_id(item['user']))) and
+                (time_register_start <= dt.utcnow() <= time_register_end))
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators
