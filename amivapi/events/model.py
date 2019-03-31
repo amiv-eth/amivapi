@@ -451,7 +451,16 @@ eventdomain = {
             },
 
             'signup_count': {
-                'description': 'Current number of singups',
+                'description': 'Current number of accepted singups.',
+
+                'readonly': True,
+                'type': 'integer'
+            },
+
+            'unaccepted_count': {
+                'description': 'Current number of unaccepted singups. This may'
+                               ' either be participants on the waiting list '
+                               'or unconfirmed email signups.',
 
                 'readonly': True,
                 'type': 'integer'
