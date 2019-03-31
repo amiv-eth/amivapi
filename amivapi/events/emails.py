@@ -19,6 +19,45 @@ from amivapi.utils import mail
 email_blueprint = Blueprint('emails', __name__)
 
 
+def notify_signup_accepted(event, signup):
+    """Send an email to a user that his signup was accepted"""
+    id_field = current_app.config['ID_FIELD']
+
+    if signup.get('user'):
+        lookup = {id_field: signup['user']}
+        user = current_app.data.find_one('users', None, **lookup)
+        name = user['firstname']
+        email = user['email']
+    else:
+        name = 'Guest of AMIV'
+        email = signup['email']
+
+    s = URLSafeSerializer(get_token_secret())
+    token = s.dumps(str(signup[id_field]))
+
+    if current_app.config.get('SERVER_NAME') is None:
+        current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
+                                   "will not work!")
+
+    deletion_link = url_for('emails.on_delete_signup', token=token,
+                            _external=True)
+
+    title = event.get('title_en') or event.get('title_de')
+    mail(current_app.config['API_MAIL'], email,
+         '[AMIV] Eventsignup accepted',
+         'Hello %s!\n'
+         '\n'
+         'We are happy to inform you that your signup for %s was accepted and '
+         'you can come to the event! If you do not have time to attend the '
+         'event please click this link to free your spot for someone else:\n'
+         '\n%s\n'
+         'You cannot sign out of this event after %s.\n\n'
+         'Best Regards,\n'
+         'The AMIV event bot'
+         % (name, title, deletion_link,
+            event['time_register_end'].strftime('%M.%H %d.%m.%Y')))
+
+
 def send_confirmmail_to_unregistered_users(items):
     """Send a confirmation email for external signups(email only)
 
