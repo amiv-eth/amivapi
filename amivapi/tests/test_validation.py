@@ -6,9 +6,6 @@
 """Test general purpose validators."""
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict
-
-from eve.io.mongo import Validator as Validator
 
 from amivapi.auth.auth import AmivTokenAuth
 from amivapi.tests.utils import WebTest
@@ -65,33 +62,27 @@ class ValidatorAMIVTest(WebTest):
             'field1': 'teststring2'
         }, token=old_token, status_code=201)
 
-    def _assert_post_valid(self,
-                           v: Validator,
-                           doc: Dict[str, Any]) -> None:
+    def _assert_post_valid(self, validator, document):
         with self.app.test_request_context(method='POST'):
-            self.assertTrue(v.validate(document=doc))
+            self.assertTrue(validator.validate(document=document))
 
-    def _assert_post_invalid(self,
-                             v: Validator,
-                             doc: Dict[str, Any]) -> None:
+    def _assert_post_invalid(self, validator, document):
         with self.app.test_request_context(method='POST'):
-            self.assertFalse(v.validate(document=doc))
+            self.assertFalse(validator.validate(document=document))
 
-    def _assert_patch_valid(self,
-                            v: Validator,
-                            update: Dict[str, Any],
-                            orig: Dict[str, Any]) -> None:
+    def _assert_patch_valid(self, validator, updates, original):
         with self.app.test_request_context(method='PATCH'):
-            self.assertTrue(v.validate_update(
-                document=update, document_id=None, persisted_document=orig))
+            self.assertTrue(validator.validate_update(
+                document=updates,
+                document_id=None,
+                persisted_document=original))
 
-    def _assert_patch_invalid(self,
-                              v: Validator,
-                              update: Dict[str, Any],
-                              orig: Dict[str, Any]) -> None:
+    def _assert_patch_invalid(self, validator, updates, original):
         with self.app.test_request_context(method='PATCH'):
-            self.assertFalse(v.validate_update(
-                document=update, document_id=None, persisted_document=orig))
+            self.assertFalse(validator.validate_update(
+                document=updates,
+                document_id=None,
+                persisted_document=original))
 
     def test_dependencies(self):
         """Test the dependencies validator."""
