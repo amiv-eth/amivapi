@@ -302,7 +302,7 @@ class EventValidator(object):
         {'type': 'boolean'}
         """
         users = current_app.data.driver.db['users']
-        if enabled and users.find({'email': value}).count() > 0:
+        if enabled and users.count_documents({'email': value}) > 0:
             self._error(field, "The email address '%s' "
                                "is already registered with a user and cannot "
                                "be used for public signup." % value)
