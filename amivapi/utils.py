@@ -94,7 +94,7 @@ def mail(sender, to, subject, text):
         msg = MIMEText(text)
         msg['Subject'] = subject
         msg['From'] = sender
-        msg['To'] = ';'.join(to if isinstance(to, list) else [to])
+        msg['To'] = ';'.join([to] if isinstance(to, str) else to)
 
         try:
             with smtplib.SMTP(config.SMTP_SERVER,
