@@ -287,3 +287,29 @@ class EventAuthTest(WebTest):
                                       + str(ev['_id']) + "\"}",
                                       token=moderator_token, status_code=200).
                          json['_meta']['total'], 2)
+
+    def test_moderator_cannot_modify_participant_list(self):
+        """Test that users can not sign up other people for events"""
+        ev = self.new_object("events", spots=100)
+        user = self.new_object("users")
+
+        moderator = self.new_object("users")
+        moderator_token = self.get_user_token(moderator['_id'])
+
+        ev = self.new_object("events", moderator=moderator['_id'])
+
+        # Test that moderator cannot signup other users
+        self.api.post('eventsignups',
+                      data={'user': str(user['_id']),
+                            'event': str(ev['_id'])},
+                      token=moderator_token,
+                      status_code=422)
+
+        # Test that moderator cannot remove other users
+        ev = self.new_object("events", moderator=moderator['_id'])
+        signup = self.new_object("eventsignups", event=ev['_id'],
+                                 user=user['_id'])
+        etag = {'If-Match': signup['_etag']}
+        print("/eventsignups/" + str(signup['_id']))
+        self.api.delete("/eventsignups/" + str(signup['_id']),
+                        headers=etag, token=moderator_token, status_code=403)
