@@ -111,9 +111,20 @@ REDIRECT_URI_REGEX = '^((http://)?localhost[^#]*|https://[^#]+)$'
 
 # Email sent to external users signing up for events
 CONFIRM_EMAIL_TEXT = (
-    "Hello from AMIV!\n\nYou have signed up for %(title)s with your E-Mail "
+    "Hello from AMIV!\n\nYou have signed up for {title} with your E-Mail "
     "address. To verify this is a valid address and keep your spot please click"
-    " this link: %(link)s\n\nBest regards,\nAMIV!"
+    " this link: {link}\n\nBest regards,\nAMIV!"
+)
+
+# Email sent to users when their event signup was accepted
+ACCEPT_EMAIL_TEXT = (
+    'Hello {name}!\n\n'
+    'We are happy to inform you that your signup for {title} was accepted and '
+    'you can come to the event! If you do not have time to attend the '
+    'event please click this link to free your spot for someone else:\n'
+    '\n{link}\n'
+    'You cannot sign out of this event after {deadline}.\n\n'
+    'Best Regards,\nAMIV!'
 )
 
 # Signup confirmation without redirct

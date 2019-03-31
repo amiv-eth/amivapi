@@ -4,12 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Logic to implement different signup queues."""
 
-from flask import current_app, url_for
-from itsdangerous import URLSafeSerializer
+from flask import current_app
 from pymongo import ASCENDING
 
-from amivapi.utils import mail
-from amivapi.events.utils import get_token_secret
+from amivapi.events.emails import notify_signup_accepted
 
 
 def update_waiting_list(event_id):
@@ -54,46 +52,9 @@ def update_waiting_list(event_id):
                                         {'accepted': True}, new_accepted)
 
                 # Notify user
-                title = event.get('title_en') or event.get('title_de')
-                notify_signup_accepted(title, new_accepted)
+                notify_signup_accepted(event, new_accepted)
 
     return accepted_ids
-
-
-def notify_signup_accepted(event_name, signup):
-    """Send an email to a user, that his signup was accepted"""
-    id_field = current_app.config['ID_FIELD']
-
-    if signup.get('user'):
-        lookup = {id_field: signup['user']}
-        user = current_app.data.find_one('users', None, **lookup)
-        name = user['firstname']
-        email = user['email']
-    else:
-        name = 'Guest of AMIV'
-        email = signup['email']
-
-    s = URLSafeSerializer(get_token_secret())
-    token = s.dumps(str(signup[id_field]))
-
-    if current_app.config.get('SERVER_NAME') is None:
-        current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
-                                   "will not work!")
-
-    deletion_link = url_for('emails.on_delete_signup', token=token,
-                            _external=True)
-
-    mail(current_app.config['API_MAIL'], email,
-         '[AMIV] Eventsignup accepted',
-         'Hello %s!\n'
-         '\n'
-         'We are happy to inform you that your signup for %s was accepted and '
-         'you can come to the event! If you do not have time to attend the '
-         'event please click this link to free your spot for someone else:\n'
-         '\n%s\n\n'
-         'Best Regards,\n'
-         'The AMIV event bot'
-         % (name, event_name, deletion_link))
 
 
 """

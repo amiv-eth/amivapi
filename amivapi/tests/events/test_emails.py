@@ -52,7 +52,7 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
-        token = re.search(r'/delete_signup/(.+)\n\n', mail['text']).group(1)
+        token = re.search(r'/delete_signup/(.+)\n', mail['text']).group(1)
 
         # With redirect set
         self.app.config['SIGNUP_DELETED_REDIRECT'] = "somewhere"
@@ -68,7 +68,7 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[1]
-        token = re.search(r'/delete_signup/(.+)\n\n', mail['text']).group(1)
+        token = re.search(r'/delete_signup/(.+)\n', mail['text']).group(1)
 
         # Without redirect set
         self.app.config.pop('SIGNUP_DELETED_REDIRECT')
