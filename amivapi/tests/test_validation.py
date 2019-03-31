@@ -98,7 +98,7 @@ class ValidatorAMIVTest(WebTest):
         schema = {
             'field1': {
                 'type': 'string',
-                'depends_all': ['field2', 'field3'],
+                'dependencies': ['field2', 'field3'],
             },
             'field2': {
                 'type': 'string',

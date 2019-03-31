@@ -50,7 +50,7 @@ class ValidatorAMIV(Validator):
     def rerun_on_patch_validators(self):
         """Names of validators that should be rerun on unchanged fields in
         PATCH."""
-        return ('depends_all',)
+        return ('dependencies',)
 
     def validate_update(self, document, document_id, persisted_document=None):
         """We change that some validators are run on all fields during PATCH.
