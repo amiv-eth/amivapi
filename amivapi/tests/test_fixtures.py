@@ -14,12 +14,8 @@ class FixtureTest(WebTest):
 
     def test_fixtures_random_generator(self):
         """Test that the fixture system generates valid documents."""
-        # create a fixture, which creates all kinds of objects
-        fixture = {}
         for resource in self.app.config['DOMAIN']:
-            fixture[resource] = [{}]
-
-        self.load_fixture(fixture)
+            self.load_fixture({resource: {}})
 
     def test_fixtures_content(self):
         """Test that loaded fixtures have the specified content."""
