@@ -41,7 +41,9 @@ def add_signup_count_to_event(item):
     """After an event is fetched from the database we add the current signup
     count"""
     item['signup_count'] = current_app.data.driver.db['eventsignups'].find(
-        {'event': item['_id']}).count()
+        {'event': item['_id'], 'accepted': True}).count()
+    item['unaccepted_count'] = current_app.data.driver.db['eventsignups'].find(
+        {'event': item['_id'], 'accepted': False}).count()
 
 
 def add_signup_count_to_event_collection(items):
