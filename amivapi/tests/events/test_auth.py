@@ -250,7 +250,9 @@ class EventAuthTest(WebTest):
         user2 = self.new_object("users")
         user2_token = self.get_user_token(user2['_id'])
 
-        ev = self.new_object("events", moderator=user1['_id'])
+        ev = self.new_object("events", moderator=user1['_id'],
+                             title_de='Some', description_de='initial',
+                             catchphrase_de='data.')
 
         self.api.patch("/events/" + str(ev['_id']),
                        headers={'If-Match': ev['_etag']},
