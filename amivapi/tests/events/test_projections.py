@@ -9,6 +9,7 @@
 - eventsignups.position
 """
 from datetime import timedelta
+import re
 
 from freezegun import freeze_time
 
@@ -18,7 +19,8 @@ from amivapi.tests.utils import WebTestNoAuth
 class EventProjectionTest(WebTestNoAuth):
     def test_signup_count_projected(self):
         """Test that signup count is correctly inserted into an event"""
-        event = self.new_object('events', spots=100)
+        event = self.new_object('events', spots=100, allow_email_signup=True,
+                                selection_strategy='fcfs',)
 
         # Add 10 signups
         self.load_fixture({'users': [{} for _ in range(10)],
@@ -31,12 +33,43 @@ class EventProjectionTest(WebTestNoAuth):
         events = self.api.get('/events', status_code=200).json
         self.assertEqual(events['_items'][0]['signup_count'], 10)
 
+        # Add an email signup
+        self.api.post('/eventsignups', data={
+            'email': 'a@example.com',
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        # Email signup still unconfirmed, should not increase signup count
+        event = self.api.get('/events/%s' % event['_id'],
+                             status_code=200).json
+        self.assertEqual(event['signup_count'], 10)
+        self.assertEqual(event['unaccepted_count'], 1)
+
+        mail = self.app.test_mails[-1]
+        token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
+        self.api.get('/confirm_email/%s' % token, status_code=200)
+
+        # Email signup confirmed, should increase signup count
+        event = self.api.get('/events/%s' % event['_id'],
+                             status_code=200).json
+        self.assertEqual(event['signup_count'], 11)
+        self.assertEqual(event['unaccepted_count'], 0)
+
+        # Add 90 signups
+        self.load_fixture({'users': [{} for _ in range(90)],
+                           'eventsignups': [{} for _ in range(90)]})
+        event = self.api.get('events/%s' % event['_id'],
+                             status_code=200).json
+        self.assertEqual(event['signup_count'], 100)
+        self.assertEqual(event['unaccepted_count'], 1)
+
     def test_waitinglist_position_projection(self):
         """Test that waiting list position is correctly inserted into a
         signup information"""
         with freeze_time("2016-01-01 00:00:00") as frozen_time:
             # Create a new event
-            event = self.new_object('events', spots=3)
+            event = self.new_object('events', spots=3,
+                                    selection_strategy='fcfs')
 
             # Add 3 signups
             for _ in range(3):
@@ -50,7 +83,7 @@ class EventProjectionTest(WebTestNoAuth):
             # Check that the number of signups on that event is correct
             event = self.api.get('events/%s' % event['_id'],
                                  status_code=200).json
-            self.assertTrue(event['signup_count'] == 3)
+            self.assertEqual(event['signup_count'], 3)
 
             # Delay signup of late user
             frozen_time.tick(delta=timedelta(seconds=1))
@@ -66,6 +99,11 @@ class EventProjectionTest(WebTestNoAuth):
                 'eventsignups/%s' % signup['_id'],
                 status_code=200).json
             self.assertEqual(signup_info['position'], 4)
+
+            event = self.api.get('events/%s' % event['_id'],
+                                 status_code=200).json
+            self.assertEqual(event['signup_count'], 3)
+            self.assertEqual(event['unaccepted_count'], 1)
 
     def test_signup_email_correct(self):
         """Test that signups display the correct email address"""
