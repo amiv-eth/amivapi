@@ -49,7 +49,8 @@ def notify_patch_blacklist(new, old):
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
                                    "will not work!")
 
-    if (not old['end_time']) and new['end_time'] <= datetime.utcnow():
+    if ((not old['end_time']) and
+            'end_time' in new and new['end_time'] <= datetime.utcnow()):
         id_field = current_app.config['ID_FIELD']
 
         lookup = {id_field: new['user']}
