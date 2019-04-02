@@ -367,7 +367,7 @@ class LdapIntegrationTest(WebTest):
         """Test sync all imports users by checking the test user."""
         with self.app.test_request_context():
             # No users in db
-            self.assertEqual(self.db['users'].find().count(), 0)
+            self.assertEqual(self.db['users'].count_documents({}), 0)
             ldap.sync_all()
             # Some users in db
-            self.assertNotEqual(self.db['users'].find().count(), 0)
+            self.assertNotEqual(self.db['users'].count_documents({}), 0)
