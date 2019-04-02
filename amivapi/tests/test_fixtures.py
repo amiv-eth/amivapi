@@ -31,7 +31,7 @@ class FixtureTest(WebTest):
         self.load_fixture(fixture)
 
         # Find all users
+        user_count = self.db['users'].count_documents({})
+        self.assertEqual(user_count, 1)
         users = self.db['users'].find()
-
-        self.assertEqual(users.count(), 1)
         self.assertEqual(users[0]['nethz'], 'pablo')

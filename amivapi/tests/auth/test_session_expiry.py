@@ -25,11 +25,11 @@ class TestSessionExpiry(WebTest):
                              timedelta(days=1))
             run_scheduled_tasks()
 
-            self.assertEqual(self.app.data.driver.db['sessions'].find().count(),
-                             1)
+            self.assertEqual(
+                self.app.data.driver.db['sessions'].count_documents({}), 1)
 
             frozen_time.tick(delta=timedelta(days=2))
             run_scheduled_tasks()
 
-            self.assertEqual(self.app.data.driver.db['sessions'].find().count(),
-                             0)
+            self.assertEqual(
+                self.app.data.driver.db['sessions'].count_documents({}), 0)

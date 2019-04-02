@@ -30,8 +30,8 @@ def update_waiting_list(event_id):
 
     if event['selection_strategy'] == 'fcfs':
         lookup = {'event': event_id, 'accepted': True}
-        signup_count = current_app.data.driver.db['eventsignups'].find(
-            lookup).count()
+        signup_count = (
+            current_app.data.driver.db['eventsignups'].count_documents(lookup))
 
         # 0 spots == infinite spots
         if event['spots'] == 0 or signup_count < event['spots']:

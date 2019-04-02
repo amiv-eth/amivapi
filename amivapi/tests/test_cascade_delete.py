@@ -45,9 +45,9 @@ class CascadingDeleteTest(WebTestNoAuth):
                         headers={'If-Match': user1['_etag']},
                         status_code=204)
 
-        sessions = self.db['sessions'].find()
-        self.assertEqual(sessions.count(), 1)
+        session_count = self.db['sessions'].count_documents({})
+        self.assertEqual(session_count, 1)
 
-        sessions = self.db['sessions'].find({
+        session_count = self.db['sessions'].count_documents({
             'user': ObjectId('deadbeefdeadbeefdeadbeef')})
-        self.assertEqual(sessions.count(), 0)
+        self.assertEqual(session_count, 0)

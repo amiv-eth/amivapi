@@ -291,8 +291,8 @@ class FixtureMixin(object):
 
         for ev in events:
             for u in users:
-                if self.db['eventsignups'].find(
-                        {'event': ev, 'user': u}).count() == 0:
+                if self.db['eventsignups'].count_documents(
+                        {'event': ev, 'user': u}) == 0:
                     obj['event'] = ev
                     obj['user'] = u
                     obj['email'] = email
