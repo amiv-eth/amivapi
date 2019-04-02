@@ -14,16 +14,18 @@ from amivapi.utils import mail
 from datetime import datetime
 
 
+def _get_email(item):
+    """Retrieve the user email for a blacklist entry."""
+    id_field = current_app.config['ID_FIELD']
+    lookup = {id_field: item['user']}
+    user = current_app.data.find_one('users', None, **lookup)
+    return user['email']
+
+
 def notify_new_blacklist(items):
     """Send an email to a user who has a new blacklist entry."""
-
     for item in items:
-        id_field = current_app.config['ID_FIELD']
-
-        lookup = {id_field: item['user']}
-        user = current_app.data.find_one('users', None, **lookup)
-        email = user['email']
-
+        email = _get_email(item)
         fields = {
             'reason': item['reason'],
             'bouncermail': current_app.config['BLACKLIST_REPLY_TO']
@@ -48,12 +50,7 @@ def notify_patch_blacklist(new, old):
     # resolved when the end_time is before now.
     if ((not old['end_time']) and
             'end_time' in new and new['end_time'] <= datetime.utcnow()):
-        id_field = current_app.config['ID_FIELD']
-
-        lookup = {id_field: new['user']}
-        user = current_app.data.find_one('users', None, **lookup)
-        email = user['email']
-
+        email = _get_email(new)
         fields = {'reason': new['reason']}
 
         mail(current_app.config['API_MAIL'], email,
@@ -63,13 +60,7 @@ def notify_patch_blacklist(new, old):
 
 def notify_delete_blacklist(item):
     """Send an email to a user if one of his entries was deleted."""
-
-    id_field = current_app.config['ID_FIELD']
-
-    lookup = {id_field: item['user']}
-    user = current_app.data.find_one('users', None, **lookup)
-    email = user['email']
-
+    email = _get_email(item)
     fields = {'reason': item['reason']}
 
     mail(current_app.config['API_MAIL'], email,
