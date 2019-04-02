@@ -28,18 +28,17 @@ def notify_new_blacklist(items):
         email = _get_email(item)
         fields = {
             'reason': item['reason'],
-            'bouncermail': current_app.config['BLACKLIST_REPLY_TO']
+            'reply_to': current_app.config['BLACKLIST_REPLY_TO']
         }
 
         if item['price']:
             fields['price'] = item['price']/100  # convert Rappen to CHF
-            mail(current_app.config['API_MAIL'], email,
-                 'You have been blacklisted!',
-                 current_app.config['BLACKLIST_ADDED_EMAIL_W_PRICE'] % fields)
+            template = current_app.config['BLACKLIST_ADDED_EMAIL_W_PRICE']
         else:
-            mail(current_app.config['API_MAIL'], email,
-                 'You have been blacklisted!',
-                 current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE'] % fields)
+            template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
+
+        mail(current_app.config['API_MAIL'], email,
+             'You have been blacklisted!', template.format(**fields))
 
 
 def notify_patch_blacklist(new, old):
@@ -55,7 +54,7 @@ def notify_patch_blacklist(new, old):
 
         mail(current_app.config['API_MAIL'], email,
              'Your blacklist entry has been removed!',
-             current_app.config['BLACKLIST_REMOVED'] % fields)
+             current_app.config['BLACKLIST_REMOVED'].format(**fields))
 
 
 def notify_delete_blacklist(item):
@@ -65,4 +64,4 @@ def notify_delete_blacklist(item):
 
     mail(current_app.config['API_MAIL'], email,
          'Your blacklist entry has been removed!',
-         current_app.config['BLACKLIST_REMOVED'] % fields)
+         current_app.config['BLACKLIST_REMOVED'].format(**fields))
