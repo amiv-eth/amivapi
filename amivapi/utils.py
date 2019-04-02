@@ -78,7 +78,7 @@ def mail(to, subject, text):
     """Send a mail to a list of recipients.
 
     The mail is sent from the address specified by `API_MAIL` in the config,
-    and the subject is prefixed by `API_MAIL_SUBJECT_PREFIX`.
+    and the subject formatted according to `API_MAIL_SUBJECT`.
 
 
     Args:
@@ -87,7 +87,7 @@ def mail(to, subject, text):
         text(string): Mail content
     """
     sender = app.config['API_MAIL']
-    subject = " ".join((app.config['API_MAIL_SUBJECT_PREFIX'], subject))
+    subject = app.config['API_MAIL_SUBJECT'].format(subject=subject)
 
     if app.config.get('TESTING', False):
         app.test_mails.append({
