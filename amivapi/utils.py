@@ -74,15 +74,21 @@ def get_id(item):
         return ObjectId(item['_id'])
 
 
-def mail(sender, to, subject, text):
+def mail(to, subject, text):
     """Send a mail to a list of recipients.
 
+    The mail is sent from the address specified by `API_MAIL` in the config,
+    and the subject formatted according to `API_MAIL_SUBJECT`.
+
+
     Args:
-        from(string): From address
         to(list of strings): List of recipient addresses
         subject(string): Subject string
         text(string): Mail content
     """
+    sender = app.config['API_MAIL']
+    subject = app.config['API_MAIL_SUBJECT'].format(subject=subject)
+
     if app.config.get('TESTING', False):
         app.test_mails.append({
             'subject': subject,
