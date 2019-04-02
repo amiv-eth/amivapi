@@ -33,10 +33,10 @@ class BlacklistEmailTest(WebTest):
         # Look for sent out mail
         mail = self.app.test_mails[0]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        self.assertTrue("pay" in mail['text'])
+        self.assertIn("pay", mail['text'])
 
     def test_receive_email_on_new_entry_wo_price(self):
-        """Test that a user receives an email if he is added to the blacklist"""
+        """Test if a user receives an email if he is added to the blacklist."""
         # Create a user
         self.load_fixture({'users': [{'_id': 24 * "0", 'email': "bla@bla.bl"}]})
         data = {
@@ -51,11 +51,10 @@ class BlacklistEmailTest(WebTest):
         # Look for sent out mail
         mail = self.app.test_mails[0]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        self.assertFalse("pay" in mail['text'])
+        self.assertNotIn("pay", mail['text'])
 
     def test_receive_email_on_patch(self):
-        """Test that a user receives an email if one of his blacklist entries is
-        resolved."""
+        """Test if a user receives a mail if one of his entries is resolved."""
         user_id = 24 * '0'
         blacklist_id = 24 * '1'
 
@@ -80,4 +79,30 @@ class BlacklistEmailTest(WebTest):
 
         # Look for sent out mail
         mail = self.app.test_mails[0]
+        self.assertEqual(mail['receivers'], 'bla@bla.bl')
+
+    def test_receive_email_on_delete(self):
+        """Test if a user receives an email if one of his entries is deleted."""
+        user_id = 24 * '0'
+        blacklist_id = 24 * '1'
+
+        # Create user
+        self.load_fixture({'users': [{'_id': user_id, 'email': "bla@bla.bl"}]})
+        r = self.load_fixture({
+                'blacklist': [{
+                    '_id': blacklist_id,
+                    'user': user_id,
+                    'reason': "Test1",
+                    'end_time': datetime(2017, 1, 1)}]
+            })  # Creat blacklist entry
+
+        etag = r[0]['_etag']
+
+        header = {'If-Match': etag}
+        r = self.api.delete("/blacklist/%s" % blacklist_id,
+                            headers=header, token=self.get_root_token(),
+                            status_code=204)
+
+        # Look for sent out mail
+        mail = self.app.test_mails[1]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')

@@ -13,6 +13,7 @@ from amivapi.utils import register_domain
 from amivapi.blacklist.emails import (
     notify_new_blacklist,
     notify_patch_blacklist,
+    notify_delete_blacklist,
 )
 
 
@@ -23,3 +24,4 @@ def init_app(app):
     # Send emails to users who have new/changed blacklist entries
     app.on_inserted_blacklist += notify_new_blacklist
     app.on_updated_blacklist += notify_patch_blacklist
+    app.on_deleted_item_blacklist += notify_delete_blacklist
