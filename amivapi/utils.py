@@ -311,7 +311,13 @@ def on_post_hook(func):
         """This is the hook eve will see."""
         response = args[-1]
         if response.status_code in range(200, 300):
-            payload = json.loads(response.get_data(as_text=True))
-            func(*args, payload)
-            response.set_data(json.dumps(payload))
+            try:
+                payload = json.loads(response.get_data(as_text=True))
+                func(*args, payload)
+                response.set_data(json.dumps(payload))
+            except RuntimeError:
+                # If we are in passthrough mode, e.g. for sending files,
+                # Eve is just passing through data and modifying the payload
+                # is not possible
+                pass
     return wrapped
