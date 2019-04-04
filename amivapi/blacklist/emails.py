@@ -37,8 +37,7 @@ def notify_new_blacklist(items):
         else:
             template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
 
-        mail(current_app.config['API_MAIL'], email,
-             'You have been blacklisted!', template.format(**fields))
+        mail(email, 'You have been blacklisted!', template.format(**fields))
 
 
 def notify_patch_blacklist(new, old):
@@ -47,13 +46,11 @@ def notify_patch_blacklist(new, old):
     # Checks if the particular update resolved the blacklist entry or just
     # fixes an error, for example changed the reason or price. An entry is
     # resolved when the end_time is before now.
-    if ((not old['end_time']) and
-            'end_time' in new and new['end_time'] <= datetime.utcnow()):
+    if ('end_time' in new and new['end_time'] <= datetime.utcnow()):
         email = _get_email(new)
         fields = {'reason': new['reason']}
 
-        mail(current_app.config['API_MAIL'], email,
-             'Your blacklist entry has been removed!',
+        mail(email, 'Your blacklist entry has been removed!',
              current_app.config['BLACKLIST_REMOVED'].format(**fields))
 
 
@@ -62,6 +59,5 @@ def notify_delete_blacklist(item):
     email = _get_email(item)
     fields = {'reason': item['reason']}
 
-    mail(current_app.config['API_MAIL'], email,
-         'Your blacklist entry has been removed!',
+    mail(email, 'Your blacklist entry has been removed!',
          current_app.config['BLACKLIST_REMOVED'].format(**fields))

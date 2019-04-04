@@ -77,21 +77,25 @@ class BlacklistEmailTest(WebTest):
                 'blacklist': [{
                     '_id': blacklist_id,
                     'user': user_id,
-                    'reason': "Test1",
-                    'end_time': datetime(2017, 1, 1)}]
+                    'reason': "Test1"}]
             })
 
         etag = r[0]['_etag']
 
-        patch = {'reason': "Test2"}
+        patch = {
+            'user': user_id,
+            'reason': "Test1",
+            'end_time': '2017-01-01T00:00:00Z'
+        }
+
         header = {'If-Match': etag}
-        with freeze_time(datetime(2017, 1, 2)):
+        with freeze_time(datetime(2017, 6, 6)):
             r = self.api.patch("/blacklist/%s" % blacklist_id, data=patch,
                                headers=header, token=self.get_root_token(),
                                status_code=200)
 
         # Check mail
-        mail = self.app.test_mails[0]
+        mail = self.app.test_mails[1]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
         expected_text = (
             "Congratulations, your blacklist entry with the following reason "
