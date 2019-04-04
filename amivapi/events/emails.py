@@ -36,8 +36,8 @@ def notify_signup_accepted(event, signup):
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
 
-    mail(current_app.config['API_MAIL'], [email],
-         'AMIV Eventsignup accepted',
+    mail([email],
+         'Eventsignup accepted',
          current_app.config['ACCEPT_EMAIL_TEXT'].format(
              name=name,
              title=event.get('title_en') or event.get('title_de'),
@@ -69,8 +69,8 @@ def send_confirmmail_to_unregistered_users(items):
             confirm_link = url_for('emails.on_confirm_email', token=token,
                                    _external=True)
 
-            mail(current_app.config['API_MAIL'], [item['email']],
-                 'Registration for AMIV event %s' % title,
+            mail([item['email']],
+                 'Registration for %s' % title,
                  current_app.config['CONFIRM_EMAIL_TEXT'].format(
                      title=title,
                      link=confirm_link))

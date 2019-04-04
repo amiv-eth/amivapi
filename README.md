@@ -121,11 +121,14 @@ MONGO_PASSWORD = 'amivapi'
 # REMOTE_MAILING_LIST_DIR = './'
 
 # SMTP configuration for mails sent by AMIVAPI (optional)
-# API_MAIL = 'api@amiv.ethz.ch'
 # SMTP_SERVER = 'localhost'
 # SMTP_PORT = '587'
 # SMTP_USERNAME = ''
 # SMTP_PASSWORD = ''
+
+# Mail configuration (`{subject}` is a placeholder, filled by the API)
+# API_MAIL = 'api@amiv.ethz.ch'
+# API_MAIL_SUBJECT = '[AMIV] {subject}'
 
 # Allow accessing a list of newsletter subscribers at /newslettersubscribers
 # SUBSCRIBER_LIST_USERNAME = ''

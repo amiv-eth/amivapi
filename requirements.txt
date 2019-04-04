@@ -1,4 +1,8 @@
-eve==0.8
+# Eve 0.8.2 fixes an important bug, enabling CORS for the /media endpoint,
+# which we require. As it is not released, we currently use the github branch.
+# As soon as 0.8.2. is released, we can switch back.
+#eve==0.8.2
+-e git+https://github.com/pyeve/eve.git@48d9c25cdca04c2f5a31ce01a1310d493fc67eda#egg=Eve
 -e git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
 -e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
 passlib==1.6.5
