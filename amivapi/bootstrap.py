@@ -5,7 +5,7 @@
 
 """API factory."""
 
-from os import getcwd, getenv
+from os import getcwd, getenv, environ
 from os.path import abspath
 
 from eve import Eve
@@ -51,7 +51,7 @@ def init_sentry(app):
     )
 
 
-def create_app(config_file=None, **kwargs):
+def create_app(config_file=None, env_var_prefix='AMIVAPI_', **kwargs):
     """
     Create a new eve app object and initialize everything.
 
@@ -62,9 +62,14 @@ def create_app(config_file=None, **kwargs):
        `AMIVAPI_CONFIG` to the path of your config file
     3. If no environment variable is set either, `config.py` in the current
        working directory is used
+    4. Individual config entries can be set using environment variables. All
+       environment variables prefixed with `AMIVAPI_` will be used, i.e.
+       the variable `AMIVAPI_X` will overwrite the config `X`. The prefix can
+       be changed.
 
     Args:
-        config (path): Specify config file to use.
+        config (path): Specify config file to use. Overwrites everything else.
+        env_var_prefix (str): The prefix for environment vars to load.
         kwargs: All other key-value arguments will be used to update the config
     Returns:
         (Eve): The Eve application
@@ -81,6 +86,15 @@ def create_app(config_file=None, **kwargs):
     except IOError:
         config_status = "No config found."
 
+    # Load individual variables from environment
+    env_vars = {var[len(env_var_prefix):]: val for var, val in environ.items()
+                if var.startswith(env_var_prefix)}
+    if env_vars:
+        env_var_status = "Loading from environment: %s" % (', '.join(env_vars))
+        config.update(env_vars)
+    else:
+        env_var_status = 'No variables loaded from environment.'
+
     config.update(kwargs)
 
     # Initialize empty domain to create Eve object, register resources later
@@ -90,6 +104,7 @@ def create_app(config_file=None, **kwargs):
               settings=config,
               validator=ValidatorAMIV)
     app.logger.info(config_status)
+    app.logger.info(env_var_status)
 
     # Set up error logging with sentry
     init_sentry(app)
