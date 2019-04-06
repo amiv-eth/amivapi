@@ -312,3 +312,11 @@ input[type=submit] {
 input[type=submit]:focus {
   background: rgba(232, 70, 43, 0.12);
 }
+
+/* Login Link */
+.login {
+  text-align: right;
+  font-size: 1.4em;
+  font-weight: 100;
+  padding: 1em 1em 1.5em 1em;
+}

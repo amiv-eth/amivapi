@@ -10,7 +10,7 @@
   <body>
     {% if error_msg %}
     <dialog open>
-      <p>{{ error_msg }}</p>
+      <p>{{ error_msg|safe }}</p>
       <button onclick="this.parentNode.close()">close</button>
     </dialog>
     {% endif %}
@@ -38,6 +38,7 @@
         {% endif %}
       </p>
 
+
       <form method="POST">
         {% if user %}
           <input type="submit" name="submit" value="logout">
@@ -46,7 +47,7 @@
           <fieldset class="text">
             <input id="username" minlength="1" type="text" name="username"
                    required autofocus>
-            <label for="username">nethz or email</label>
+            <label for="username">email</label>
           </fieldset>
           <fieldset class="text">
             <input id="password" minlength="1" type="password" name="password"
@@ -60,6 +61,8 @@
             <label for="remember">remember me on this device</label>
           </fieldset>
           <input type="submit" name="submit" value="login">
+          <br/>
+          <a class="login" href={{switch_url}}>Login via SWITCHaai</a>
         {% endif %}
       </form>
     </main>

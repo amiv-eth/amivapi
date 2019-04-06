@@ -99,8 +99,11 @@ SUBSCRIBER_LIST_PASSWORD = None
 # Aspect ratio tolerance for non-integer ratios (like DIN A)
 ASPECT_RATIO_TOLERANCE = 0.01
 
-# OAuth
+# VSETH Auth
+VSETH_AUTH_URL = 'http://echo.tvseth.ethz.ch'
 
+
+# OAuth
 # See https://tools.ietf.org/html/rfc6749#section-3.1.2
 # The redirect URL must be absolute, may include query params and must not
 # include a fragment.

@@ -165,6 +165,10 @@ def oauth():
 
     # Check if the user already has a token
     authenticate_token(token)
+
+    # Check if a vseth_authcookie was supplied and contains valid data
+    #TODO
+
     if g.current_user is None:
         user = None
     else:
@@ -189,13 +193,19 @@ def oauth():
                 token = ''
                 error_msg = ("Login failed! If you think there is an error, "
                              "please contact AMIV with the exact time of your "
-                             "login.")
+                             "login. <br />If you tried to log in with your "
+                             "nethz credentials, please use the SWITCHaai.")
                 current_app.logger.info("Login failed with error: %s" % error)
+
+    # Prepare SWITCHaai login link (use current url as callback path)
+    switch_url = (current_app.config['VSETH_AUTH_URL'] +
+                  '?path=' + request.full_path)
 
     # Serve the login page (reset cookie if needed)
     response = make_response(render_template("loginpage.html",
                                              client_id=client_id,
                                              user=user,
+                                             switch_url=switch_url,
                                              error_msg=error_msg))
     response.set_cookie('token', token)
     return response
