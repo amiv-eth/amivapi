@@ -11,12 +11,9 @@ entries get resolved/deleted.
 from flask import current_app
 
 from amivapi.utils import mail
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 
-from amivapi.cron import (
-    schedulable,
-    schedule_task
-)
+from amivapi.cron import schedulable, schedule_task
 
 
 def _get_email(item):
@@ -27,27 +24,21 @@ def _get_email(item):
     return user['email']
 
 
-def schedule_email(item):
-    """schedules an email when end_time is reached"""
-
-    email = _get_email(item)
-    fields = {'reason': item['reason']}
-    schedule_task(item['end_time'], send_scheduled_email, email,
-                  'Your blacklist entry has been removed!',
-                  current_app.config['BLACKLIST_REMOVED'].format(**fields),
-                  item['end_time'])
-
-
 @schedulable
-def send_scheduled_email(email, subject, message, blacklist_id):
-    """Sends a scheduled email to a user whose entry has been deleted"""
-    blacklist = current_app.data.find_one('blacklist', None,
-                                          {"_id": blacklist_id})
+def send_removed_mail(item):
+    """Schedules an email when end_time is reached and the entry is removed."""
+    # Check that the end date is still correct and has not changed again
+    _item = current_app.data.find_one('blacklist', None, {"_id": item['_id']})
+    if _item is None:
+        return  # Entry was deleted, no mail to send anymore
 
-    if (blacklist and blacklist['end_time'] and
-       abs(blacklist['end_time']-datetime.now(timezone.utc))
-       < timedelta(hours=4)):
-        mail(email, subject, message)
+    # Note: We have to remove the (empty) tzinfo from dates coming from the db
+    if _item['end_time'].replace(tzinfo=None) == item['end_time']:
+        email = _get_email(_item)
+        fields = {'reason': _item['reason']}
+        mail(email,
+             'Your blacklist entry has been removed!',
+             current_app.config['BLACKLIST_REMOVED'].format(**fields))
 
 
 def notify_new_blacklist(items):
@@ -66,27 +57,26 @@ def notify_new_blacklist(items):
             template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
 
         mail(email, 'You have been blacklisted!', template.format(**fields))
+
+        # If the end time is already known, schedule removal mail
         if item['end_time'] and item['end_time'] > datetime.utcnow():
-            schedule_email(item)
+            schedule_task(item['end_time'], send_removed_mail, item)
 
 
 def notify_patch_blacklist(new, old):
     """Send an email to a user if one of his entries was updated."""
-
     # Checks if the particular update resolved the blacklist entry or just
     # fixes an error, for example changed the reason or price. An entry is
     # resolved when the end_time is before now.
-    if ('end_time' in new and new['end_time'] <= datetime.utcnow()):
-        email = _get_email(new)
-        fields = {'reason': new['reason']}
+    if 'end_time' not in new:
+        return
 
-        mail(email, 'Your blacklist entry has been removed!',
-             current_app.config['BLACKLIST_REMOVED'].format(**fields))
-
-    if ('end_time' in new and
-       ('end_time' not in old or old['end_time'] != new['end_time']) and
-       new['end_time'] > datetime.utcnow()):
-        schedule_email(new)
+    # Either send mail immediately, or schedule for the future
+    item = {**old, **new}
+    if new['end_time'] <= datetime.utcnow():
+        send_removed_mail(item)
+    elif new['end_time'] != old['end_time']:
+        schedule_task(new['end_time'], send_removed_mail, item)
 
 
 def notify_delete_blacklist(item):
