@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 # Sentry
 
