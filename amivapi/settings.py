@@ -13,7 +13,7 @@ from datetime import timedelta
 
 from passlib.context import CryptContext
 
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 # Sentry
 
@@ -114,7 +114,7 @@ REDIRECT_URI_REGEX = '^((http://)?localhost[^#]*|https://[^#]+)$'
 CONFIRM_EMAIL_TEXT = (
     "Hello from AMIV!\n\nYou have signed up for {title} with your E-Mail "
     "address. To verify this is a valid address and keep your spot please click"
-    " this link: {link}\n\nBest regards,\nAMIV!"
+    " this link: {link}\n\nBest regards,\nAMIV"
 )
 
 # Email sent to users when their event signup was accepted
@@ -125,7 +125,32 @@ ACCEPT_EMAIL_TEXT = (
     'event please click this link to free your spot for someone else:\n'
     '\n{link}\n'
     'You cannot sign out of this event after {deadline}.\n\n'
-    'Best Regards,\nAMIV!'
+    'Best Regards,\nAMIV'
+)
+
+# Address for issues with the blacklist
+BLACKLIST_REPLY_TO = "bouncer@amiv.ethz.ch"
+
+# Email sent to people who have a new entry on the blacklists
+BLACKLIST_ADDED_EMAIL_W_PRICE = (
+    "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
+    "means that you cannot register for any new amiv events! To get removed "
+    "from the blacklist, you have to pay {price:.2f} CHF\n\nIf you think that "
+    "this is an error, don't hesitate to contact {reply_to}\n\nBest "
+    "Regards,\nAMIV"
+)
+
+BLACKLIST_ADDED_EMAIL_WO_PRICE = (
+    "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
+    "means that you cannot register for any new amiv events!\n\nIf you think "
+    "that this is an error, don't hesitate to contact {reply_to}\n\nBest "
+    "Regards,\nAMIV"
+)
+
+# Email sent to people who got one blacklist entry removed
+BLACKLIST_REMOVED = (
+    "Congratulations, your blacklist entry with the following reason has been "
+    "removed:\n\n{reason}\n\nBest Regards,\nAMIV"
 )
 
 # Signup confirmation without redirct
