@@ -11,7 +11,12 @@ entries get resolved/deleted.
 from flask import current_app
 
 from amivapi.utils import mail
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+from amivapi.cron import (
+    schedulable,
+    schedule_task
+)
 
 
 def _get_email(item):
@@ -20,6 +25,29 @@ def _get_email(item):
     lookup = {id_field: item['user']}
     user = current_app.data.find_one('users', None, **lookup)
     return user['email']
+
+
+def schedule_email(item):
+    """schedules an email when end_time is reached"""
+
+    email = _get_email(item)
+    fields = {'reason': item['reason']}
+    schedule_task(item['end_time'], send_scheduled_email, email,
+                  'Your blacklist entry has been removed!',
+                  current_app.config['BLACKLIST_REMOVED'].format(**fields),
+                  item['end_time'])
+
+
+@schedulable
+def send_scheduled_email(email, subject, message, blacklist_id):
+    """Sends a scheduled email to a user whose entry has been deleted"""
+    blacklist = current_app.data.find_one('blacklist', None,
+                                          {"_id": blacklist_id})
+
+    if (blacklist and blacklist['end_time'] and
+       abs(blacklist['end_time']-datetime.now(timezone.utc))
+       < timedelta(hours=4)):
+        mail(email, subject, message)
 
 
 def notify_new_blacklist(items):
@@ -38,6 +66,8 @@ def notify_new_blacklist(items):
             template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
 
         mail(email, 'You have been blacklisted!', template.format(**fields))
+        if item['end_time'] and item['end_time'] > datetime.utcnow():
+            schedule_email(item)
 
 
 def notify_patch_blacklist(new, old):
@@ -52,6 +82,11 @@ def notify_patch_blacklist(new, old):
 
         mail(email, 'Your blacklist entry has been removed!',
              current_app.config['BLACKLIST_REMOVED'].format(**fields))
+
+    if ('end_time' in new and
+       ('end_time' not in old or old['end_time'] != new['end_time']) and
+       new['end_time'] > datetime.utcnow()):
+        schedule_email(new)
 
 
 def notify_delete_blacklist(item):
