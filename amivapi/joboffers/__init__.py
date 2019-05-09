@@ -62,7 +62,7 @@ jobdomain = {
 
             'title_de': {
                 'title': 'German Title',
-                'description': 'The title of the job offer. ',
+                'description': 'The title of the job offer in German.',
                 'example': 'Rest API Entwickler (100%)',
 
                 'type': 'string',
@@ -74,8 +74,8 @@ jobdomain = {
                 'default': None,
             },
             'title_en': {
-                'title': 'German Title',
-                'description': 'The title of the job offer. ',
+                'title': 'English Title',
+                'description': 'The title of the job offer in English.',
                 'example': 'Rest API Developer (100%)',
 
                 'type': 'string',
