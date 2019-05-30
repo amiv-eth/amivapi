@@ -41,7 +41,7 @@ X_DOMAINS = '*'
 X_HEADERS = ['Authorization', 'Content-Type', 'Cache-Control',
              'If-Match', 'If-None-Match', 'If-Modified-Since']
 MONGO_QUERY_BLACKLIST = ['$where']  # default blacklists where and regex queries
-CACHE_CONTROL = 'no-store, must-revalidate'
+CACHE_CONTROL = 'no-cache, must-revalidate'
 
 # MongoDB
 MONGO_HOST = 'localhost'
