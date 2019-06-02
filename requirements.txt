@@ -1,6 +1,6 @@
 eve==0.9.1
--e git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
--e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
+git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
+git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
 passlib==1.7.1
 jsonschema==3.0.1
 freezegun==0.3.12
