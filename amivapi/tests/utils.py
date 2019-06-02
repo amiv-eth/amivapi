@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """General testing utilities."""
 
-from datetime import datetime, timezone
+from datetime import datetime as dt, timezone
 import pytest
 
 from itertools import count
@@ -170,7 +170,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
             str: Token that can be used to authenticate user.
         """
         if created is None:
-            created = datetime.now(timezone.utc)
+            created = dt.now(timezone.utc)
 
         token = "test_token_" + str(next(self.counter))
         self.db['sessions'].insert_one({u'user': ObjectId(user_id),

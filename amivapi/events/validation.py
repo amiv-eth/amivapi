@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 """Event Validation."""
-from datetime import datetime
+from datetime import datetime as dt, timezone
 import json
 
 from flask import current_app, g, request
@@ -72,7 +72,7 @@ class EventValidator(object):
             count = current_app.data.driver.db['blacklist'].count_documents({
                         'user': user_id,
                         '$or': [{'end_time': None},
-                                {'end_time': {'$gte': datetime.utcnow()}}]})
+                                {'end_time': {'$gte': dt.now(timezone.utc)}}]})
             if count:
                 self._error(field, "the user with id %s is on the blacklist"
                             % user_id)
@@ -113,8 +113,8 @@ class EventValidator(object):
 
             # The event has signup, check if it is open
             if not g.get('resource_admin'):
-                now = datetime.utcnow()
-                if now < event['time_register_start'].replace(tzinfo=None):
+                now = dt.now(timezone.utc)
+                if now < event['time_register_start']:
                     self._error(field, "the signup for event with %s is "
                                 "not open yet." % event_id)
                 elif now > event['time_register_end'].replace(tzinfo=None):
@@ -224,12 +224,12 @@ class EventValidator(object):
         if time is None:
             return time
 
-        if isinstance(time, datetime):
-            return time.replace(tzinfo=None)
+        if isinstance(time, dt):
+            return time
         else:
             try:
                 date_format = current_app.config['DATE_FORMAT']
-                return datetime.strptime(time, date_format).replace(tzinfo=None)
+                return dt.strptime(time, date_format)
             except ValueError:
                 return None
 
@@ -250,7 +250,7 @@ class EventValidator(object):
         if other_time is None:
             return  # Other time has wrong format, will be caught by validator
 
-        if value.replace(tzinfo=None) <= other_time:
+        if value <= other_time:
             self._error(field, "Must be at a point in time after %s" %
                         later_than)
 
@@ -271,7 +271,7 @@ class EventValidator(object):
         if other_time is None:
             return
 
-        if value.replace(tzinfo=None) >= other_time:
+        if value >= other_time:
             self._error(field, "Must be at a point in time before %s" %
                         earlier_than)
 

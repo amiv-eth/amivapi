@@ -7,7 +7,7 @@
 from bson import ObjectId
 
 from flask import g, current_app
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone
 from amivapi.auth import AmivTokenAuth
 from amivapi.utils import get_id
 
@@ -49,14 +49,14 @@ class EventSignupAuth(AmivTokenAuth):
             event = current_app.data.find_one('events', None, **lookup)
 
         # Remove tzinfo to compare to utcnow (API only accepts UTC anyways)
-        time_register_start = event['time_register_start'].replace(tzinfo=None)
-        time_register_end = event['time_register_end'].replace(tzinfo=None)
+        register_start = event['time_register_start']
+        register_end = event['time_register_end']
 
         # Only the user itself can modify the item (not moderators), and only
         # within the signup window
         return (('user' in item) and
                 (user_id == str(get_id(item['user']))) and
-                (time_register_start <= dt.utcnow() <= time_register_end))
+                (register_start <= dt.now(timezone.utc) <= register_end))
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators

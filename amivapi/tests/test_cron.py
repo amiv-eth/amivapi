@@ -6,7 +6,7 @@
 
 """ Test scheduler """
 
-from datetime import datetime, timedelta
+from datetime import datetime as dt, timedelta, timezone
 from freezegun import freeze_time
 
 from amivapi import cron
@@ -43,7 +43,7 @@ class CronTest(WebTestNoAuth):
                 CronTest.has_run = True
                 CronTest.received_arg = arg
 
-            schedule_task(datetime(2016, 1, 1, 1, 0, 0),
+            schedule_task(dt(2016, 1, 1, 1, 0, 0),
                           scheduled_function,
                           "arg")
 
@@ -90,7 +90,7 @@ class CronTest(WebTestNoAuth):
                 pass
 
             with self.assertRaises(NotSchedulable):
-                schedule_task(datetime.utcnow(), test_func)
+                schedule_task(dt.now(timezone.utc), test_func)
 
     def test_schedule_once_soon_works(self):
         with self.app.app_context():
@@ -117,7 +117,7 @@ class CronTest(WebTestNoAuth):
                 CronTest.has_run = True
                 CronTest.received_arg = arg
 
-            schedule_task(datetime(2016, 1, 1, 1, 0, 0),
+            schedule_task(dt(2016, 1, 1, 1, 0, 0),
                           tester,
                           "arg")
 
@@ -125,7 +125,7 @@ class CronTest(WebTestNoAuth):
 
             self.assertFalse(CronTest.has_run)
 
-            update_scheduled_task(datetime(2016, 1, 1, 3, 20, 0),
+            update_scheduled_task(dt(2016, 1, 1, 3, 20, 0),
                                   tester,
                                   "new-arg")
 

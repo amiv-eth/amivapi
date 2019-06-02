@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for purchases module"""
 
-from datetime import datetime, timedelta
+from datetime import datetime as dt, timedelta, timezone
 from io import BytesIO
 from os.path import dirname, join
 
@@ -21,8 +21,8 @@ class JobOffersTest(utils.WebTestNoAuth):
     def test_add_joboffer_nomedia(self):
         """ Usecase: A firm wants to post a joboffer on the website without any media
         """
-
-        time_end = (datetime.utcnow() + timedelta(days=2)).strftime(DATE_FORMAT)
+        time_end = ((dt.now(timezone.utc) + timedelta(days=2))
+                    .strftime(DATE_FORMAT))
         post_data = {
             'company': 'ACME Inc.',
             'description_de': """Firmenbeschreibung auf Deutsch der
@@ -54,7 +54,7 @@ class JobOffersTest(utils.WebTestNoAuth):
 
         # Now we test with a random job offer that has expired
         # Should return no joboffers since the only one has expired
-        expired_time = datetime.utcnow() - timedelta(days=1)
+        expired_time = dt.now(timezone.utc) - timedelta(days=1)
 
         self.new_object(
             'joboffers',
@@ -66,13 +66,13 @@ class JobOffersTest(utils.WebTestNoAuth):
 
         p = self.api.get(
             '/joboffers?where={"time_end": {"$gte": "%s"}}'
-            % datetime.utcnow().strftime(DATE_FORMAT),
+            % dt.now(timezone.utc).strftime(DATE_FORMAT),
             status_code=200).json['_items']
         self.assertEqual(len(p), 0)
 
         # Next we test fetching a valid job offer
         # Should return the fresh job offer which is still valid
-        valid_time = (datetime.utcnow() + timedelta(days=1))
+        valid_time = (dt.now(timezone.utc) + timedelta(days=1))
 
         self.new_object(
             'joboffers',
@@ -84,6 +84,6 @@ class JobOffersTest(utils.WebTestNoAuth):
 
         p = self.api.get(
             '/joboffers?where={"time_end" : {"$gte": "%s"}}'
-            % datetime.utcnow().strftime(DATE_FORMAT),
+            % dt.now(timezone.utc).strftime(DATE_FORMAT),
             status_code=200).json['_items']
         self.assertTrue(len(p) > 0)

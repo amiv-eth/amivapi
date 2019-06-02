@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for purchases module"""
 
-from datetime import datetime, timedelta
+from datetime import datetime as dt, timedelta, timezone
 
 from amivapi.settings import DATE_FORMAT
 from amivapi.tests import utils
@@ -23,26 +23,26 @@ class BeveragesTest(utils.WebTestNoAuth):
         p = self.api.get(
             '/beverages?where={"user": "%s", "product":"beer", '
             '"timestamp": {"$gte": "%s"}}'
-            % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
+            % (str(user['_id']), dt.now(timezone.utc).strftime(DATE_FORMAT)),
             status_code=200).json['_items']
         self.assertEqual(len(p), 0)
 
         # Next test with a transaction 2 days ago
         self.new_object('beverages', user=user['_id'], product='beer',
-                        timestamp=datetime.utcnow() - timedelta(days=2))
+                        timestamp=dt.now(timezone.utc) - timedelta(days=2))
 
         p = self.api.get(
             '/beverages?where={"user": "%s", "product":"beer", '
             '"timestamp": {"$gte": "%s"}}'
-            % (str(user['_id']), datetime.utcnow().strftime(DATE_FORMAT)),
+            % (str(user['_id']), dt.now(timezone.utc).strftime(DATE_FORMAT)),
             status_code=200).json['_items']
         self.assertEqual(len(p), 0)
 
         # Now we add a beverage and ask again
         self.new_object('beverages', user=user['_id'], product='beer',
-                        timestamp=datetime.utcnow())
+                        timestamp=dt.now(timezone.utc))
 
-        time = (datetime.utcnow() - timedelta(hours=1)).strftime(DATE_FORMAT)
+        time = (dt.now(timezone.utc) - timedelta(hours=1)).strftime(DATE_FORMAT)
         p = self.api.get(
             '/beverages?where={"user": "%s", "product":"beer", '
             '"timestamp": {"$gte": "%s"}}'
@@ -62,7 +62,7 @@ class BeveragesTest(utils.WebTestNoAuth):
         post_data = {
             'user': str(user['_id']),
             'product': 'beer',
-            'timestamp': datetime.utcnow().strftime(DATE_FORMAT)
+            'timestamp': dt.now(timezone.utc).strftime(DATE_FORMAT)
         }
 
         self.api.post("/beverages", data=post_data, status_code=201)

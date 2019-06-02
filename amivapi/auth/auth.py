@@ -71,7 +71,7 @@ Item endpoints:
   - `AmivTokenAuth.has_item_write_permission`
 """
 
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone
 from functools import wraps
 
 from eve.auth import BasicAuth, resource_auth
@@ -220,7 +220,8 @@ def authenticate_token(token):
 
         if session:
             # Update timestamp (remove microseconds to match mongo precision)
-            new_time = dt.utcnow().replace(microsecond=0)
+            new_time = dt.now(timezone.utc).replace(microsecond=0)
+            print(new_time)
             sessions.update_one({'_id': session['_id']},
                                 {'$set': {
                                     '_updated': new_time

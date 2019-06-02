@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Test event authorization"""
 
-from datetime import datetime
+from datetime import datetime as dt
 import json
 
 from freezegun import freeze_time
@@ -130,8 +130,8 @@ class EventAuthTest(WebTest):
     def test_registration_window_signup(self):
         """Test that signups out of the registration window are rejected for
         unpriviledged users."""
-        t_open = datetime(2016, 1, 1)
-        t_close = datetime(2016, 12, 31)
+        t_open = dt(2016, 1, 1)
+        t_close = dt(2016, 12, 31)
 
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
@@ -141,21 +141,21 @@ class EventAuthTest(WebTest):
         root_token = self.get_root_token()
 
         # Too early
-        with freeze_time(datetime(2015, 1, 1)):
+        with freeze_time(dt(2015, 1, 1)):
             self.api.post("/eventsignups", data={
                 'event': str(ev['_id']),
                 'user': str(user['_id'])
             }, token=token, status_code=422)
 
         # Too late
-        with freeze_time(datetime(2017, 1, 1)):
+        with freeze_time(dt(2017, 1, 1)):
             self.api.post("/eventsignups", data={
                 'event': str(ev['_id']),
                 'user': str(user['_id'])
             }, token=token, status_code=422)
 
         # Correct time
-        with freeze_time(datetime(2016, 6, 1)):
+        with freeze_time(dt(2016, 6, 1)):
             self.api.post("/eventsignups", data={
                 'event': str(ev['_id']),
                 'user': str(user['_id'])
@@ -164,7 +164,7 @@ class EventAuthTest(WebTest):
         user2 = self.new_object('users')
 
         # Admin can ignore time
-        with freeze_time(datetime(2015, 1, 1)):
+        with freeze_time(dt(2015, 1, 1)):
             self.api.post("/eventsignups", data={
                 'event': str(ev['_id']),
                 'user': str(user2['_id'])
@@ -173,8 +173,8 @@ class EventAuthTest(WebTest):
     def test_registration_window_signoff(self):
         """Test that signoff out of the registration window are rejected for
         unpriviledged users."""
-        t_open = datetime(2016, 1, 1)
-        t_close = datetime(2016, 12, 31)
+        t_open = dt(2016, 1, 1)
+        t_close = dt(2016, 12, 31)
 
         user = self.new_object("users")
         token = self.get_user_token(user['_id'])
@@ -188,17 +188,17 @@ class EventAuthTest(WebTest):
         etag = {'If-Match': signup['_etag']}
 
         # Too early
-        with freeze_time(datetime(2015, 1, 1)):
+        with freeze_time(dt(2015, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=token, status_code=403)
 
         # Too late
-        with freeze_time(datetime(2017, 1, 1)):
+        with freeze_time(dt(2017, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=token, status_code=403)
 
         # Correct time
-        with freeze_time(datetime(2016, 6, 1)):
+        with freeze_time(dt(2016, 6, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=token, status_code=204)
 
@@ -207,7 +207,7 @@ class EventAuthTest(WebTest):
         etag = {'If-Match': signup['_etag']}
 
         # Admin can ignore time
-        with freeze_time(datetime(2015, 1, 1)):
+        with freeze_time(dt(2015, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=root_token, status_code=204)
 

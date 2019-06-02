@@ -6,7 +6,7 @@
 """A command line interface for AMIVApi."""
 from os import listdir, remove
 from os.path import join, isdir
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone
 from time import sleep
 
 from click import argument, echo, group, option, Path, Choice, ClickException
@@ -91,9 +91,9 @@ def cron(config, continuous):
              % interval.total_seconds())
 
         while True:
-            checkpoint = dt.utcnow()
+            checkpoint = dt.now(timezone.utc)
             run_cron(app)
-            execution_time = dt.utcnow() - checkpoint
+            execution_time = dt.now(timezone.utc) - checkpoint
             echo('Tasks executed, total execution time: %.3f seconds.'
                  % execution_time.total_seconds())
 

@@ -5,7 +5,7 @@
 
 """Test general purpose validators."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime as dt, timedelta, timezone
 
 from amivapi.auth.auth import AmivTokenAuth
 from amivapi.tests.utils import WebTest
@@ -22,7 +22,7 @@ class ValidatorAMIVTest(WebTest):
         token = self.get_user_token(user['_id'])
         old_token = self.get_user_token(
             user['_id'],
-            created=datetime.now(timezone.utc) - timedelta(minutes=2))
+            created=dt.now(timezone.utc) - timedelta(minutes=2))
 
         class AllowEverythingAuth(AmivTokenAuth):
             def has_resource_write_permission(*_):

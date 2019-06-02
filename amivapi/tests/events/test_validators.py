@@ -5,7 +5,7 @@
 
 """Test general purpose validators of event module."""
 
-from datetime import datetime
+from datetime import datetime as dt
 import json
 
 from freezegun import freeze_time
@@ -78,8 +78,8 @@ class EventValidatorTest(WebTestNoAuth):
     def test_blacklist(self):
         """Test that users can only sign up if they are not blacklisted"""
 
-        t_open = datetime(2016, 1, 1)
-        t_close = datetime(2016, 12, 31)
+        t_open = dt(2016, 1, 1)
+        t_close = dt(2016, 12, 31)
 
         ev = self.new_object("events", spots=100)
         user1 = self.new_object("users")
@@ -93,17 +93,17 @@ class EventValidatorTest(WebTestNoAuth):
         self.new_object("blacklist", user=user2['_id'],
                         start_time=t_open)
 
-        with freeze_time(datetime(2016, 6, 1)):
+        with freeze_time(dt(2016, 6, 1)):
             self.api.post('eventsignups', data={'user': str(user1['_id']),
                           'event': str(ev['_id'])}, token=user1_token,
                           status_code=422)
 
-        with freeze_time(datetime(2017, 6, 1)):
+        with freeze_time(dt(2017, 6, 1)):
             self.api.post('eventsignups', data={'user': str(user1['_id']),
                           'event': str(ev['_id'])}, token=user1_token,
                           status_code=201)
 
-        with freeze_time(datetime(2017, 6, 1)):
+        with freeze_time(dt(2017, 6, 1)):
             self.api.post('eventsignups', data={'user': str(user2['_id']),
                           'event': str(ev['_id'])}, token=user2_token,
                           status_code=422)
@@ -113,10 +113,10 @@ class EventValidatorTest(WebTestNoAuth):
         self.app.register_resource('test', {
             'schema': {
                 'field1': {
-                    'type': 'datetime'
+                    'type': 'dt'
                 },
                 'field2': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'later_than': 'field1'
                 }
             }
@@ -152,11 +152,11 @@ class EventValidatorTest(WebTestNoAuth):
         self.app.register_resource('test', {
             'schema': {
                 'field1': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'earlier_than': 'field2'
                 },
                 'field2': {
-                    'type': 'datetime',
+                    'type': 'dt',
                 }
             }
         })
@@ -180,11 +180,11 @@ class EventValidatorTest(WebTestNoAuth):
         self.app.register_resource('test', {
             'schema': {
                 'time1': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'earlier_than': 'time2'
                 },
                 'time2': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'later_than': 'time1'
                 }
             }
@@ -282,10 +282,10 @@ class EventValidatorTest(WebTestNoAuth):
         self.app.register_resource('test', {
             'schema': {
                 'time1': {
-                    'type': 'datetime'
+                    'type': 'dt'
                 },
                 'time2': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'later_than': 'time1'
                 }
             }
@@ -329,16 +329,16 @@ class EventValidatorTest(WebTestNoAuth):
         """
         # We have two fields, both of which have a later_than validator. The one
         # being called first will see the other field as an unparsed string. The
-        # second one will see a `Datetime` object. If we don't crash, then both
+        # second one will see a `dt` object. If we don't crash, then both
         # versions are validated correctly.
         self.app.register_resource('test', {
             'schema': {
                 'field1': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'later_than': 'field2',
                 },
                 'field2': {
-                    'type': 'datetime',
+                    'type': 'dt',
                     'later_than': 'field1',
                 }
             }

@@ -42,7 +42,7 @@ validators and will therefore reject random values.
 See preprocess_sessions or preprocess_events below for examples
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime as dt, timedelta, timezone
 from os.path import dirname, join
 import random
 import string
@@ -239,10 +239,10 @@ class FixtureMixin(object):
 
         # fullfill earlier_than and later_than validators
         obj['time_advertising_start'] = (
-            datetime.utcnow() - timedelta(
+            dt.now(timezone.utc) - timedelta(
                 seconds=random.randint(0, 1000000)))
         obj['time_advertising_end'] = (
-            datetime.utcnow() + timedelta(
+            dt.now(timezone.utc) + timedelta(
                 seconds=random.randint(0, 1000000)))
 
         # add some number of spots. If not specified different, we default
@@ -253,10 +253,10 @@ class FixtureMixin(object):
             if ('time_register_start' not in obj and
                     'time_register_end' not in obj):
                 obj['time_register_start'] = (
-                    datetime.utcnow() - timedelta(
+                    dt.now(timezone.utc) - timedelta(
                         seconds=random.randint(0, 1000000)))
                 obj['time_register_end'] = (
-                    datetime.utcnow() + timedelta(
+                    dt.now(timezone.utc) + timedelta(
                         seconds=random.randint(0, 1000000)))
             else:
                 if ('time_register_start' not in obj or
@@ -345,12 +345,12 @@ class FixtureMixin(object):
             return random.choice([True, False])
 
         elif t == 'date':
-            return datetime.date.fromordinal(
+            return date.fromordinal(
                 random.randint(0, date.max.toordinal()))
 
         elif t == 'datetime':
-            return datetime.utcfromtimestamp(
-                random.randint(0, 2**32))
+            return dt.fromtimestamp(
+                random.randint(0, 2**32)).replace(tzinfo=timezone.utc)
 
         elif t == 'float':
             return random.rand() * random.randint(0, 2**32)

@@ -9,7 +9,7 @@ Provides the apikey resource and hooks to handle authorization with a key.
 
 API keys should only be created or modified by admins.
 """
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone
 
 from flask import abort, current_app, g
 
@@ -37,7 +37,7 @@ def authorize_apikeys(resource):
         permission = apikey['permissions'].get(resource)
 
         # Update timestamp (remove microseconds to match mongo precision)
-        new_time = dt.utcnow().replace(microsecond=0)
+        new_time = dt.now(timezone.utc).replace(microsecond=0)
         apikeys.update_one({'_id': apikey['_id']},
                            {'$set': {'_updated': new_time}})
 

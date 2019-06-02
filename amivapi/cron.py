@@ -46,7 +46,7 @@ run every day at the same time, but will drift into the future slowly. This
 might sum up to a missing period, so after a year the function might have been
 called only 364 times.
 """
-from datetime import datetime
+from datetime import datetime as dt, timezone
 from functools import wraps
 import pickle
 
@@ -80,7 +80,7 @@ def periodic(period, *args):
     def wrap(func):
         @wraps(func)
         def wrapped():
-            schedule_task(datetime.utcnow() + period, wrapped)
+            schedule_task(dt.now(timezone.utc) + period, wrapped)
             func(*args)
 
         schedulable(wrapped)
@@ -135,7 +135,7 @@ def schedule_once_soon(func, *args):
     if current_app.data.driver.db['scheduled_tasks'].count_documents(
             {'function': func_str(func)}) != 0:
         return
-    schedule_task(datetime.utcnow(), func, *args)
+    schedule_task(dt.now(timezone.utc), func, *args)
 
 
 #
@@ -158,7 +158,7 @@ def run_scheduled_tasks():
     while True:
         task = (current_app.data.driver.db['scheduled_tasks']
                 .find_one_and_delete(
-                    {'time': {'$lte': datetime.utcnow()}}))
+                    {'time': {'$lte': dt.now(timezone.utc)}}))
 
         if task is None:
             return

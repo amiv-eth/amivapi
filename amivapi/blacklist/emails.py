@@ -11,7 +11,7 @@ entries get resolved/deleted.
 from flask import current_app
 
 from amivapi.utils import mail
-from datetime import datetime
+from datetime import datetime as dt, timezone
 
 from amivapi.cron import schedulable, schedule_task
 
@@ -32,8 +32,7 @@ def send_removed_mail(item):
     if _item is None:
         return  # Entry was deleted, no mail to send anymore
 
-    # Note: We have to remove the (empty) tzinfo from dates coming from the db
-    if _item['end_time'].replace(tzinfo=None) == item['end_time']:
+    if _item['end_time'] == item['end_time']:
         email = _get_email(_item)
         fields = {'reason': _item['reason']}
         mail(email,
@@ -59,7 +58,7 @@ def notify_new_blacklist(items):
         mail(email, 'You have been blacklisted!', template.format(**fields))
 
         # If the end time is already known, schedule removal mail
-        if item['end_time'] and item['end_time'] > datetime.utcnow():
+        if item['end_time'] and item['end_time'] > dt.now(timezone.utc):
             schedule_task(item['end_time'], send_removed_mail, item)
 
 
@@ -73,7 +72,7 @@ def notify_patch_blacklist(new, old):
 
     # Either send mail immediately, or schedule for the future
     item = {**old, **new}
-    if new['end_time'] <= datetime.utcnow():
+    if new['end_time'] <= dt.now(timezone.utc):
         send_removed_mail(item)
     elif new['end_time'] != old['end_time']:
         schedule_task(new['end_time'], send_removed_mail, item)

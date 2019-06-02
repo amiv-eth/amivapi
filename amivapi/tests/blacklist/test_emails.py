@@ -8,7 +8,7 @@ from amivapi.tests.utils import WebTest
 from amivapi.cron import (
     run_scheduled_tasks
 )
-from datetime import datetime
+from datetime import datetime as dt, timezone
 from datetime import timedelta
 from freezegun import freeze_time
 
@@ -87,11 +87,11 @@ class BlacklistEmailTest(WebTest):
         patch = {
             'user': user_id,
             'reason': "Test1",
-            'end_time': '2017-01-01T00:00:00Z'
+            'end_time': dt(2017, 1, 1, tzinfo=timezone.utc)
         }
 
         header = {'If-Match': etag}
-        with freeze_time(datetime(2017, 6, 6)):
+        with freeze_time(dt(2017, 6, 6, tzinfo=timezone.utc)):
             r = self.api.patch("/blacklist/%s" % blacklist_id, data=patch,
                                headers=header, token=self.get_root_token(),
                                status_code=200)
@@ -137,8 +137,8 @@ class BlacklistEmailTest(WebTest):
 
     def test_receive_scheduled_email_on_create(self):
         """Test if a user receives an email if the end_time is reached"""
-        with self.app.app_context(), freeze_time(
-                "2017-01-01 00:00:00") as frozen_time:
+        with self.app.app_context(), \
+                freeze_time(dt(2017, 1, 1, tzinfo=timezone.utc)) as frozen_time:
             user_id = 24 * '0'
             blacklist_id = 24 * '1'
 
@@ -151,7 +151,7 @@ class BlacklistEmailTest(WebTest):
                     '_id': blacklist_id,
                     'user': user_id,
                     'reason': "Test1",
-                    'end_time': datetime(2017, 1, 2)
+                    'end_time': dt(2017, 1, 2, tzinfo=timezone.utc)
                 }]
             })
 
@@ -200,7 +200,7 @@ class BlacklistEmailTest(WebTest):
             }
 
             header = {'If-Match': etag}
-            with freeze_time(datetime(2017, 1, 1)):
+            with freeze_time(dt(2017, 1, 1, tzinfo=timezone.utc)):
                 r = self.api.patch("/blacklist/%s" % blacklist_id, data=patch,
                                    headers=header, token=self.get_root_token(),
                                    status_code=200)
@@ -252,7 +252,7 @@ class BlacklistEmailTest(WebTest):
             etag = r[0]['_etag']
 
             header = {'If-Match': etag}
-            with freeze_time(datetime(2017, 1, 1)):
+            with freeze_time(dt(2017, 1, 1, tzinfo=timezone.utc)):
                 r = self.api.delete("/blacklist/%s" % blacklist_id,
                                     headers=header, token=self.get_root_token(),
                                     status_code=204)

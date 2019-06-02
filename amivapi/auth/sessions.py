@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Sessions endpoint."""
 
-import datetime
+from datetime import datetime as dt, timedelta, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -253,7 +253,7 @@ def verify_password(user, plaintext):
 
 
 # Regular task to clean up expired sessions
-@periodic(datetime.timedelta(days=1))
+@periodic(timedelta(days=1))
 def delete_expired_sessions():
     """Delete expired sessions.
 
@@ -264,5 +264,5 @@ def delete_expired_sessions():
     >>> with app.app_context():
     >>>     delete_expired_sessions()
     """
-    deadline = datetime.datetime.utcnow() - app.config['SESSION_TIMEOUT']
+    deadline = dt.now(timezone.utc) - app.config['SESSION_TIMEOUT']
     app.data.driver.db['sessions'].remove({'_updated': {'$lt': deadline}})

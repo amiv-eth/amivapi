@@ -9,7 +9,7 @@ Also contains email management for group mailing lists
 
 And provides a helper function to check group permissions.
 """
-from datetime import datetime, timedelta
+from datetime import datetime as dt, timedelta, timezone
 
 from flask import current_app
 
@@ -49,4 +49,4 @@ def init_app(app):
 @periodic(timedelta(days=1))
 def remove_expired_group_members():
     current_app.data.driver.db['groupmemberships'].remove(
-        {'expiry': {'$lte': datetime.utcnow()}})
+        {'expiry': {'$lte': dt.now(timezone.utc)}})
