@@ -1,15 +1,11 @@
-# Eve 0.8.2 fixes an important bug, enabling CORS for the /media endpoint,
-# which we require. As it is not released, we currently use the github branch.
-# As soon as 0.8.2. is released, we can switch back.
-#eve==0.8.2
--e git+https://github.com/pyeve/eve.git@48d9c25cdca04c2f5a31ce01a1310d493fc67eda#egg=Eve
--e git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
+eve==0.9.1
+git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
+# "nethz" must be instaleld in editable mode, otherwise some certs are not found
+# Wontfix: With the upcoming migration, this library will not be needed anymore
 -e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
-passlib==1.6.5
-jsonschema==2.5.1
-click==6.6
-pytz==2016.7
-freezegun==0.3.8
-sentry-sdk[flask]==0.4.1
-bs4==0.0.1
-Pillow==5.3.0
+passlib==1.7.1
+jsonschema==3.0.1
+freezegun==0.3.12
+sentry-sdk[flask]==0.8.1
+beautifulsoup4==4.6.3
+Pillow==6.0.0

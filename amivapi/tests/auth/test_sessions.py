@@ -184,8 +184,7 @@ class PasswordVerificationTest(WebTest):
         Also needs app context to access config.
         """
         with self.app.app_context():
-            hashed = self.app.config['PASSWORD_CONTEXT'].encrypt(
-                "some_pw")
+            hashed = self.app.config['PASSWORD_CONTEXT'].hash("some_pw")
 
             # Correct password
             self.assertTrue(
@@ -205,11 +204,9 @@ class PasswordVerificationTest(WebTest):
         weak_context = CryptContext(
             schemes=["pbkdf2_sha256"],
             pbkdf2_sha256__default_rounds=5,
-            pbkdf2_sha256__vary_rounds=0.1,
-            pbkdf2_sha256__min_rounds=1,
         )
 
-        return weak_context.encrypt(plaintext)
+        return weak_context.hash(plaintext)
 
     def assertRehashed(self, user_id, plaintext, old_hash):
         """Assert that the password was rehased.
@@ -244,9 +241,7 @@ class PasswordVerificationTest(WebTest):
             weak_hash = self._get_weak_hash(password)
 
             # Add a user with to db. use password hashed with weak context
-            user_id = db.insert({
-                'password': weak_hash
-            })
+            user_id = db.insert_one({'password': weak_hash}).inserted_id
 
             user = db.find_one({'_id': ObjectId(user_id)})
 
@@ -262,9 +257,7 @@ class PasswordVerificationTest(WebTest):
         weak_hash = self._get_weak_hash(password)
 
         # Add a user with to db. use password hashed with weak context
-        user_id = db.insert({
-            'password': weak_hash
-        })
+        user_id = db.insert_one({'password': weak_hash}).inserted_id
 
         login_data = {
             'username': str(user_id),

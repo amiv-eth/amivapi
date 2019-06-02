@@ -113,12 +113,7 @@ class WebTest(unittest.TestCase, FixtureMixin):
         'SENTRY_ENVIRONMENT': None,
         'PASSWORD_CONTEXT': CryptContext(
             schemes=["pbkdf2_sha256"],
-
-            # default_rounds is used when hashing new passwords, to be varied
-            # each time by vary_rounds
             pbkdf2_sha256__default_rounds=10,
-            pbkdf2_sha256__vary_rounds=0.1,
-
             # min_rounds is used to determine if a hash needs to be upgraded
             pbkdf2_sha256__min_rounds=8,
         )
@@ -178,9 +173,9 @@ class WebTest(unittest.TestCase, FixtureMixin):
             created = datetime.now(timezone.utc)
 
         token = "test_token_" + str(next(self.counter))
-        self.db['sessions'].insert({u'user': ObjectId(user_id),
-                                    u'token': token,
-                                    u'_created': created})
+        self.db['sessions'].insert_one({u'user': ObjectId(user_id),
+                                        u'token': token,
+                                        u'_created': created})
         return token
 
     def get_root_token(self):

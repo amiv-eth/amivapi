@@ -194,7 +194,7 @@ def _hash_password(user):
     password_context = current_app.config['PASSWORD_CONTEXT']
 
     if user.get('password', None) is not None:
-        user['password'] = password_context.encrypt(user['password'])
+        user['password'] = password_context.hash(user['password'])
 
 
 def hash_on_insert(items):
