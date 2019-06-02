@@ -9,7 +9,6 @@ import json
 
 from flask import current_app, g, request
 from jsonschema import Draft4Validator, SchemaError
-import pytz
 
 
 class EventValidator(object):
@@ -114,11 +113,11 @@ class EventValidator(object):
 
             # The event has signup, check if it is open
             if not g.get('resource_admin'):
-                now = datetime.now(pytz.utc)
-                if now < event['time_register_start']:
+                now = datetime.utcnow()
+                if now < event['time_register_start'].replace(tzinfo=None):
                     self._error(field, "the signup for event with %s is "
                                 "not open yet." % event_id)
-                elif now > event['time_register_end']:
+                elif now > event['time_register_end'].replace(tzinfo=None):
                     self._error(field, "the signup for event with id %s "
                                 "closed." % event_id)
 

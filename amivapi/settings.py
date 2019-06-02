@@ -82,12 +82,7 @@ ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
 SESSION_TIMEOUT = timedelta(days=365)
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
-
-    # default_rounds is used when hashing new passwords, to be varied each
-    # time by vary_rounds
     pbkdf2_sha256__default_rounds=10 ** 3,
-    pbkdf2_sha256__vary_rounds=0.1,
-
     # min_rounds is used to determine if a hash needs to be upgraded
     pbkdf2_sha256__min_rounds=8 * 10 ** 2,
 )

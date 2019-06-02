@@ -297,7 +297,7 @@ class AuthFunctionTest(FakeAuthTest):
         ]
 
         # Put into db
-        collection.insert(data)
+        collection.insert_many(data)
 
         for session in data:
             with self.app.test_request_context(

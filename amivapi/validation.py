@@ -14,7 +14,7 @@ validate the schema itself.
 
 from datetime import datetime, timedelta, timezone
 from imghdr import what
-from collections import Hashable
+from collections.abc import Hashable
 from PIL import Image
 from bs4 import BeautifulSoup
 
@@ -51,7 +51,8 @@ class ValidatorAMIV(Validator):
         PATCH."""
         return ('dependencies',)
 
-    def validate_update(self, document, document_id, persisted_document=None):
+    def validate_update(self, document, document_id,
+                        persisted_document=None, normalize_document=True):
         """We change that some validators are run on all fields during PATCH.
 
         We need this to check that dependencies are not lost. If A depends on
@@ -63,7 +64,8 @@ class ValidatorAMIV(Validator):
         # called. This is not optimal, but ok, as we are not using a custom
         # error handler. There isn't really a better place to hook in our
         # dependency validators...
-        super().validate_update(document, document_id, persisted_document)
+        super().validate_update(document, document_id,
+                                persisted_document, normalize_document)
 
         for field in self._get_present_fields():
             definition = self.schema.get(field, {})
