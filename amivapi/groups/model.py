@@ -318,7 +318,7 @@ groupdomain = {
                 'type': 'dict',
                 'keyschema': {'type': 'string',
                               'api_resources': True},
-                'valueschema': {'type': 'string',
+                'valuesrules': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
                 'nullable': True,
                 'default': None,

@@ -50,7 +50,6 @@ from contextlib import contextmanager
 
 from bson import ObjectId
 from eve.methods.post import post_internal
-import pytz
 from werkzeug.datastructures import FileStorage
 
 from amivapi.settings import EMAIL_REGEX, REDIRECT_URI_REGEX
@@ -209,7 +208,7 @@ class FixtureMixin(object):
             # Create some random permission
             resource = random.choice(list(self.app.config['DOMAIN'].keys()))
             permission = (
-                random.choice(schema['permissions']['valueschema']['allowed']))
+                random.choice(schema['permissions']['valuesrules']['allowed']))
 
             obj['permissions'] = {resource: permission}
 
@@ -240,10 +239,10 @@ class FixtureMixin(object):
 
         # fullfill earlier_than and later_than validators
         obj['time_advertising_start'] = (
-            datetime.now(pytz.utc) - timedelta(
+            datetime.utcnow() - timedelta(
                 seconds=random.randint(0, 1000000)))
         obj['time_advertising_end'] = (
-            datetime.now(pytz.utc) + timedelta(
+            datetime.utcnow() + timedelta(
                 seconds=random.randint(0, 1000000)))
 
         # add some number of spots. If not specified different, we default
@@ -254,10 +253,10 @@ class FixtureMixin(object):
             if ('time_register_start' not in obj and
                     'time_register_end' not in obj):
                 obj['time_register_start'] = (
-                    datetime.now(pytz.utc) - timedelta(
+                    datetime.utcnow() - timedelta(
                         seconds=random.randint(0, 1000000)))
                 obj['time_register_end'] = (
-                    datetime.now(pytz.utc) + timedelta(
+                    datetime.utcnow() + timedelta(
                         seconds=random.randint(0, 1000000)))
             else:
                 if ('time_register_start' not in obj or
@@ -350,8 +349,8 @@ class FixtureMixin(object):
                 random.randint(0, date.max.toordinal()))
 
         elif t == 'datetime':
-            return datetime.fromtimestamp(
-                random.randint(0, 2**32)).replace(tzinfo=pytz.utc)
+            return datetime.utcfromtimestamp(
+                random.randint(0, 2**32))
 
         elif t == 'float':
             return random.rand() * random.randint(0, 2**32)
