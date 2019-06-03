@@ -20,12 +20,7 @@ class StudydocsAuth(AmivTokenAuth):
         return True
 
 
-def add_uploader_on_insert(item):
-    """Add the _author field before inserting studydocs"""
-    item['uploader'] = g.get('current_user')
-
-
-def add_uploader_on_bulk_insert(items):
+def add_uploader_on_insert(items):
     """Add the _author field before inserting studydocs"""
     for item in items:
-        add_uploader_on_insert(item)
+        item['uploader'] = g.get('current_user')

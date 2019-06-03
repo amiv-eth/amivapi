@@ -2,11 +2,20 @@
 #
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
-"""Studydoc rating computation."""
+"""Studydoc rating computation.
 
-from bson import ObjectId
+For the rating, we use the lower bound of a confidence interval around
+the 'naive' average vote, which accounts for the number of votes.
+
+The rating for a study document is updated each time a study doc rating is
+for the respective document is POSTed or PATCHed. The value is then written
+to the database to allow sorting of study documents by rating.
+"""
+
 from flask import current_app
 from math import sqrt
+
+from amivapi.utils import get_id
 
 
 def lower_confidence_bound(upvotes, downvotes, z=1.28):
@@ -31,17 +40,43 @@ def lower_confidence_bound(upvotes, downvotes, z=1.28):
     return max(bound, 0)
 
 
-def add_rating(item):
+def _update_rating(studydoc_id):
     """Computes the rating for a study document."""
-    ratings = current_app.data.driver.db['studydocratings']
-    lookup = {'studydoc': ObjectId(item['_id'])}
+    docs = current_app.data.driver.db['studydocuments']
+    ratings = current_app.data.driver.db['studydocumentratings']
+    lookup = {'studydocument': studydoc_id}
 
+    # Check votes
     upvotes = ratings.count_documents({'rating': 'up', **lookup})
     downvotes = ratings.count_documents({'rating': 'down', **lookup})
 
-    item['rating'] = lower_confidence_bound(upvotes, downvotes)
+    # Compute rating and write to database
+    rating = lower_confidence_bound(upvotes, downvotes)
+    docs.update_one({'_id': studydoc_id}, {'$set': {'rating': rating}})
 
 
-def add_rating_collection(response):
-    for item in response['_items']:
-        add_rating(item)
+def init_rating(items):
+    """On creating of a study-document, set the rating to None."""
+    for item in items:
+        item['rating'] = None
+    # lookup = {'_id': {'$in': [get_id(item['_id']) for item in items]}}
+    # updates = {'$set': {'rating': None}}
+    # current_app.data.driver.db['studydocuments'].update_many(lookup, updates)
+
+
+def update_rating_post(items):
+    """Rating update hook for POST requests."""
+    for item in items:
+        _update_rating(get_id(item['studydocument']))
+
+
+def update_rating_patch(updates, original):
+    """Rating update hook for PATCH requests."""
+    _update_rating(get_id(updates['studydocument'])
+                   if 'studydocument' in updates else
+                   get_id(original['studydocument']))
+
+
+def update_rating_delete(item):
+    """Rating update hook for DELETE requests."""
+    _update_rating(get_id(item['studydocument']))

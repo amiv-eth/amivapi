@@ -218,8 +218,8 @@ studydocdomain = {
         },
     },
 
-    'studydocratings': {
-        'resource_title': "Study Document Rating",
+    'studydocumentratings': {
+        'resource_title': "Study Document Ratings",
         'item_title': "Study Document Rating",
 
         'description': "Rating for Study documents (TODO)",
@@ -227,7 +227,7 @@ studydocdomain = {
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-         # TODO
+        # TODO
         'authentication': StudydocsAuth,
 
         'schema': {
@@ -243,10 +243,10 @@ studydocdomain = {
                 },
                 'not_patchable': True,
                 'required': True,
-                'unique_combination': ['studydoc'],
+                'unique_combination': ['studydocument'],
             },
 
-            'studydoc': {
+            'studydocument': {
                 'title': 'Study Document',
                 'description': 'The rated study doc.',
                 'example': '10d8e50e303049ecb856ae9b',
