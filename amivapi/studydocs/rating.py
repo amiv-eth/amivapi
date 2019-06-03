@@ -18,8 +18,10 @@ from math import sqrt
 from amivapi.utils import get_id
 
 
-def lower_confidence_bound(upvotes, downvotes, z=1.28):
-    """Compute the lower bound of the wilson confidence interval is returned,
+def compute_rating(upvotes, downvotes, z=1.28):
+    """Compute the rating.
+
+    Concretely, the lower bound of the wilson confidence interval is returned,
     which takes the number of votes into account. [1]
 
     We use z = 1.28 by default, which corresponds to a 80% confidence interval
@@ -51,7 +53,7 @@ def _update_rating(studydoc_id):
     downvotes = ratings.count_documents({'rating': 'down', **lookup})
 
     # Compute rating and write to database
-    rating = lower_confidence_bound(upvotes, downvotes)
+    rating = compute_rating(upvotes, downvotes)
     docs.update_one({'_id': studydoc_id}, {'$set': {'rating': rating}})
 
 
@@ -59,9 +61,6 @@ def init_rating(items):
     """On creating of a study-document, set the rating to None."""
     for item in items:
         item['rating'] = None
-    # lookup = {'_id': {'$in': [get_id(item['_id']) for item in items]}}
-    # updates = {'$set': {'rating': None}}
-    # current_app.data.driver.db['studydocuments'].update_many(lookup, updates)
 
 
 def update_rating_post(items):

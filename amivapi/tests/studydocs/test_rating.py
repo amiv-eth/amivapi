@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Tests for studydocuments rating."""
 
-from amivapi.studydocs.rating import lower_confidence_bound
+from amivapi.studydocs.rating import compute_rating
 from amivapi.tests.utils import WebTest, WebTestNoAuth
 
 
@@ -34,7 +34,7 @@ class StudydocsRatingTest(WebTestNoAuth):
             (0, 5, 0.0),
             (0, 10, 0.0),
         ]:
-            bound = lower_confidence_bound(upvotes, downvotes)
+            bound = compute_rating(upvotes, downvotes)
             self.assertAlmostEqual(rating, bound, 2)
 
     def test_rating(self):
