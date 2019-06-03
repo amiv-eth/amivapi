@@ -5,7 +5,7 @@
 """Tests for studydocuments rating."""
 
 from amivapi.studydocs.rating import lower_confidence_bound
-from amivapi.tests.utils import WebTestNoAuth
+from amivapi.tests.utils import WebTest, WebTestNoAuth
 
 
 class StudydocsRatingTest(WebTestNoAuth):
@@ -130,3 +130,100 @@ class StudydocsRatingTest(WebTestNoAuth):
                         headers={'If-Match': rating_1['_etag']},
                         status_code=204)
         self._assert_rating(doc, None)
+
+    def test_rate_once(self):
+        """Every user can rate a document only once."""
+        user = str(self.new_object('users')['_id'])
+        doc = str(self.new_object('studydocuments')['_id'])
+
+        data = {'user': user, 'studydocument': doc, 'rating': 'up'}
+        self.api.post('/studydocumentratings', data=data, status_code=201)
+        self.api.post('/studydocumentratings', data=data, status_code=422)
+
+
+class StudydocsRatingAuthTest(WebTest):
+    """Test rating permissions and visibility."""
+
+    def test_see_own(self):
+        """Users can only see their own ratings."""
+        user_1, user_2 = self.load_fixture({'users': [{}, {}]})
+        self.new_object('studydocuments')
+        rating_1, rating_2 = self.load_fixture({
+            'studydocumentratings': [
+                {'user': str(user_1['_id']), 'rating': 'up'},
+                {'user': str(user_2['_id']), 'rating': 'down'}
+            ]
+        })
+
+        token = self.get_user_token(rating_1['user'])
+
+        # Resource
+        response = self.api.get('/studydocumentratings',
+                                token=token, status_code=200)
+        ids = [item['_id'] for item in response.json['_items']]
+        self.assertIn(str(rating_1['_id']), ids)
+        self.assertNotIn(str(rating_2['_id']), ids)
+
+        # Item
+        self.api.get('/studydocumentratings/' + str(rating_1['_id']),
+                     token=token, status_code=200)
+        self.api.get('/studydocumentratings/' + str(rating_2['_id']),
+                     token=token, status_code=404)
+
+    def test_create(self):
+        """Users can only create ratings for themselves."""
+        user_1, user_2 = self.load_fixture({'users': [{}, {}]})
+        doc = str(self.new_object('studydocuments')['_id'])
+
+        data_1 = {'studydocument': doc, 'user': str(user_1['_id']),
+                  'rating': 'up'}
+        data_2 = {'studydocument': doc, 'user': str(user_2['_id']),
+                  'rating': 'up'}
+        token = self.get_user_token(user_1['_id'])
+        self.api.post('/studydocumentratings', data=data_1, token=token,
+                      status_code=201)
+        self.api.post('/studydocumentratings', data=data_2, token=token,
+                      status_code=422)
+
+    def test_modify_own(self):
+        """Users can only patch their own ratings."""
+        user_1, user_2 = self.load_fixture({'users': [{}, {}]})
+        self.new_object('studydocuments')
+        rating_1, rating_2 = self.load_fixture({
+            'studydocumentratings': [
+                {'user': str(user_1['_id']), 'rating': 'down'},
+                {'user': str(user_2['_id']), 'rating': 'down'}
+            ]
+        })
+
+        token = self.get_user_token(rating_1['user'])
+        updates = {'rating': 'up'}
+
+        self.api.patch('/studydocumentratings/' + str(rating_1['_id']),
+                       data=updates, token=token, status_code=200,
+                       headers={'If-Match': rating_1['_etag']})
+        # Cannot even see other rating, so a 404 is returned
+        self.api.patch('/studydocumentratings/' + str(rating_2['_id']),
+                       data=updates, token=token, status_code=404,
+                       headers={'If-Match': rating_2['_etag']})
+
+    def test_delete_own(self):
+        """Users can only delete their own ratings."""
+        user_1, user_2 = self.load_fixture({'users': [{}, {}]})
+        self.new_object('studydocuments')
+        rating_1, rating_2 = self.load_fixture({
+            'studydocumentratings': [
+                {'user': str(user_1['_id']), 'rating': 'down'},
+                {'user': str(user_2['_id']), 'rating': 'down'}
+            ]
+        })
+
+        token = self.get_user_token(rating_1['user'])
+
+        self.api.delete('/studydocumentratings/' + str(rating_1['_id']),
+                        token=token, status_code=204,
+                        headers={'If-Match': rating_1['_etag']})
+        # Cannot even see other rating, so a 404 is returned
+        self.api.delete('/studydocumentratings/' + str(rating_2['_id']),
+                        token=token, status_code=404,
+                        headers={'If-Match': rating_2['_etag']})

@@ -4,9 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Model for studydocuments."""
 
-from amivapi.settings import DEPARTMENT_LIST
+from flask import g
 
-from .authorization import StudydocsAuth
+from amivapi.settings import DEPARTMENT_LIST
+from .authorization import StudydocsAuth, StudydocratingsAuth
 
 
 description = ("""
@@ -23,22 +24,18 @@ All fields that do not apply can be `Null`.
 
 <br />
 
-## Security
-
-In addition to the usual
-[permissions](#section/Authentication-and-Authorization/Authorization),
-file uploaders have additional permissions:
-
-- **Users** can modify all items they uploaded themselves (identified by the
-  user id in the `uploader` field).
-
-- **Admins** can modify items for all users.
-
-<br />
-
 ## Ratings
 
-TODO!
+Every **User** can rate study documents by either up- or downvoting, using the
+[Study Document Ratings](#tag/Study-Document-Rating) endpoint.
+
+Ratings are not simply averages, but take the number of votes into account.
+Concretely, the rating is the lower bound of the wilson confidence interval.
+
+[You can read more here][1] if you are interested!
+
+[1]: http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+
 
 <br />
 
@@ -64,6 +61,26 @@ _summary:
 The summary is only computed for documents matching the current `where` query,
 e.g. when searching for ITET documents, only professors related to ITET
 documents will show up in the summary.
+
+<br />
+
+## Security
+
+In addition to the usual
+[permissions](#section/Authentication-and-Authorization/Authorization),
+file uploaders have additional permissions, and rating access is restricted:
+
+- **Users** can modify all items they uploaded themselves (identified by the
+  user id in the `uploader` field). They can give ratings (only for themselves,
+  not for other users) and see their own ratings.
+
+- **Admins** can see and modify items and ratings for all users.
+
+""")
+
+
+description_rating = ("""
+
 """)
 
 
@@ -72,6 +89,20 @@ class StudyDocValidator(object):
 
     def _validate_allow_summary(self, *args, **kwargs):
         """{'type': 'boolean'}"""
+
+    def _validate_only_self(self, enabled, field, value):
+        """Validate if the id can be used for a rating.
+
+        Users can only sign up themselves
+        Moderators and admins can sign up everyone
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        user = g.get('current_user')
+        if enabled and not g.get('resource_admin') and (str(value) != user):
+            self._error(field, "You can only rate with your own id."
+                        "(Your id: %s)" % (user))
 
 
 studydocdomain = {
@@ -222,17 +253,16 @@ studydocdomain = {
         'resource_title': "Study Document Ratings",
         'item_title': "Study Document Rating",
 
-        'description': "Rating for Study documents (TODO)",
+        'description': "A rating for a [Study Document](#tag/Study-Document).",
 
         'resource_methods': ['GET', 'POST'],
         'item_methods': ['GET', 'PATCH', 'DELETE'],
 
-        # TODO
-        'authentication': StudydocsAuth,
+        'authentication': StudydocratingsAuth,
 
         'schema': {
             'user': {
-                'description': 'The rating user.',
+                'description': 'The rating user. You can only use your own id.',
                 'example': '679ff66720812cdc2da4fb4a',
 
                 'type': 'objectid',
@@ -243,12 +273,13 @@ studydocdomain = {
                 },
                 'not_patchable': True,
                 'required': True,
+                'only_self': True,
                 'unique_combination': ['studydocument'],
             },
 
             'studydocument': {
                 'title': 'Study Document',
-                'description': 'The rated study doc.',
+                'description': 'The rated study document.',
                 'example': '10d8e50e303049ecb856ae9b',
 
                 'data_relation': {
