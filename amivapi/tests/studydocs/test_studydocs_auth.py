@@ -88,16 +88,3 @@ class StudydocsAuthTest(WebTest):
 
         docs = self.api.get('/studydocuments', token=token, status_code=200)
         self.assertEqual(len(docs.json['_items']), 5)
-
-
-class StudyDocRatingAuthTest(WebTest):
-    """Test for rating authentication."""
-
-    def test_own_ratings(self):
-        ...
-
-    def test_other_ratings(self):
-        ...
-
-    def test_admin_ratings(self):
-        ...
