@@ -158,10 +158,10 @@ SIGNUP_DELETED_TEXT = "Your signup was removed."
 # We can use this to discover department of students
 LDAP_DEPARTMENT_MAP = {
     # (phrase in departmentNumber for our members): department of member
-    u'ETH Student D-ITET': u'itet',  # for BSc, MSc as well as PhD students!
-    u'ETH Studentin D-ITET': u'itet',
-    u'ETH Student D-MAVT': u'mavt',
-    u'ETH Studentin D-MAVT': u'mavt',
+    u'Student D-ITET': u'itet',  # for BSc, MSc as well as PhD students!
+    u'Studentin D-ITET': u'itet',
+    u'Student D-MAVT': u'mavt',
+    u'Studentin D-MAVT': u'mavt',
     # All other departments are mapped to 'None' (s.t. None equals 'no member')
 }
 
