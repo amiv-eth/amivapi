@@ -223,8 +223,9 @@ class LdapTest(WebTestNoAuth):
             'givenName',
             'sn',
             'swissEduPersonGender',
+            'ou',
             'departmentNumber',
-            'ou'
+            'description',
         ]
         mock_results = [1, 2, 3]
         # Mock ldap query
@@ -349,6 +350,7 @@ class LdapIntegrationTest(WebTest):
             user = ldap.sync_one(LDAP_USER_NETHZ)
             data_only = {key: value for (key, value) in user.items()
                          if not key.startswith('_')}  # no meta fields
+            data_only.pop('password_set')  # meta field as well
 
             # Double check with database
             db_user = self.db['users'].find_one({'nethz': LDAP_USER_NETHZ})
