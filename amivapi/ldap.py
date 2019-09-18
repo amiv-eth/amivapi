@@ -166,7 +166,7 @@ def _process_data(data):
     # In some rare cases, the departmentNumber field is either empty
     # or missing -> normalize to empty string
     department_info = next(iter(
-        data.get('departmentNumber') or data.get('description') or []
+        data.get('description') or data.get('departmentNumber') or []
     ), '')
     department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
     department = (dept for phrase, dept in department_map
