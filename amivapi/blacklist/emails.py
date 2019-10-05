@@ -26,14 +26,14 @@ def _get_email(item):
 
 @schedulable
 def send_removed_mail(item):
-    """Sends a scheduled email when end_time is reached and the entry is removed."""
+    """Send scheduled email when a blacklist entry times out."""
     _item = current_app.data.find_one('blacklist', None, {"_id": item['_id']})
     # Check that the end date is still correct and has not changed again
     if _item is None:
         return  # Entry was deleted, no mail to send anymore
     if _item.get('end_time') is None:
         return  # Entry was patched to last indefinitely, so no mail to send.
-    if _item['end_time'].replace(tzinfo=None) != item['end_time']
+    if _item['end_time'].replace(tzinfo=None) != item['end_time']:
         return  # Entry was edited, so this is outdated.
 
     email = _get_email(_item)
