@@ -26,19 +26,21 @@ def _get_email(item):
 
 @schedulable
 def send_removed_mail(item):
-    """Schedules an email when end_time is reached and the entry is removed."""
-    # Check that the end date is still correct and has not changed again
+    """Sends a scheduled email when end_time is reached and the entry is removed."""
     _item = current_app.data.find_one('blacklist', None, {"_id": item['_id']})
+    # Check that the end date is still correct and has not changed again
     if _item is None:
         return  # Entry was deleted, no mail to send anymore
+    if _item.get('end_time') is None:
+        return  # Entry was patched to last indefinitely, so no mail to send.
+    if _item['end_time'].replace(tzinfo=None) != item['end_time']
+        return  # Entry was edited, so this is outdated.
 
-    # Note: We have to remove the (empty) tzinfo from dates coming from the db
-    if _item['end_time'].replace(tzinfo=None) == item['end_time']:
-        email = _get_email(_item)
-        fields = {'reason': _item['reason']}
-        mail(email,
-             'Your blacklist entry has been removed!',
-             current_app.config['BLACKLIST_REMOVED'].format(**fields))
+    email = _get_email(_item)
+    fields = {'reason': _item['reason']}
+    mail(email,
+         'Your blacklist entry has been removed!',
+         current_app.config['BLACKLIST_REMOVED'].format(**fields))
 
 
 def notify_new_blacklist(items):
@@ -67,8 +69,9 @@ def notify_patch_blacklist(new, old):
     """Send an email to a user if one of his entries was updated."""
     # Checks if the particular update resolved the blacklist entry or just
     # fixes an error, for example changed the reason or price. An entry is
-    # resolved when the end_time is before now.
-    if 'end_time' not in new:
+    # resolved when the end_time is before now. The end_time might also
+    # have been removed, in which case we don't schedule an email either.
+    if 'end_time' not in new or new['end_time'] is None:
         return
 
     # Either send mail immediately, or schedule for the future
