@@ -16,7 +16,6 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 
 from amivapi import (
     auth,
-    beverages,
     cascade,
     cron,
     documentation,
@@ -104,7 +103,6 @@ def create_app(config_file=None, **kwargs):
     groups.init_app(app)
     blacklist.init_app(app)
     joboffers.init_app(app)
-    beverages.init_app(app)
     studydocs.init_app(app)
     cascade.init_app(app)
     cron.init_app(app)
