@@ -4,6 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Test that people are correctly added and removed from the waiting list"""
 
+from datetime import datetime, timedelta
+from freezegun import freeze_time
+
+from amivapi.cron import run_scheduled_tasks
 from amivapi.tests.utils import WebTestNoAuth
 
 
@@ -95,3 +99,60 @@ class EventsignupQueueTest(WebTestNoAuth):
         self.api.delete('/eventsignups/%s' % signup2['_id'],
                         headers={'If-Match': signup2['_etag']},
                         status_code=204)
+
+    def test_fairfcfs_nobody_gets_accepted_in_first_minute(self):
+        """Test that with fcfs the users don't get accepted within
+        for events with unlimited spaces"""
+        event = self.new_object(
+            'events', spots=10, selection_strategy='fcfs',
+            allow_email_signups=True,
+            time_register_end=datetime.now() + timedelta(minute=19))
+
+        user = self.new_object('users')
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+        self.assertFalse(signup['accepted'])
+
+        signup = self.api.post('/eventsignups', data={
+            'event': str(event['_id']),
+            'email': 'bla@test.bla'
+        }, status_code=201).json
+        self.assertFalse(signup['accepted'])
+
+    def test_fairfcfs_lottery_selects_right_number_of_signups(self):
+        """Test that """
+        with self.app.app_context(), freeze_time(
+                "2016-01-01 00:00:00") as frozen_time:
+            event = self.new_object('events', spots=10,
+                                    selection_strategy='fcfs',
+                                    time_register_start=datetime.now())
+
+            # Add 11 signups
+            self.load_fixture({'users': [{} for _ in range(50)]})
+            signups = self.load_fixtures(
+                {'eventsignups': [{} for _ in range(11)]})
+
+            frozen_time.tick(delta=timedelta(hours=1))
+            run_scheduled_tasks()
+
+            # check that 10 signups got accepted
+            event = self.api.get('events/%s' % event['_id'],
+                                 status_code=200).json
+            self.assertEqual(event['signup_count'], 10)
+
+            # late signups
+            late_signup = self.api.post('/eventsignups', data={
+                'event': str(event['_id'])
+            }, status_code=201).json
+            self.assertFalse(late_signup['accepted'])
+
+            # check that signups within first minute have priority
+            self.api.delete('/eventsignups/%s' % signups[0]['_id'],
+                            headers={'If-Match': signups[0]['_etag']},
+                            status_code=204)
+            late_signup = self.api.get('/eventsignups/%s' % late_signup['_id'],
+                                       status_code=200).json
+            self.assertFalse(late_signup['accepted'])

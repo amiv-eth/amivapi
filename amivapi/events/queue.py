@@ -4,14 +4,20 @@
 #          you to buy us beer if we meet and you like the software.
 """Logic to implement different signup queues."""
 
+from datetime import datetime, timedelta
+from random import sample
+import pytz
+
 from flask import current_app, url_for
 from itsdangerous import URLSafeSerializer
 from pymongo import ASCENDING
 
 from amivapi.utils import mail
 from amivapi.events.utils import get_token_secret
+from amivapi.cron import schedule_task
 
 
+# @schedulable
 def update_waiting_list(event_id):
     """Fill up missing people in an event with people from the waiting list.
     This gets triggered by different hooks, whenever the list needs to be
@@ -28,36 +34,64 @@ def update_waiting_list(event_id):
     lookup = {id_field: event_id}
     event = current_app.data.find_one('events', None, **lookup)
 
-    accepted_ids = []
+    accepted_signups = []
+    if event['selection_strategy'] != 'fcfs':
+        return []
 
-    if event['selection_strategy'] == 'fcfs':
-        lookup = {'event': event_id, 'accepted': True}
-        signup_count = current_app.data.driver.db['eventsignups'].find(
-            lookup).count()
+    signup_count = current_app.data.driver.db['eventsignups'].find(
+        {'event': event_id}).count_documents()
+    accepted_count = current_app.data.driver.db['eventsignups'].find(
+        {'event': event_id, 'accepted': True}).count_documents()
 
-        # 0 spots == infinite spots
-        if event['spots'] == 0 or signup_count < event['spots']:
-            lookup = {'event': event_id, 'accepted': False, 'confirmed': True}
-            new_list = current_app.data.driver.db['eventsignups'].find(
-                lookup).sort('_created', ASCENDING)
+    if event['spots'] != 0:
+        # Fair FCFS Lottery
+        lottery_deadline = event['time_register_start'] + timedelta(minutes=1)
 
-            if event['spots'] > 0:
-                to_accept = new_list.limit(event['spots'] - signup_count)
-            else:
-                # infinite spots, so just accept everyone
-                to_accept = new_list
+        if lottery_deadline >= datetime.now(pytz.utc):
+            if signup_count == 0:
+                # This is the first signup, schedule an update of the waiting
+                # list in 1 minute.
+                schedule_task(datetime.now() + timedelta(minutes=2),
+                              update_waiting_list, event_id)
+            return []
 
-            for new_accepted in to_accept:
-                accepted_ids.append(new_accepted['_id'])
-                # Set accepted flag
-                current_app.data.update('eventsignups', new_accepted[id_field],
-                                        {'accepted': True}, new_accepted)
+        lottery_tickets = current_app.data.driver.db['eventsignups'].find(
+            {'event': event_id,
+             '_created': {'$lt': lottery_deadline},
+             'accepted': False,
+             'confirmed': True})
+        num_lottery_tickets = lottery_tickets.count_documents()
 
-                # Notify user
-                title = event.get('title_en') or event.get('title_de')
-                notify_signup_accepted(title, new_accepted)
+        if num_lottery_tickets > 0 and event['spots'] - accepted_count > 0:
+            winners = sample(range(num_lottery_tickets),
+                             min(num_lottery_tickets,
+                                 event['spots'] - accepted_count))
+            accepted_signups.extend([lottery_tickets[i] for i in winners])
+            accepted_count += len(winners)
 
-    return accepted_ids
+    # FCFS for the rest
+    # 0 spots == infinite spots
+    if event['spots'] == 0 or accepted_count < event['spots']:
+        lookup = {'event': event_id, 'accepted': False, 'confirmed': True}
+        new_list = current_app.data.driver.db['eventsignups'].find(
+            lookup).sort('_created', ASCENDING)
+
+        if event['spots'] > 0:
+            accepted_signups.extend(new_list.limit(
+                event['spots'] - accepted_count))
+        else:
+            # infinite spots, so just accept everyone
+            accepted_signups.extend(new_list)
+
+    for signup in accepted_signups:
+        # Set accepted flag
+        current_app.data.update('eventsignups', signup[id_field],
+                                {'accepted': True}, signup)
+        # Notify user
+        title = event.get('title_en') or event.get('title_de')
+        notify_signup_accepted(title, signup)
+
+    return [signup[id_field] for signup in accepted_signups]
 
 
 def notify_signup_accepted(event_name, signup):
