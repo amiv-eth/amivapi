@@ -96,6 +96,8 @@ def mail(to, subject, text):
             'receivers': to,
             'text': text
         })
+    elif app.config.get('DEBUG', False):
+        print('{}{}{}{}'.format(subject, sender, to, text))
     elif config.SMTP_SERVER and config.SMTP_PORT:
         msg = MIMEText(text)
         msg['Subject'] = subject

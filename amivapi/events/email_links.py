@@ -10,7 +10,7 @@ sign off via links.
 from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
-from flask import Blueprint, current_app, redirect, request
+from flask import Blueprint, current_app, redirect, request, make_response, render_template, g
 from itsdangerous import BadSignature, URLSafeSerializer
 
 from amivapi.events.queue import update_waiting_list
@@ -66,19 +66,32 @@ def on_delete_signup(token):
     try:
         s = URLSafeSerializer(get_token_secret())
         signup_id = ObjectId(s.loads(token))
+        # event_name = s.loads(token)
     except BadSignature:
         return "Unknown token"
 
-    deleteitem_internal('eventsignups', concurrency_check=False,
-                        **{current_app.config['ID_FIELD']: signup_id})
-
     # Verify if user confirmed
-    # definitive = request.args.get('definitive')
-    # if definitive:
-
-    # Removal
-    redirect_url = current_app.config.get('SIGNUP_DELETED_REDIRECT')
-    if redirect_url:
-        return redirect(redirect_url)
-    else:
-        return current_app.config['SIGNUP_DELETED_TEXT']
+    # definitive = request.args.get('DEFINITIVE_DELETE')
+    # Get first name for personal greeting
+    query = {'_id': ObjectId(g.current_user)}
+    projection = {'firstname': 1}  # Firstame is a required field for users
+    data = current_app.data.driver.db['users'].find_one(query, projection)
+    user = data['firstname']
+    unregister_page = True
+    if unregister_page:
+    # Serve the unregister_event page
+        response = make_response(render_template("unregister_event.html",
+                                                 user=user,
+                                                 event=event_name,
+                                                 error_msg=error_msg))
+        response.set_cookie('token', token)
+        return response
+    else: # Legacy
+        # Removal
+        deleteitem_internal('eventsignups', concurrency_check=False,
+                            **{current_app.config['ID_FIELD']: signup_id})
+        redirect_url = current_app.config.get('SIGNUP_DELETED_REDIRECT')
+        if redirect_url:
+            return redirect(redirect_url)
+        else:
+            return current_app.config['SIGNUP_DELETED_TEXT']

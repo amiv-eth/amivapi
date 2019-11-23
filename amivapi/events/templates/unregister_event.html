@@ -1,0 +1,67 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMIV Unregister from Event</title>
+    <style type="text/css">
+      {% include "style.css" %}
+    </style>
+  </head>
+  <body>
+    {% if error_msg %}
+    <dialog open>
+      <p>{{ error_msg }}</p>
+      <button onclick="this.parentNode.close()">close</button>
+    </dialog>
+    {% endif %}
+
+    <aside>
+      <img src={{ url_for('static', filename='logo.png') }} alt="Logo">
+    </aside>
+
+    <main>
+      <h1>
+        {% if user %}
+        Hi {{user}}!
+        {% else %}
+        Hello!
+        {% endif %}
+      </h1>
+      <p>
+        {% if user and event %}
+        We will irrevocably unregister you (<em>{{user}}</em>) from the event <em>{{event}}</em>.
+        Is that ok?
+        {% else %}
+        You clicked on a opt-out link of the AMIV at ETHZ student organization. We cannot process your request,
+          because we either do <em>{not}</em> know the event you wish to unregister from, or your user name, or both.
+        {% endif %}
+      </p>
+
+      <form method="POST">
+        {% if user %}
+          <input type="submit" name="submit" value="logout">
+          <input type="submit" name="submit" value="confirm">
+        {% else %}
+          <fieldset class="text">
+            <input id="username" minlength="1" type="text" name="username"
+                   required autofocus>
+            <label for="username">nethz or email</label>
+          </fieldset>
+          <fieldset class="text">
+            <input id="password" minlength="1" type="password" name="password"
+                   required>
+            <label for="password">password</label>
+          </fieldset>
+          <br/>
+          <fieldset class="checkbox">
+            <input type="checkbox" id="remember"
+                   name="remember" value="remember"></input>
+            <label for="remember">remember me on this device</label>
+          </fieldset>
+          <input type="submit" name="submit" value="login">
+        {% endif %}
+      </form>
+    </main>
+
+  </body>
+</html>
