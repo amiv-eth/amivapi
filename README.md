@@ -12,7 +12,7 @@ feel free to fork and modify.
 If you only want to use AMIV API, check out the online documentation
 (There's a link in the github description above).
 
-If you are an administrator and wish to get the AMIV API running, keep reading!
+If you are an administrator and wish to get the AMIV API r`unning, keep reading!
 
 If you are a developer looking to work on AMIV API, it's best to look at the
 code directly. You can start with [bootstrap.py](amivapi/bootstrap.py),
@@ -72,8 +72,13 @@ The following command runs a MongoDB service available on the default port
 password `amivapi`.
 
 ```sh
+# Initialize "swarm", a scheduling and clustering tool, that will enable us to create a network overlay
+docker swarm init
+
 # Create a network so that the api service can later be connected to the db
-docker network create --driver overlay backend
+docker network create --driver overlay backend # Overlay so that it is representative of the real-life AMIV structure
+
+# 
 docker service create \
     --name mongodb -p 27017:27017 --network backend\
     -e MONGODB_DATABASE=amivapi \

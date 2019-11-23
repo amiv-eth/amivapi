@@ -66,3 +66,6 @@ config.yaml
 amivapi/config.yaml
 apikeys.yaml
 amivapi_storage
+
+# Pycharm
+.idea/*
