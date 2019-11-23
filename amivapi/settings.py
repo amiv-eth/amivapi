@@ -68,7 +68,7 @@ REMOTE_MAILING_LIST_DIR = './'  # Use home directory on remote by default
 # SMTP server defaults
 API_MAIL = 'api@amiv.ethz.ch'
 API_MAIL_SUBJECT = "[AMIV] {subject}"
-SMTP_HOST = 'localhost' # None
+SMTP_HOST = 'localhost' # None in case you want to accept that no mails get sent (local testing)
 SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 

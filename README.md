@@ -12,7 +12,7 @@ feel free to fork and modify.
 If you only want to use AMIV API, check out the online documentation
 (There's a link in the github description above).
 
-If you are an administrator and wish to get the AMIV API r`unning, keep reading!
+If you are an administrator and wish to get the AMIV API running, keep reading!
 
 If you are a developer looking to work on AMIV API, it's best to look at the
 code directly. You can start with [bootstrap.py](amivapi/bootstrap.py),
@@ -36,7 +36,7 @@ You only need to install Docker, nothing else is required.
 
 ### Manual Installation for Development
 
-For development, we recommend to **fork** the repository and install AMIV API
+For development, we recommend to fork the repository and install AMIV API
 manually.
 
 First of all, we advise using a [virtual environment](https://docs.python.org/3/tutorial/venv.html).
@@ -76,7 +76,7 @@ password `amivapi`.
 docker swarm init
 
 # Create a network so that the api service can later be connected to the db
-docker network create --driver overlay backend # Overlay so that it is representative of the real-life AMIV structure
+docker network create --driver overlay backend
 
 # 
 docker service create \
@@ -176,7 +176,7 @@ docker service create \
     amiveth/amivapi amivapi cron --continuous
 
 # To attach your command line to the docker instance, use
-docker attach amivapi{...} # Use tab completion to find the name of the service
+docker attach amivapi... # Use tab completion to find the name of the service
 
 # As we run docker as a service, it restarts by itself even if you use docker kill
 # To stop the service, use
