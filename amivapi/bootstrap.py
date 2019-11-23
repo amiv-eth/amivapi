@@ -50,6 +50,23 @@ def init_sentry(app):
     )
 
 
+SIP_ENV_VARS = [
+    'SIP_AUTH_OIDC_DISCOVERY_URL',
+    'SIP_AUTH_AMIVAPI_CLIENT_ID',
+    'SIP_AUTH_AMIVAPI_CLIENT_SECRET',
+]
+
+
+def get_sip_config_from_env():
+    """Read the SIP configuration from environment variables."""
+    return {varname: getenv(varname) for varname in SIP_ENV_VARS}
+
+
+def drop_none_values_from_dict(dic):
+    """Drops all key-value pairs from a dictionary that have a None value."""
+    return {k: v for k, v in dic.items() if v is not None}
+
+
 def create_app(config_file=None, **kwargs):
     """
     Create a new eve app object and initialize everything.
@@ -79,6 +96,13 @@ def create_app(config_file=None, **kwargs):
         config_status = "Config loaded: %s" % user_config
     except IOError:
         config_status = "No config found."
+
+    # The SIP container is passing us settings through environment variables.
+    sip_env_config = get_sip_config_from_env()
+    # Unset environment variables will be be None values. In those cases we
+    # will want to keep the default, which is ok for testing.
+    config_updates = drop_none_values_from_dict(sip_env_config)
+    config.update(config_updates)
 
     config.update(kwargs)
 

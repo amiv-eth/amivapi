@@ -8,6 +8,8 @@ WORKDIR /api
 RUN apk add --no-cache musl-dev python-dev gcc git bash && \
     #  libjpeg and zlib for Pillow
     apk add --no-cache zlib-dev jpeg-dev && \
+    # libffi and openssl for Cryptography
+    apk add --no-cache libffi-dev openssl-dev && \
     apk add --no-cache mongodb
 
 # Install pip dependencies.

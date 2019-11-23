@@ -74,6 +74,11 @@ SMTP_TIMEOUT = 10
 LDAP_USERNAME = None
 LDAP_PASSWORD = None
 
+# SIP
+SIP_AUTH_OIDC_DISCOVERY_URL = None
+SIP_AUTH_AMIVAPI_CLIENT_ID = None
+SIP_AUTH_AMIVAPI_CLIENT_SECRET = None
+
 # Execution of periodic tasks with `amivapi run cron`
 CRON_INTERVAL = timedelta(minutes=5)  # per default, check tasks every 5 min
 

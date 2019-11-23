@@ -9,3 +9,5 @@ freezegun==0.3.12
 sentry-sdk[flask]==0.8.1
 beautifulsoup4==4.6.3
 Pillow==6.2.0
+requests==2.22.0
+jwcrypto==0.6.0

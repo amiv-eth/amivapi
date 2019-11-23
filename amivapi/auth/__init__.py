@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 
 """Auth and session endpoint initialization."""
-from amivapi.auth import apikeys, oauth
+from amivapi.auth import apikeys, flask_openid, oauth
 from amivapi.auth.auth import (
     abort_if_not_public,
     add_lookup_filter,
@@ -66,3 +66,4 @@ def init_app(app):
     # Add apikey authorization
     apikeys.init_apikeys(app)
     oauth.init_oauth(app)
+    flask_openid.init_app(app)
