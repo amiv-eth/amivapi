@@ -48,5 +48,5 @@ def init_app(app):
 
 @periodic(timedelta(days=1))
 def remove_expired_group_members():
-    current_app.data.driver.db['groupmemberships'].remove(
+    current_app.data.driver.db['groupmemberships'].remove_many(
         {'expiry': {'$lte': datetime.utcnow()}})

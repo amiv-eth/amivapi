@@ -123,7 +123,7 @@ apikeydomain = {
                 },
 
                 'type': 'dict',
-                'keyschema': {'type': 'string',
+                'keysrules': {'type': 'string',
                               'api_resources': True},
                 'valuesrules': {'type': 'string',
                                 'allowed': ['read', 'readwrite']},
