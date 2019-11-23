@@ -36,13 +36,14 @@ def notify_signup_accepted(event, signup):
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
 
-    mail([email],
-         'Eventsignup accepted',
-         current_app.config['ACCEPT_EMAIL_TEXT'].format(
-             name=name,
-             title=event.get('title_en') or event.get('title_de'),
-             link=deletion_link,
-             deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')))
+    print(deletion_link)
+    # mail([email],
+    #      'Eventsignup accepted',
+    #      current_app.config['ACCEPT_EMAIL_TEXT'].format(
+    #          name=name,
+    #          title=event.get('title_en') or event.get('title_de'),
+    #          link=deletion_link,
+    #          deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')))
 
 
 def send_confirmmail_to_unregistered_users(items):

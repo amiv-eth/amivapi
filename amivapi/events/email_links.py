@@ -7,7 +7,7 @@
 Needed when external users want to sign up for public events or users want to
 sign off via links.
 """
-import sys
+from datetime import datetime
 from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
@@ -17,7 +17,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 from amivapi.events.queue import update_waiting_list
 from amivapi.events.utils import get_token_secret
 
-email_blueprint = Blueprint('emails', __name__)
+email_blueprint = Blueprint('emails', __name__, template_folder='templates')
 
 
 def add_confirmed_before_insert(items):
@@ -86,18 +86,26 @@ def on_delete_signup(token):
         query = {'_id': user}
         data_user = current_app.data.driver.db['users'].find_one(query)
         user = data_user["firstname"]
-
+    event = data_signup['event']
+    query = {'_id': event}
+    data_event = current_app.data.driver.db['events'].find_one(query)
+    event_name = data_event["title_en"]
+    if event_name is None:
+        event_name = data_event["title_en"]
+    print(data_event["time_start"])
+    event_date = datetime.strftime(data_event["time_start"], '%Y-%m-%d %H:%M')
     # Serve the unregister_event page
     response = make_response(render_template("unregister_event.html",
                                              user=user,
-                                             event=data_signup["title_en"],
+                                             event=event_name,
+                                             event_date=event_date,
                                              error_msg=error_msg,
                                              token=token))
     response.set_cookie('token', token)
     return response
 
 
-@email_blueprint.route('/delete_confirmed/<token>')
+@email_blueprint.route('/delete_confirmed/<token>', methods = ['POST'])
 def on_delete_confirmed(token):
     try:
         s = URLSafeSerializer(get_token_secret())
