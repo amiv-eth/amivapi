@@ -37,30 +37,10 @@
         {% endif %}
       </p>
 
-      <form method="POST">
-        {% if user %}
-          <input type="submit" name="submit" value="logout">
-          <input type="submit" name="submit" value="confirm">
-        {% else %}
-          <fieldset class="text">
-            <input id="username" minlength="1" type="text" name="username"
-                   required autofocus>
-            <label for="username">nethz or email</label>
-          </fieldset>
-          <fieldset class="text">
-            <input id="password" minlength="1" type="password" name="password"
-                   required>
-            <label for="password">password</label>
-          </fieldset>
-          <br/>
-          <fieldset class="checkbox">
-            <input type="checkbox" id="remember"
-                   name="remember" value="remember"></input>
-            <label for="remember">remember me on this device</label>
-          </fieldset>
-          <input type="submit" name="submit" value="login">
-        {% endif %}
+       <form action="/delete_confirmed/{token}" method="POST">
+        <input type="submit" value="I agree">
       </form>
+
     </main>
 
   </body>

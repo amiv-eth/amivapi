@@ -7,6 +7,7 @@
 Needed when external users want to sign up for public events or users want to
 sign off via links.
 """
+import sys
 from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
@@ -66,32 +67,49 @@ def on_delete_signup(token):
     try:
         s = URLSafeSerializer(get_token_secret())
         signup_id = ObjectId(s.loads(token))
-        # event_name = s.loads(token)
+
     except BadSignature:
         return "Unknown token"
 
     # Verify if user confirmed
     # definitive = request.args.get('DEFINITIVE_DELETE')
     # Get first name for personal greeting
-    query = {'_id': ObjectId(g.current_user)}
-    projection = {'firstname': 1}  # Firstame is a required field for users
-    data = current_app.data.driver.db['users'].find_one(query, projection)
-    user = data['firstname']
-    unregister_page = True
-    if unregister_page:
+    error_msg = ''
+    query = {'_id': signup_id}
+    data_signup = current_app.data.driver.db['eventsignups'].find_one(query)
+    if data_signup is None:
+        error_msg = "This event might not exist anymore, or the link is broken, or we made a mistake."
+    user = data_signup['user']
+    if user is None:
+        user = data_signup['email']
+    else:
+        query = {'_id': user}
+        data_user = current_app.data.driver.db['users'].find_one(query)
+        user = data_user["firstname"]
+
     # Serve the unregister_event page
-        response = make_response(render_template("unregister_event.html",
-                                                 user=user,
-                                                 event=event_name,
-                                                 error_msg=error_msg))
-        response.set_cookie('token', token)
-        return response
-    else: # Legacy
-        # Removal
-        deleteitem_internal('eventsignups', concurrency_check=False,
-                            **{current_app.config['ID_FIELD']: signup_id})
-        redirect_url = current_app.config.get('SIGNUP_DELETED_REDIRECT')
-        if redirect_url:
-            return redirect(redirect_url)
-        else:
-            return current_app.config['SIGNUP_DELETED_TEXT']
+    response = make_response(render_template("unregister_event.html",
+                                             user=user,
+                                             event=data_signup["title_en"],
+                                             error_msg=error_msg,
+                                             token=token))
+    response.set_cookie('token', token)
+    return response
+
+
+@email_blueprint.route('/delete_confirmed/<token>')
+def on_delete_confirmed(token):
+    try:
+        s = URLSafeSerializer(get_token_secret())
+        signup_id = ObjectId(s.loads(token))
+
+    except BadSignature:
+        return "Unknown token"
+
+    deleteitem_internal('eventsignups', concurrency_check=False,
+                        **{current_app.config['ID_FIELD']: signup_id})
+    redirect_url = current_app.config.get('SIGNUP_DELETED_REDIRECT')
+    if redirect_url:
+        return redirect(redirect_url)
+    else:
+        return current_app.config['SIGNUP_DELETED_TEXT']
