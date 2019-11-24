@@ -36,9 +36,11 @@ def add_position_to_signup_collection(response):
     for item in response['_items']:
         add_position_to_signup(item)
 
+
 def add_position_to_signup_on_inserted(items):
     for item in items:
         add_position_to_signup(item)
+
 
 def add_signup_count_to_event(item):
     """After an event is fetched from the database we add the current signup
