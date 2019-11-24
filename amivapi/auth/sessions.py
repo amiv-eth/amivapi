@@ -265,4 +265,4 @@ def delete_expired_sessions():
     >>>     delete_expired_sessions()
     """
     deadline = datetime.datetime.utcnow() - app.config['SESSION_TIMEOUT']
-    app.data.driver.db['sessions'].remove({'_updated': {'$lt': deadline}})
+    app.data.driver.db['sessions'].delete_many({'_updated': {'$lt': deadline}})
