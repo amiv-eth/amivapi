@@ -600,6 +600,12 @@ eventdomain = {
                 'type': 'boolean',
                 'admin_only': True
             },
+            'position': {
+                'description': "Position of the signup within all signups of "
+                               "the event.",
+                'readonly': True,
+                'type': 'integer',
+            }
         }
     }
 }
