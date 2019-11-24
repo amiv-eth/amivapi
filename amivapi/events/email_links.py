@@ -92,8 +92,10 @@ def on_delete_signup(token):
     event_name = data_event["title_en"]
     if event_name is None:
         event_name = data_event["title_en"]
-    print(data_event["time_start"])
-    event_date = datetime.strftime(data_event["time_start"], '%Y-%m-%d %H:%M')
+    if data_event["time_start"] is None:
+        event_date = "a yet undefined day."
+    else:
+        event_date = datetime.strftime(data_event["time_start"], '%Y-%m-%d %H:%M')
     # Serve the unregister_event page
     response = make_response(render_template("unregister_event.html",
                                              user=user,
