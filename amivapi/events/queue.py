@@ -4,7 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Logic to implement different signup queues."""
 
-from flask import current_app
+from flask import current_app, g
 from pymongo import ASCENDING
 
 from amivapi.events.emails import notify_signup_accepted
@@ -65,7 +65,7 @@ Hooks that trigger fcfs execution
 def add_accepted_before_insert(signups):
     """Add the accepted field before inserting signups."""
     for signup in signups:
-        signup['accepted'] = False
+        signup['accepted'] = g.resource_admin and signup.get('accepted', False)
 
 
 def update_waiting_list_after_insert(signups):

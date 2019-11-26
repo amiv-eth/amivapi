@@ -55,6 +55,15 @@ class EventsignupQueueTest(WebTestNoAuth):
                                     status_code=200).json
         self.assertTrue(user2_signup['accepted'])
 
+        # post accepted signup as admin
+        user1_signup = self.api.post('/eventsignups', data={
+            'user': str(user1['_id']),
+            'event': str(event['_id']),
+            'accepted': True
+        }, status_code=201).json
+
+        self.assertTrue(user1_signup['accepted'])
+
     def test_fcfs_users_get_auto_accepted_unlimited_spots(self):
         """Test that with fcfs the users get automatically accepted on signup
         for events with unlimited spaces"""
