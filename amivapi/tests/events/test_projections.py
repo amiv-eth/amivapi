@@ -63,8 +63,8 @@ class EventProjectionTest(WebTestNoAuth):
         self.assertEqual(event['signup_count'], 100)
         self.assertEqual(event['unaccepted_count'], 1)
 
-    def test_waitinglist_position_projection(self):
-        """Test that waiting list position is correctly inserted into a
+    def test_signuplist_position_projection(self):
+        """Test that signup list position is correctly inserted into a
         signup information"""
         with freeze_time("2016-01-01 00:00:00") as frozen_time:
             # Create a new event
@@ -93,6 +93,8 @@ class EventProjectionTest(WebTestNoAuth):
                 'event': str(event['_id']),
                 'user': str(late_user['_id'])
             }, status_code=201).json
+            # Check that position is part of the received entity
+            self.assertEqual(signup['position'], 4)
 
             # GET the late user's signup to check his position
             signup_info = self.api.get(
