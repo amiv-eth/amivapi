@@ -65,6 +65,8 @@ Hooks that trigger fcfs execution
 def add_accepted_before_insert(signups):
     """Add the accepted field before inserting signups."""
     for signup in signups:
+        # Admins may provide a value for `accepted`.
+        # If not provided or not admin set it to false`.
         signup['accepted'] = g.resource_admin and signup.get('accepted', False)
 
 

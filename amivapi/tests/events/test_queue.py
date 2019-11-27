@@ -4,7 +4,41 @@
 #          you to buy us beer if we meet and you like the software.
 """Test that people are correctly added and removed from the waiting list"""
 
-from amivapi.tests.utils import WebTestNoAuth
+from amivapi.tests.utils import WebTestNoAuth, WebTest
+
+
+class EventsignupQueuePermissionTest(WebTest):
+    def test_fcfs_users_cannot_provide_accepted(self):
+        """Test that with fcfs admins can provide accepted
+        field while normal users cannot"""
+        event = self.new_object('events', spots=1,
+                                selection_strategy='fcfs')
+
+        user1 = self.new_object('users')
+        user2 = self.new_object('users')
+
+        user1_signup = self.api.post('/eventsignups', data={
+            'user': str(user1['_id']),
+            'event': str(event['_id'])
+        }, token=self.get_user_token(user1['_id']), status_code=201).json
+
+        self.assertTrue(user1_signup['accepted'])
+
+        # Check that a normal user cannot provide the accepted field
+        self.api.post('/eventsignups', data={
+            'user': str(user2['_id']),
+            'event': str(event['_id']),
+            'accepted': True
+        }, token=self.get_user_token(user2['_id']), status_code=422)
+
+        # Check that admins can always provide the accepted field
+        user2_signup = self.api.post('/eventsignups', data={
+            'user': str(user2['_id']),
+            'event': str(event['_id']),
+            'accepted': True
+        }, token=self.get_root_token(), status_code=201).json
+
+        self.assertTrue(user2_signup['accepted'])
 
 
 class EventsignupQueueTest(WebTestNoAuth):
