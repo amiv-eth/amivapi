@@ -195,9 +195,9 @@ def _create_or_update_user(ldap_data):
             # Membership will not be downgraded and email not be overwritten
             # Newletter settings will also not be adjusted
             ldap_data.pop('email', None)
-            ldap_data.pop('send_newsletter', None)
             if db_data.get('membership') != u"none":
                 ldap_data.pop('membership', None)
+                ldap_data.pop('send_newsletter', None)
 
             user = patch_internal('users',
                                   ldap_data,
