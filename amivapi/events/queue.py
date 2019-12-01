@@ -75,6 +75,18 @@ def add_accepted_before_insert(signups):
             event['moderator'])) and signup.get('accepted', False)
 
 
+def notify_signup_accepted_on_inserted(signups):
+    """Notify the users if an admin inserted a signup where
+    accepted was set to true."""
+    for signup in signups:
+        if signup['accepted']:
+            id_field = current_app.config['ID_FIELD']
+            lookup = {id_field: signup['event']}
+            event = current_app.data.find_one('events', None, **lookup)
+
+            notify_signup_accepted(event, signup)
+
+
 def update_waiting_list_after_insert(signups):
     """Hook to automatically update the waiting list.
 

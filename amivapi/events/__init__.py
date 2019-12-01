@@ -30,6 +30,7 @@ from amivapi.events.projections import (
 )
 from amivapi.events.queue import (
     add_accepted_before_insert,
+    notify_signup_accepted_on_inserted,
     update_waiting_list_after_delete,
     update_waiting_list_after_insert,
 )
@@ -63,6 +64,7 @@ def init_app(app):
     app.on_insert_eventsignups += add_confirmed_before_insert
     # Sending confirmation mails
     app.on_inserted_eventsignups += send_confirmmail_to_unregistered_users
+    app.on_inserted_eventsignups += notify_signup_accepted_on_inserted
 
     # Auto accept registrations for fcfs system
     app.on_insert_eventsignups += add_accepted_before_insert
