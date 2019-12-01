@@ -107,7 +107,7 @@ Now it's time to configure AMIV API. Create a file `config.py`
 ROOT_PASSWORD = 'root'
 
 # MongoDB Configuration
-MONGO_HOST = 'mongodb' # or 'localhost' if you run the API from Python
+MONGO_HOST = 'mongodb' # or 'localhost' if you run the database locally
 MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
 MONGO_USERNAME = 'amivapi'
