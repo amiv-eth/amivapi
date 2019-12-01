@@ -11,7 +11,8 @@ from datetime import datetime
 from bson import ObjectId
 from eve.methods.delete import deleteitem_internal
 from eve.methods.patch import patch_internal
-from flask import Blueprint, current_app, redirect, request, make_response, render_template, g
+from flask import Blueprint, current_app, redirect, make_response,\
+    render_template
 from itsdangerous import BadSignature, URLSafeSerializer
 
 from amivapi.events.queue import update_waiting_list
@@ -78,7 +79,7 @@ def on_delete_signup(token):
     query = {'_id': signup_id}
     data_signup = current_app.data.driver.db['eventsignups'].find_one(query)
     if data_signup is None:
-        error_msg = "This event might not exist anymore, or the link is broken, or we made a mistake."
+        error_msg = "This event might not exist anymore or the link is broken."
     user = data_signup['user']
     if user is None:
         user = data_signup['email']
@@ -95,7 +96,8 @@ def on_delete_signup(token):
     if data_event["time_start"] is None:
         event_date = "a yet undefined day."
     else:
-        event_date = datetime.strftime(data_event["time_start"], '%Y-%m-%d %H:%M')
+        event_date = datetime.strftime(data_event["time_start"],
+                                       '%Y-%m-%d %H:%M')
     # Serve the unregister_event page
     response = make_response(render_template("unregister_event.html",
                                              user=user,
@@ -107,7 +109,7 @@ def on_delete_signup(token):
     return response
 
 
-@email_blueprint.route('/delete_confirmed/<token>', methods = ['POST'])
+@email_blueprint.route('/delete_confirmed/<token>', methods=['POST'])
 def on_delete_confirmed(token):
     try:
         s = URLSafeSerializer(get_token_secret())

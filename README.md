@@ -191,7 +191,7 @@ variable `AMIVAPI_CONFIG` to specify the config path in the container.)
 If you have installed AMIV API locally, you can use the CLI to start it.
 
 First, change `MONGO_HOST = 'mongodb'` in `config.py` to `'MONGO_HOST = 'localhost'`.
-Then, in CLI:
+Then, in CLI (with the environment active):
 
 ```sh
 amivapi run dev # Start development server
@@ -210,7 +210,7 @@ amivapi run --help
 If you have docker installed you can simply run the tests in a Docker instance:
 
 ```sh
-./run_tests.sh
+./run_tests.sh # potentially try with sudo
 ```
 
 By default, this will start a container with mongodb, and run

@@ -62,13 +62,14 @@ MAILING_LIST_DIR = None
 REMOTE_MAILING_LIST_ADDRESS = None
 REMOTE_MAILING_LIST_KEYFILE = None
 REMOTE_MAILING_LIST_DIR = './'  # Use home directory on remote by default
-# Signups via email (@email_blueprint.route('/delete_signup/<token>') in email_links.py)
+# Signups via email (@email_blueprint.route('/delete_signup/<token>')
+# in email_links.py)
 # DEFINITIVE_DELETE = ''
 
 # SMTP server defaults
 API_MAIL = 'api@amiv.ethz.ch'
 API_MAIL_SUBJECT = "[AMIV] {subject}"
-SMTP_HOST = 'localhost' # None in case you want to accept that no mails get sent (local testing)
+SMTP_HOST = 'localhost'
 SMTP_PORT = 587
 SMTP_TIMEOUT = 10
 
