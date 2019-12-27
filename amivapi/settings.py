@@ -50,6 +50,12 @@ MONGO_DBNAME = 'amivapi'
 MONGO_USERNAME = 'amivapi'
 MONGO_PASSWORD = 'amivapi'
 
+S3_HOST = 'localhost:9000'
+S3_ACCESS_KEY = 'amivapi'
+S3_SECRET_KEY = 'amivapi'
+S3_BUCKET = 'amivapi'
+S3_SECURE_CONNECTION = True
+
 # File Storage
 RETURN_MEDIA_AS_BASE64_STRING = False
 RETURN_MEDIA_AS_URL = True

@@ -1,14 +1,31 @@
+FROM minio/minio:RELEASE.2019-10-12T01-39-57Z
+
+# Multi-Stage build to import already built binary of minio
 FROM python:3.6-alpine3.9
+
+ENV MINIO_UPDATE off
+ENV MINIO_ACCESS_KEY_FILE=access_key \
+    MINIO_SECRET_KEY_FILE=secret_key \
+    MINIO_KMS_MASTER_KEY_FILE=kms_master_key
+
+# Copy minio binary from first stage.
+COPY --from=0 /usr/bin/minio /usr/bin/minio
+COPY --from=0 /usr/bin/docker-entrypoint.sh /usr/bin/minio-entrypoint.sh
 
 # Create user with home directory and no password and change workdir.
 RUN adduser -Dh /api amivapi
 WORKDIR /api
 
 # Install packages.
-RUN apk add --no-cache musl-dev python-dev gcc git bash && \
+RUN apk add --no-cache musl-dev python-dev gcc git bash curl && \
     #  libjpeg and zlib for Pillow
     apk add --no-cache zlib-dev jpeg-dev && \
     apk add --no-cache mongodb
+
+# Update dns config for minio
+RUN  \
+     apk add --no-cache ca-certificates 'curl>7.61.0' 'su-exec>=0.2' && \
+     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
 
 # Install pip dependencies.
 COPY requirements.txt /api/requirements.txt
@@ -21,5 +38,9 @@ COPY ./ /api
 
 # Switch user
 USER amivapi
+
+# Prepare storage for minio.
+RUN mkdir /api/data
+VOLUME ["/api/data"]
 
 ENTRYPOINT ["/api/test_with_db.sh"]

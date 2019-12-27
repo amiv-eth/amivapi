@@ -10,6 +10,7 @@ from os.path import abspath
 
 from eve import Eve
 from flask import Config
+from eve_s3storage import S3MediaStorage
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -87,6 +88,7 @@ def create_app(config_file=None, **kwargs):
 
     app = Eve("amivapi",  # Flask needs this name to find the static folder
               settings=config,
+              media=S3MediaStorage,
               validator=ValidatorAMIV)
     app.logger.info(config_status)
 
