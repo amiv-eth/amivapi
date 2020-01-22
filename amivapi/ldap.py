@@ -32,6 +32,12 @@ always the same, and the second part of the string contains further details.
 We therefore match the first part of the `departmentNumber` field to
 check for the department. In the app settings, we define which substring
 is mapped to which department.
+
+As of fall 2019, this information seems to have move to the `description` field,
+and looks (almost) identical, except that the string does not start with "ETH "
+anymore. Unfortunately, the info for all previous students is still in the
+`departmentNumber` field, thus we check which of both fields is in use before
+parsing.
 """
 
 from eve.methods.patch import patch_internal
@@ -115,8 +121,10 @@ def _search(query):
         'givenName',
         'sn',
         'swissEduPersonGender',
+        'ou',
+        # Dept for old students in 'departmentNumber', for new in 'description'
         'departmentNumber',
-        'ou'
+        'description',
     ]
     results = current_app.config['ldap_connector'].search(query,
                                                           attributes=attr)
@@ -157,10 +165,12 @@ def _process_data(data):
     # See file docstring for explanation of `deparmentNumber` field
     # In some rare cases, the departmentNumber field is either empty
     # or missing -> normalize to empty string
-    department_number = next(iter(data.get('departmentNumber', [])), '')
+    department_info = next(iter(
+        data.get('description') or data.get('departmentNumber') or []
+    ), '')
     department_map = current_app.config['LDAP_DEPARTMENT_MAP'].items()
     department = (dept for phrase, dept in department_map
-                  if phrase in department_number)
+                  if phrase in department_info)
     res['department'] = next(department, None)  # None if no match
 
     # Membership: One of our departments and VSETH member
@@ -185,9 +195,9 @@ def _create_or_update_user(ldap_data):
             # Membership will not be downgraded and email not be overwritten
             # Newletter settings will also not be adjusted
             ldap_data.pop('email', None)
-            ldap_data.pop('send_newsletter', None)
             if db_data.get('membership') != u"none":
                 ldap_data.pop('membership', None)
+                ldap_data.pop('send_newsletter', None)
 
             user = patch_internal('users',
                                   ldap_data,

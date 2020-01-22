@@ -8,4 +8,4 @@ jsonschema==3.0.1
 freezegun==0.3.12
 sentry-sdk[flask]==0.8.1
 beautifulsoup4==4.6.3
-Pillow==6.0.0
+Pillow==6.2.0

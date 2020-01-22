@@ -116,7 +116,7 @@ class ApiKeyModelTests(WebTestNoAuth):
         result = self.api.post("/apikeys", data=data).json
         tokens = [item['token'] for item in result['_items']]
 
-        self.assertNotEquals(tokens[0], tokens[1])
+        self.assertNotEqual(tokens[0], tokens[1])
         # Assert keys are not empty
         for token in tokens:
             self.assertTrue(len(token) > 0)

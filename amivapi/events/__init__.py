@@ -21,6 +21,7 @@ from amivapi.events.projections import (
     add_email_to_signup_collection,
     add_position_to_signup,
     add_position_to_signup_collection,
+    add_position_to_signup_on_inserted,
     add_signup_count_to_event,
     add_signup_count_to_event_collection
 )
@@ -49,6 +50,7 @@ def init_app(app):
     # Show user's position in the signup list
     app.on_fetched_resource_eventsignups += add_position_to_signup_collection
     app.on_fetched_item_eventsignups += add_position_to_signup
+    app.on_inserted_eventsignups += add_position_to_signup_on_inserted
 
     # Show signup count in events
     app.on_fetched_resource_events += add_signup_count_to_event_collection

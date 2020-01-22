@@ -214,6 +214,26 @@ class LdapTest(WebTestNoAuth):
             else:
                 self.assertEqual(result[field], db_value)
 
+    def test_upgrade_membership(self):
+        # Insert non-member and upgrade by ldap later
+        user = self.api.post('/users', data={
+            'nethz': 'pablo',
+            'email': 'pablo@ethz.ch',  # this will be auto-generated
+            'firstname': 'P',
+            'lastname': 'Ablo',
+            'department': 'itet',
+            'membership': 'none',
+            'gender': 'female',
+            'legi': '01234567',
+            'send_newsletter': False,
+        }, status_code=201).json
+        self.assertFalse(user['send_newsletter'])
+
+        with self.app.test_request_context():
+            result = ldap._create_or_update_user(self.fake_filtered_data())
+
+        self.assertTrue(result['send_newsletter'])
+
     def test_search(self):
         """Test that ldap is correctly queried."""
         test_query = "äüáíðáßðöó"
@@ -223,8 +243,9 @@ class LdapTest(WebTestNoAuth):
             'givenName',
             'sn',
             'swissEduPersonGender',
+            'ou',
             'departmentNumber',
-            'ou'
+            'description',
         ]
         mock_results = [1, 2, 3]
         # Mock ldap query
@@ -349,6 +370,7 @@ class LdapIntegrationTest(WebTest):
             user = ldap.sync_one(LDAP_USER_NETHZ)
             data_only = {key: value for (key, value) in user.items()
                          if not key.startswith('_')}  # no meta fields
+            data_only.pop('password_set')  # meta field as well
 
             # Double check with database
             db_user = self.db['users'].find_one({'nethz': LDAP_USER_NETHZ})
