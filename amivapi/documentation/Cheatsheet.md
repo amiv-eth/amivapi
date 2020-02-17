@@ -24,7 +24,7 @@ other programming languages.
 
 /events?where={"time_start":{"$gt":"2018-06-06T10:00:00Z"}}
 
-/events?where={"$or":[{"title_en":"Party","title_de":"Feier"}]}
+/events?where={"$or":[{"title_en":"Party"},{"title_de":"Feier"}]}
 
 /events?where={"img_infoscreen":{"$exists":true}}
 ```
