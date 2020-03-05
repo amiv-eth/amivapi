@@ -52,7 +52,7 @@ def send_confirmmail_to_unregistered_users(items):
         item: The item, which was just inserted into the database
     """
     for item in items:
-        if 'user' not in item or item['user'] is None:
+        if item.get('user') is None:
             event = current_app.data.find_one(
                 'events', None,
                 **{current_app.config['ID_FIELD']: item['event']})

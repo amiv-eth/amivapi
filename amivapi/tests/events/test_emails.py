@@ -41,8 +41,8 @@ class EventMailTest(WebTestNoAuth):
                               status_code=200).json
         self.assertEqual(signup['confirmed'], True)
 
-    def test_email_token_when_user_null(self):
-        """Test confirmation by email link when user is set to None."""
+    def test_confirmation_email_when_user_null(self):
+        """Test confirmation email when user is explicitly set to None."""
         event = self.new_object('events', spots=100, allow_email_signup=True)
         signup = self.api.post('/eventsignups', data={
             'event': str(event['_id']),
@@ -56,20 +56,6 @@ class EventMailTest(WebTestNoAuth):
         # Look for sent out mail
         mail = self.app.test_mails[0]
         self.assertEqual(mail['receivers'][0], 'bla@test.bla')
-
-        # Use the confirm link
-        token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
-        # With redirect set
-        self.app.config['EMAIL_CONFIRMED_REDIRECT'] = "somewhere"
-        self.api.get('/confirm_email/%s' % token, status_code=302)
-        # And without
-        self.app.config.pop('EMAIL_CONFIRMED_REDIRECT')
-        self.api.get('/confirm_email/%s' % token, status_code=200)
-
-        # Check that the signup got confirmed
-        signup = self.api.get('/eventsignups/%s' % signup['_id'],
-                              status_code=200).json
-        self.assertEqual(signup['confirmed'], True)
 
     def test_email_signup_delete(self):
         """Test deletion of signup via email link."""
