@@ -257,7 +257,6 @@ eventdomain = {
                 'description': 'Start time of the event itself. If you define '
                                'a start time, an end time is required, too.',
                 'example': '2018-10-17T18:00:00Z',
-
                 'type': 'datetime',
                 'nullable': True,
                 'default': None,
@@ -269,7 +268,6 @@ eventdomain = {
                 'description': 'End time of the event itself. If you define '
                                'an end time, a start time is required, too.',
                 'example': '2018-10-17T22:00:00Z',
-
                 'type': 'datetime',
                 'nullable': True,
                 'default': None,

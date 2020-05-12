@@ -72,7 +72,9 @@ class EventMailTest(WebTestNoAuth):
 
         # With redirect set
         self.app.config['SIGNUP_DELETED_REDIRECT'] = "somewhere"
-        self.api.get('/delete_signup/%s' % token, status_code=302)
+        self.api.get('/eventsignups/%s' % signup['_id'], status_code=200)
+        self.api.get('/delete_signup/%s' % token, status_code=200)
+        self.api.post('/delete_confirmed/%s' % token, status_code=302)
 
         # Check that signup was deleted
         self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
@@ -88,7 +90,9 @@ class EventMailTest(WebTestNoAuth):
 
         # Without redirect set
         self.app.config.pop('SIGNUP_DELETED_REDIRECT')
+        self.api.get('/eventsignups/%s' % signup['_id'], status_code=200)
         self.api.get('/delete_signup/%s' % token, status_code=200)
+        self.api.post('/delete_confirmed/%s' % token, status_code=200)
 
         # Check that signup was deleted
         self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)

@@ -1,0 +1,47 @@
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AMIV Unregister from Event</title>
+    <style type="text/css">
+      {% include "style.css" %}
+    </style>
+  </head>
+  <body>
+    {% if error_msg %}
+    <dialog open>
+      <p>{{ error_msg }}</p>
+      <button onclick="this.parentNode.close()">close</button>
+    </dialog>
+    {% endif %}
+
+    <aside>
+      <img src={{ url_for('static', filename='logo.png') }} alt="Logo">
+    </aside>
+
+    <main>
+      <h1>
+        {% if user %}
+        Hi {{user}}!
+        {% else %}
+        Hello!
+        {% endif %}
+      </h1>
+      <p>
+        {% if user and event %}
+        We will irrevocably unregister you (<em>{{user}}</em>) from the event <em>{{event}}</em> on {{event_date}}.
+        Is that ok?
+        {% else %}
+        You clicked on a opt-out link of the AMIV at ETHZ student organization. We cannot process your request,
+          because we either do <em>not</em> know the event you wish to unregister from, or your user name, or both.
+        {% endif %}
+      </p>
+
+       <form action="/delete_confirmed/{{token}}" method="POST">
+        <input type="submit" value="I agree">
+      </form>
+
+    </main>
+
+  </body>
+</html>

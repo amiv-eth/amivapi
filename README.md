@@ -36,7 +36,7 @@ You only need to install Docker, nothing else is required.
 
 ### Manual Installation for Development
 
-For development, we recommend to clone the repository and install AMIV API
+For development, we recommend to fork the repository and install AMIV API
 manually.
 
 First of all, we advise using a [virtual environment](https://docs.python.org/3/tutorial/venv.html).
@@ -72,8 +72,13 @@ The following command runs a MongoDB service available on the default port
 password `amivapi`.
 
 ```sh
+# Initialize "swarm", a scheduling and clustering tool, that will enable us to create a network overlay
+docker swarm init
+
 # Create a network so that the api service can later be connected to the db
 docker network create --driver overlay backend
+
+# 
 docker service create \
     --name mongodb -p 27017:27017 --network backend\
     -e MONGODB_DATABASE=amivapi \
@@ -102,7 +107,7 @@ Now it's time to configure AMIV API. Create a file `config.py`
 ROOT_PASSWORD = 'root'
 
 # MongoDB Configuration
-MONGO_HOST = 'mongodb'
+MONGO_HOST = 'mongodb' # or 'localhost' if you run the database locally
 MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
 MONGO_USERNAME = 'amivapi'
@@ -152,7 +157,7 @@ Configuration files can be used easily for services using
 docker config create amivapi_config config.py
 ```
 
-Now start the API service (make sure to put it in the same network as MongoDB
+Now start the API service (make sure to put it in the same network (here `backend`) as MongoDB
 if you are running a MongoDB service locally).
 
 ```sh
@@ -169,6 +174,13 @@ docker service create \
     --name amivapi-cron --network backend \
     --config source=amivapi_config,target=/api/config.py \
     amiveth/amivapi amivapi cron --continuous
+
+# To attach your command line to the docker instance, use
+docker attach amivapi... # Use tab completion to find the name of the service
+
+# As we run docker as a service, it restarts by itself even if you use docker kill
+# To stop the service, use
+docker service rm amivapi
 ```
 
 (If you want to mount the config somewhere else, you can use the environment
@@ -176,23 +188,17 @@ variable `AMIVAPI_CONFIG` to specify the config path in the container.)
 
 ### Run locally
 
-If you have installed AMIV API locally, you can use the CLI to start it:
+If you have installed AMIV API locally, you can use the CLI to start it.
+
+First, change `MONGO_HOST = 'mongodb'` in `config.py` to `'MONGO_HOST = 'localhost'`.
+Then, in CLI (with the environment active):
 
 ```sh
-# Start development server
-amivapi run dev
-
-# Start production server (requires the `bjoern` package)
-amivapi run prod
-
-# Execute scheduled tasks periodically
-amivapi cron --continuous
-
-# Specify config if its not `config.py` in the current directory
-amivapi --config <path> run dev
-
-# Get help, works for sub-commands as well
-amivapi --help
+amivapi run dev # Start development server
+amivapi run prod # Start production server (requires the `bjoern` package)
+amivapi cron --continuous # Execute scheduled tasks periodically
+amivapi --config <path> run dev # Specify config if its not `config.py` in the current directory
+amivapi --help # Get help, works for sub-commands as well
 amivapi run --help
 ```
 
@@ -204,7 +210,7 @@ amivapi run --help
 If you have docker installed you can simply run the tests in a Docker instance:
 
 ```sh
-./run_tests.sh
+./run_tests.sh # potentially try with sudo
 ```
 
 By default, this will start a container with mongodb, and run
