@@ -32,7 +32,6 @@ class EventsignupQueuePermissionTest(WebTest):
         }, token=self.get_user_token(user2['_id']), status_code=422)
 
         # Check that admins can always provide the accepted field
-        self.app.test_mails = []
         user2_signup = self.api.post('/eventsignups', data={
             'user': str(user2['_id']),
             'event': str(event['_id']),
@@ -40,8 +39,6 @@ class EventsignupQueuePermissionTest(WebTest):
         }, token=self.get_root_token(), status_code=201).json
 
         self.assertTrue(user2_signup['accepted'])
-        # Check that an accepted mail was sent
-        self.assertEqual(len(self.app.test_mails), 1)
 
 
 class EventsignupQueueTest(WebTestNoAuth):
