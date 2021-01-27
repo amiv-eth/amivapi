@@ -182,9 +182,9 @@ studydocdomain = {
             'type': {
                 'example': 'cheat sheets',
                 'type': 'string',
-                'nullable': True,
-                'default': None,
-                'allowed': ['exams', 'oral exams',
+                'required': True,
+                'nullable': False,
+                'allowed': ['spring exams', 'autumn exams', 'oral exams',
                             'cheat sheets', 'study guides',
                             'lecture documents', 'exercises'],
                 'allow_summary': True,
