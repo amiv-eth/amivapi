@@ -178,8 +178,21 @@ def process_login(items):
         if (app.config.get('ldap_connector') and
                 ldap.authenticate_user(username, password)):
             # Success, sync user and get token
-            updated = ldap.sync_one(username)
-            _prepare_token(item, updated['_id'])
+            # updated = ldap.sync_one(username)
+            # _prepare_token(item, updated['_id'])
+
+            # Temporary fix for LDAP sync issues!
+            users = app.data.driver.db['users']
+            lookup = {'$or': [{'nethz': username}, {'email': username}]}
+            user = users.find_one(lookup)
+
+            if not user:
+                status = \
+                    "Authenticated user (LDAP) is not synced to the database."
+                app.logger.debug(status)
+                abort(500, description=debug_error_message(status))
+
+            _prepare_token(item, user['_id'])
             app.logger.info(
                 "User '%s' was authenticated with LDAP" % username)
             return
