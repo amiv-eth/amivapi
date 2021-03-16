@@ -1,0 +1,42 @@
+# Docker compose file for local API development.
+version: "3.8"
+
+# Services: API and MongoDB
+services:
+  api:
+    build:
+      context: .
+    ports:
+      - 5000:5000
+    volumes:
+      - ./amivapi:/api/amivapi
+      - ./dev_config.py:/api/config.py
+    environment:
+      AMIVAPI_CONFIG: /api/config.py
+      # TODO tests?
+    depends_on:
+      - mongodb
+    command: ["amivapi", "run", "dev"]
+
+  mongodb:
+    image: mongo:4.4.4
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_DATABASE: amivapi
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
+      # Init script to create users
+      - ./dev_mongoinit.js:/docker-entrypoint-initdb.d/dev_mongoinit.js:ro
+
+# Named volumes for mongodb
+volumes:
+  mongodb:
+    driver_opts:
+      type: "tmpfs"
+      device: "tmpfs"
+  mongodb_config:
+    driver_opts:
+      type: "tmpfs"
+      device: "tmpfs"
