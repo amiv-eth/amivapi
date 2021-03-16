@@ -52,6 +52,7 @@ def init_app(app):
     """Attach an ldap connection to the app."""
     user = app.config['LDAP_USERNAME']
     password = app.config['LDAP_PASSWORD']
+    hosts = app.config['LDAP_HOSTS']
 
     if user is None and password is None:
         return
@@ -60,7 +61,7 @@ def init_app(app):
         raise ValueError("You cannot set only a username or only a password "
                          "for ldap.")
 
-    app.config['ldap_connector'] = AuthenticatedLdap(user, password)
+    app.config['ldap_connector'] = AuthenticatedLdap(user, password, hosts)
 
 
 def authenticate_user(cn, password):
