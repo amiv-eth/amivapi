@@ -60,7 +60,8 @@ def _get_lookup():
     if req and req.where:
         try:
             # Mongo Syntax
-            return current_app.data._sanitize(json.loads(req.where))
+            return current_app.data._sanitize('studydocuments',
+                                              json.loads(req.where))
         except (HTTPException, json.JSONDecodeError):
             # Python Syntax
             return parse(req.where)
