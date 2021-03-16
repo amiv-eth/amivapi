@@ -35,6 +35,7 @@ class LdapTest(WebTestNoAuth):
         """Test that init app uses correct credentials stored connector."""
         ldap_user = 'test'
         ldap_pass = 'T3ST'
+        ldap_hosts = self.app.config['LDAP_HOSTS']
         initialized_ldap = 'I totally am an ldap instance.'
 
         self.app.config['LDAP_USERNAME'] = ldap_user
@@ -44,7 +45,7 @@ class LdapTest(WebTestNoAuth):
         with patch(to_patch, return_value=initialized_ldap) as init:
             ldap.init_app(self.app)
 
-            init.assert_called_with(ldap_user, ldap_pass)
+            init.assert_called_with(ldap_user, ldap_pass, ldap_hosts)
             self.assertEqual(self.app.config['ldap_connector'],
                              initialized_ldap)
 
