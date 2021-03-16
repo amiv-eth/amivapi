@@ -10,7 +10,7 @@ ENV AMIVAPI_CONFIG=/api/config.py
 
 # Install bjoern and dependencies for install
 RUN apk add --no-cache --virtual .deps \
-        musl-dev python-dev gcc git && \
+        musl-dev gcc git && \
     # Keep libev for running bjoern, libjpeg and zlib for Pillow
     apk add --no-cache libev-dev zlib-dev jpeg-dev && \
     pip install bjoern

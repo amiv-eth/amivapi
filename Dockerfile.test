@@ -5,7 +5,7 @@ RUN adduser -Dh /api amivapi
 WORKDIR /api
 
 # Install packages.
-RUN apk add --no-cache musl-dev python-dev gcc git bash && \
+RUN apk add --no-cache musl-dev gcc git bash && \
     #  libjpeg and zlib for Pillow
     apk add --no-cache zlib-dev jpeg-dev && \
     apk add --no-cache mongodb
