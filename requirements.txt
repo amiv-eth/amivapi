@@ -2,7 +2,7 @@ eve==1.1.5
 git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
 # "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
--e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
+-e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
 passlib==1.7.4
 jsonschema==3.2.0
 freezegun==1.1.0
