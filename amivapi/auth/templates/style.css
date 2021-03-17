@@ -103,7 +103,13 @@ main {
 
 /* Error Dialog */
 /* ============ */
-
+.dialogs {
+  grid-column: error-start / error-end;
+  grid-row: error-start / error-start;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
 /* Use a ::before element to insert a background for the error dialog */
 body::before {
   content: "";
@@ -113,8 +119,8 @@ body::before {
   box-shadow: 0em -1em 1em -1em rgb(110,110,110) inset;
 }
 dialog {
-  grid-column: error-start / error-end;
-  grid-row: error-start / error-start;
+  /* grid-column: error-start / error-end;
+  grid-row: error-start / error-start; */
   display: flex;
   position: relative;
   width: 100%;
@@ -122,12 +128,22 @@ dialog {
   padding: 0.25em;
   margin: 0em;
   text-align: center;
-
   border: none;
   background: none;
+  border-top: 1px dashed rgb(110,110,110);
 }
 dialog:not([open]) {
   display: none;
+}
+
+dialog.notice {
+  grid-column: error-start / error-end;
+  grid-row: notice-start / notice-start;
+  border-top: none;
+}
+
+dialog.notice p {
+  color: rgb(110,110,110);
 }
 
 dialog p {

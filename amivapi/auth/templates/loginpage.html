@@ -8,12 +8,18 @@
     </style>
   </head>
   <body>
-    {% if error_msg %}
-    <dialog open>
-      <p>{{ error_msg }}</p>
-      <button onclick="this.parentNode.close()">close</button>
-    </dialog>
-    {% endif %}
+    <div class="dialogs">
+      <dialog class="notice" open>
+        <p>Users currently experience issues authenticating with their n.ethz credentials.<br/>
+        We are working on a solution. Thank your for your patience.</p>
+      </dialog>
+      {% if error_msg %}
+      <dialog open>
+        <p>{{ error_msg }}</p>
+        <button onclick="this.parentNode.close">close</button>
+      </dialog>    
+      {% endif %}
+    </div>
 
     <aside>
       <img src={{ url_for('static', filename='logo.png') }} alt="Logo">
