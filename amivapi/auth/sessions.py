@@ -182,10 +182,10 @@ def process_login(items):
             # Success, sync user and get token
             try:
                 user = ldap.sync_one(username)
+                app.logger.info(
+                    "User '%s' was authenticated with LDAP" % username)
             except LDAPException:
                 # Sync failed! Try to find user in db.
-                app.logger.error(f"User '{username}' was authenticated, " +
-                                 "but could not be synced.")
                 user = _find_user(username)
                 if user:
                     app.logger.error(
@@ -199,8 +199,6 @@ def process_login(items):
                     abort(401, description=debug_error_message(status))
 
             _prepare_token(item, user['_id'])
-            app.logger.info(
-                "User '%s' was authenticated with LDAP" % username)
             return
 
         # Database, try to find via nethz, mail or objectid
