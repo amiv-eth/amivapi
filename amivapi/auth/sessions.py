@@ -6,16 +6,18 @@
 
 import datetime
 
-from bson import ObjectId
-from bson.errors import InvalidId
-from eve.methods.patch import patch_internal
-from eve.utils import debug_error_message
-from flask import abort, current_app as app
-
 from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
 from amivapi.cron import periodic
 from amivapi.utils import admin_permissions, get_id
+from bson import ObjectId
+from bson.errors import InvalidId
+from eve.methods.patch import patch_internal
+from eve.utils import debug_error_message
+from flask import abort
+from flask import current_app as app
+from ldap3.core.exceptions import LDAPException
+
 
 # Change when we drop python3.5 support
 try:
@@ -178,22 +180,31 @@ def process_login(items):
         if (app.config.get('ldap_connector') and
                 ldap.authenticate_user(username, password)):
             # Success, sync user and get token
-            updated = ldap.sync_one(username)
-            _prepare_token(item, updated['_id'])
+            try:
+                user = ldap.sync_one(username)
+            except LDAPException:
+                # Sync failed! Try to find user in db.
+                app.logger.error(f"User '{username}' was authenticated, " +
+                                 "but could not be synced.")
+                user = _find_user(username)
+                if user:
+                    app.logger.error(
+                        f"User '{username}' authenticated with LDAP and found "
+                        "in db, but LDAP sync failed.")
+                else:
+                    status = (f"Login failed: user '{username}' authenticated "
+                              "with LDAP but not found in db, and LDAP sync "
+                              "failed.")
+                    app.logger.error(status)
+                    abort(401, description=debug_error_message(status))
+
+            _prepare_token(item, user['_id'])
             app.logger.info(
                 "User '%s' was authenticated with LDAP" % username)
             return
 
         # Database, try to find via nethz, mail or objectid
-        users = app.data.driver.db['users']
-        lookup = {'$or': [{'nethz': username}, {'email': username}]}
-        try:
-            objectid = ObjectId(username)
-            lookup['$or'].append({'_id': objectid})
-        except InvalidId:
-            pass  # input can't be used as ObjectId
-        user = users.find_one(lookup)
-
+        user = _find_user(username)
         if user:
             app.logger.debug("User found in db.")
             if verify_password(user, item['password']):
@@ -209,6 +220,18 @@ def process_login(items):
         status = "Login with db failed: User not found!"
         app.logger.debug(status)
         abort(401, description=debug_error_message(status))
+
+
+def _find_user(username):
+    """Find user by nethz or email."""
+    users = app.data.driver.db['users']
+    lookup = {'$or': [{'nethz': username}, {'email': username}]}
+    try:
+        objectid = ObjectId(username)
+        lookup['$or'].append({'_id': objectid})
+    except InvalidId:
+        pass  # input can't be used as ObjectId
+    return users.find_one(lookup)
 
 
 def _prepare_token(item, user_id):
