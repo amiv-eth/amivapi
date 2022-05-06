@@ -586,7 +586,7 @@ eventdomain = {
                 'example': True,
 
                 'type': 'boolean',
-                'admin_only': True,
+                'admin_or_moderator_only': True,
                 'default': False,
             },
             'checked_in': {
@@ -598,7 +598,7 @@ eventdomain = {
                 'default': None,
                 'nullable': True,
                 'type': 'boolean',
-                'admin_only': True
+                'admin_or_moderator_only': True
             },
             'position': {
                 'description': "Position of the signup within all signups of "

@@ -123,6 +123,23 @@ ACCEPT_EMAIL_TEXT = (
     'Best Regards,\nAMIV'
 )
 
+# Email sent to users when their event signup is on the waiting list
+WAITING_LIST_EMAIL_TEXT = (
+    'Hello {name}!\n\n'
+    'We are sorry to inform you that your signup for {title} was rejected '
+    'because there are no free spots available. '
+    'We put you on a waiting list and we will send you an email when a spot'
+    ' becomes available.\n\n'
+    'Best Regards,\nAMIV'
+)
+
+# Email sent to confirm deregistration of an event
+DEREGISTER_EMAIL_TEXT = (
+    'Hello {name}!\n\n'
+    'You have been successfully deregistered from {title}.\n\n'
+    'Best Regards,\nAMIV'
+)
+
 # Address for issues with the blacklist
 BLACKLIST_REPLY_TO = "bouncer@amiv.ethz.ch"
 

@@ -77,13 +77,17 @@ class EventMailTest(WebTestNoAuth):
         # Check that signup was deleted
         self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
 
+        self.assertEqual(len(self.app.test_mails), 2)
+        self.assertTrue(
+            'successfully deregistered' in self.app.test_mails[1]['text'])
+
         # Another signup
         signup = self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event['_id'])
         }, status_code=201).json
 
-        mail = self.app.test_mails[1]
+        mail = self.app.test_mails[2]
         token = re.search(r'/delete_signup/(.+)\n', mail['text']).group(1)
 
         # Without redirect set
@@ -92,6 +96,85 @@ class EventMailTest(WebTestNoAuth):
 
         # Check that signup was deleted
         self.api.get('/eventsignups/%s' % signup['_id'], status_code=404)
+
+    def test_email_direct_signup_by_moderator(self):
+        """Test email on direct signup by a moderator"""
+        user_id = 24 * '1'
+        moderator_id = 24 * '2'
+        event_id = 24 * '3'
+        self.load_fixture({
+            'users': [{
+                '_id': user_id
+            }, {
+                '_id': moderator_id
+            }],
+            'events': [{
+                '_id': event_id,
+                'moderator': moderator_id,
+                'spots': 100,
+                'selection_strategy': 'manual'
+            }],
+        })
+
+        self.api.post('/eventsignups',
+                      data={
+                          'user': user_id,
+                          'event': event_id,
+                          'accepted': True},
+                      token=self.get_user_token(moderator_id),
+                      status_code=201)
+        
+        self.assertEqual(len(self.app.test_mails), 1)
+        print(self.app.test_mails[0]['text'])
+        self.assertTrue('was accepted' in self.app.test_mails[0]['text'])
+
+    def test_email_waiting_list(self):
+        """Test all emails in the following process:
+        1. User signs up for an event
+        2. Event is full
+        3. User is added to the waiting list
+        4. First user deletes his signup, second user is accepted
+        """
+        user_id1 = 24 * '1'
+        user_id2 = 24 * '2'
+        event_id = 24 * '3'
+        self.load_fixture({
+            'users': [{
+                '_id': user_id1
+            }, {
+                '_id': user_id2
+            }],
+            'events': [{
+                '_id': event_id,
+                'spots': 1,
+                'selection_strategy': 'fcfs'
+            }],
+        })
+
+        signup1 = self.api.post('/eventsignups', data={
+            'event': event_id,
+            'user': user_id1,
+        }, status_code=201).json
+
+        self.assertEqual(len(self.app.test_mails), 1)
+        self.assertTrue('was accepted' in self.app.test_mails[0]['text'])
+
+        _ = self.api.post('/eventsignups', data={
+            'event': event_id,
+            'user': user_id2,
+        }, status_code=201).json
+
+        self.assertEqual(len(self.app.test_mails), 2)
+        self.assertTrue('was rejected' in self.app.test_mails[1]['text'])
+
+        etag = {'If-Match': signup1['_etag']}
+        self.api.delete("/eventsignups/" + str(signup1['_id']),
+                        headers=etag, status_code=204)
+
+        self.assertEqual(len(self.app.test_mails), 4)
+        self.assertTrue(
+            'successfully deregistered' in self.app.test_mails[2]['text'])
+        self.assertTrue('was accepted' in self.app.test_mails[3]['text'])
 
     def test_invalid_token(self):
         """Test that an error is returned for an invalid token to the email
@@ -136,6 +219,7 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
+
         for field in mail.values():
             self.assertTrue('None' not in field)
 
