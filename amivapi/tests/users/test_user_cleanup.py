@@ -7,15 +7,10 @@
 Test if inactive non-members get deleted from database
 """
 
-from datetime import datetime, timedelta
-from lib2to3.pgen2 import token
-from signal import SIG_DFL
 from freezegun import freeze_time
 
-from amivapi import cron
 from amivapi.tests import utils
 from amivapi.users import cleanup
-
 
 
 class UserCleanupTest(utils.WebTest):
@@ -58,7 +53,7 @@ class UserCleanupTest(utils.WebTest):
         ]
 
         root_token = self.get_root_token()
-        
+
         with self.app.app_context():
             with freeze_time("2019-08-24T14:15:22Z"):
                 # Non-member, updated 6 Month ago
@@ -72,12 +67,12 @@ class UserCleanupTest(utils.WebTest):
                 # (honorary) Member, updated 18 Month ago
                 self.api.post("/users", data=entries[3], token=root_token)
 
-            users = self.api.get("/users", token=root_token ).json
+            users = self.api.get("/users", token=root_token).json
             self.assertEqual(len(users['_items']), 4)
 
             with freeze_time("2019-12-24T14:15:22Z"):
                 cleanup.remove_inactive_users()
 
-            users = self.api.get("/users", token=root_token ).json
+            users = self.api.get("/users", token=root_token).json
 
         self.assertEqual(len(users['_items']), 3)

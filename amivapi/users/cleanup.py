@@ -5,15 +5,15 @@
 """Delete inactive users to keep the database clean"""
 
 from datetime import timedelta, datetime
+from flask import current_app as app
 
 from amivapi.cron import periodic
 
-from flask import current_app as app
 
 @periodic(timedelta(days=28))
 def remove_inactive_users():
     """Delete non-amiv-members, which were not active for more than one year"""
     dueDate = datetime.now() - timedelta(days=365)
 
-    app.data.driver.db['users'].delete_many({'$and': [{'_updated':{'$lt': dueDate}}, 
-                                                {'membership':'none'}]})
+    app.data.driver.db['users'].delete_many(
+        {'$and': [{'_updated': {'$lt': dueDate}}, {'membership': 'none'}]})
