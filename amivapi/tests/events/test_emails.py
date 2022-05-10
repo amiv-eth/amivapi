@@ -231,7 +231,7 @@ class EventMailTest(WebTestNoAuth):
             self.assertTrue('None' not in field)
 
 
-    def test_reply_to_emails(self):
+    def test_moderator_signup_text(self):
         text = "We will meet at 9:30."
         event = self.new_object('events', spots=100, selection_strategy='fcfs', moderator_signup_text=text)
         user = self.new_object('users')
