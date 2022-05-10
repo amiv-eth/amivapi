@@ -36,6 +36,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
     event_name = event.get('title_en') or event.get('title_de')
+    event_moderator_text = event.get('moderator_signup_text') or ""
 
     if waiting_list:
         mail([email],
@@ -50,6 +51,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
             name=name,
             title=event_name,
             link=deletion_link,
+            moderatortext=event_moderator_text,
             deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')))
 
 

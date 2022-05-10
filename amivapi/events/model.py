@@ -436,6 +436,12 @@ eventdomain = {
                 'json_schema': True,
                 'only_if_not_null': 'spots',
             },
+            'moderator_signup_text': {
+                "description": "Custom Text from the Moderator that will be sent with the Signup-Email",
+                'type': 'string',
+                'default': None,
+                'nullable': False
+            },
 
             # `allow_email_signup` and `selection` strategy do not depend
             # on `spots` explicitly, because otherwise we cannot set their
