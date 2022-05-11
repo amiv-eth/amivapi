@@ -74,6 +74,7 @@ def add_accepted_before_insert(signups):
         signup['accepted'] = (g.resource_admin or g.get('current_user') == str(
             event['moderator'])) and signup.get('accepted', False)
 
+
 def update_waiting_list_after_insert(signups):
     """Hook to automatically update the waiting list.
 
