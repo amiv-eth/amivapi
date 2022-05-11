@@ -1,7 +1,7 @@
 # amivapi
 
-[![Build status](https://secure.travis-ci.org/amiv-eth/amivapi.png?branch=master)](https://secure.travis-ci.org/amiv-eth/amivapi)
-[![Coverage Status](https://coveralls.io/repos/amiv-eth/amivapi/badge.svg)](https://coveralls.io/r/amiv-eth/amivapi)
+![Build status](https://github.com/amiv-eth/amivapi/actions/workflows/main.yml/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/amiv-eth/amivapi/branch/master/graph/badge.svg?token=TXceP4H3Bb)](https://codecov.io/gh/amiv-eth/amivapi)
 
 AMIV API is a [Python-EVE]((http://docs.python-eve.org)) based REST interface
 to manage members, events, mail forwards, job offers and study documents for a
