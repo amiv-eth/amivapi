@@ -123,7 +123,7 @@ class EventMailTest(WebTestNoAuth):
                           'accepted': True},
                       token=self.get_user_token(moderator_id),
                       status_code=201)
-        
+
         self.assertEqual(len(self.app.test_mails), 1)
         print(self.app.test_mails[0]['text'])
         self.assertTrue('was accepted' in self.app.test_mails[0]['text'])

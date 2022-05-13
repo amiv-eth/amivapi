@@ -62,7 +62,7 @@ def notify_signup_deleted(signup):
     if signup.get('user'):
         lookup = {id_field: signup['user']}
         user = current_app.data.find_one('users', None, **lookup)
-        if user is None: # User was deleted
+        if user is None:  # User was deleted
             return
         name = user['firstname']
         email = user['email']
