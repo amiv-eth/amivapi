@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.10.4-alpine
 
 # Create user with home directory and no password and change workdir
 RUN adduser -Dh /api amivapi
