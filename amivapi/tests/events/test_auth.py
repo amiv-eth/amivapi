@@ -230,7 +230,8 @@ class EventAuthTest(WebTest):
         # Moderators can ignore time
         with freeze_time(datetime(2015, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
-                            headers=etag, token=moderator_token, status_code=204)
+                            headers=etag, token=moderator_token,
+                            status_code=204)
 
         # Admin can ignore time
         with freeze_time(datetime(2015, 1, 1)):
