@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  schedule:
+    - cron: '5 4 * * 1'
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.9']
+
+    services:
+      mongodb:
+        image: mongo:5.0.8
+        env:
+          MONGO_INITDB_DATABASE: amivapi
+        options: >-
+          --health-cmd mongo
+          --health-start-period 20s
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox tox-gh-actions setuptools
+      - name: Create MongoDB User
+        run: mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
+      - name: Test with tox
+        run: tox
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
+
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    env:
+      IMAGE_NAME: amiveth/amivapi
+
+    steps:
+      - uses: actions/checkout@v3
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+      # Login against a Docker registry except on PR
+      - name: Log into Docker Hub registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Extract metadata (tags, labels) for Docker
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: type=raw,value=latest
+      # Build and push Docker image with Buildx (don't push on PR)
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          pull: true
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
