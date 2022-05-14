@@ -1,6 +1,7 @@
 # amivapi
 
-![Build status](https://github.com/amiv-eth/amivapi/actions/workflows/pipeline.yml/badge.svg?branch=master)
+[![CI](https://github.com/amiv-eth/amivapi/actions/workflows/ci.yml/badge.svg)](https://github.com/amiv-eth/amivapi/actions/workflows/ci.yml)
+[![CD](https://github.com/amiv-eth/amivapi/actions/workflows/cd.yml/badge.svg)](https://github.com/amiv-eth/amivapi/actions/workflows/cd.yml)
 [![codecov](https://codecov.io/gh/amiv-eth/amivapi/branch/master/graph/badge.svg?token=TXceP4H3Bb)](https://codecov.io/gh/amiv-eth/amivapi)
 
 AMIV API is a [Python-EVE]((http://docs.python-eve.org)) based REST interface
