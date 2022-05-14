@@ -1,0 +1,46 @@
+name: Tests
+
+on: [workflow_call] 
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.9']
+
+    services:
+      mongodb:
+        image: mongo:5.0.8
+        env:
+          MONGO_INITDB_DATABASE: amivapi
+        options: >-
+          --health-cmd mongo
+          --health-start-period 20s
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox tox-gh-actions setuptools
+      - name: Create MongoDB User
+        run: mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
+      - name: Test with tox
+        run: tox
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
