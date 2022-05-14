@@ -12,8 +12,10 @@ jobs:
 
   build:
     uses: ./.github/workflows/1_build.yml
+    needs: tests
     with:
       push: true
 
   deploy:
     uses: ./.github/workflows/1_deploy.yml
+    needs: build
