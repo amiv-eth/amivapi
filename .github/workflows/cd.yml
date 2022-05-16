@@ -1,0 +1,38 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [master]
+    types: 
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container: amiveth/service-update-helper:latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    strategy:
+      matrix:
+        deploy-url:
+          - https://deploy-cluster.amiv.ethz.ch
+          - https://deploy-leela.amiv.ethz.ch
+        deploy-service:
+          - amivapi
+          - amivapi-cron
+          - amivapi-dev
+          - amivapi-dev-cron
+        exclude:
+          - deploy-url: 'https://deploy-leela.amiv.ethz.ch'
+            deploy-service: 'amivapi-dev'
+          - deploy-url: 'https://deploy-leela.amiv.ethz.ch'
+            deploy-service: 'amivapi-dev-cron'
+
+    env:
+      CI_DEPLOY_URL: ${{ matrix.deploy-url }}
+      CI_DEPLOY_SERVICE: ${{ matrix.deploy-service }}
+      CI_DEPLOY_TOKEN: ${{ secrets.CI_DEPLOY_TOKEN }}
+
+    steps:
+      - run: /update.py
