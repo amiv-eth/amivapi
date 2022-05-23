@@ -42,7 +42,7 @@ jobs:
         run: mongo test_amivapi --eval 'db.createUser({user:"test_user",pwd:"test_pw",roles:["readWrite"]});'
       - name: Test with tox
         run: tox
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
