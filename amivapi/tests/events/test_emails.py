@@ -246,8 +246,8 @@ class EventMailTest(WebTestNoAuth):
 
         # Check whether `reply-to` header present in email if moderator is set.
         user_moderator = self.new_object('users', email='xyz@gmail.com')
-        event2 = self.new_object('events', spots=100, 
-                                 selection_strategy='fcfs', 
+        event2 = self.new_object('events', spots=100,
+                                 selection_strategy='fcfs',
                                  moderator=user_moderator['_id'])
 
         self.api.post('/eventsignups', data={
