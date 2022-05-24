@@ -111,7 +111,7 @@ def mail(to, subject, text, replyTo = None):
         msg['From'] = sender
         msg['To'] = ';'.join([to] if isinstance(to, str) else to)
         if replyTo is not None:
-            msg['reply-to'] = replyTo
+            msg['Reply-To'] = replyTo
 
         try:
             with smtplib.SMTP(config.SMTP_SERVER,
