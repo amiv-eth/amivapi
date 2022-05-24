@@ -58,7 +58,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
             title=event_name,
             link=deletion_link,
             deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
-            moderator_email)
+            reply_to=moderator_email)
 
 
 def notify_signup_deleted(signup):

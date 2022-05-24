@@ -97,10 +97,10 @@ def mail(to, subject, text, reply_to=None):
             'receivers': to,
             'text': text,
         }
-        
+
         if reply_to is not None:
             mail['reply-to'] = reply_to
-            
+
         app.test_mails.append(mail)
 
     elif config.SMTP_SERVER and config.SMTP_PORT:

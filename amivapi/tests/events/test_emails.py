@@ -231,11 +231,11 @@ class EventMailTest(WebTestNoAuth):
             self.assertTrue('None' not in field)
 
     def test_reply_to_emails(self):
-        # Check that there is no `reply-to` header in the email if no moderator is set.
+        # Check there is no `reply-to` header in email if no moderator is set.
         event = self.new_object('events', spots=100, selection_strategy='fcfs')
         user = self.new_object('users')
 
-        signup = self.api.post('/eventsignups', data={
+        self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event['_id'])
         }, status_code=201).json
@@ -244,14 +244,16 @@ class EventMailTest(WebTestNoAuth):
 
         self.assertTrue('reply-to' not in mail)
 
-        # Check that the `reply-to` header is present in the email if the moderator is set.
+        # Check whether `reply-to` header present in email if moderator is set.
         user_moderator = self.new_object('users', email='xyz@gmail.com')
-        event2 = self.new_object('events', spots=100, selection_strategy='fcfs', moderator=user_moderator['_id'])
+        event2 = self.new_object('events', spots=100, 
+                                 selection_strategy='fcfs', 
+                                 moderator=user_moderator['_id'])
 
-        signup = self.api.post('/eventsignups', data={
+        self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event2['_id'])
         }, status_code=201).json
 
         mail = self.app.test_mails[1]
-        self.assertTrue(mail['reply-to'] == 'xyz@gmail.com' )
+        self.assertTrue(mail['reply-to'] == 'xyz@gmail.com')
