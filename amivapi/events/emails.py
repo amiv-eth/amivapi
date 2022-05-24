@@ -38,11 +38,11 @@ def notify_signup_accepted(event, signup, waiting_list=False):
     event_name = event.get('title_en') or event.get('title_de')
 
     # find email address of moderator
-    lookup = {id_field: event['moderator']}
-    moderator = current_app.data.find_one('users', None, **lookup)
-    moderatoremail = None
-    if moderator is not None: 
-        moderatoremail = moderator['email']
+    moderator_email = None
+    if event['moderator'] is not None:
+        lookup = {id_field: event['moderator']}
+        moderator = current_app.data.find_one('users', None, **lookup)
+        moderator_email = moderator['email']
 
     if waiting_list:
         mail([email],
@@ -58,7 +58,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
             title=event_name,
             link=deletion_link,
             deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
-            moderatoremail)
+            moderator_email)
 
 
 def notify_signup_deleted(signup):
