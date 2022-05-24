@@ -253,5 +253,3 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[1]
         self.assertTrue(mail['reply-to'] == 'xyz@gmail.com' )
-
-
