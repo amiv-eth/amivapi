@@ -231,6 +231,7 @@ class EventMailTest(WebTestNoAuth):
             self.assertTrue('None' not in field)
 
     def test_reply_to_emails(self):
+        # Check that there is no `reply-to` header in the email if no moderator is set.
         event = self.new_object('events', spots=100, selection_strategy='fcfs')
         user = self.new_object('users')
 
