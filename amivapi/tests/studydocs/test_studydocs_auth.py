@@ -14,7 +14,7 @@ test_file_content = b"\x50\x4b\x05\x06" + b"\x00" * 18
 
 
 class StudydocsAuthTest(WebTest):
-    """Studycos Test class."""
+    """Studydocs Test class."""
 
     def test_uploader_added(self):
         """Test that the uploader is correctly added to a document."""
@@ -25,6 +25,7 @@ class StudydocsAuthTest(WebTest):
                             headers={'content-type': 'multipart/form-data'},
                             data={
                                 'title': 'test',
+                                'type': 'cheat sheets',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]
@@ -41,6 +42,7 @@ class StudydocsAuthTest(WebTest):
                             headers={'content-type': 'multipart/form-data'},
                             data={
                                 'title': 'test',
+                                'type': 'cheat sheets',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]
@@ -65,6 +67,7 @@ class StudydocsAuthTest(WebTest):
                             headers={'content-type': 'multipart/form-data'},
                             data={
                                 'title': 'test',
+                                'type': 'cheat sheets',
                                 'files': [
                                     (BytesIO(test_file_content), 'test.zip')
                                 ]
