@@ -229,3 +229,29 @@ class EventMailTest(WebTestNoAuth):
         mail = self.app.test_mails[1]
         for field in mail.values():
             self.assertTrue('None' not in field)
+
+    def test_reply_to_emails(self):
+        event = self.new_object('events', spots=100, selection_strategy='fcfs')
+        user = self.new_object('users')
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[0]
+
+        self.assertTrue('reply-to' not in mail)
+
+        user_moderator = self.new_object('users', email='xyz@gmail.com')
+        event2 = self.new_object('events', spots=100, selection_strategy='fcfs', moderator=user_moderator['_id'])
+
+        signup = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event2['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[1]
+        self.assertTrue(mail['reply-to'] == 'xyz@gmail.com' )
+
+

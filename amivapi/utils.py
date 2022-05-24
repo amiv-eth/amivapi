@@ -74,7 +74,7 @@ def get_id(item):
         return ObjectId(item['_id'])
 
 
-def mail(to, subject, text):
+def mail(to, subject, text, replyTo = None):
     """Send a mail to a list of recipients.
 
     The mail is sent from the address specified by `API_MAIL` in the config,
@@ -90,17 +90,28 @@ def mail(to, subject, text):
     subject = app.config['API_MAIL_SUBJECT'].format(subject=subject)
 
     if app.config.get('TESTING', False):
-        app.test_mails.append({
+        if replyTo is not None:
+            app.test_mails.append({
+                'subject': subject,
+                'from': sender,
+                'receivers': to,
+                'text': text,
+                'reply-to': replyTo
+            })
+        else: 
+          app.test_mails.append({
             'subject': subject,
             'from': sender,
             'receivers': to,
             'text': text
-        })
+        })  
     elif config.SMTP_SERVER and config.SMTP_PORT:
         msg = MIMEText(text)
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = ';'.join([to] if isinstance(to, str) else to)
+        if replyTo is not None:
+            msg['reply-to'] = replyTo
 
         try:
             with smtplib.SMTP(config.SMTP_SERVER,
