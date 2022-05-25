@@ -248,7 +248,7 @@ class EventMailTest(WebTestNoAuth):
         for field in mail.values():
             self.assertTrue('None' not in field)
 
-        self.assertTrue('Eventsignup accepted' in mail['subject'])
+        self.assertTrue('accepted' in mail['subject'])
 
         self.api.post('/eventsignups', data={
             'email': 'a@example.com',
@@ -263,5 +263,5 @@ class EventMailTest(WebTestNoAuth):
                 self.assertTrue('None' not in field)
 
             self.assertTrue(
-                ('Eventsignup accepted' in mail['subject']) or
+                ('accepted' in mail['subject']) or
                 ('confirm_email' in mail['text']))
