@@ -194,7 +194,8 @@ def _process_data(data):
 
     if len(keys_skipped) > 0:
         current_app.logger.info(
-            "Skipped fields for LDAP sync for user '%s': %s" %
+            "The follow fields are missing in the LDAP response and "
+            "could not be synchronized for user '%s': %s" %
             (res.get('nethz'), ','.join(keys_skipped)))
 
     return res
