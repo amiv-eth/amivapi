@@ -65,7 +65,8 @@ class StudydocsSummaryTest(WebTestNoAuth):
         assert '_summary' in response
         assert response['_summary'] == {
             'type': {
-                'lecture documents': 1,  # The document with title `third` is ignored
+                # The document with title `third` is ignored
+                'lecture documents': 1,
                 'cheat sheets': 1,
             },
             'lecture': {
