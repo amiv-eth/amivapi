@@ -152,15 +152,17 @@ def _process_data(data):
     It will take all fields relevant for a user update and map them
     to the correct fields for the user resource.
     """
-    res = {'nethz': data['cn'][0],
-           'legi': data['swissEduPersonMatriculationNumber'],
-           'firstname': data['givenName'][0],
-           'lastname': data['sn'][0]}
-    # email can be removed when Eve switches to Cerberus 1.x, then
-    # We could do this as a default value in the user model
-    res['email'] = '%s@ethz.ch' % res['nethz']
-    res['gender'] = \
-        u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
+    res = {'nethz': data.get('cn', [None])[0],
+           'legi': data.get('swissEduPersonMatriculationNumber'),
+           'firstname': data.get('givenName', [None])[0],
+           'lastname': data.get('sn', [None])[0]}
+    if res['nethz'] is not None:
+        # email can be removed when Eve switches to Cerberus 1.x, then
+        # We could do this as a default value in the user model
+        res['email'] = '%s@ethz.ch' % res['nethz']
+    if 'swissEduPersonGender' in data:
+        res['gender'] = \
+            u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
     # See file docstring for explanation of `deparmentNumber` field
     # In some rare cases, the departmentNumber field is either empty
@@ -175,14 +177,15 @@ def _process_data(data):
 
     # Membership: One of our departments and VSETH member
     is_member = ((res['department'] is not None) and
-                 ('VSETH Mitglied' in data['ou']))
+                 'ou' in data and ('VSETH Mitglied' in data['ou']))
     res['membership'] = u"regular" if is_member else u"none"
 
     # For members, send newsletter to True by default
     if is_member:
         res['send_newsletter'] = True
 
-    return res
+    # Remove all keys with None value before return
+    return {key: value for key, value in res.items() if value is not None}
 
 
 def _create_or_update_user(ldap_data):
