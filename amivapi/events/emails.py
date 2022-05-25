@@ -48,17 +48,17 @@ def notify_signup_accepted(event, signup, waiting_list=False):
         mail([email],
              'Your signup for %s was put on the waiting list' % event_name,
              current_app.config['WAITING_LIST_EMAIL_TEXT'].format(
-            name=name,
-            title=event_name))
+                name=name,
+                title=event_name))
     else:
         mail([email],
              'Your event signup for %s was accepted' % event_name,
              current_app.config['ACCEPT_EMAIL_TEXT'].format(
-            name=name,
-            title=event_name,
-            link=deletion_link,
-            deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
-            reply_to=moderator_email)
+                name=name,
+                title=event_name,
+                link=deletion_link,
+                deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
+             moderator_email)
 
 
 def notify_signup_deleted(signup):
