@@ -184,8 +184,19 @@ def _process_data(data):
     if is_member:
         res['send_newsletter'] = True
 
-    # Remove all keys with None value before return
-    return {key: value for key, value in res.items() if value is not None}
+    # Remove all keys with None value and 
+    keys_skipped = []
+    for key in list(res.keys()):
+        if res[key] is None:
+            del res[key]
+            keys_skipped.append(key)
+
+    if len(keys_skipped) > 0:
+        current_app.logger.info(
+            "Skipped fields for LDAP sync for user '%s': %s" % \
+                res.get('nethz'), ','.join(keys_skipped))
+
+    return res
 
 
 def _create_or_update_user(ldap_data):
