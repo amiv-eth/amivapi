@@ -230,17 +230,17 @@ class EventMailTest(WebTestNoAuth):
         for field in mail.values():
             self.assertTrue('None' not in field)
 
-
-    def test_moderator_signup_text(self):
+    def test_signup_additional_info(self):
         text = "We will meet at 9:30."
-        event = self.new_object('events', spots=100, selection_strategy='fcfs', moderator_signup_text=text)
+        event = self.new_object('events', spots=100, selection_strategy='fcfs',
+                                signup_additional_info=text)
         user = self.new_object('users')
 
-        signup = self.api.post('/eventsignups', data={
+        self.api.post('/eventsignups', data={
             'user': str(user['_id']),
             'event': str(event['_id'])
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
-
-        self.assertTrue(text not in mail['text'])
+        print(mail)
+        self.assertTrue(text not in mail)

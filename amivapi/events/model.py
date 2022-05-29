@@ -436,8 +436,10 @@ eventdomain = {
                 'json_schema': True,
                 'only_if_not_null': 'spots',
             },
-            'moderator_signup_text': {
-                "description": "Additional information from the organizers that will be sent with the signup-accepted email.",
+            'signup_additional_info': {
+                "description": "Additional information from the organizers "
+                               "that will be sent with the signup-accepted "
+                               "email.",
                 'type': 'string',
                 'default': None,
                 'nullable': False

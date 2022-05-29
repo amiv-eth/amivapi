@@ -120,7 +120,7 @@ ACCEPT_EMAIL_TEXT = (
     'event please click this link to free your spot for someone else:\n'
     '\n{link}\n'
     'You cannot sign out of this event after {deadline}.\n\n'
-    '{moderatortext}\n\n'
+    '{additional_info_text}\n\n'
     'Best Regards,\nAMIV'
 )
 
