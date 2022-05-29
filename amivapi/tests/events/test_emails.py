@@ -243,4 +243,4 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[0]
 
-        self.assertTrue(text not in mail)
+        self.assertTrue(text not in mail['text'])
