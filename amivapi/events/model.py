@@ -437,7 +437,7 @@ eventdomain = {
                 'only_if_not_null': 'spots',
             },
             'moderator_signup_text': {
-                "description": "Custom Text from the Moderator that will be sent with the Signup-Email",
+                "description": "Additional information from the organizers that will be sent with the signup-accepted email.",
                 'type': 'string',
                 'default': None,
                 'nullable': False
