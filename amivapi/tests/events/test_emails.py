@@ -242,5 +242,4 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
-        print(mail)
-        self.assertTrue(text not in mail)
+        self.assertTrue(text in mail['text'])
