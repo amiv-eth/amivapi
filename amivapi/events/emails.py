@@ -25,6 +25,7 @@ def find_reply_to_email(event):
         reply_to_email = current_app.config.get('DEFAULT_EVENT_REPLY_TO')
     return reply_to_email
 
+
 def notify_signup_accepted(event, signup, waiting_list=False):
     """Send an email to a user that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
@@ -91,7 +92,7 @@ def notify_signup_deleted(signup):
     if current_app.config.get('SERVER_NAME') is None:
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
                                    "will not work!")
-    
+
     reply_to_email = find_reply_to_email(event)
 
     mail([email],
