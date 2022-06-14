@@ -123,6 +123,9 @@ ACCEPT_EMAIL_TEXT = (
     'Best Regards,\nAMIV'
 )
 
+# Address for issues with event signups
+DEFAULT_EVENT_REPLY_TO = "kultur@amiv.ethz.ch"
+
 # Email sent to users when their event signup is on the waiting list
 WAITING_LIST_EMAIL_TEXT = (
     'Hello {name}!\n\n'

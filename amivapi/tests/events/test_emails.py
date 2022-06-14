@@ -230,10 +230,13 @@ class EventMailTest(WebTestNoAuth):
         for field in mail.values():
             self.assertTrue('None' not in field)
 
-    def test_reply_to_emails(self):
-        # Check there is no `reply-to` header in email if no moderator is set.
-        event = self.new_object('events', spots=100, selection_strategy='fcfs')
+    def test_moderator_reply_to(self):
+        # Check whether `reply-to` header is the moderator in email if set.
         user = self.new_object('users')
+        user_moderator = self.new_object('users', email='xyz@gmail.com')
+        event = self.new_object('events', spots=100,
+                                 selection_strategy='fcfs',
+                                 moderator=user_moderator['_id'])
 
         self.api.post('/eventsignups', data={
             'user': str(user['_id']),
@@ -241,19 +244,41 @@ class EventMailTest(WebTestNoAuth):
         }, status_code=201).json
 
         mail = self.app.test_mails[0]
+        self.assertTrue(mail['reply-to'] == 'xyz@gmail.com')
 
-        self.assertTrue('reply-to' not in mail)
-
-        # Check whether `reply-to` header present in email if moderator is set.
-        user_moderator = self.new_object('users', email='xyz@gmail.com')
-        event2 = self.new_object('events', spots=100,
+    def test_all_emails_for_reply_to_header(self):
+        # Check that the `reply-to` header in all email is set to default
+        reply_to_email = self.app.config.get('DEFAULT_EVENT_REPLY_TO')
+        event1 = self.new_object('events', spots=100, 
+                                 selection_strategy='manual')
+        event2 = self.new_object('events', spots=100, 
                                  selection_strategy='fcfs',
-                                 moderator=user_moderator['_id'])
-
-        self.api.post('/eventsignups', data={
-            'user': str(user['_id']),
+                                 allow_email_signup = True)
+        user = self.new_object('users')
+        
+        # signup of external user
+        signup0 = self.api.post('/eventsignups', data={
+            'email': 'a@example.com',
             'event': str(event2['_id'])
         }, status_code=201).json
 
-        mail = self.app.test_mails[1]
-        self.assertTrue(mail['reply-to'] == 'xyz@gmail.com')
+        mail = self.app.test_mails[0]
+        token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
+
+        self.api.get('/confirm_email/%s' % token, status_code=200)
+
+        # signup to waitlist
+        signup1 = self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event1['_id'])
+        }, status_code=201).json
+
+        # delete signup
+        etag = {'If-Match': signup1['_etag']}
+        self.api.delete("/eventsignups/" + str(signup1['_id']),
+                        headers=etag, status_code=204)
+
+        for i in range(len(self.app.test_mails)):
+            mail = self.app.test_mails[i]
+            self.assertTrue(mail['reply-to'] == reply_to_email)
+        

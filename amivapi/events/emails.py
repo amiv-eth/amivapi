@@ -13,6 +13,18 @@ from amivapi.events.utils import get_token_secret
 from amivapi.utils import mail
 
 
+# find email address of moderator or use the default
+def find_reply_to_email(event):
+    id_field = current_app.config['ID_FIELD']
+    reply_to_email = None
+    if event['moderator'] is not None:
+        lookup = {id_field: event['moderator']}
+        moderator = current_app.data.find_one('users', None, **lookup)
+        reply_to_email = moderator['email']
+    else:
+        reply_to_email = current_app.config.get('DEFAULT_EVENT_REPLY_TO')
+    return reply_to_email
+
 def notify_signup_accepted(event, signup, waiting_list=False):
     """Send an email to a user that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
@@ -37,19 +49,15 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                             _external=True)
     event_name = event.get('title_en') or event.get('title_de')
 
-    # find email address of moderator
-    moderator_email = None
-    if event['moderator'] is not None:
-        lookup = {id_field: event['moderator']}
-        moderator = current_app.data.find_one('users', None, **lookup)
-        moderator_email = moderator['email']
+    reply_to_email = find_reply_to_email(event)
 
     if waiting_list:
         mail([email],
              'Your signup for %s was put on the waiting list' % event_name,
              current_app.config['WAITING_LIST_EMAIL_TEXT'].format(
                 name=name,
-                title=event_name))
+                title=event_name),
+             reply_to_email)
     else:
         mail([email],
              'Your event signup for %s was accepted' % event_name,
@@ -58,7 +66,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                 title=event_name,
                 link=deletion_link,
                 deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
-             moderator_email)
+             reply_to_email)
 
 
 def notify_signup_deleted(signup):
@@ -83,13 +91,16 @@ def notify_signup_deleted(signup):
     if current_app.config.get('SERVER_NAME') is None:
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
                                    "will not work!")
+    
+    reply_to_email = find_reply_to_email(event)
 
     mail([email],
          'Successfully deregistered from %s' % event.get(
              'title_en') or event.get('title_de'),
          current_app.config['DEREGISTER_EMAIL_TEXT'].format(
-        name=name,
-        title=event.get('title_en') or event.get('title_de')))
+            name=name,
+            title=event.get('title_en') or event.get('title_de')),
+         reply_to_email)
 
 
 def send_confirmmail_to_unregistered_users(items):
@@ -116,8 +127,11 @@ def send_confirmmail_to_unregistered_users(items):
             confirm_link = url_for('emails.on_confirm_email', token=token,
                                    _external=True)
 
+            reply_to_email = find_reply_to_email(event)
+
             mail([item['email']],
                  'Registration for %s' % title,
                  current_app.config['CONFIRM_EMAIL_TEXT'].format(
                      title=title,
-                     link=confirm_link))
+                     link=confirm_link),
+                 reply_to_email)
