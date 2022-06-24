@@ -272,29 +272,9 @@ def _update_paths(swagger, resource, domain):
     """
     title = domain['item_title']
     key = '%s__id' % title
-    path = '/%s/{%sId}' % (resource, title.lower())
 
     updates = {'description': 'The `_id` field of a %s document' % title}
     add_documentation(swagger, {'parameters': {key: updates}})
-
-    # try:
-    #     lookup = domain['additional_lookup']
-    # except KeyError:
-    #     pass
-    # else:
-    #     field = lookup['field']
-    #     params = [{
-    #         'in': 'path',
-    #         'name': field,
-    #         'required': False,
-    #         'description': '*Instead* of the `_id`, you can also use the '
-    #                        '`%s` field as an alternative lookup when '
-    #                        '*retrieving* a document.' % field,
-    #         'type': lookup['url'],
-    #     }]
-    #     add_documentation(swagger, {
-    #         'paths': {path: {'get': {'parameters': params}}},
-    #     })
 
 
 def _update_methods(swagger, resource, domain):
