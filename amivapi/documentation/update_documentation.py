@@ -16,23 +16,28 @@ from os import path
 from eve_swagger import add_documentation
 
 
-def update_documentation(app):
+def update_documentation(app,swagger):
     """Update the API documentation provided by Eve-Swagger.
 
     1. Update top-level descriptions etc.
     2. Add definitions for responses and parameters
     3. Update each resource, i.e. lookups, methods, and properties
     """
-    _update_top_level(app)
-    _update_definitions(app)
+    _update_top_level(app, swagger)
+    _update_definitions(app, swagger)
 
     for resource, domain in app.config['DOMAIN'].items():
-        _update_properties(domain)
-        _update_paths(resource, domain)
-        _update_methods(resource, domain)
+        print('****')
+        print(resource)
+        print('----')
+        print(domain)
+        print('****')
+        _update_properties(swagger, domain)
+        _update_paths(swagger, resource, domain)
+        _update_methods(swagger, resource, domain)
 
 
-def _update_top_level(app):
+def _update_top_level(app, swagger):
     """Update top-level descriptions."""
     # Extend documentation description
     # Markdown files that will be included in the API documentation
@@ -51,132 +56,180 @@ def _update_top_level(app):
                                        *additional_docs))
 
     # Add logo
-    add_documentation({'info': {'x-logo': app.config['SWAGGER_LOGO']}})
+    add_documentation(swagger, {'info': {'x-logo': app.config['SWAGGER_LOGO']}})
 
     # Add servers
-    add_documentation({'servers': app.config['SWAGGER_SERVERS']})
+    add_documentation(swagger, {'servers': app.config['SWAGGER_SERVERS']})
 
     # Required to tell online docs that we don't return xml
     app.config['XML'] = False
 
 
-def _update_definitions(app):
+def _create_error_message(code, description, additional_properties={}):
+    """Creates the schema for an error message."""
+
+    return {
+        "description": description,
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        **additional_properties,
+                        "_status": {"type": "string", "const": "ERR"},
+                        "_error": {
+                            "type": "object",
+                            "properties": {
+                                "code": {"type": "integer", "const": code },
+                                "message": {"type": "string"},
+                            },
+                        },
+                    },
+                    "required": ["_status", "_error", [*additional_properties]],
+                }
+            }
+        }
+    }
+
+def _update_definitions(app, swagger):
     """Update the definitions in the docs.
 
-    In particular, extend the `parameters` section with definitions
-    for the various query parameters, e.g. filter and embed.
+    In particular, extend or override existing items in the `parameters`
+    section with definitions for the various query parameters, e.g. query__where
+    and embed.
 
     Furthermore, add definitions for the error responses to the `definitions`
     section.
     """
-    add_documentation({
-        # Query parameters
-        'parameters': {
-            'auth': {
-                "in": "header",
-                "name": "Authorization",
-                "description": "API token.<br />(read more in "
-                               "[Authentication and Authorization]"
-                               "(#section/Authentication-and-Authorization))",
-                "required": True,
-                "type": "string"
-            },
-            'filter': {
-                "in": "query",
-                "name": "where",
-                "type": "object",
-                "description": "Apply a filter."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-            'max_results': {
-                "in": "query",
-                "name": "max_results",
-                "type": "integer",
-                "minimum": 0,
-                "maximum": app.config['PAGINATION_LIMIT'],
-                "default": app.config['PAGINATION_DEFAULT'],
-                "description": "Limit the number of results per page."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-            'page': {
-                "in": "query",
-                "name": "page",
-                "type": "integer",
-                "minimum": 1,
-                "description": "Specify result page."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-            'sort': {
-                "in": "query",
-                "name": "sort",
-                "type": "object",
-                "description": "Sort results."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-            'embed': {
-                "in": "query",
-                "name": "embedded",
-                "type": "object",
-                "description": "Control embedding of related resources."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-            'project': {
-                "in": "query",
-                "name": "projection",
-                "type": "object",
-                "description": "Show/hide fields in response."
-                               "<br />[(Cheatsheet)](#section/Cheatsheet)",
-            },
-        },
+    add_documentation(swagger, {
+        'components': {
+            # Query parameters
+            'parameters': {
+                'auth': {
+                    "in": "header",
+                    "name": "Authorization",
+                    "description": "API token.<br />(read more in "
+                                "[Authentication and Authorization]"
+                                "(#section/Authentication-and-Authorization))",
+                    "required": True,
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                'query__where': {
+                    "in": "query",
+                    "name": "where",
+                    "schema": {
+                        "type": "object",
+                    },
+                    "description": "Apply a filter."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                },
+                'query__max_results': {
+                    "in": "query",
+                    "name": "max_results",
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": app.config['PAGINATION_LIMIT'],
+                        "default": app.config['PAGINATION_DEFAULT'],
+                    },
+                    "description": "Limit the number of results per page."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                },
+                'query__page': {
+                    "in": "query",
+                    "name": "page",
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                    },
+                    "description": "Specify result page."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                },
+                'query__sort': {
+                    "in": "query",
+                    "name": "sort",
+                    "schema": {
+                        "type": "object",
+                    },
+                    "description": "Sort results."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                },
+                'query__embedded': {
+                    "in": "query",
+                    "name": "embedded",
+                    "schema": {
+                        "type": "object",
+                    },
+                    "description": "Control embedding of related resources."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                },
+                'query__projection': {
+                    "in": "query",
+                    "name": "projection",
+                    "schema": {
+                        "type": "object",
+                    },
+                    "description": "Show/hide fields in response."
+                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                }
+            }           
+        }
+    })
 
-        # Error Responses
-        'definitions': {
-            '404': {
-                'description': 'No item with the provided `_id` exists',
-            },
-            '401': {
-                'description': 'The `Authorization` header is missing or '
-                               'contains an invalid token',
-            },
-            '403': {
-                'description': 'The `Authorization` header contains a valid '
-                               'token, but you do not have the required '
-                               'permissions',
-            },
-            '422': {
-                'description': 'Validation of the document body failed',
-            },
-            '428': {
-                'description': "The `If-Match` header is missing",
-            },
-            '412': {
-                'description': "The `If-Match` header does not match the "
-                               "current `_etag`",
+    add_documentation(swagger, {
+        'components': {
+            # Error Responses
+            'responses': {
+                '404': _create_error_message(404, 'No item with the provided `_id` exists'),
+                '401': _create_error_message(401, 'The `Authorization` header is missing or '
+                                                  'contains an invalid token'),
+                '403': _create_error_message(403, 'The `Authorization` header contains a valid '
+                                                  'token, but you do not have the required '
+                                                  'permissions'),
+                '422': _create_error_message(422, 'Validation of the document body failed', {
+                        '_issues': {
+                            "description": "The validation issues as a map between field and error message.",
+                            "example": {
+                                "<field1>": "required field",
+                                "<field2>": "must be of objectid type"
+                            },
+                            "type": "object",
+                            "title": "Map<String,String>",
+                            "patternProperties": {
+                                "^[a-zA-Z0-9]+$": { "type": "string" }
+                            }
+                        }
+                    }),
+                '428': _create_error_message(428, "The `If-Match` header is missing"),
+                '412': _create_error_message(412, "The `If-Match` header does not match the "
+                                                  "current `_etag`")
             }
         }
     })
 
 
-def _add_param_refs(path, method, references):
+def _add_param_refs(swagger, path, method, references):
     """Helper to add references to query parameters to a path method."""
-    parameters = [{'$ref': '#/parameters/%s' % ref}
+    parameters = [{'$ref': '#/components/parameters/%s' % ref}
                   for ref in references]
-    add_documentation({
+    add_documentation(swagger, {
         'paths': {path: {method.lower(): {'parameters': parameters}}},
     })
 
 
-def _add_error_refs(path, method, codes):
+def _add_error_refs(swagger, path, method, codes):
     """Helper to add references to error responses to a path method."""
-    errors = {str(code): {'$ref': '#/definitions/%s' % code}
+    errors = {str(code): {'$ref': '#/components/responses/%s' % code}
               for code in codes}
 
-    add_documentation({
+    add_documentation(swagger, {
         'paths': {path: {method.lower(): {'responses': errors}}},
     })
 
 
-def _update_properties(domain):
+def _update_properties(swagger, domain):
     """Update field properties.
 
     - Properties can have a title. Use `title` if specified, otherwise
@@ -188,7 +241,7 @@ def _update_properties(domain):
     """
     def _update_property(prop, key, value):
         """Helper to update a property."""
-        add_documentation({'definitions': {
+        add_documentation(swagger, {'definitions': {
             domain['item_title']: {'properties': {prop: {key: value}}}
         }})
 
@@ -211,7 +264,7 @@ def _update_properties(domain):
                 _update_property(prop, 'default', prop_def['default'])
 
 
-def _update_paths(resource, domain):
+def _update_paths(swagger, resource, domain):
     """Update the lookup paths for a resource.
 
     Re-format the default _id lookup and add additional lookups,
@@ -222,29 +275,29 @@ def _update_paths(resource, domain):
     path = '/%s/{%sId}' % (resource, title.lower())
 
     updates = {'description': 'The `_id` field of a %s document' % title}
-    add_documentation({'parameters': {key: updates}})
+    add_documentation(swagger, {'parameters': {key: updates}})
 
-    try:
-        lookup = domain['additional_lookup']
-    except KeyError:
-        pass
-    else:
-        field = lookup['field']
-        params = [{
-            'in': 'path',
-            'name': field,
-            'required': False,
-            'description': '*Instead* of the `_id`, you can also use the '
-                           '`%s` field as an alternative lookup when '
-                           '*retrieving* a document.' % field,
-            'type': lookup['url'],
-        }]
-        add_documentation({
-            'paths': {path: {'get': {'parameters': params}}},
-        })
+    # try:
+    #     lookup = domain['additional_lookup']
+    # except KeyError:
+    #     pass
+    # else:
+    #     field = lookup['field']
+    #     params = [{
+    #         'in': 'path',
+    #         'name': field,
+    #         'required': False,
+    #         'description': '*Instead* of the `_id`, you can also use the '
+    #                        '`%s` field as an alternative lookup when '
+    #                        '*retrieving* a document.' % field,
+    #         'type': lookup['url'],
+    #     }]
+    #     add_documentation(swagger, {
+    #         'paths': {path: {'get': {'parameters': params}}},
+    #     })
 
 
-def _update_methods(resource, domain):
+def _update_methods(swagger, resource, domain):
     """For each method, add the appropriate query params and responses."""
     # 0: Check if the resource has data relation and can use `embedded`
     has_data_relation = any('data_relation' in field_def
@@ -260,21 +313,25 @@ def _update_methods(resource, domain):
             errors += [401, 403]
             parameters.append('auth')
 
-        if method == 'GET':
-            parameters += ['filter', 'max_results', 'page', 'sort']
-
         if method == 'POST':
             errors.append(422)
 
-        parameters.append('project')
         if has_data_relation:
-            parameters.append('embed')
+            parameters.append('embedded')
 
-        _add_error_refs(resource_path, method, errors)
-        _add_param_refs(resource_path, method, parameters)
+        _add_error_refs(swagger, resource_path, method, errors)
+        _add_param_refs(swagger, resource_path, method, parameters)
 
     # 2: Item methods, `GET`, `PATCH` and `DELETE` possible
     item_path = '/%s/{%sId}' % (resource, domain['item_title'].lower())
+
+    try:
+        # Prepare path for additional lookup if any.
+        lookup = domain['additional_lookup']
+        item_additional_path = '/%s/{%s}' % (resource, lookup['field'].capitalize())
+    except KeyError:
+        item_additional_path = None
+
     for method in domain['item_methods']:
         parameters = []
         errors = [404]  # all item methods can result in 404 if item is missing
@@ -283,19 +340,20 @@ def _update_methods(resource, domain):
             errors += [401, 403]
             parameters.append('auth')
 
-        if method == 'GET':
-            parameters.append('filter')
-
         if method == 'PATCH':
             errors += [412, 422, 428]
 
         if method in ['GET', 'PATCH']:
-            parameters.append('project')
             if has_data_relation:
-                parameters.append('embed')
+                parameters.append('embedded')
 
         if method == 'DELETE':
             errors += [412, 428]
 
-        _add_error_refs(item_path, method, errors)
-        _add_param_refs(item_path, method, parameters)
+        _add_error_refs(swagger, item_path, method, errors)
+        _add_param_refs(swagger, item_path, method, parameters)
+
+        # Apply the same modification also to the additional lookup path
+        if method == 'GET' and item_additional_path is not None:
+            _add_error_refs(swagger, item_additional_path, method, errors)
+            _add_param_refs(swagger, item_additional_path, method, parameters)
