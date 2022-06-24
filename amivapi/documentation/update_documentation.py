@@ -16,7 +16,7 @@ from os import path
 from eve_swagger import add_documentation
 
 
-def update_documentation(app,swagger):
+def update_documentation(app, swagger):
     """Update the API documentation provided by Eve-Swagger.
 
     1. Update top-level descriptions etc.
@@ -27,11 +27,6 @@ def update_documentation(app,swagger):
     _update_definitions(app, swagger)
 
     for resource, domain in app.config['DOMAIN'].items():
-        print('****')
-        print(resource)
-        print('----')
-        print(domain)
-        print('****')
         _update_properties(swagger, domain)
         _update_paths(swagger, resource, domain)
         _update_methods(swagger, resource, domain)
@@ -80,7 +75,7 @@ def _create_error_message(code, description, additional_properties={}):
                         "_error": {
                             "type": "object",
                             "properties": {
-                                "code": {"type": "integer", "const": code },
+                                "code": {"type": "integer", "const": code},
                                 "message": {"type": "string"},
                             },
                         },
@@ -90,6 +85,7 @@ def _create_error_message(code, description, additional_properties={}):
             }
         }
     }
+
 
 def _update_definitions(app, swagger):
     """Update the definitions in the docs.
@@ -108,9 +104,10 @@ def _update_definitions(app, swagger):
                 'auth': {
                     "in": "header",
                     "name": "Authorization",
-                    "description": "API token.<br />(read more in "
-                                "[Authentication and Authorization]"
-                                "(#section/Authentication-and-Authorization))",
+                    "description":
+                        "API token.<br />(read more in "
+                        "[Authentication and Authorization]"
+                        "(#section/Authentication-and-Authorization))",
                     "required": True,
                     "schema": {
                         "type": "string"
@@ -123,7 +120,7 @@ def _update_definitions(app, swagger):
                         "type": "object",
                     },
                     "description": "Apply a filter."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 },
                 'query__max_results': {
                     "in": "query",
@@ -135,7 +132,7 @@ def _update_definitions(app, swagger):
                         "default": app.config['PAGINATION_DEFAULT'],
                     },
                     "description": "Limit the number of results per page."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 },
                 'query__page': {
                     "in": "query",
@@ -145,7 +142,7 @@ def _update_definitions(app, swagger):
                         "minimum": 1,
                     },
                     "description": "Specify result page."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 },
                 'query__sort': {
                     "in": "query",
@@ -154,7 +151,7 @@ def _update_definitions(app, swagger):
                         "type": "object",
                     },
                     "description": "Sort results."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 },
                 'query__embedded': {
                     "in": "query",
@@ -163,7 +160,7 @@ def _update_definitions(app, swagger):
                         "type": "object",
                     },
                     "description": "Control embedding of related resources."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 },
                 'query__projection': {
                     "in": "query",
@@ -172,9 +169,9 @@ def _update_definitions(app, swagger):
                         "type": "object",
                     },
                     "description": "Show/hide fields in response."
-                                "<br />[(Cheatsheet)](#section/Cheatsheet)",
+                                   "<br />[(Cheatsheet)](#section/Cheatsheet)",
                 }
-            }           
+            }
         }
     })
 
@@ -182,15 +179,20 @@ def _update_definitions(app, swagger):
         'components': {
             # Error Responses
             'responses': {
-                '404': _create_error_message(404, 'No item with the provided `_id` exists'),
-                '401': _create_error_message(401, 'The `Authorization` header is missing or '
-                                                  'contains an invalid token'),
-                '403': _create_error_message(403, 'The `Authorization` header contains a valid '
-                                                  'token, but you do not have the required '
-                                                  'permissions'),
-                '422': _create_error_message(422, 'Validation of the document body failed', {
+                '404': _create_error_message(
+                    404, 'No item with the provided `_id` exists'),
+                '401': _create_error_message(
+                    401, 'The `Authorization` header is missing or '
+                         'contains an invalid token'),
+                '403': _create_error_message(
+                    403, 'The `Authorization` header contains a valid '
+                         'token, but you do not have the required '
+                         'permissions'),
+                '422': _create_error_message(
+                    422, 'Validation of the document body failed', {
                         '_issues': {
-                            "description": "The validation issues as a map between field and error message.",
+                            "description": "The validation issues as a map "
+                                           "between field and error message.",
                             "example": {
                                 "<field1>": "required field",
                                 "<field2>": "must be of objectid type"
@@ -198,13 +200,15 @@ def _update_definitions(app, swagger):
                             "type": "object",
                             "title": "Map<String,String>",
                             "patternProperties": {
-                                "^[a-zA-Z0-9]+$": { "type": "string" }
+                                "^[a-zA-Z0-9]+$": {"type": "string"}
                             }
                         }
                     }),
-                '428': _create_error_message(428, "The `If-Match` header is missing"),
-                '412': _create_error_message(412, "The `If-Match` header does not match the "
-                                                  "current `_etag`")
+                '428': _create_error_message(
+                    428, "The `If-Match` header is missing"),
+                '412': _create_error_message(
+                    412, "The `If-Match` header does not match the "
+                         "current `_etag`")
             }
         }
     })
@@ -308,7 +312,8 @@ def _update_methods(swagger, resource, domain):
     try:
         # Prepare path for additional lookup if any.
         lookup = domain['additional_lookup']
-        item_additional_path = '/%s/{%s}' % (resource, lookup['field'].capitalize())
+        item_additional_path = '/%s/{%s}' % (resource,
+                                             lookup['field'].capitalize())
     except KeyError:
         item_additional_path = None
 
