@@ -1,4 +1,4 @@
-eve==1.1.5
+eve==2.0
 git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
 # "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
@@ -6,7 +6,7 @@ git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5
 passlib==1.7.4
 jsonschema==4.6.0
 freezegun==1.2.1
-sentry-sdk[flask]==1.5.12
+sentry-sdk[flask]==1.6.0
 beautifulsoup4==4.11.1
 Pillow==9.1.1
 pymongo==3.12.3
