@@ -143,11 +143,12 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.api = self.app.test_client()
 
         # Create a separate mongo connection and db reference for tests
-        self.connection = MongoClient(host=self.app.config['MONGO_HOST'],
-                                      port=self.app.config['MONGO_PORT'],
-                                      username=self.app.config['MONGO_USERNAME'],
-                                      password=self.app.config['MONGO_PASSWORD'],
-                                      authSource=self.app.config['MONGO_DBNAME'])
+        self.connection = MongoClient(
+            host=self.app.config['MONGO_HOST'],
+            port=self.app.config['MONGO_PORT'],
+            username=self.app.config['MONGO_USERNAME'],
+            password=self.app.config['MONGO_PASSWORD'],
+            authSource=self.app.config['MONGO_DBNAME'])
         self.db = self.connection[self.app.config['MONGO_DBNAME']]
 
     def tearDown(self):
