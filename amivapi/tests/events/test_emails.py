@@ -246,6 +246,10 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[0]
         for field in mail.values():
+            # We check whether any field in the email structure contains the
+            # string 'None' as this is the string representation of the None
+            # value. This happens when a value inserted into the template
+            # string was (unexpectedly) None.
             self.assertTrue('None' not in field)
 
         self.assertTrue('accepted' in mail['subject'])
@@ -260,8 +264,15 @@ class EventMailTest(WebTestNoAuth):
         self.assertIs(len(self.app.test_mails), 3)
         for mail in self.app.test_mails[1:]:
             for field in mail.values():
+                # We check whether any field in the email structure contains the
+                # string 'None' as this is the string representation of the None
+                # value. This happens when a value inserted into the template
+                # string was (unexpectedly) None.
                 self.assertTrue('None' not in field)
 
+            # We expect that the accepted email and the email to confirm the
+            # email address were sent.
+            # We check some unique phrases distinct to each of these messages.
             self.assertTrue(
-                ('accepted' in mail['subject']) or
+                ('accepted' in mail['subject']) !=
                 ('confirm_email' in mail['text']))
