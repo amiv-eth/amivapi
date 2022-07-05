@@ -1,18 +1,18 @@
-eve==1.1.5
+eve==2.0
 git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
 # "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
 -e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
 passlib==1.7.4
-jsonschema==4.5.1
+jsonschema==4.6.1
 freezegun==1.2.1
-sentry-sdk[flask]==1.5.12
+sentry-sdk[flask]==1.6.0
 beautifulsoup4==4.11.1
-Pillow==9.1.0
+Pillow==9.2.0
 pymongo==3.12.3
 
 # Test requirements. It's not worth the hassle to keep them separate.
 pytest==7.1.2
 pytest-cov==3.0.0
-tox==3.25.0
+tox==3.25.1
 flake8==4.0.1
