@@ -4,7 +4,7 @@ git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5
 # Wontfix: With the upcoming migration, this library will not be needed anymore
 -e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
 passlib==1.7.4
-jsonschema==4.6.2
+jsonschema==4.7.2
 freezegun==1.2.1
 sentry-sdk[flask]==1.6.0
 beautifulsoup4==4.11.1
