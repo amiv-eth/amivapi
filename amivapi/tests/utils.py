@@ -51,7 +51,7 @@ class TestClient(FlaskClient):
             })
 
         # Add content-type: json header if nothing else is provided
-        if (not("content-type" in kwargs['headers']) and
+        if (not ("content-type" in kwargs['headers']) and
                 ("data" in kwargs)):
             # Parse data
             kwargs['data'] = json.dumps(kwargs['data'])
