@@ -13,17 +13,18 @@ from amivapi.events.utils import get_token_secret
 from amivapi.utils import mail
 
 
-# find email address of moderator or use the default
 def find_reply_to_email(event):
+    """Get the moderator or default event mailing reply-to email address."""
     id_field = current_app.config['ID_FIELD']
-    reply_to_email = None
+
     if event['moderator'] is not None:
         lookup = {id_field: event['moderator']}
         moderator = current_app.data.find_one('users', None, **lookup)
-        reply_to_email = moderator['email']
-    else:
-        reply_to_email = current_app.config.get('DEFAULT_EVENT_REPLY_TO')
-    return reply_to_email
+
+        if moderator is not None:
+            return moderator['email']
+
+    return current_app.config.get('DEFAULT_EVENT_REPLY_TO')
 
 
 def notify_signup_accepted(event, signup, waiting_list=False):

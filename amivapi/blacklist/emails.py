@@ -38,9 +38,9 @@ def send_removed_mail(item):
 
     email = _get_email(_item)
     fields = {'reason': _item['reason']}
-    mail(email,
-         'Your blacklist entry has been removed!',
-         current_app.config['BLACKLIST_REMOVED'].format(**fields))
+    mail(email, 'Your blacklist entry has been removed!',
+         current_app.config['BLACKLIST_REMOVED'].format(**fields),
+         current_app.config['BLACKLIST_REPLY_TO'])
 
 
 def notify_new_blacklist(items):
@@ -58,7 +58,10 @@ def notify_new_blacklist(items):
         else:
             template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
 
-        mail(email, 'You have been blacklisted!', template.format(**fields))
+        mail(email,
+             'You have been blacklisted!',
+             template.format(**fields),
+             current_app.config['BLACKLIST_REPLY_TO'])
 
         # If the end time is already known, schedule removal mail
         if item['end_time'] and item['end_time'] > datetime.utcnow():
@@ -88,4 +91,5 @@ def notify_delete_blacklist(item):
     fields = {'reason': item['reason']}
 
     mail(email, 'Your blacklist entry has been removed!',
-         current_app.config['BLACKLIST_REMOVED'].format(**fields))
+         current_app.config['BLACKLIST_REMOVED'].format(**fields),
+         current_app.config['BLACKLIST_REPLY_TO'])
