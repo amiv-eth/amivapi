@@ -19,7 +19,9 @@ class JobOffersTest(utils.WebTestNoAuth):
     """Test basic functionality of joboffers"""
 
     def test_add_joboffer_nomedia(self):
-        """ Usecase: A firm wants to post a joboffer on the website without any media
+        """
+        Usecase:
+        A firm wants to post a joboffer on the website withoutany media
         """
 
         time_end = (datetime.utcnow() + timedelta(days=2)).strftime(DATE_FORMAT)

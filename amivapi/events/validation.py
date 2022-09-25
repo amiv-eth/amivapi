@@ -159,7 +159,8 @@ class EventValidator(object):
                             % event_id)
 
     def _validate_admin_or_moderator_only(self, enabled, field, value):
-        """Prohibit anyone except admins or event moderators from setting this field.
+        """Prohibit anyone except admins or event moderators from setting this
+        field.
 
         Applies to POST and PATCH.
 
