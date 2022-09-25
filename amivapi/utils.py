@@ -87,7 +87,9 @@ def mail(to, subject, text, reply_to=None):
         text(string): Mail content
         reply_to(string): Address of event moderator
     """
-    sender = app.config['API_MAIL']
+    sender_address = app.config['API_MAIL_ADDRESS']
+    sender_name = app.config['API_MAIL_NAME']
+    sender = f'{sender_name} <{sender_address}>'
     subject = app.config['API_MAIL_SUBJECT'].format(subject=subject)
 
     if app.config.get('TESTING', False):
@@ -127,7 +129,7 @@ def mail(to, subject, text, reply_to=None):
                     smtp.ehlo()
 
                 try:
-                    smtp.sendmail(msg['From'], to, msg.as_string())
+                    smtp.sendmail(sender_address, to, msg.as_string())
                 except smtplib.SMTPRecipientsRefused:
                     error = ("Failed to send mail:\n"
                              "From: %s\nTo: %s\n"
