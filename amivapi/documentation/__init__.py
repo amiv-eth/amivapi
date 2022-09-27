@@ -9,12 +9,12 @@ We use ReDoc to display an OpenAPI documentation.
 The documenation is produced by Eve-Swagger, which we extend with details.
 """
 from flask import Blueprint, render_template_string, current_app
-from eve_swagger import swagger
+from eve_swagger import get_swagger_blueprint
 
 
 from .update_documentation import update_documentation
 
-
+swagger = get_swagger_blueprint()
 redoc = Blueprint('redoc', __name__, static_url_path='/docs')
 
 
@@ -60,4 +60,4 @@ def init_app(app):
     # host the ui (we use redoc) at /docs
     app.register_blueprint(redoc)
 
-    update_documentation(app)
+    update_documentation(app, swagger)
