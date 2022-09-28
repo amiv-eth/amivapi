@@ -1,5 +1,5 @@
 eve==2.0.2
-git+https://github.com/amiv-eth/eve-swagger.git@f0660c8f81bc94cad2d938247b7f135aec28c86d#egg=Eve_Swagger
+git+https://github.com/amiv-eth/eve-swagger.git@de78e466fd34a0614d6f556a371e0ae8d973aca9#egg=Eve_Swagger
 # "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
 -e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
