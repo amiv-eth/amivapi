@@ -231,7 +231,7 @@ class EventMailTest(WebTestNoAuth):
             self.assertTrue('None' not in field)
 
     def test_moderator_reply_to(self):
-        # Check whether `reply-to` header is the moderator in email if set.
+        """Check whether `reply-to` header is the moderator in email if set."""
         user = self.new_object('users')
         user_moderator = self.new_object('users', email='xyz@gmail.com')
         event = self.new_object('events', spots=100,
@@ -247,7 +247,7 @@ class EventMailTest(WebTestNoAuth):
         self.assertTrue(mail['reply-to'] == 'xyz@gmail.com')
 
     def test_all_emails_for_reply_to_header(self):
-        # Check that the `reply-to` header in all email is set to default
+        """Check that the `reply-to` header in all email is set to default"""
         reply_to_email = self.app.config.get('DEFAULT_EVENT_REPLY_TO')
         event1 = self.new_object('events', spots=100,
                                  selection_strategy='manual')
