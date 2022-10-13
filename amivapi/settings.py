@@ -168,6 +168,7 @@ BLACKLIST_ADDED_EMAIL_WO_PRICE = (
 
 # Email sent to people who got one blacklist entry removed
 BLACKLIST_REMOVED = (
+    "Hello {name}\n\n"
     "Congratulations, your blacklist entry with the following reason has been "
     "removed:\n\n{reason}\n\nBest Regards,\nAMIV"
 )

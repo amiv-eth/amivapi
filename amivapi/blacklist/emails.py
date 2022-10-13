@@ -16,12 +16,12 @@ from datetime import datetime
 from amivapi.cron import schedulable, schedule_task
 
 
-def _get_email(item):
+def _get_email_and_name(item):
     """Retrieve the user email for a blacklist entry."""
     id_field = current_app.config['ID_FIELD']
     lookup = {id_field: item['user']}
     user = current_app.data.find_one('users', None, **lookup)
-    return user['email']
+    return user['email'], user['firstname']
 
 
 @schedulable
@@ -36,8 +36,8 @@ def send_removed_mail(item):
     if _item['end_time'].replace(tzinfo=None) != item['end_time']:
         return  # Entry was edited, so this is outdated.
 
-    email = _get_email(_item)
-    fields = {'reason': _item['reason']}
+    email, name = _get_email_and_name(_item)
+    fields = {'reason': _item['reason'], 'name': name}
     mail(email, 'Your blacklist entry has been removed!',
          current_app.config['BLACKLIST_REMOVED'].format(**fields),
          current_app.config['BLACKLIST_REPLY_TO'])
@@ -46,10 +46,11 @@ def send_removed_mail(item):
 def notify_new_blacklist(items):
     """Send an email to a user who has a new blacklist entry."""
     for item in items:
-        email = _get_email(item)
+        email, name = _get_email_and_name(item)
         fields = {
             'reason': item['reason'],
-            'reply_to': current_app.config['BLACKLIST_REPLY_TO']
+            'reply_to': current_app.config['BLACKLIST_REPLY_TO'],
+            'name': name
         }
 
         if item['price']:
@@ -87,8 +88,8 @@ def notify_patch_blacklist(new, old):
 
 def notify_delete_blacklist(item):
     """Send an email to a user if one of his entries was deleted."""
-    email = _get_email(item)
-    fields = {'reason': item['reason']}
+    email, name = _get_email_and_name(item)
+    fields = {'reason': item['reason'], 'name': name}
 
     mail(email, 'Your blacklist entry has been removed!',
          current_app.config['BLACKLIST_REMOVED'].format(**fields),
