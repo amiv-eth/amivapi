@@ -74,7 +74,7 @@ def get_id(item):
         return ObjectId(item['_id'])
 
 
-def mail(to, subject, text):
+def mail(to, subject, text, reply_to=None):
     """Send a mail to a list of recipients.
 
     The mail is sent from the address specified by `API_MAIL` in the config,
@@ -85,22 +85,33 @@ def mail(to, subject, text):
         to(list of strings): List of recipient addresses
         subject(string): Subject string
         text(string): Mail content
+        reply_to(string): Address of event moderator
     """
-    sender = app.config['API_MAIL']
+    sender_address = app.config['API_MAIL_ADDRESS']
+    sender_name = app.config['API_MAIL_NAME']
+    sender = f'{sender_name} <{sender_address}>'
     subject = app.config['API_MAIL_SUBJECT'].format(subject=subject)
 
     if app.config.get('TESTING', False):
-        app.test_mails.append({
+        mail = {
             'subject': subject,
             'from': sender,
             'receivers': to,
-            'text': text
-        })
+            'text': text,
+        }
+
+        if reply_to is not None:
+            mail['reply-to'] = reply_to
+
+        app.test_mails.append(mail)
+
     elif config.SMTP_SERVER and config.SMTP_PORT:
         msg = MIMEText(text)
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = ';'.join([to] if isinstance(to, str) else to)
+        if reply_to is not None:
+            msg['reply-to'] = reply_to
 
         try:
             with smtplib.SMTP(config.SMTP_SERVER,
@@ -118,7 +129,7 @@ def mail(to, subject, text):
                     smtp.ehlo()
 
                 try:
-                    smtp.sendmail(msg['From'], to, msg.as_string())
+                    smtp.sendmail(sender_address, to, msg.as_string())
                 except smtplib.SMTPRecipientsRefused:
                     error = ("Failed to send mail:\n"
                              "From: %s\nTo: %s\n"
