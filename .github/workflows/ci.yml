@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    # Due to incompatibility of ubuntu-20.04 with mongo 5.0,
+    # Due to drop of out-of-the-box support in ubuntu-22.04 for MongoDB 5.0,
     # we cannot use ubuntu-latest.
     runs-on: ubuntu-20.04
     strategy:
