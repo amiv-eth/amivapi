@@ -9,14 +9,14 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         python-version: ['3.7', '3.10']
 
     services:
       mongodb:
-        image: mongo:5.0.8
+        image: mongo:5.0.14
         env:
           MONGO_INITDB_DATABASE: amivapi
         options: >-
