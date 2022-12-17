@@ -9,6 +9,8 @@ on:
 
 jobs:
   test:
+    # Due to incompatibility of ubuntu-20.04 with mongo 5.0,
+    # we cannot use ubuntu-latest.
     runs-on: ubuntu-20.04
     strategy:
       matrix:
