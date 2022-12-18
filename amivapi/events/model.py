@@ -18,6 +18,14 @@ of and join.
 
 <br />
 
+## Type
+
+Events can be of different types. Events organized by another organization or
+company are of type `external`, otherwise they are `internal`. Announcements
+are events of type `announcement` as they are not events in a classical sense.
+
+<br />
+
 ## Moderator
 
 Events can have a *Moderator*. The Moderator can modify the events, and view
@@ -237,6 +245,15 @@ eventdomain = {
                 'type': 'string',
                 'maxlength': 10000,
                 'no_html': True,
+            },
+            'type': {
+                'description': 'Specifies what kind of event it is. This may '
+                               'be a regular event or a special announcement.',
+                'example': 'internal',
+                'type': 'string',
+                'required': True,
+                'nullable': False,
+                'allowed': ['announcement', 'internal', 'external'],
             },
             'location': {
                 'description': 'Where the event will take place.',
@@ -492,6 +509,7 @@ eventdomain = {
                 'readonly': True,
                 'type': 'integer'
             },
+
             'moderator': {
                 'description': '`_id` of a user which will be the event '
                                'moderator, who can modify the event.',

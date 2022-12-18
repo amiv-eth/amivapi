@@ -20,6 +20,7 @@ class EventModelTest(WebTestNoAuth):
                     catchphrase_en='disco, disco, party, party',
                     time_advertising_start='1970-01-01T00:00:01Z',
                     time_advertising_end='2020-01-01T00:00:00Z',
+                    type='internal',
                     priority=5,
                     **data)
 
@@ -38,36 +39,36 @@ class EventModelTest(WebTestNoAuth):
         used together."""
         # Test valid internal and external events
         self.api.post("/events",
-                      data=self.event_data(dict(
-                          spots=10,
-                          time_register_start='1970-01-01T00:00:01Z',
-                          time_register_end='2020-01-01T00:00:01Z',
-                          external_registration=None
-                      )),
+                      data=self.event_data({
+                          'spots': 10,
+                          'time_register_start': '1970-01-01T00:00:01Z',
+                          'time_register_end': '2020-01-01T00:00:01Z',
+                          'external_registration': None
+                      }),
                       status_code=201)
         self.api.post("/events",
-                      data=self.event_data(dict(
-                          spots=None, 
-                          external_registration='https://amiv.ethz.ch/test'
-                      )),
+                      data=self.event_data({
+                          'spots': None, 
+                          'external_registration': 'https://amiv.ethz.ch/test'
+                      }),
                       status_code=201)
 
         # Test for invalid url
         self.api.post("/events",
-                      data=self.event_data(dict(
-                          spots=None, 
-                          external_registration='ftp://amiv.ethz.ch/test'
-                      )),
+                      data=self.event_data({
+                          'spots': None, 
+                          'external_registration': 'ftp://amiv.ethz.ch/test'
+                      }),
                       status_code=422)
         
         # Test for external and internal registration in parallel
         self.api.post("/events",
-                      data=self.event_data(dict(
-                          spots=10,
-                          time_register_start='1970-01-01T00:00:01Z',
-                          time_register_end='2020-01-01T00:00:01Z',
-                          external_registration='https://amiv.ethz.ch/test'
-                      )),
+                      data=self.event_data({
+                          'spots': 10,
+                          'time_register_start': '1970-01-01T00:00:01Z',
+                          'time_register_end': '2020-01-01T00:00:01Z',
+                          'external_registration': 'https://amiv.ethz.ch/test'
+                      }),
                       status_code=422)
 
     def test_email_or_user(self):
