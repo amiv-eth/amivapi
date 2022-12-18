@@ -394,7 +394,8 @@ eventdomain = {
 
                 # Dependencies only for fields without useful defaults
                 'dependencies': ['time_register_start',
-                                 'time_register_end'],
+                                 'time_register_end',
+                                 'time_deregister_end'],
                 'min': 0,
                 'nullable': True,
                 'default': None,
@@ -408,7 +409,7 @@ eventdomain = {
                 'type': 'datetime',
                 'nullable': True,
                 'default': None,
-                'dependencies': ['time_register_end'],
+                'dependencies': ['time_register_end', 'time_deregister_end'],
                 'earlier_than': 'time_register_end',
                 'only_if_not_null': 'spots'
             },
@@ -416,6 +417,18 @@ eventdomain = {
                 'title': 'Registration End',
                 'description': 'End of the registration window.',
                 'example': '2018-10-13T17:00:00Z',
+
+                'type': 'datetime',
+                'default': None,
+                'nullable': True,
+                'dependencies': ['time_register_start', 'time_deregister_end'],
+                'later_than': 'time_register_start',
+                'only_if_not_null': 'spots'
+            },
+            'time_deregister_end': {
+                'title': 'Deregistration End',
+                'description': 'End of the deregistration window.',
+                'example': '2018-10-12T17:00:00Z',
 
                 'type': 'datetime',
                 'default': None,

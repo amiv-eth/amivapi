@@ -188,6 +188,7 @@ class EventModelTest(WebTestNoAuth):
                 "additionalProperties": False,
                 'properties': {}})},
             {'time_register_start': '2016-10-17T21:11:14Z'},
+            {'time_deregister_end': '2016-10-18T18:11:14Z'},
             {'time_register_end': '2016-10-18T21:11:14Z'}
         ]
 

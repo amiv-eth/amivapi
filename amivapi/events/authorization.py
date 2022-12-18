@@ -51,6 +51,7 @@ class EventSignupAuth(AmivTokenAuth):
         # Remove tzinfo to compare to utcnow (API only accepts UTC anyways)
         time_register_start = event['time_register_start'].replace(tzinfo=None)
         time_register_end = event['time_register_end'].replace(tzinfo=None)
+        time_deregister_end = event['time_deregister_end'].replace(tzinfo=None)
 
         # Only the user itself can modify the item (not moderators), and only
         # within the signup window
@@ -58,7 +59,7 @@ class EventSignupAuth(AmivTokenAuth):
         return (user_id == str(event['moderator']) or
                 (('user' in item) and
                  (user_id == str(get_id(item['user']))) and
-                 (time_register_start <= dt.utcnow() <= time_register_end)))
+                 (time_register_start <= dt.utcnow() <= time_deregister_end)))
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators

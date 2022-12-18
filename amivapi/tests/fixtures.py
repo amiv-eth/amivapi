@@ -258,12 +258,17 @@ class FixtureMixin(object):
                 obj['time_register_end'] = (
                     datetime.utcnow() + timedelta(
                         seconds=random.randint(0, 1000000)))
+                obj['time_deregister_end'] = (
+                    datetime.utcnow() + timedelta(
+                        seconds=random.randint(0, 1000000)))
             else:
                 if ('time_register_start' not in obj or
-                        'time_register_end' not in obj):
+                        'time_register_end' not in obj or
+                        'time_deregister_end' not in obj):
                     raise BadFixtureException(
-                        "Bad fixture: please specify either both "
-                        "time_register_start and time_register_end or none")
+                        "Bad fixture: please specify either all of "
+                        "time_register_start and time_register_end "
+                        "and time_deregister_end or none")
 
             obj.setdefault('allow_email_signup',
                            random.choice([True, False]))
