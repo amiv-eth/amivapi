@@ -50,7 +50,6 @@ class EventSignupAuth(AmivTokenAuth):
 
         # Remove tzinfo to compare to utcnow (API only accepts UTC anyways)
         time_register_start = event['time_register_start'].replace(tzinfo=None)
-        time_register_end = event['time_register_end'].replace(tzinfo=None)
         time_deregister_end = event['time_deregister_end'].replace(tzinfo=None)
 
         # Only the user itself can modify the item (not moderators), and only

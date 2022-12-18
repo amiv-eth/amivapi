@@ -221,7 +221,7 @@ class EventAuthTest(WebTest):
         with freeze_time(datetime(2017, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=token, status_code=403)
-        
+
         # Slightly too late
         with freeze_time(datetime(2016, 12, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
