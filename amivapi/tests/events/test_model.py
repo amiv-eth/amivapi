@@ -33,7 +33,7 @@ class EventModelTest(WebTestNoAuth):
             'event': str(ev['_id']),
             'user': str(user['_id'])
         }, status_code=422)
-    
+
     def test_external_registration(self):
         """Test that internal and external registrations cannot be
         used together."""
@@ -48,7 +48,7 @@ class EventModelTest(WebTestNoAuth):
                       status_code=201)
         self.api.post("/events",
                       data=self.event_data({
-                          'spots': None, 
+                          'spots': None,
                           'external_registration': 'https://amiv.ethz.ch/test'
                       }),
                       status_code=201)
@@ -56,11 +56,11 @@ class EventModelTest(WebTestNoAuth):
         # Test for invalid url
         self.api.post("/events",
                       data=self.event_data({
-                          'spots': None, 
+                          'spots': None,
                           'external_registration': 'ftp://amiv.ethz.ch/test'
                       }),
                       status_code=422)
-        
+
         # Test for external and internal registration in parallel
         self.api.post("/events",
                       data=self.event_data({

@@ -351,7 +351,7 @@ class EventValidator(object):
             self.persisted_document.get(only_if_null) is not None)
 
         if ((only_if_null in doc and doc.get(only_if_null) is not None) or
-            (not (only_if_null in doc) and exists_in_original)):
+                (not (only_if_null in doc) and exists_in_original)):
             self._error(field, "May only be specified if %s is null"
                         % only_if_null)
 

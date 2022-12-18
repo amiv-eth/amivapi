@@ -11,6 +11,7 @@ from amivapi.auth.auth import AmivTokenAuth
 from amivapi.tests.utils import WebTest, WebTestNoAuth
 from amivapi.validation import ValidatorAMIV
 
+
 class ValidatorAMIVTestNoAuth(WebTestNoAuth):
     """Unit test class for general purpose validators w/o authentication."""
 

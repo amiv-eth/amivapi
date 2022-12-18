@@ -416,8 +416,10 @@ class ValidatorAMIV(Validator):
 
         if url:
             result = urlparse(value)
-            if not all([result.scheme in ['http', 'https'], result.netloc, result.path]):
+            if not all([result.scheme in ['http', 'https'],
+                        result.netloc, result.path]):
                 self._error(field, 'The text be a valid http(s) url.')
+
 
 # Cerberus uses a different validator for schemas, which is unaware of
 # custom types.

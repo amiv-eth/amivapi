@@ -485,8 +485,8 @@ eventdomain = {
 
             'external_registration': {
                 'description': 'Link to an external registration for the '
-                                'advertised event. If used, `spots` must be '
-                                'set to `Null`.',
+                               'advertised event. If used, `spots` must be '
+                               'set to `Null`.',
                 'type': 'string',
                 'nullable': True,
                 'default': None,
