@@ -133,6 +133,12 @@ signup:
     "SBB_Abo": "GA"
 }
 ```
+
+## External Registration
+
+There might be the case that the signup is organized by another organization or
+company. In this case, a link to the external signup can be set. It is not
+allowed to have "spots" > 0 and an external registration link at the same time.
 """)
 
 description_signups = ("""
@@ -380,7 +386,7 @@ eventdomain = {
                 'default': False,
             },
 
-            # Signups
+            # Signups / (external) Registration
 
             'spots': {
                 'title': 'Signup Spots',
@@ -458,6 +464,17 @@ eventdomain = {
                 'type': 'string',
                 'allowed': ['fcfs', 'manual'],
                 'default': 'fcfs',
+            },
+
+            'external_registration': {
+                'description': 'Link to an external registration for the '
+                                'advertised event. If used, `spots` must be '
+                                'set to `Null`.',
+                'type': 'string',
+                'nullable': True,
+                'default': None,
+                'url': True,
+                'only_if_null': 'spots'
             },
 
             'signup_count': {
