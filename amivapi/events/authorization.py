@@ -6,7 +6,7 @@
 
 from bson import ObjectId
 
-from flask import g, current_app
+from flask import g, current_app, request
 from datetime import datetime as dt
 from amivapi.auth import AmivTokenAuth
 from amivapi.utils import get_id
@@ -19,7 +19,7 @@ class EventAuth(AmivTokenAuth):
         """The group moderator is allowed to change things."""
         # Return true if a moderator exists and it is equal to the current user
         return item.get('moderator') and (
-                user_id == str(get_id(item['moderator'])))
+            user_id == str(get_id(item['moderator'])))
 
 
 class EventSignupAuth(AmivTokenAuth):
@@ -39,7 +39,7 @@ class EventSignupAuth(AmivTokenAuth):
 
     def has_item_write_permission(self, user_id, item):
         """Users can modify their signups within the registration window.
-            Moderators can not modify signups from other users.
+            Moderators can modify signups from other users anytime.
         """
         if isinstance(item['event'], dict):
             event = item['event']
@@ -54,9 +54,11 @@ class EventSignupAuth(AmivTokenAuth):
 
         # Only the user itself can modify the item (not moderators), and only
         # within the signup window
-        return (('user' in item) and
-                (user_id == str(get_id(item['user']))) and
-                (time_register_start <= dt.utcnow() <= time_register_end))
+
+        return (user_id == str(event['moderator']) or
+                (('user' in item) and
+                 (user_id == str(get_id(item['user']))) and
+                 (time_register_start <= dt.utcnow() <= time_register_end)))
 
     def has_resource_write_permission(self, user_id):
         """Anyone can sign up. Further requirements are enforced with validators
@@ -89,6 +91,21 @@ class EventAuthValidator(object):
         if enabled:
             if g.resource_admin or value is None:
                 return
-            if g.get('current_user') != str(value):
+
+            id_field = current_app.config['ID_FIELD']
+            # If PATCH, then event_id will not be provided, we have to find it
+            if request.method == 'PATCH':
+                lookup = {id_field: self.persisted_document['event']}
+            elif 'event' in self.document:
+                lookup = {id_field: self.document['event']}
+            else:
+                # No event provided, the `required` validator of the event field
+                # will complain, but we can't continue here
+                return
+
+            event = current_app.data.find_one('events', None, **lookup)
+
+            if (g.get('current_user') != str(event['moderator'])
+                    and g.get('current_user') != str(value)):
                 self._error(field, "You can only enroll yourself. (%s: "
                                    "%s is yours)." % (field, g.current_user))

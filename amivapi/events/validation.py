@@ -70,9 +70,9 @@ class EventValidator(object):
         """
         if enabled:
             count = current_app.data.driver.db['blacklist'].count_documents({
-                        'user': user_id,
-                        '$or': [{'end_time': None},
-                                {'end_time': {'$gte': datetime.utcnow()}}]})
+                'user': user_id,
+                '$or': [{'end_time': None},
+                        {'end_time': {'$gte': datetime.utcnow()}}]})
             if count:
                 self._error(field, "the user with id %s is on the blacklist"
                             % user_id)
@@ -112,7 +112,8 @@ class EventValidator(object):
                 return
 
             # The event has signup, check if it is open
-            if not g.get('resource_admin'):
+            if (g.get('current_user') != str(event['moderator'])
+                    and not g.get('resource_admin')):
                 now = datetime.utcnow()
                 if now < event['time_register_start'].replace(tzinfo=None):
                     self._error(field, "the signup for event with %s is "
@@ -156,6 +157,46 @@ class EventValidator(object):
                 self._error(field,
                             "event %s does not allow signup with email address"
                             % event_id)
+
+    def _validate_admin_or_moderator_only(self, enabled, field, value):
+        """Prohibit anyone except admins or event moderators from setting this
+        field.
+
+        Applies to POST and PATCH.
+
+        Args:
+            enabled (bool): Boolean, should be true to use the rule
+            field (string): field name
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        id_field = current_app.config['ID_FIELD']
+        # If PATCH, then event_id will not be provided, we have to find it
+        if request.method == 'PATCH':
+            lookup = {id_field: self.persisted_document['event']}
+        elif 'event' in self.document:
+            lookup = {id_field: self.document['event']}
+        else:
+            # No event provided, the `required` validator of the event field
+            # will complain, but we can't continue here
+            return
+
+        event = current_app.data.find_one('events', None, **lookup)
+
+        if event is None:
+            return
+        # Due to how cerberus works, this rule is evaluated *after* default
+        # values are set. We have to ensure that defaults are not rejected
+        # on POST
+        default_value = (request.method == 'POST' and
+                         'default' in self.schema[field] and
+                         self.schema[field]['default'] == value)
+
+        if (enabled and not g.get('current_user') == str(event['moderator'])
+                and not g.resource_admin and not default_value):
+            self._error(field,
+                        'This field can only be set with admin permissions.')
 
     def _validate_json_schema(self, enabled, field, value):
         """Validate a json schema[1] string.

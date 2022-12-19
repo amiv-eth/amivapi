@@ -133,9 +133,13 @@ class EventAuthTest(WebTest):
         t_open = datetime(2016, 1, 1)
         t_close = datetime(2016, 12, 31)
 
+        moderator = self.new_object("users")
+        moderator_token = self.get_user_token(moderator['_id'])
+
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
-                             time_register_end=t_close)
+                             time_register_end=t_close,
+                             moderator=moderator['_id'])
         user = self.new_object("users")
         token = self.get_user_token(user['_id'])
         root_token = self.get_root_token()
@@ -163,11 +167,20 @@ class EventAuthTest(WebTest):
 
         user2 = self.new_object('users')
 
-        # Admin can ignore time
+        # Moderator can ignore time
         with freeze_time(datetime(2015, 1, 1)):
             self.api.post("/eventsignups", data={
                 'event': str(ev['_id']),
                 'user': str(user2['_id'])
+            }, token=moderator_token, status_code=201)
+
+        user3 = self.new_object('users')
+
+        # Admin can ignore time
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.post("/eventsignups", data={
+                'event': str(ev['_id']),
+                'user': str(user3['_id'])
             }, token=root_token, status_code=201)
 
     def test_registration_window_signoff(self):
@@ -176,16 +189,24 @@ class EventAuthTest(WebTest):
         t_open = datetime(2016, 1, 1)
         t_close = datetime(2016, 12, 31)
 
+        moderator = self.new_object("users")
+        moderator_token = self.get_user_token(moderator['_id'])
+
         user = self.new_object("users")
+        user2 = self.new_object("users")
         token = self.get_user_token(user['_id'])
         root_token = self.get_root_token()
 
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
-                             time_register_end=t_close)
+                             time_register_end=t_close,
+                             moderator=moderator['_id'])
         signup = self.new_object("eventsignups", event=ev['_id'],
                                  user=user['_id'])
         etag = {'If-Match': signup['_etag']}
+        signup2 = self.new_object("eventsignups", event=ev['_id'],
+                                  user=user2['_id'])
+        etag2 = {'If-Match': signup2['_etag']}
 
         # Too early
         with freeze_time(datetime(2015, 1, 1)):
@@ -206,22 +227,37 @@ class EventAuthTest(WebTest):
                                  user=user['_id'])
         etag = {'If-Match': signup['_etag']}
 
-        # Admin can ignore time
+        # Moderators can ignore time
         with freeze_time(datetime(2015, 1, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
-                            headers=etag, token=root_token, status_code=204)
+                            headers=etag, token=moderator_token,
+                            status_code=204)
 
-    def test_checkin_admin_permissions(self):
-        """Test that no user without admin permissions can check in a user"""
+        # Admin can ignore time
+        with freeze_time(datetime(2015, 1, 1)):
+            self.api.delete("/eventsignups/" + str(signup2['_id']),
+                            headers=etag2, token=root_token, status_code=204)
+
+    def test_checkin_admin_or_moderator_permissions(self):
+        """Test that no user without admin or moderator
+        permissions can check in a user
+        """
         user_id = 24 * '1'
-        event_id = 24 * '2'
+        user_id2 = 24 * '2'
+        moderator_id = 24 * '3'
+        event_id = 24 * '4'
 
         self.load_fixture({
             'users': [{
                 '_id': user_id
+            }, {
+                '_id': user_id2
+            }, {
+                '_id': moderator_id
             }],
             'events': [{
-                '_id': event_id
+                '_id': event_id,
+                'moderator': moderator_id
             }],
         })
 
@@ -235,6 +271,17 @@ class EventAuthTest(WebTest):
                        data={'checked_in': 'True'},
                        headers={'If-Match': etag},
                        status_code=422)
+
+        self.api.patch("/eventsignups/%s" % eventsignup_id,
+                       token=self.get_user_token(moderator_id),
+                       data={'checked_in': 'True'},
+                       headers={'If-Match': etag},
+                       status_code=200)
+
+        eventsignup = self.new_object('eventsignups', event=event_id,
+                                      user=user_id2)
+        etag = eventsignup['_etag']
+        eventsignup_id = eventsignup['_id']
 
         self.api.patch("/eventsignups/%s" % eventsignup_id,
                        token=self.get_root_token(),
@@ -259,12 +306,12 @@ class EventAuthTest(WebTest):
                        data={
                            "title_de": "API Event Patch attempt by "
                                        "unauthorized user"
-                       }, token=user2_token, status_code=403)
+        }, token=user2_token, status_code=403)
         self.api.patch("/events/" + str(ev['_id']),
                        headers={'If-Match': ev['_etag']},
                        data={
                            "title_de": "API Event Patched by moderator"
-                       }, token=user1_token, status_code=200)
+        }, token=user1_token, status_code=200)
 
     def test_event_moderator_can_see_event_participant_list(self):
         """Test that a moderator can see the list of participants """
@@ -290,8 +337,8 @@ class EventAuthTest(WebTest):
                                       token=moderator_token, status_code=200).
                          json['_meta']['total'], 2)
 
-    def test_moderator_cannot_modify_participant_list(self):
-        """Test that users can not sign up other people for events"""
+    def test_moderator_can_modify_participant_list(self):
+        """Test that event moderators can sign up other people for events"""
         ev = self.new_object("events", spots=100)
         user = self.new_object("users")
 
@@ -300,18 +347,18 @@ class EventAuthTest(WebTest):
 
         ev = self.new_object("events", moderator=moderator['_id'])
 
-        # Test that moderator cannot signup other users
+        # Test that moderator can signup other users
         self.api.post('eventsignups',
                       data={'user': str(user['_id']),
                             'event': str(ev['_id'])},
                       token=moderator_token,
-                      status_code=422)
+                      status_code=201)
 
-        # Test that moderator cannot remove other users
+        # Test that moderator can remove other users
         ev = self.new_object("events", moderator=moderator['_id'])
         signup = self.new_object("eventsignups", event=ev['_id'],
                                  user=user['_id'])
         etag = {'If-Match': signup['_etag']}
         print("/eventsignups/" + str(signup['_id']))
         self.api.delete("/eventsignups/" + str(signup['_id']),
-                        headers=etag, token=moderator_token, status_code=403)
+                        headers=etag, token=moderator_token, status_code=204)

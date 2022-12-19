@@ -1,11 +1,17 @@
-eve==0.9.1
-git+https://github.com/hermannsblum/eve-swagger.git@5c9cf066ffa72712f9018a3eb0c5142f7733d8cc#egg=Eve_Swagger
-# "nethz" must be instaleld in editable mode, otherwise some certs are not found
+eve==2.0.4
+git+https://github.com/amiv-eth/eve-swagger.git@de78e466fd34a0614d6f556a371e0ae8d973aca9#egg=Eve_Swagger
+# "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
--e git+https://github.com/NotSpecial/nethz.git@1d3004081c3618f1f41463476a847b0bddd6d91a#egg=nethz
-passlib==1.7.1
-jsonschema==3.0.1
-freezegun==0.3.12
-sentry-sdk[flask]==0.8.1
-beautifulsoup4==4.6.3
-Pillow==6.2.0
+-e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
+passlib==1.7.4
+jsonschema==4.17.3
+freezegun==1.2.2
+sentry-sdk[flask]==1.12.0
+beautifulsoup4==4.11.1
+Pillow==9.3.0
+
+# Test requirements. It's not worth the hassle to keep them separate.
+pytest==7.2.0
+pytest-cov==4.0.0
+tox==4.0.12
+flake8==6.0.0

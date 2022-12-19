@@ -67,7 +67,12 @@ def add_accepted_before_insert(signups):
     for signup in signups:
         # Admins may provide a value for `accepted`.
         # If not provided or not admin set it to false`.
-        signup['accepted'] = g.resource_admin and signup.get('accepted', False)
+
+        lookup = {current_app.config['ID_FIELD']: signup.get('event')}
+        event = current_app.data.find_one('events', None, **lookup)
+
+        signup['accepted'] = (g.resource_admin or g.get('current_user') == str(
+            event['moderator'])) and signup.get('accepted', False)
 
 
 def update_waiting_list_after_insert(signups):
@@ -81,9 +86,20 @@ def update_waiting_list_after_insert(signups):
     for each item.
     """
     for signup in signups:
-        accepted = update_waiting_list(signup['event'])
-        if signup['_id'] in accepted:
-            signup['accepted'] = True
+        if signup['accepted']:
+            lookup = {current_app.config['ID_FIELD']: signup.get('event')}
+            event = current_app.data.find_one('events', None, **lookup)
+            if event is not None:
+                notify_signup_accepted(event, signup, False)
+        else:
+            accepted = update_waiting_list(signup['event'])
+            if signup['_id'] in accepted:
+                signup['accepted'] = True
+            elif signup.get('user') is not None:
+                lookup = {current_app.config['ID_FIELD']: signup.get('event')}
+                event = current_app.data.find_one('events', None, **lookup)
+                if event is not None:
+                    notify_signup_accepted(event, signup, True)
 
 
 def update_waiting_list_after_delete(signup):

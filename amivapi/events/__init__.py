@@ -10,7 +10,10 @@ logic needed for signup of non members to events.
 
 
 from amivapi.events.authorization import EventAuthValidator
-from amivapi.events.emails import send_confirmmail_to_unregistered_users
+from amivapi.events.emails import (
+    send_confirmmail_to_unregistered_users,
+    notify_signup_deleted
+)
 from amivapi.events.email_links import (
     add_confirmed_before_insert,
     email_blueprint
@@ -66,6 +69,7 @@ def init_app(app):
 
     # Update waiting list after insert or delete of signups
     app.on_inserted_eventsignups += update_waiting_list_after_insert
+    app.on_deleted_item_eventsignups += notify_signup_deleted
     app.on_deleted_item_eventsignups += update_waiting_list_after_delete
 
     app.register_blueprint(email_blueprint)

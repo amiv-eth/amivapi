@@ -64,7 +64,8 @@ REMOTE_MAILING_LIST_KEYFILE = None
 REMOTE_MAILING_LIST_DIR = './'  # Use home directory on remote by default
 
 # SMTP server defaults
-API_MAIL = 'api@amiv.ethz.ch'
+API_MAIL_ADDRESS = 'no-reply@amiv.ethz.ch'
+API_MAIL_NAME = 'AMIV an der ETH'
 API_MAIL_SUBJECT = "[AMIV] {subject}"
 SMTP_HOST = 'localhost'
 SMTP_PORT = 587
@@ -124,19 +125,42 @@ ACCEPT_EMAIL_TEXT = (
     'Best Regards,\nAMIV'
 )
 
+# Address for issues with event signups
+DEFAULT_EVENT_REPLY_TO = "kultur@amiv.ethz.ch"
+
+# Email sent to users when their event signup is on the waiting list
+WAITING_LIST_EMAIL_TEXT = (
+    'Hello {name}!\n\n'
+    'We are sorry to inform you that your signup for {title} was rejected '
+    'because there are no free spots available. '
+    'We put you on a waiting list and we will send you an email when a spot'
+    ' becomes available.\n\n'
+    'Best Regards,\nAMIV'
+)
+
+# Email sent to confirm deregistration of an event
+DEREGISTER_EMAIL_TEXT = (
+    'Hello {name}\n\n'
+    'You have been successfully deregistered from {title}.\n\n'
+    'Best Regards,\nAMIV'
+)
+
 # Address for issues with the blacklist
 BLACKLIST_REPLY_TO = "bouncer@amiv.ethz.ch"
 
 # Email sent to people who have a new entry on the blacklists
 BLACKLIST_ADDED_EMAIL_W_PRICE = (
+    "Hello {name}\n\n"
     "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
     "means that you cannot register for any new amiv events! To get removed "
-    "from the blacklist, you have to pay {price:.2f} CHF\n\nIf you think that "
-    "this is an error, don't hesitate to contact {reply_to}\n\nBest "
+    "from the blacklist, you have to pay {price:.2f} CHF in the AMIV Office "
+    "in CAB E37.\n\nIf you think that this is an error, don't hesitate to "
+    "contact {reply_to}\n\nBest "
     "Regards,\nAMIV"
 )
 
 BLACKLIST_ADDED_EMAIL_WO_PRICE = (
+    "Hello {name}\n\n"
     "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
     "means that you cannot register for any new amiv events!\n\nIf you think "
     "that this is an error, don't hesitate to contact {reply_to}\n\nBest "
@@ -145,6 +169,7 @@ BLACKLIST_ADDED_EMAIL_WO_PRICE = (
 
 # Email sent to people who got one blacklist entry removed
 BLACKLIST_REMOVED = (
+    "Hello {name}\n\n"
     "Congratulations, your blacklist entry with the following reason has been "
     "removed:\n\n{reason}\n\nBest Regards,\nAMIV"
 )

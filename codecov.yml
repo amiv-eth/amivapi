@@ -1,0 +1,8 @@
+coverage:
+  status:
+    project:
+      default:
+        # Compares coverage to the base commit (of a pull request) and allows a
+        # 0.1% drop of the coverage to be marked as successful.
+        target: auto
+        threshold: 0.1%

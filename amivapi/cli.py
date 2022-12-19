@@ -149,8 +149,7 @@ def run(config, mode):
                          ENV='development',
                          DEBUG=True,
                          TESTING=True)
-        app.run(threaded=True)
-
+        app.run(threaded=True, host='0.0.0.0', port=5000)
     elif mode == 'prod':
         if bjoern:
             echo('Starting bjoern on port 8080...')

@@ -13,7 +13,21 @@ from amivapi.events.utils import get_token_secret
 from amivapi.utils import mail
 
 
-def notify_signup_accepted(event, signup):
+def find_reply_to_email(event):
+    """Get the moderator or default event mailing reply-to email address."""
+    id_field = current_app.config['ID_FIELD']
+
+    if event['moderator'] is not None:
+        lookup = {id_field: event['moderator']}
+        moderator = current_app.data.find_one('users', None, **lookup)
+
+        if moderator is not None:
+            return moderator['email']
+
+    return current_app.config.get('DEFAULT_EVENT_REPLY_TO')
+
+
+def notify_signup_accepted(event, signup, waiting_list=False):
     """Send an email to a user that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
 
@@ -35,14 +49,60 @@ def notify_signup_accepted(event, signup):
 
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
+    event_name = event.get('title_en') or event.get('title_de')
+
+    reply_to_email = find_reply_to_email(event)
+
+    if waiting_list:
+        mail([email],
+             'Your signup for %s was put on the waiting list' % event_name,
+             current_app.config['WAITING_LIST_EMAIL_TEXT'].format(
+                name=name,
+                title=event_name),
+             reply_to_email)
+    else:
+        mail([email],
+             'Your event signup for %s was accepted' % event_name,
+             current_app.config['ACCEPT_EMAIL_TEXT'].format(
+                name=name,
+                title=event_name,
+                link=deletion_link,
+                deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
+             reply_to_email)
+
+
+def notify_signup_deleted(signup):
+    """Send an email to a user that his signup was deleted"""
+    id_field = current_app.config['ID_FIELD']
+
+    if signup.get('user'):
+        lookup = {id_field: signup['user']}
+        user = current_app.data.find_one('users', None, **lookup)
+        if user is None:  # User was deleted
+            return
+        name = user['firstname']
+        email = user['email']
+    else:
+        name = 'Guest of AMIV'
+        email = signup['email']
+
+    event = current_app.data.find_one(
+        'events', None,
+        **{current_app.config['ID_FIELD']: signup['event']})
+
+    if current_app.config.get('SERVER_NAME') is None:
+        current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
+                                   "will not work!")
+
+    reply_to_email = find_reply_to_email(event)
 
     mail([email],
-         'Eventsignup accepted',
-         current_app.config['ACCEPT_EMAIL_TEXT'].format(
-             name=name,
-             title=event.get('title_en') or event.get('title_de'),
-             link=deletion_link,
-             deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')))
+         'Successfully deregistered from %s' % event.get(
+             'title_en') or event.get('title_de'),
+         current_app.config['DEREGISTER_EMAIL_TEXT'].format(
+            name=name,
+            title=event.get('title_en') or event.get('title_de')),
+         reply_to_email)
 
 
 def send_confirmmail_to_unregistered_users(items):
@@ -69,8 +129,11 @@ def send_confirmmail_to_unregistered_users(items):
             confirm_link = url_for('emails.on_confirm_email', token=token,
                                    _external=True)
 
+            reply_to_email = find_reply_to_email(event)
+
             mail([item['email']],
                  'Registration for %s' % title,
                  current_app.config['CONFIRM_EMAIL_TEXT'].format(
                      title=title,
-                     link=confirm_link))
+                     link=confirm_link),
+                 reply_to_email)
