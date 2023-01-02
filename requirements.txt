@@ -13,5 +13,5 @@ Pillow==9.3.0
 # Test requirements. It's not worth the hassle to keep them separate.
 pytest==7.2.0
 pytest-cov==4.0.0
-tox==4.0.12
+tox==4.1.2
 flake8==6.0.0
