@@ -9,14 +9,16 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Due to drop of out-of-the-box support in ubuntu-22.04 for MongoDB 5.0,
+    # we cannot use ubuntu-latest.
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ['3.7', '3.9']
+        python-version: ['3.8', '3.10']
 
     services:
       mongodb:
-        image: mongo:5.0.8
+        image: mongo:5.0.14
         env:
           MONGO_INITDB_DATABASE: amivapi
         options: >-
@@ -31,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -80,7 +82,7 @@ jobs:
       # Build and push Docker image with Buildx (don't push on PR)
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           pull: true

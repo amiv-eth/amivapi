@@ -51,7 +51,7 @@ class TestClient(FlaskClient):
             })
 
         # Add content-type: json header if nothing else is provided
-        if (not("content-type" in kwargs['headers']) and
+        if (not ("content-type" in kwargs['headers']) and
                 ("data" in kwargs)):
             # Parse data
             kwargs['data'] = json.dumps(kwargs['data'])
@@ -143,12 +143,13 @@ class WebTest(unittest.TestCase, FixtureMixin):
         self.api = self.app.test_client()
 
         # Create a separate mongo connection and db reference for tests
-        self.connection = MongoClient(host=self.app.config['MONGO_HOST'],
-                                      port=self.app.config['MONGO_PORT'])
+        self.connection = MongoClient(
+            host=self.app.config['MONGO_HOST'],
+            port=self.app.config['MONGO_PORT'],
+            username=self.app.config['MONGO_USERNAME'],
+            password=self.app.config['MONGO_PASSWORD'],
+            authSource=self.app.config['MONGO_DBNAME'])
         self.db = self.connection[self.app.config['MONGO_DBNAME']]
-        self.db.authenticate(name=self.app.config['MONGO_USERNAME'],
-                             password=self.app.config['MONGO_PASSWORD'],
-                             source=self.app.config['MONGO_DBNAME'])
 
     def tearDown(self):
         """Tear down after testing."""

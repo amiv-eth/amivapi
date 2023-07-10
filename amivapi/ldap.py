@@ -52,6 +52,7 @@ def init_app(app):
     """Attach an ldap connection to the app."""
     user = app.config['LDAP_USERNAME']
     password = app.config['LDAP_PASSWORD']
+    hosts = app.config['LDAP_HOSTS']
 
     if user is None and password is None:
         return
@@ -60,7 +61,7 @@ def init_app(app):
         raise ValueError("You cannot set only a username or only a password "
                          "for ldap.")
 
-    app.config['ldap_connector'] = AuthenticatedLdap(user, password)
+    app.config['ldap_connector'] = AuthenticatedLdap(user, password, hosts)
 
 
 def authenticate_user(cn, password):
@@ -152,15 +153,17 @@ def _process_data(data):
     It will take all fields relevant for a user update and map them
     to the correct fields for the user resource.
     """
-    res = {'nethz': data['cn'][0],
-           'legi': data['swissEduPersonMatriculationNumber'],
-           'firstname': data['givenName'][0],
-           'lastname': data['sn'][0]}
-    # email can be removed when Eve switches to Cerberus 1.x, then
-    # We could do this as a default value in the user model
-    res['email'] = '%s@ethz.ch' % res['nethz']
-    res['gender'] = \
-        u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
+    res = {'nethz': data.get('cn', [None])[0],
+           'legi': data.get('swissEduPersonMatriculationNumber'),
+           'firstname': data.get('givenName', [None])[0],
+           'lastname': data.get('sn', [None])[0]}
+    if res['nethz'] is not None:
+        # email can be removed when Eve switches to Cerberus 1.x, then
+        # We could do this as a default value in the user model
+        res['email'] = '%s@ethz.ch' % res['nethz']
+    if 'swissEduPersonGender' in data:
+        res['gender'] = \
+            u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
     # See file docstring for explanation of `deparmentNumber` field
     # In some rare cases, the departmentNumber field is either empty
@@ -175,12 +178,26 @@ def _process_data(data):
 
     # Membership: One of our departments and VSETH member
     is_member = ((res['department'] is not None) and
-                 ('VSETH Mitglied' in data['ou']))
+                 'ou' in data and ('VSETH Mitglied' in data['ou']))
     res['membership'] = u"regular" if is_member else u"none"
 
     # For members, send newsletter to True by default
     if is_member:
         res['send_newsletter'] = True
+
+    # Remove all keys with None value
+    keys_skipped = []
+    for key in list(res.keys()):
+        # Key 'department' is allowed to be None
+        if res[key] is None and key != 'department':
+            del res[key]
+            keys_skipped.append(key)
+
+    if len(keys_skipped) > 0:
+        current_app.logger.info(
+            "The follow fields are missing in the LDAP response and "
+            "could not be synchronized for user '%s': %s" %
+            (res.get('nethz'), ','.join(keys_skipped)))
 
     return res
 

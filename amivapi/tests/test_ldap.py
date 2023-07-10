@@ -35,6 +35,7 @@ class LdapTest(WebTestNoAuth):
         """Test that init app uses correct credentials stored connector."""
         ldap_user = 'test'
         ldap_pass = 'T3ST'
+        ldap_hosts = self.app.config['LDAP_HOSTS']
         initialized_ldap = 'I totally am an ldap instance.'
 
         self.app.config['LDAP_USERNAME'] = ldap_user
@@ -44,7 +45,7 @@ class LdapTest(WebTestNoAuth):
         with patch(to_patch, return_value=initialized_ldap) as init:
             ldap.init_app(self.app)
 
-            init.assert_called_with(ldap_user, ldap_pass)
+            init.assert_called_with(ldap_user, ldap_pass, ldap_hosts)
             self.assertEqual(self.app.config['ldap_connector'],
                              initialized_ldap)
 
@@ -111,6 +112,43 @@ class LdapTest(WebTestNoAuth):
             expected = self.fake_filtered_data()
 
             self.assertEqual(filtered, expected)
+
+    def test_process_data_incomplete_response(self):
+        """Test that processing ldap response works even if
+        some fields are missing."""
+        tests = (
+            # (missing ldap_field, (missing filtered_fields), \
+            #    {patch for expected})
+            ('cn', ('nethz', 'email')),
+            ('swissEduPersonMatriculationNumber', ('legi')),
+            ('givenName', ('firstname')),
+            ('sn', ('lastname')),
+            ('swissEduPersonGender', ('gender')),
+            ('departmentNumber', tuple(),
+                {'department': None, 'membership': 'none',
+                 'send_newsletter': False}),
+            ('ou', ('send_newsletter'), {'membership': 'none'}),
+        )
+
+        with self.app.app_context():
+            for test in tests:
+                ldap_data = {key: value
+                             for key, value in self.fake_ldap_data().items()
+                             if key != test[0]}
+                filtered = ldap._process_data(ldap_data)
+                expected = {key: value
+                            for key, value in self.fake_filtered_data().items()
+                            if key not in test[1]}
+
+                # Apply patch for expected data
+                if len(test) > 2:
+                    expected.update(**test[2])
+
+                if (expected['membership'] == 'none' and
+                        'send_newsletter' in expected):
+                    del expected['send_newsletter']
+
+                self.assertEqual(filtered, expected)
 
     def test_process_gender(self):
         """ Test parsing of gender field."""
