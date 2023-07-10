@@ -17,16 +17,16 @@ jobs:
       matrix:
         deploy-url:
           - https://deploy-cluster.amiv.ethz.ch
-          - https://deploy-leela.amiv.ethz.ch
+          - https://deploy-fallback.amiv.ethz.ch
         deploy-service:
           - amivapi
           - amivapi-cron
           - amivapi-dev
           - amivapi-dev-cron
         exclude:
-          - deploy-url: 'https://deploy-leela.amiv.ethz.ch'
+          - deploy-url: 'https://deploy-fallback.amiv.ethz.ch'
             deploy-service: 'amivapi-dev'
-          - deploy-url: 'https://deploy-leela.amiv.ethz.ch'
+          - deploy-url: 'https://deploy-fallback.amiv.ethz.ch'
             deploy-service: 'amivapi-dev-cron'
 
     env:

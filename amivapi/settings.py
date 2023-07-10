@@ -74,6 +74,12 @@ SMTP_TIMEOUT = 10
 # LDAP
 LDAP_USERNAME = None
 LDAP_PASSWORD = None
+LDAP_HOSTS = ["ldaps://ldaps-rz-1.ethz.ch",
+              "ldaps://ldaps-rz-2.ethz.ch",
+              "ldaps://ldaps-rz-3.ethz.ch",
+              "ldaps://ldaps-hit-1.ethz.ch",
+              "ldaps://ldaps-hit-2.ethz.ch",
+              "ldaps://ldaps-hit-3.ethz.ch"]
 
 # Execution of periodic tasks with `amivapi run cron`
 CRON_INTERVAL = timedelta(minutes=5)  # per default, check tasks every 5 min
