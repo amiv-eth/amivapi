@@ -184,7 +184,7 @@ studydocdomain = {
                 'type': 'string',
                 'required': True,
                 'nullable': False,
-                'allowed': ['spring exams', 'autumn exams', 'oral exams',
+                'allowed': ['exams', 'oral exams',
                             'cheat sheets', 'study guides',
                             'lecture documents', 'exercises'],
                 'allow_summary': True,
