@@ -6,7 +6,7 @@ git+https://github.com/amiv-eth/eve-swagger.git@de78e466fd34a0614d6f556a371e0ae8
 passlib==1.7.4
 jsonschema==4.17.3
 freezegun==1.2.2
-sentry-sdk[flask]==1.24.0
+sentry-sdk[flask]==1.28.0
 beautifulsoup4==4.12.2
 Pillow==9.5.0
 
