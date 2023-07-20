@@ -15,6 +15,7 @@ pdfpath = join(dirname(__file__), "../fixtures", 'test.pdf')
 pngpath = join(dirname(__file__), "../fixtures", 'lena.png')
 jpgpath = join(dirname(__file__), "../fixtures", 'lena.jpg')
 
+
 class JobOffersTest(utils.WebTestNoAuth):
     """Test basic functionality of joboffers"""
 
