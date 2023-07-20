@@ -43,7 +43,8 @@ class JobOffersTest(utils.WebTestNoAuth):
             'title_en': 'ACME Inc now hiring explosions experts',
         }
 
-        post_data = base_post_data | {
+        post_data = {
+            **base_post_data,
             'pdf': (BytesIO(br'%PDF magic'), 'test.pdf'),
             'logo': (open(pngpath, 'rb'), 'logo.png'),
         }
@@ -53,7 +54,8 @@ class JobOffersTest(utils.WebTestNoAuth):
                       headers={'content-type': 'multipart/form-data'},
                       data=post_data, status_code=201)
 
-        post_data = base_post_data | {
+        post_data = {
+            **base_post_data,
             'pdf': (BytesIO(br'%PDF magic'), 'test.pdf'),
             'logo': (open(jpgpath, 'rb'), 'logo.jpg'),
         }
@@ -63,7 +65,8 @@ class JobOffersTest(utils.WebTestNoAuth):
                       headers={'content-type': 'multipart/form-data'},
                       data=post_data, status_code=201)
 
-        post_data = base_post_data | {
+        post_data = {
+            **base_post_data,
             'logo': (open(jpgpath, 'rb'), 'logo.jpeg'),
         }
 
