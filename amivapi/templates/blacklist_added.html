@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block text_german %}
+  <p>Hallo {{ name }}</p>
+  <p>Du wurdest aus folgendem Grund geblacklisted:</p>
+  <p>{{ reason }}</p>
+  <p>Das heisst, dass du dich nicht mehr für neue AMIV-Events registrieren kannst!{% if price is defined %} Um von der Blacklist entfernt zu werden, zahle bitte {{ "%.2f"|format(price) }} CHF im AMIV Büro im CAB E37.{% endif %}</p>
+  <p>Wenn du denkst, dass es sich hier um einen Fehler handelt, zögere bitte nicht, <a href="mailto:{{ reply_to }}">{{ reply_to }}</a> zu kontaktieren.</p>
+  <p>Freundliche Grüsse</br>AMIV</p>
+{% endblock %}
+
+{% block text_english %}
+  <p>Hello {{ name }}</p>
+  <p>You have been blacklisted for the following reason:</p>
+  <p>{{ reason }}</p>
+  <p>This means that you cannot register for any new amiv events!{% if price is defined %} To get removed from the blacklist, you have to pay {{ "%.2f"|format(price) }} CHF in the AMIV Office in CAB E37.{% endif %}</p>
+  <p>If you think that this is an error, don't hesitate to contact <a href="mailto:{{ reply_to }}">{{ reply_to }}</a>.</p>
+  <p>Best Regards</br>AMIV</p>
+{% endblock %}

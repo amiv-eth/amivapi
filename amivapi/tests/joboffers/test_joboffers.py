@@ -12,20 +12,21 @@ from amivapi.settings import DATE_FORMAT
 from amivapi.tests import utils
 
 pdfpath = join(dirname(__file__), "../fixtures", 'test.pdf')
-lenapath = join(dirname(__file__), "../fixtures", 'lena.png')
+pngpath = join(dirname(__file__), "../fixtures", 'lena.png')
+jpgpath = join(dirname(__file__), "../fixtures", 'lena.jpg')
 
 
 class JobOffersTest(utils.WebTestNoAuth):
     """Test basic functionality of joboffers"""
 
-    def test_add_joboffer_nomedia(self):
+    def test_add_joboffer(self):
         """
         Usecase:
-        A firm wants to post a joboffer on the website withoutany media
+        A firm wants to post a joboffer on the website
         """
 
         time_end = (datetime.utcnow() + timedelta(days=2)).strftime(DATE_FORMAT)
-        post_data = {
+        base_post_data = {
             'company': 'ACME Inc.',
             'description_de': """Firmenbeschreibung auf Deutsch der
             weltberühmten ACME Inc. Von Herr Rädö im Jahr 1893 gegründet und
@@ -41,8 +42,33 @@ class JobOffersTest(utils.WebTestNoAuth):
             'time_end': time_end,
             'title_de': 'ACME Inc jetzt auf der Suche nach Explosionsexperte',
             'title_en': 'ACME Inc now hiring explosions experts',
+        }
+
+        post_data = {
+            **base_post_data,
             'pdf': (BytesIO(br'%PDF magic'), 'test.pdf'),
-            'logo': (open(lenapath, 'rb'), 'logo.png'),
+            'logo': (open(pngpath, 'rb'), 'logo.png'),
+        }
+
+        # Check if posting the joboffer is successful
+        self.api.post("/joboffers",
+                      headers={'content-type': 'multipart/form-data'},
+                      data=post_data, status_code=201)
+
+        post_data = {
+            **base_post_data,
+            'pdf': (BytesIO(br'%PDF magic'), 'test.pdf'),
+            'logo': (open(jpgpath, 'rb'), 'logo.jpg'),
+        }
+
+        # Check if posting the joboffer is successful
+        self.api.post("/joboffers",
+                      headers={'content-type': 'multipart/form-data'},
+                      data=post_data, status_code=201)
+
+        post_data = {
+            **base_post_data,
+            'logo': (open(jpgpath, 'rb'), 'logo.jpeg'),
         }
 
         # Check if posting the joboffer is successful

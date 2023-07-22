@@ -1,0 +1,9 @@
+*** English version below ***
+
+{% block text_german %}
+{% endblock %}
+
+*** English version ***
+
+{% block text_english %}
+{% endblock %}

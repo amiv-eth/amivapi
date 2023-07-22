@@ -10,7 +10,7 @@ from flask import current_app, url_for
 from itsdangerous import URLSafeSerializer
 
 from amivapi.events.utils import get_token_secret
-from amivapi.utils import mail
+from amivapi.utils import mail_from_template
 
 
 def find_reply_to_email(event):
@@ -49,26 +49,41 @@ def notify_signup_accepted(event, signup, waiting_list=False):
 
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
-    event_name = event.get('title_en') or event.get('title_de')
+    title_en = event['title_en']
+    title_de = event['title_de']
+    signup_additional_info_en = event['signup_additional_info_en']
+    signup_additional_info_de = event['signup_additional_info_de']
 
     reply_to_email = find_reply_to_email(event)
 
     if waiting_list:
-        mail([email],
-             'Your signup for %s was put on the waiting list' % event_name,
-             current_app.config['WAITING_LIST_EMAIL_TEXT'].format(
+        mail_from_template(
+            to=[email],
+            subject='Your signup for %s was put on the waiting list'
+                    % (title_en or title_de),
+            template_name='events_waitingList',
+            template_args=dict(
                 name=name,
-                title=event_name),
-             reply_to_email)
+                title_en=(title_en or title_de),
+                title_de=(title_de or title_en)),
+            reply_to=reply_to_email)
     else:
-        mail([email],
-             'Your event signup for %s was accepted' % event_name,
-             current_app.config['ACCEPT_EMAIL_TEXT'].format(
+        mail_from_template(
+            to=[email],
+            subject='Your event signup for %s was accepted'
+                    % (title_en or title_de),
+            template_name='events_accept',
+            template_args=dict(
                 name=name,
-                title=event_name,
+                title_en=(title_en or title_de),
+                title_de=(title_de or title_en),
                 link=deletion_link,
-                deadline=event['time_register_end'].strftime('%H.%M %d.%m.%Y')),
-             reply_to_email)
+                signup_additional_info_en=(signup_additional_info_en or
+                                           signup_additional_info_de),
+                signup_additional_info_de=(signup_additional_info_de or
+                                           signup_additional_info_en),
+                deadline=event['time_register_end']),
+            reply_to=reply_to_email)
 
 
 def notify_signup_deleted(signup):
@@ -94,15 +109,20 @@ def notify_signup_deleted(signup):
         current_app.logger.warning("SERVER_NAME is not set. E-Mail links "
                                    "will not work!")
 
+    title_en = event.get('title_en')
+    title_de = event.get('title_de')
+
     reply_to_email = find_reply_to_email(event)
 
-    mail([email],
-         'Successfully deregistered from %s' % event.get(
-             'title_en') or event.get('title_de'),
-         current_app.config['DEREGISTER_EMAIL_TEXT'].format(
+    mail_from_template(
+        to=[email],
+        subject='Successfully deregistered from %s' % (title_en or title_de),
+        template_name='events_deregister',
+        template_args=dict(
             name=name,
-            title=event.get('title_en') or event.get('title_de')),
-         reply_to_email)
+            title_en=(title_en or title_de),
+            title_de=(title_de or title_en)),
+        reply_to=reply_to_email)
 
 
 def send_confirmmail_to_unregistered_users(items):
@@ -117,7 +137,8 @@ def send_confirmmail_to_unregistered_users(items):
                 'events', None,
                 **{current_app.config['ID_FIELD']: item['event']})
 
-            title = event.get('title_en') or event.get('title_de')
+            title_en = event.get('title_en')
+            title_de = event.get('title_de')
 
             s = URLSafeSerializer(get_token_secret())
             token = s.dumps(str(item['_id']))
@@ -131,9 +152,12 @@ def send_confirmmail_to_unregistered_users(items):
 
             reply_to_email = find_reply_to_email(event)
 
-            mail([item['email']],
-                 'Registration for %s' % title,
-                 current_app.config['CONFIRM_EMAIL_TEXT'].format(
-                     title=title,
-                     link=confirm_link),
-                 reply_to_email)
+            mail_from_template(
+                to=[item['email']],
+                subject='Registration for %s' % (title_en or title_de),
+                template_name='events_confirm',
+                template_args=dict(
+                    title_en=(title_en or title_de),
+                    title_de=(title_de or title_en),
+                    link=confirm_link),
+                reply_to=reply_to_email)
