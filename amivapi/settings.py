@@ -112,73 +112,11 @@ ASPECT_RATIO_TOLERANCE = 0.01
 # https to allow testing of local tools (if required)
 REDIRECT_URI_REGEX = '^((http://)?localhost[^#]*|https://[^#]+)$'
 
-# Email sent to external users signing up for events
-CONFIRM_EMAIL_TEXT = (
-    "Hello from AMIV!\n\nYou have signed up for {title} with your E-Mail "
-    "address. To verify this is a valid address and keep your spot please click"
-    " this link: {link}\n\nBest regards,\nAMIV"
-)
-
-# Email sent to users when their event signup was accepted
-ACCEPT_EMAIL_TEXT = (
-    'Hello {name}!\n\n'
-    'We are happy to inform you that your signup for {title} was accepted and '
-    'you can come to the event! If you do not have time to attend the '
-    'event please click this link to free your spot for someone else:\n'
-    '\n{link}\n'
-    'You cannot sign out of this event after {deadline}.\n\n'
-    '{additional_info_text}\n\n'
-    'Best Regards,\nAMIV'
-)
-
 # Address for issues with event signups
 DEFAULT_EVENT_REPLY_TO = "kultur@amiv.ethz.ch"
 
-# Email sent to users when their event signup is on the waiting list
-WAITING_LIST_EMAIL_TEXT = (
-    'Hello {name}!\n\n'
-    'We are sorry to inform you that your signup for {title} was rejected '
-    'because there are no free spots available. '
-    'We put you on a waiting list and we will send you an email when a spot'
-    ' becomes available.\n\n'
-    'Best Regards,\nAMIV'
-)
-
-# Email sent to confirm deregistration of an event
-DEREGISTER_EMAIL_TEXT = (
-    'Hello {name}\n\n'
-    'You have been successfully deregistered from {title}.\n\n'
-    'Best Regards,\nAMIV'
-)
-
 # Address for issues with the blacklist
 BLACKLIST_REPLY_TO = "bouncer@amiv.ethz.ch"
-
-# Email sent to people who have a new entry on the blacklists
-BLACKLIST_ADDED_EMAIL_W_PRICE = (
-    "Hello {name}\n\n"
-    "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
-    "means that you cannot register for any new amiv events! To get removed "
-    "from the blacklist, you have to pay {price:.2f} CHF in the AMIV Office "
-    "in CAB E37.\n\nIf you think that this is an error, don't hesitate to "
-    "contact {reply_to}\n\nBest "
-    "Regards,\nAMIV"
-)
-
-BLACKLIST_ADDED_EMAIL_WO_PRICE = (
-    "Hello {name}\n\n"
-    "You have been blacklisted for the following reason:\n\n{reason}\n\nThis "
-    "means that you cannot register for any new amiv events!\n\nIf you think "
-    "that this is an error, don't hesitate to contact {reply_to}\n\nBest "
-    "Regards,\nAMIV"
-)
-
-# Email sent to people who got one blacklist entry removed
-BLACKLIST_REMOVED = (
-    "Hello {name}\n\n"
-    "Congratulations, your blacklist entry with the following reason has been "
-    "removed:\n\n{reason}\n\nBest Regards,\nAMIV"
-)
 
 # Signup confirmation without redirct
 CONFIRM_TEXT = "Your signup was confirmed!"

@@ -8,16 +8,18 @@
 from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from os import urandom
 from binascii import hexlify
 import smtplib
 from functools import wraps
 import json
+import jinja2
 
 from bson import ObjectId
 from eve.utils import config
-from flask import current_app as app
+from flask import render_template, current_app as app
 from flask import g
 
 
@@ -73,8 +75,33 @@ def get_id(item):
     except TypeError:
         return ObjectId(item['_id'])
 
+def mail_from_template(to, subject, template_name, template_args, reply_to=None):
+    """Send a mail to a list of recipients by using the given jinja2 template.
 
-def mail(to, subject, text, reply_to=None):
+    Expects that at least a txt version of the template exists and also uses
+    the HTML version if available.
+
+    The mail is sent from the address specified by `API_MAIL` in the config,
+    and the subject formatted according to `API_MAIL_SUBJECT`.
+
+
+    Args:
+        to(list of strings): List of recipient addresses
+        subject(string): Subject string
+        template_name(string): Jinja2 template name
+        template_args(dict): arguments passed to the templating engine
+        reply_to(string): Address of event moderator
+    """
+    text = render_template('{}.txt'.format(template_name, **template_args))
+
+    try:
+        html = render_template('{}.html'.format(template_name, **template_args))
+    except jinja2.exceptions.TemplateNotFound:
+        html = None
+
+    mail(to, subject, text, html, reply_to)
+
+def mail(to, subject, text, html=None, reply_to=None):
     """Send a mail to a list of recipients.
 
     The mail is sent from the address specified by `API_MAIL` in the config,
@@ -84,7 +111,8 @@ def mail(to, subject, text, reply_to=None):
     Args:
         to(list of strings): List of recipient addresses
         subject(string): Subject string
-        text(string): Mail content
+        text(string): Mail content as plaintext
+        html(string): Mail content as HTML
         reply_to(string): Address of event moderator
     """
     sender_address = app.config['API_MAIL_ADDRESS']
@@ -98,6 +126,7 @@ def mail(to, subject, text, reply_to=None):
             'from': sender,
             'receivers': to,
             'text': text,
+            'html': html,
         }
 
         if reply_to is not None:
@@ -106,10 +135,17 @@ def mail(to, subject, text, reply_to=None):
         app.test_mails.append(mail)
 
     elif config.SMTP_SERVER and config.SMTP_PORT:
-        msg = MIMEText(text)
+        if html is not None:
+            msg = MIMEMultipart('alternative')
+            msg.attach(MIMEText(text, 'plain'))
+            msg.attach(MIMEText(html, 'html'))
+        else:
+            msg = MIMEText(text)
+
         msg['Subject'] = subject
         msg['From'] = sender
         msg['To'] = ';'.join([to] if isinstance(to, str) else to)
+
         if reply_to is not None:
             msg['reply-to'] = reply_to
 

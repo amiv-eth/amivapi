@@ -7,7 +7,7 @@ Gratuliere, dein Blacklist-Eintrag mit folgendem Grund wurde entfernt:
 
 {{ reason }}
 
-Freundliche Grüsse
+Freundliche Grüsse,
 AMIV
 {% endblock %}
 
@@ -18,6 +18,6 @@ Congratulations, your blacklist entry with the following reason has been removed
 
 {{ reason }}
 
-Best Regards
+Best Regards,
 AMIV
 {% endblock %}

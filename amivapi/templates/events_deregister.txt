@@ -14,6 +14,6 @@ Hello {{ name }}
 
 You have been successfully deregistered from {{ title_en }}.
 
-Best Regards
+Best Regards,
 AMIV
 {% endblock %}

@@ -442,7 +442,7 @@ eventdomain = {
                                "email.",
                 'type': 'string',
                 'default': None,
-                'nullable': False
+                'nullable': True
             },
 
             # `allow_email_signup` and `selection` strategy do not depend
