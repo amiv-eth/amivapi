@@ -18,6 +18,14 @@ of and join.
 
 <br />
 
+## Type
+
+Events can be of different types. Events organized by another organization or
+company are of type `external`, otherwise they are `internal`. Announcements
+are events of type `announcement` as they are not events in a classical sense.
+
+<br />
+
 ## Moderator
 
 Events can have a *Moderator*. The Moderator can modify the events, and view
@@ -133,6 +141,12 @@ signup:
     "SBB_Abo": "GA"
 }
 ```
+
+## External Registration
+
+There might be the case that the signup is organized by another organization or
+company. In this case, a link to the external signup can be set. It is not
+allowed to have "spots" > 0 and an external registration link at the same time.
 """)
 
 description_signups = ("""
@@ -231,6 +245,15 @@ eventdomain = {
                 'type': 'string',
                 'maxlength': 10000,
                 'no_html': True,
+            },
+            'type': {
+                'description': 'Specifies what kind of event it is. This may '
+                               'be a regular event or a special announcement.',
+                'example': 'internal',
+                'type': 'string',
+                'required': True,
+                'nullable': False,
+                'allowed': ['announcement', 'internal', 'external'],
             },
             'location': {
                 'description': 'Where the event will take place.',
@@ -380,7 +403,7 @@ eventdomain = {
                 'default': False,
             },
 
-            # Signups
+            # Signups / (external) Registration
 
             'spots': {
                 'title': 'Signup Spots',
@@ -449,6 +472,30 @@ eventdomain = {
                 'json_schema': True,
                 'only_if_not_null': 'spots',
             },
+            'signup_additional_info_en': {
+                "title": "Additional info in English",
+                "description": "Additional information from the organizers "
+                               "that will be sent with the signup-accepted "
+                               "email written in English.",
+                'type': 'string',
+                'default': None,
+                'nullable': True,
+                'no_html': True,
+                'dependencies': ['title_en'],
+                'only_if_not_null': 'spots'
+            },
+            'signup_additional_info_de': {
+                "title": "Additional info in German",
+                "description": "Additional information from the organizers "
+                               "that will be sent with the signup-accepted "
+                               "email written in German.",
+                'type': 'string',
+                'default': None,
+                'nullable': True,
+                'no_html': True,
+                'dependencies': ['title_de'],
+                'only_if_not_null': 'spots'
+            },
 
             # `allow_email_signup` and `selection` strategy do not depend
             # on `spots` explicitly, because otherwise we cannot set their
@@ -473,6 +520,17 @@ eventdomain = {
                 'default': 'fcfs',
             },
 
+            'external_registration': {
+                'description': 'Link to an external registration for the '
+                               'advertised event. If used, `spots` must be '
+                               'set to `Null`.',
+                'type': 'string',
+                'nullable': True,
+                'default': None,
+                'url': True,
+                'only_if_null': 'spots'
+            },
+
             'signup_count': {
                 'description': 'Current number of accepted singups.',
 
@@ -488,6 +546,7 @@ eventdomain = {
                 'readonly': True,
                 'type': 'integer'
             },
+
             'moderator': {
                 'description': '`_id` of a user which will be the event '
                                'moderator, who can modify the event.',

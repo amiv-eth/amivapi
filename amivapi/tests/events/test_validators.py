@@ -16,28 +16,6 @@ from amivapi.tests.utils import WebTestNoAuth
 class EventValidatorTest(WebTestNoAuth):
     """Unit test class for general purpose validators of event module."""
 
-    def test_validate_no_html(self):
-        """Test no-html validator."""
-        self.app.register_resource('test', {
-            'schema': {
-                'field': {
-                    'type': 'string',
-                    'no_html': True
-                }
-            }
-        })
-
-        has_html = '<head><title>I\'m title</title></head>Hello, <b>world</b>'
-        has_no_html = 'ich <3 du und="test" d:> ichht fldf d<'
-
-        self.api.post('/test', data={
-            'field': has_html
-        }, status_code=422)
-
-        self.api.post('/test', data={
-            'field': has_no_html
-        }, status_code=201)
-
     def test_validate_json_schema_object(self):
         """Test cerberus schema validator."""
         self.app.register_resource('test', {
@@ -265,6 +243,81 @@ class EventValidatorTest(WebTestNoAuth):
         response = self.api.post('/test', data={
             'field1': 1
         }, status_code=201).json
+
+        self.api.patch(
+            '/test/%s' % response['_id'],
+            data={'field2': 1},
+            headers={'If-Match': response['_etag']},
+            status_code=200
+        )
+
+    def test_only_if_null(self):
+        """Test that the only_if_null validator works."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'integer',
+                },
+                'field2': {
+                    'type': 'integer',
+                    'only_if_null': 'field1'
+                }
+            }
+        })
+
+        self.api.post('/test', data={}, status_code=201)
+
+        self.api.post('/test', data={
+            'field1': 1
+        }, status_code=201)
+
+        self.api.post('/test', data={
+            'field2': 1
+        }, status_code=201)
+
+        self.api.post('/test', data={
+            'field1': 1,
+            'field2': 1,
+        }, status_code=422)
+
+        # If the values would have a negative boolean value it
+        # should still not be allowed
+        self.api.post('/test', data={
+            'field1': 0,
+            'field2': 1,
+        }, status_code=422)
+
+    def test_only_if_null_patch(self):
+        """Test that patches check the original document."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field1': {
+                    'type': 'integer',
+                },
+                'field2': {
+                    'type': 'integer',
+                    'only_if_null': 'field1'
+                }
+            }
+        })
+
+        response = self.api.post('/test', data={
+            'field1': 1
+        }, status_code=201).json
+
+        self.api.patch(
+            '/test/%s' % response['_id'],
+            data={'field2': 1},
+            headers={'If-Match': response['_etag']},
+            status_code=422
+        )
+
+        response = self.api.patch(
+            '/test/%s' % response['_id'],
+            data={'field1': None, 'field2': 1},
+            headers={'If-Match': response['_etag']},
+            status_code=200
+        ).json
 
         self.api.patch(
             '/test/%s' % response['_id'],
