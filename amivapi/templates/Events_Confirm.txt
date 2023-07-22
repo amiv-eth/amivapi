@@ -1,0 +1,19 @@
+{% extends "base.txt" %}
+
+{% block text_german %}
+Hey!
+
+Du hast dich für {{ title_de }} mit deiner E-Mail Adresse angemeldet. Um zu bestätigen, dass es sich hier um eine gültige Adresse handelt und auch deinen Platz zu bestätigen, klicke bitte auf diesen Link: {{ link }}
+
+Freundliche Grüsse,
+AMIV
+{% endblock %}
+
+{% block text_english %}
+Hello from AMIV!
+
+You have signed up for {{ title_en }} with your E-Mail address. To verify this is a valid address and keep your spot please click this link: {{ link }}
+
+Best regards,
+AMIV
+{% endblock %}

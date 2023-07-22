@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block text_german %}
+  <p>Hey {{ name }}</p>
+
+  <p>Du wurdest erfolgreich vom Event {{ title_de }} abgemeldet.</p>
+
+  <p>Freundliche Grüsse,</br>AMIV</p>
+{% endblock %}
+
+{% block text_english %}
+  <p>Hello {{ name }}</p>
+
+  <p>You have been successfully deregistered from {{ title_en }}.</p>
+
+  <p>Best Regards</br>AMIV</p>
+{% endblock %}
