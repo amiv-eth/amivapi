@@ -86,7 +86,7 @@ CRON_INTERVAL = timedelta(minutes=5)  # per default, check tasks every 5 min
 
 # Security
 ROOT_PASSWORD = u"root"  # Will be overwridden by config.py
-SESSION_TIMEOUT = timedelta(days=365)
+SESSION_TIMEOUT = timedelta(days=14)
 PASSWORD_CONTEXT = CryptContext(
     schemes=["pbkdf2_sha256"],
     pbkdf2_sha256__default_rounds=10 ** 3,
