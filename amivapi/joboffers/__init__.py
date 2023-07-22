@@ -52,10 +52,10 @@ jobdomain = {
                 'no_html': True,
             },
             'logo': {
-                'description': 'Company logo (`.jpeg` or `.png`).',
+                'description': 'Company logo (`.jpg`, `.jpeg` or `.png`).',
                 'example': '(File)',
 
-                'filetype': ['png', 'jpeg'],
+                'filetype': ['png', 'jpeg', 'jpg'],
                 'type': 'media',
                 'required': True,
             },
