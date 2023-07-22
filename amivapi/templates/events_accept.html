@@ -6,8 +6,8 @@
 <p>Wir freuen uns, dir mitteilen zu können, dass deine Anmeldung für {{ title_de }} angenommen wurde und du an der Veranstaltung teilnehmen kannst!</p>
 <p>Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, melde dich <a href="{{ link }}">hier</a> ab, um deinen Platz für jemand anderen freizugeben.<br/>
 Du kannst dich nur bis {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }} vom Event abmelden.</p>
-{% if additional_info_text is defined and additional_info_text|length %}
-<p>{{ additional_info_text_de }}</p>
+{% if signup_additional_info_de is not none and signup_additional_info_de|length %}
+<p>{{ signup_additional_info_de }}</p>
 {% endif %}
 <p>Bei Fragen zum Event und/oder zu deiner Anmeldung antworte direkt auf diese E-Mail.</p>
 <p>Freundliche Grüsse,<br/>AMIV</p>
@@ -19,8 +19,8 @@ Du kannst dich nur bis {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime(
 <p>We are happy to inform you that your signup for {{ title_en }} was accepted and you can come to the event!</p>
 <p>If you do not have time to attend the event please click <a href="{{ link }}">here</a> to free your spot for someone else.<br/>
 You cannot sign out of this event after {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }}.</p>
-{% if additional_info_text is defined and additional_info_text|length %}
-<p>{{ additional_info_text_en }}</p>
+{% if signup_additional_info_en is not none and signup_additional_info_en|length %}
+<p>{{ signup_additional_info_en }}</p>
 {% endif %}
 <p>For questions about the event and/or your signup, reply directly to this email.</p>
 <p>Best Regards,<br/>AMIV</p>

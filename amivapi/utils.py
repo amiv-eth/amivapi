@@ -75,7 +75,10 @@ def get_id(item):
     except TypeError:
         return ObjectId(item['_id'])
 
-def mail_from_template(to, subject, template_name, template_args, reply_to=None):
+
+def mail_from_template(
+    to, subject, template_name, template_args, reply_to=None
+):
     """Send a mail to a list of recipients by using the given jinja2 template.
 
     Expects that at least a txt version of the template exists and also uses
@@ -92,14 +95,15 @@ def mail_from_template(to, subject, template_name, template_args, reply_to=None)
         template_args(dict): arguments passed to the templating engine
         reply_to(string): Address of event moderator
     """
-    text = render_template('{}.txt'.format(template_name, **template_args))
+    text = render_template('{}.txt'.format(template_name), **template_args)
 
     try:
-        html = render_template('{}.html'.format(template_name, **template_args))
+        html = render_template('{}.html'.format(template_name), **template_args)
     except jinja2.exceptions.TemplateNotFound:
         html = None
 
     mail(to, subject, text, html, reply_to)
+
 
 def mail(to, subject, text, html=None, reply_to=None):
     """Send a mail to a list of recipients.

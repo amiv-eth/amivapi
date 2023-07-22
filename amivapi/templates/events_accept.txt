@@ -10,8 +10,8 @@ Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, klicke bitte auf dies
 {{ link }}
 Du kannst dich nur bis {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }} vom Event abmelden.
 
-{% if additional_info_text is defined and additional_info_text|length %}
-{{ additional_info_text_de }}
+{% if signup_additional_info_de is not none and signup_additional_info_de|length %}
+{{ signup_additional_info_de }}
 
 {% endif %}
 Bei Fragen zum Event und/oder zu deiner Anmeldung antworte direkt auf diese E-Mail.
@@ -30,8 +30,8 @@ If you do not have time to attend the event please click this link to free your 
 {{ link }}
 You cannot sign out of this event after {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }}.
 
-{% if additional_info_text is defined and additional_info_text|length %}
-{{ additional_info_text_en }}
+{% if signup_additional_info_en is not none and signup_additional_info_en|length %}
+{{ signup_additional_info_en }}
 
 {% endif %}
 For questions about the event and/or your signup, reply directly to this email.

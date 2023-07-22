@@ -46,8 +46,8 @@ class BlacklistEmailTest(WebTest):
         self.assertIn(data['reason'], mail['html'])
         self.assertIn("Paula", mail['text'])
         self.assertIn("Paula", mail['html'])
-        self.assertIn("{:.2f}".format(data['price']), mail['text'])
-        self.assertIn("{:.2f}".format(data['price']), mail['html'])
+        self.assertIn("{:.2f}".format(data['price']/100), mail['text'])
+        self.assertIn("{:.2f}".format(data['price']/100), mail['html'])
 
     def test_receive_email_on_new_entry_wo_price(self):
         """Test if a user receives an email if he is added to the blacklist."""
@@ -112,11 +112,6 @@ class BlacklistEmailTest(WebTest):
         # Check mail
         mail = self.app.test_mails[1]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        expected_text = (
-            "Hello Paula\n\nCongratulations, your blacklist entry with the "
-            "following reason has been removed:\n\nTest1\n\nBest Regards,\n"
-            "AMIV"
-        )
         self.assertIn(patch['reason'], mail['text'])
         self.assertIn(patch['reason'], mail['html'])
         self.assertIn('removed', mail['text'])

@@ -7,7 +7,7 @@ Du wurdest aus folgendem Grund geblacklisted:
 
 {{ reason }}
 
-Das heisst, dass du dich nicht mehr für neue AMIV-Events registrieren kannst!{% if price is defined %} Um von der Blacklist entfernt zu werden, zahle bitte {{ price|round(2, 'common') }} CHF im AMIV Büro im CAB E37.{% endif %}
+Das heisst, dass du dich nicht mehr für neue AMIV-Events registrieren kannst!{% if price is defined and price is not none %} Um von der Blacklist entfernt zu werden, zahle bitte {{ "%.2f"|format(price) }} CHF im AMIV Büro im CAB E37.{% endif %}
 
 Wenn du denkst, dass es sich hier um einen Fehler handelt, zögere bitte nicht, {{ reply_to }} zu kontaktieren.
 
@@ -22,7 +22,7 @@ You have been blacklisted for the following reason:
 
 {{ reason }}
 
-This means that you cannot register for any new amiv events!{% if price is defined %} To get removed from the blacklist, you have to pay {{ price|round(2, 'common') }} CHF in the AMIV Office in CAB E37.{% endif %}
+This means that you cannot register for any new amiv events!{% if price is defined and price is not none %} To get removed from the blacklist, you have to pay {{ "%.2f"|format(price) }} CHF in the AMIV Office in CAB E37.{% endif %}
 
 If you think that this is an error, don't hesitate to contact {{ reply_to }}
 

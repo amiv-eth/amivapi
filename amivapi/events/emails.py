@@ -51,32 +51,37 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                             _external=True)
     title_en = event['title_en']
     title_de = event['title_de']
-    event_signup_info_text = event['signup_additional_info'] or ""
+    signup_additional_info_en = event['signup_additional_info_en']
+    signup_additional_info_de = event['signup_additional_info_de']
 
     reply_to_email = find_reply_to_email(event)
 
     if waiting_list:
         mail_from_template(
             to=[email],
-            subject='Your signup for %s was put on the waiting list' % (title_en or title_de),
-            template_name='events_',
+            subject='Your signup for %s was put on the waiting list'
+                    % (title_en or title_de),
+            template_name='events_waitingList',
             template_args=dict(
                 name=name,
-                title_en=title_en,
-                title_de=title_de,
-            ),
+                title_en=(title_en or title_de),
+                title_de=(title_de or title_en)),
             reply_to=reply_to_email)
     else:
         mail_from_template(
             to=[email],
-            subject='Your event signup for %s was accepted' % (title_en or title_de),
+            subject='Your event signup for %s was accepted'
+                    % (title_en or title_de),
             template_name='events_accept',
             template_args=dict(
                 name=name,
-                title_en=title_en,
-                title_de=title_de,
+                title_en=(title_en or title_de),
+                title_de=(title_de or title_en),
                 link=deletion_link,
-                additional_info_text=event_signup_info_text,
+                signup_additional_info_en=(signup_additional_info_en or
+                                           signup_additional_info_de),
+                signup_additional_info_de=(signup_additional_info_de or
+                                           signup_additional_info_en),
                 deadline=event['time_register_end']),
             reply_to=reply_to_email)
 
@@ -115,8 +120,8 @@ def notify_signup_deleted(signup):
         template_name='events_deregister',
         template_args=dict(
             name=name,
-            title_en=title_en,
-            title_de=title_de),
+            title_en=(title_en or title_de),
+            title_de=(title_de or title_en)),
         reply_to=reply_to_email)
 
 
@@ -152,7 +157,7 @@ def send_confirmmail_to_unregistered_users(items):
                 subject='Registration for %s' % (title_en or title_de),
                 template_name='events_confirm',
                 template_args=dict(
-                    title_en=title_en,
-                    title_de=title_de,
+                    title_en=(title_en or title_de),
+                    title_de=(title_de or title_en),
                     link=confirm_link),
                 reply_to=reply_to_email)

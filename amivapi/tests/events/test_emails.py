@@ -285,7 +285,10 @@ class EventMailTest(WebTestNoAuth):
     def test_signup_additional_info(self):
         text = "We will meet at 9:30."
         event = self.new_object('events', spots=100, selection_strategy='fcfs',
-                                signup_additional_info=text)
+                                title_en='title',
+                                description_en='Description',
+                                catchphrase_en='catchphrase',
+                                signup_additional_info_en=text)
         user = self.new_object('users')
 
         self.api.post('/eventsignups', data={
