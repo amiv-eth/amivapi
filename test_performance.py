@@ -103,7 +103,7 @@ def create_event():
         'time_register_end': (datetime.utcnow() +
                               timedelta(days=100)).strftime(DATE_FORMAT),
         'time_deregister_end': (datetime.utcnow() +
-                              timedelta(days=100)).strftime(DATE_FORMAT),
+                              timedelta(days=80)).strftime(DATE_FORMAT),
         'allow_email_signup': True
     }
     return post(BASE_URL + '/events', json=data, auth=(ROOT_PW, '')).json()
