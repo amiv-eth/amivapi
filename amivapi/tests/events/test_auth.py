@@ -131,6 +131,7 @@ class EventAuthTest(WebTest):
         """Test that signups out of the registration window are rejected for
         unpriviledged users."""
         t_open = datetime(2016, 1, 1)
+        t_deregister = datetime(2016, 11, 1)
         t_close = datetime(2016, 12, 31)
 
         moderator = self.new_object("users")
@@ -138,6 +139,7 @@ class EventAuthTest(WebTest):
 
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
+                             time_deregister_end=t_deregister,
                              time_register_end=t_close,
                              moderator=moderator['_id'])
         user = self.new_object("users")
@@ -183,10 +185,11 @@ class EventAuthTest(WebTest):
                 'user': str(user3['_id'])
             }, token=root_token, status_code=201)
 
-    def test_registration_window_signoff(self):
-        """Test that signoff out of the registration window are rejected for
+    def test_deregistration_window_signoff(self):
+        """Test that signoff out of the deregistration window are rejected for
         unpriviledged users."""
         t_open = datetime(2016, 1, 1)
+        t_deregister = datetime(2016, 11, 1)
         t_close = datetime(2016, 12, 31)
 
         moderator = self.new_object("users")
@@ -199,6 +202,7 @@ class EventAuthTest(WebTest):
 
         ev = self.new_object("events", spots=100,
                              time_register_start=t_open,
+                             time_deregister_end=t_deregister,
                              time_register_end=t_close,
                              moderator=moderator['_id'])
         signup = self.new_object("eventsignups", event=ev['_id'],
@@ -215,6 +219,11 @@ class EventAuthTest(WebTest):
 
         # Too late
         with freeze_time(datetime(2017, 1, 1)):
+            self.api.delete("/eventsignups/" + str(signup['_id']),
+                            headers=etag, token=token, status_code=403)
+
+        # Slightly too late
+        with freeze_time(datetime(2016, 12, 1)):
             self.api.delete("/eventsignups/" + str(signup['_id']),
                             headers=etag, token=token, status_code=403)
 

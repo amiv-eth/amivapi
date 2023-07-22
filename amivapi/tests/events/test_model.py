@@ -43,6 +43,7 @@ class EventModelTest(WebTestNoAuth):
                           'spots': 10,
                           'time_register_start': '1970-01-01T00:00:01Z',
                           'time_register_end': '2020-01-01T00:00:01Z',
+                          'time_deregister_end': '2019-01-01T00:00:01Z',
                           'external_registration': None
                       }),
                       status_code=201)
@@ -67,6 +68,7 @@ class EventModelTest(WebTestNoAuth):
                           'spots': 10,
                           'time_register_start': '1970-01-01T00:00:01Z',
                           'time_register_end': '2020-01-01T00:00:01Z',
+                          'time_deregister_end': '2019-01-01T00:00:01Z',
                           'external_registration': 'https://amiv.ethz.ch/test'
                       }),
                       status_code=422)
@@ -226,6 +228,7 @@ class EventModelTest(WebTestNoAuth):
                 "additionalProperties": False,
                 'properties': {}})},
             {'time_register_start': '2016-10-17T21:11:14Z'},
+            {'time_deregister_end': '2016-10-18T18:11:14Z'},
             {'time_register_end': '2016-10-18T21:11:14Z'}
         ]
 
