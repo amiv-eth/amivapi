@@ -1,0 +1,19 @@
+{% extends "base.txt" %}
+
+{% block text_german %}
+Hey {{ name }}
+
+Du wurdest erfolgreich vom Event {{ title_de }} abgemeldet.
+
+Freundliche Grüsse,
+AMIV
+{% endblock %}
+
+{% block text_english %}
+Hello {{ name }}
+
+You have been successfully deregistered from {{ title_en }}.
+
+Best Regards
+AMIV
+{% endblock %}

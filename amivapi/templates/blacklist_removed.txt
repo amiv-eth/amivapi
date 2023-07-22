@@ -1,0 +1,23 @@
+{% extends "base.txt" %}
+
+{% block text_german %}
+Hallo {{ name }}
+
+Gratuliere, dein Blacklist-Eintrag mit folgendem Grund wurde entfernt:
+
+{{ reason }}
+
+Freundliche Grüsse
+AMIV
+{% endblock %}
+
+{% block text_english %}
+Hello {{ name }}
+
+Congratulations, your blacklist entry with the following reason has been removed:
+
+{{ reason }}
+
+Best Regards
+AMIV
+{% endblock %}
