@@ -281,3 +281,20 @@ class EventMailTest(WebTestNoAuth):
         for i in range(len(self.app.test_mails)):
             mail = self.app.test_mails[i]
             self.assertTrue(mail['reply-to'] == reply_to_email)
+
+    def test_signup_additional_info(self):
+        text = "We will meet at 9:30."
+        event = self.new_object('events', spots=100, selection_strategy='fcfs',
+                                title_en='title',
+                                description_en='Description',
+                                catchphrase_en='catchphrase',
+                                signup_additional_info_en=text)
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[0]
+        self.assertTrue(text in mail['text'])

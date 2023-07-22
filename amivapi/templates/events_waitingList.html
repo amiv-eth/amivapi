@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block text_german %}
+  <p>Hey {{ name }}!</p>
+
+  <p>Leider müssten wir dich informieren, dass deine Anmeldung für {{ title_de }} abgelehnt wurde, weil keine freien Plätze mehr verfügbar sind.</p>
+  <p>Wir haben dich auf die Warteliste gesetzt und schicken dir eine E-Mail, sobald wieder ein Platz frei wird.</p>
+
+  <p>Freundliche Grüsse,</br>AMIV</p>
+{% endblock %}
+
+{% block text_english %}
+  <p>Hello {{ name }}!</p>
+
+  <p>We are sorry to inform you that your signup for {{ title_en }} was rejected because there are no free spots available.</p>
+  <p>We put you on a waiting list and we will send you an email when a spot becomes available.</p>
+
+  <p>Best Regards,</br>AMIV</p>
+{% endblock %}

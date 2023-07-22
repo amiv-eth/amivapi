@@ -436,6 +436,30 @@ eventdomain = {
                 'json_schema': True,
                 'only_if_not_null': 'spots',
             },
+            'signup_additional_info_en': {
+                "title": "Additional info in English",
+                "description": "Additional information from the organizers "
+                               "that will be sent with the signup-accepted "
+                               "email written in English.",
+                'type': 'string',
+                'default': None,
+                'nullable': True,
+                'no_html': True,
+                'dependencies': ['title_en'],
+                'only_if_not_null': 'spots'
+            },
+            'signup_additional_info_de': {
+                "title": "Additional info in German",
+                "description": "Additional information from the organizers "
+                               "that will be sent with the signup-accepted "
+                               "email written in German.",
+                'type': 'string',
+                'default': None,
+                'nullable': True,
+                'no_html': True,
+                'dependencies': ['title_de'],
+                'only_if_not_null': 'spots'
+            },
 
             # `allow_email_signup` and `selection` strategy do not depend
             # on `spots` explicitly, because otherwise we cannot set their

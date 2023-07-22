@@ -10,7 +10,7 @@ entries get resolved/deleted.
 
 from flask import current_app
 
-from amivapi.utils import mail
+from amivapi.utils import mail_from_template
 from datetime import datetime
 
 from amivapi.cron import schedulable, schedule_task
@@ -38,9 +38,12 @@ def send_removed_mail(item):
 
     email, name = _get_email_and_name(_item)
     fields = {'reason': _item['reason'], 'name': name}
-    mail(email, 'Your blacklist entry has been removed!',
-         current_app.config['BLACKLIST_REMOVED'].format(**fields),
-         current_app.config['BLACKLIST_REPLY_TO'])
+    mail_from_template(
+        to=email,
+        subject='Your blacklist entry has been removed!',
+        template_name='blacklist_removed',
+        template_args=fields,
+        reply_to=current_app.config['BLACKLIST_REPLY_TO'])
 
 
 def notify_new_blacklist(items):
@@ -55,14 +58,13 @@ def notify_new_blacklist(items):
 
         if item['price']:
             fields['price'] = item['price']/100  # convert Rappen to CHF
-            template = current_app.config['BLACKLIST_ADDED_EMAIL_W_PRICE']
-        else:
-            template = current_app.config['BLACKLIST_ADDED_EMAIL_WO_PRICE']
 
-        mail(email,
-             'You have been blacklisted!',
-             template.format(**fields),
-             current_app.config['BLACKLIST_REPLY_TO'])
+        mail_from_template(
+            to=email,
+            subject='You have been blacklisted!',
+            template_name='blacklist_added',
+            template_args=fields,
+            reply_to=current_app.config['BLACKLIST_REPLY_TO'])
 
         # If the end time is already known, schedule removal mail
         if item['end_time'] and item['end_time'] > datetime.utcnow():
@@ -91,6 +93,9 @@ def notify_delete_blacklist(item):
     email, name = _get_email_and_name(item)
     fields = {'reason': item['reason'], 'name': name}
 
-    mail(email, 'Your blacklist entry has been removed!',
-         current_app.config['BLACKLIST_REMOVED'].format(**fields),
-         current_app.config['BLACKLIST_REPLY_TO'])
+    mail_from_template(
+        to=email,
+        subject='Your blacklist entry has been removed!',
+        template_name='blacklist_removed',
+        template_args=fields,
+        reply_to=current_app.config['BLACKLIST_REPLY_TO'])
