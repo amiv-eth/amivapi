@@ -267,7 +267,7 @@ class FixtureMixin(object):
                         'time_deregister_end' not in obj):
                     raise BadFixtureException(
                         "Bad fixture: please specify either all of "
-                        "time_register_start and time_register_end "
+                        "time_register_start, time_register_end "
                         "and time_deregister_end or none")
 
             obj.setdefault('allow_email_signup',
