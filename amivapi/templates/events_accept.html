@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% set weekdays = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"] %}
+{% set weekdays_de = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"] %}
 {% block text_german %}
 <p>Hallo {{ name }}!</p>
 <p>Wir freuen uns, dir mitteilen zu können, dass deine Anmeldung für {{ title_de }} angenommen wurde und du an der Veranstaltung teilnehmen kannst!</p>
 <p>Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, melde dich <a href="{{ link }}">hier</a> ab, um deinen Platz für jemand anderen freizugeben.<br/>
-Du kannst dich nur bis {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }} vom Event abmelden.</p>
+Du kannst dich nur bis {{ weekdays_de[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }} vom Event abmelden.</p>
 {% if signup_additional_info_de is not none and signup_additional_info_de|length %}
 <p>{{ signup_additional_info_de }}</p>
 {% endif %}
@@ -13,12 +13,12 @@ Du kannst dich nur bis {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime(
 <p>Freundliche Grüsse,<br/>AMIV</p>
 {% endblock %}
 
-{% set weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] %}
+{% set weekdays_en = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] %}
 {% block text_english %}
 <p>Hello {{ name }}!</p>
 <p>We are happy to inform you that your signup for {{ title_en }} was accepted and you can come to the event!</p>
 <p>If you do not have time to attend the event please click <a href="{{ link }}">here</a> to free your spot for someone else.<br/>
-You cannot sign out of this event after {{ weekdays[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y') }}.</p>
+You cannot sign out of this event after {{ weekdays_en[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }}.</p>
 {% if signup_additional_info_en is not none and signup_additional_info_en|length %}
 <p>{{ signup_additional_info_en }}</p>
 {% endif %}
