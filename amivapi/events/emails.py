@@ -82,7 +82,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                                            signup_additional_info_de),
                 signup_additional_info_de=(signup_additional_info_de or
                                            signup_additional_info_en),
-                deadline=event['time_register_end']),
+                deadline=event['time_deregister_end']),
             reply_to=reply_to_email)
 
 

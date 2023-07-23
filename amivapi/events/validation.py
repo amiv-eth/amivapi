@@ -335,6 +335,26 @@ class EventValidator(object):
             self._error(field, "May only be specified if %s is not null"
                         % only_if_not_null)
 
+    def _validate_only_if_null(self, only_if_null, field, _):
+        """The field may only be set if another field is None.
+
+        Args:
+            only_if_null (string): The field, that may be None
+            field (string): name of the validated field
+
+        The rule's arguments are validated against this schema:
+        {'type': 'string'}
+        """
+        doc = self.document
+        exists_in_original = (  # Check original document in case of patches
+            self.persisted_document is not None and
+            self.persisted_document.get(only_if_null) is not None)
+
+        if ((only_if_null in doc and doc.get(only_if_null) is not None) or
+                (not (only_if_null in doc) and exists_in_original)):
+            self._error(field, "May only be specified if %s is null"
+                        % only_if_null)
+
     def _validate_no_user_mail(self, enabled, field, value):
         """Validate that the mail address does not belong to a user.
 

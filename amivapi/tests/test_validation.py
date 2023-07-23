@@ -8,8 +8,70 @@
 from datetime import datetime, timedelta, timezone
 
 from amivapi.auth.auth import AmivTokenAuth
-from amivapi.tests.utils import WebTest
+from amivapi.tests.utils import WebTest, WebTestNoAuth
 from amivapi.validation import ValidatorAMIV
+
+
+class ValidatorAMIVTestNoAuth(WebTestNoAuth):
+    """Unit test class for general purpose validators w/o authentication."""
+
+    def test_validate_no_html(self):
+        """Test no-html validator."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field': {
+                    'type': 'string',
+                    'no_html': True
+                }
+            }
+        })
+
+        has_html = '<head><title>I\'m title</title></head>Hello, <b>world</b>'
+        has_no_html = 'ich <3 du und="test" d:> ichht fldf d<'
+
+        self.api.post('/test', data={
+            'field': has_html
+        }, status_code=422)
+
+        self.api.post('/test', data={
+            'field': has_no_html
+        }, status_code=201)
+
+    def test_validate_url(self):
+        """Test url validator."""
+        self.app.register_resource('test', {
+            'schema': {
+                'field': {
+                    'type': 'string',
+                    'url': True
+                }
+            }
+        })
+
+        valid_urls = [
+            'http://amiv.ethz.ch/test',
+            'https://amiv.ethz.ch/test',
+            'https://amiv.ethz.ch/',
+            'http://amiv.ethz.ch/test#testAnchor'
+            'http://amiv.ethz.ch/test?param=yes'
+        ]
+        invalid_urls = [
+            'amiviscool',
+            'www.amiv.ethz.ch',
+            'www.amiv.ethz.ch/test',
+            'ftp://example.amiv.ethz.ch/'
+        ]
+
+        for valid_url in valid_urls:
+            print(valid_url)
+            self.api.post('/test', data={
+                'field': valid_url
+            }, status_code=201)
+
+        for invalid_url in invalid_urls:
+            self.api.post('/test', data={
+                'field': invalid_url
+            }, status_code=422)
 
 
 class ValidatorAMIVTest(WebTest):
