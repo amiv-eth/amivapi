@@ -11,7 +11,7 @@ beautifulsoup4==4.12.2
 Pillow==10.0.0
 
 # Test requirements. It's not worth the hassle to keep them separate.
-pytest==7.4.0
+pytest==7.4.1
 pytest-cov==4.1.0
 tox==4.8.0
 flake8==6.1.0
