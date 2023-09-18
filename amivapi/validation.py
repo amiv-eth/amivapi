@@ -17,6 +17,7 @@ from imghdr import what
 from collections.abc import Hashable
 from PIL import Image
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 from eve.io.mongo import Validator as Validator
 from flask import current_app as app
@@ -400,6 +401,24 @@ class ValidatorAMIV(Validator):
         """
         if no_html and bool(BeautifulSoup(value, 'html.parser').find()):
             self._error(field, 'The text must not contain html elements.')
+
+    def _validate_url(self, url, field, value):
+        """Validation for a text field.
+
+        Validates that the provided text is a valid URL.
+
+        Args:
+            url (bool): if set to true, all text not being a valid URL will be
+                        rejected
+            field (string): field name
+            value: field value
+        """
+
+        if url:
+            result = urlparse(value)
+            if not all([result.scheme in ['http', 'https'],
+                        result.netloc, result.path]):
+                self._error(field, 'The text be a valid http(s) url.')
 
 
 # Cerberus uses a different validator for schemas, which is unaware of

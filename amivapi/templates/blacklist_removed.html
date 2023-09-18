@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block text_german %}
+  <p>Hallo {{ name }}</p>
+  <p>Gratuliere, dein Blacklist-Eintrag mit folgendem Grund wurde entfernt:</p>
+  <p>{{ reason }}</p>
+  <p>Freundliche Grüsse</br>AMIV</p>
+{% endblock %}
+
+{% block text_english %}
+  <p>Hello {{ name }}</p>
+  <p>Congratulations, your blacklist entry with the following reason has been removed:</p>
+  <p>{{ reason }}</p>
+  <p>Best Regards</br>AMIV</p>
+{% endblock %}
