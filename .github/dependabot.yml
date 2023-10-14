@@ -4,7 +4,11 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    groups:
+      all:
+        patterns:
+          - "*"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
@@ -13,3 +17,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      eve:
+        patterns:
+          - "eve"
+          - "flask"
+          - "pymongo"
+      test:
+        patterns:
+          - "pytest*"
+          - "tox"
+          - "flake8"
