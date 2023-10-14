@@ -161,6 +161,7 @@ def mail(to, subject, text, html=None, reply_to=None, calendar_invite=None):
             msg_body = MIMEMultipart('alternative')
             msg_body.attach(MIMEText(text, 'plain'))
             msg_body.attach(MIMEText(html, 'html'))
+            msg.attach(msg_body)
         else:
             msg = MIMEMultipart('mixed')
             msg.attach(MIMEText(text))
