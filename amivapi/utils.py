@@ -167,9 +167,9 @@ def mail(to, subject, text, html=None, reply_to=None, calendar_invite=None):
             msg.attach(MIMEText(text))
 
         if calendar_invite is not None:
-            calendar_mime = MIMEText(calendar_invite, 'calendar')
+            calendar_mime = MIMEText(calendar_invite, 'calendar', "utf-8")
             calendar_mime['Content-Disposition'] = (
-                'attachment; filename="invite.ics", charset="utf-8"; method=PUBLISH')
+                'attachment; filename="invite.ics"; charset="utf-8"; method=PUBLISH')
             msg.attach(calendar_mime)
 
         msg['Subject'] = subject

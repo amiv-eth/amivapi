@@ -22,11 +22,11 @@ UID:{{ event_id }}@amiv.ethz.ch
 ORGANIZER;CN=MAILTO:{{ reply_to_email }}
 LOCATION:{{ location }}
 SUMMARY:{{ title_en }}
-{% if signup_additional_info_en is not none and signup_additional_info_en|length %}
+{% if signup_additional_info_en is not none and signup_additional_info_en|length -%}
 DESCRIPTION:{{ signup_additional_info_en }}\n\n{{ description_en }}
-{% else %}
+{% else -%}
 DESCRIPTION:{{ description_en }}
-{% endif %}
+{% endif -%}
 CLASS:PUBLIC
 DTSTART;TZID=Europe/Berlin:{{ time_start.strftime('%Y%m%dT%H%M%S') }}
 DTEND;TZID=Europe/Berlin:{{ time_end.strftime('%Y%m%dT%H%M%S') }}
