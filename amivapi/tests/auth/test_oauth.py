@@ -57,7 +57,7 @@ class OAuthTest(WebTest):
         user = self.new_object('users')
         token = self.get_user_token(user['_id'])
 
-        self.api.set_cookie('localhost', 'token', token)
+        self.api.set_cookie('token', token, domain='localhost')
         login_page = self.api.get(
             '/oauth?'
             'response_type=token'
@@ -245,7 +245,7 @@ class OAuthTest(WebTest):
         user = self.new_object('users', firstname='Pablito')
         token = self.get_user_token(user['_id'])
 
-        self.api.set_cookie('localhost', 'token', token)
+        self.api.set_cookie('token', token, domain='localhost')
         login_page = self.api.get(
             '/oauth?'
             'response_type=token'
