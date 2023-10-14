@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Test email confirmation system for external event signups."""
 
+import datetime
 import re
 
 from amivapi.tests.utils import WebTestNoAuth
@@ -220,15 +221,41 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[0]
 
-        for field in mail.values():
+        for name, field in mail.items():
+            if name.startswith('nullable_'):
+                continue
             self.assertTrue('None' not in field)
 
         token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
         self.api.get('/confirm_email/%s' % token, status_code=200)
 
         mail = self.app.test_mails[1]
-        for field in mail.values():
+        for name, field in mail.items():
+            if name.startswith('nullable_'):
+                continue
             self.assertTrue('None' not in field)
+
+    def test_no_nones_calendar_invite(self):
+        """Test that the calendar invite is added.
+        Calendar invites require a start and end time, which are non-required properties.
+        """
+        event = self.new_object('events', spots=100, selection_strategy='fcfs',
+                                allow_email_signup=True,
+                                time_start=datetime.datetime.strptime('2019-01-01T00:00:00Z', '%Y-%m-%dT%H:%M:%SZ'),
+                                time_end=datetime.datetime.strptime('2019-01-01T01:00:00Z', '%Y-%m-%dT%H:%M:%SZ'),
+                                description_en='Description\nSpanning\nmultiple\nlines.',)
+
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id'])
+        }, status_code=201).json
+
+        mail = self.app.test_mails[0]
+
+        self.assertTrue(mail["nullable_calendar_invite"] is not None and
+                        'None' not in mail["nullable_calendar_invite"])
 
     def test_moderator_reply_to(self):
         """Check whether `reply-to` header is the moderator in email if set."""
