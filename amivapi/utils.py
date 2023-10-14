@@ -76,7 +76,8 @@ def get_id(item):
 
 
 def mail_from_template(
-    to, subject, template_name, template_args, reply_to=None, calendar_invite=None
+    to, subject, template_name, template_args, reply_to=None,
+    calendar_invite=None
 ):
     """Send a mail to a list of recipients by using the given jinja2 template.
 
@@ -116,7 +117,8 @@ def get_calendar_invite(template_name, template_args):
     for key, value in template_args.items():
         if isinstance(value, str):
             template_args[key] = value.replace('\n', '\\n')
-    calendar_invite = render_template('{}.ics'.format(template_name), **template_args)
+    calendar_invite = render_template('{}.ics'.format(template_name),
+                                      **template_args)
     return calendar_invite
 
 
@@ -169,7 +171,8 @@ def mail(to, subject, text, html=None, reply_to=None, calendar_invite=None):
         if calendar_invite is not None:
             calendar_mime = MIMEText(calendar_invite, 'calendar', "utf-8")
             calendar_mime['Content-Disposition'] = (
-                'attachment; filename="invite.ics"; charset="utf-8"; method=PUBLISH')
+                'attachment; filename="invite.ics"; ' +
+                'charset="utf-8"; method=PUBLISH')
             msg.attach(calendar_mime)
 
         msg['Subject'] = subject

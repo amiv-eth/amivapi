@@ -237,13 +237,19 @@ class EventMailTest(WebTestNoAuth):
 
     def test_no_nones_calendar_invite(self):
         """Test that the calendar invite is added.
-        Calendar invites require a start and end time, which are non-required properties.
+        Calendar invites require a start and end time,
+        which are non-required properties.
         """
         event = self.new_object('events', spots=100, selection_strategy='fcfs',
                                 allow_email_signup=True,
-                                time_start=datetime.datetime.strptime('2019-01-01T00:00:00Z', '%Y-%m-%dT%H:%M:%SZ'),
-                                time_end=datetime.datetime.strptime('2019-01-01T01:00:00Z', '%Y-%m-%dT%H:%M:%SZ'),
-                                description_en='Description\nSpanning\nmultiple\nlines.',)
+                                time_start=datetime.datetime.strptime(
+                                    '2019-01-01T00:00:00Z',
+                                    '%Y-%m-%dT%H:%M:%SZ'),
+                                time_end=datetime.datetime.strptime(
+                                    '2019-01-01T01:00:00Z',
+                                    '%Y-%m-%dT%H:%M:%SZ'),
+                                description_en=('Description\nSpanning\n' +
+                                                'multiple\nlines.'),)
 
         user = self.new_object('users')
 
