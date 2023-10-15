@@ -1,6 +1,7 @@
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:https://www.amiv.ethz.ch/
+X-MS-OLK-FORCEINSPECTOROPEN:TRUE
 METHOD:PUBLISH
 BEGIN:VTIMEZONE
 TZID:Europe/Berlin
@@ -19,7 +20,7 @@ END:DAYLIGHT
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:{{ event_id }}@amiv.ethz.ch
-ORGANIZER;CN=MAILTO:{{ reply_to_email }}
+ORGANIZER:MAILTO:{{ reply_to_email }}
 LOCATION:{{ location }}
 SUMMARY:{{ title_en }}
 {% if signup_additional_info_en is not none and signup_additional_info_en|length -%}
@@ -27,7 +28,6 @@ DESCRIPTION:{{ signup_additional_info_en }}\n\n{{ description_en }}
 {% else -%}
 DESCRIPTION:{{ description_en }}
 {% endif -%}
-CLASS:PUBLIC
 DTSTART;TZID=Europe/Berlin:{{ time_start.strftime('%Y%m%dT%H%M%S') }}
 DTEND;TZID=Europe/Berlin:{{ time_end.strftime('%Y%m%dT%H%M%S') }}
 DTSTAMP:{{ time_now_utc.strftime('%Y%m%dT%H%M%SZ') }}
