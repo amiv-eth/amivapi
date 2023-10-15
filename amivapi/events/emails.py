@@ -6,7 +6,7 @@
 
 Needed when users are notified about their event signups.
 """
-import datetime
+from datetime import datetime, timezone
 from flask import current_app, url_for
 from itsdangerous import URLSafeSerializer
 
@@ -58,7 +58,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
     location = (event['location'] or '')
     time_start = event['time_start']
     time_end = event['time_end']
-    time_now_utc = datetime.datetime.now()
+    time_now_utc = datetime.now(timezone.utc)
 
     signup_additional_info_en = event['signup_additional_info_en']
     signup_additional_info_de = event['signup_additional_info_de']
