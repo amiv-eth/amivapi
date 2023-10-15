@@ -304,18 +304,18 @@ class EventMailTest(WebTestNoAuth):
         updates his signup acceptance."""
         # Case 1: Manual Event with waiting list
         manual_event = self.new_object('events',
-                                spots=100,
-                                selection_strategy='manual',
-                                allow_email_signup=True)
+                                       spots=100,
+                                       selection_strategy='manual',
+                                       allow_email_signup=True)
         manual_user = self.new_object('users')
 
         # User put on waiting list
         manual_signup = self.api.post('/eventsignups',
-                                data={
-                                    'user': str(manual_user['_id']),
-                                    'event': str(manual_event['_id'])
-                                },
-                                status_code=201).json
+                                      data={
+                                          'user': str(manual_user['_id']),
+                                          'event': str(manual_event['_id'])
+                                      },
+                                      status_code=201).json
         self.assertTrue('was rejected' in self.app.test_mails[0]['text'])
 
         # User manually accepted from waiting list
@@ -335,13 +335,12 @@ class EventMailTest(WebTestNoAuth):
                                      selection_strategy='fcfs',
                                      allow_email_signup=True)
         # User accepted
-        self.api.post(
-            '/eventsignups',
-            data={
-                'user': str(fcfc_user_accepted['_id']),
-                'event': str(fcfc_event['_id'])
-            },
-            status_code=201)
+        self.api.post('/eventsignups',
+                      data={
+                          'user': str(fcfc_user_accepted['_id']),
+                          'event': str(fcfc_event['_id'])
+                      },
+                      status_code=201)
         self.assertTrue('was accepted' in self.app.test_mails[2]['text'])
 
         # User put on waiting list
