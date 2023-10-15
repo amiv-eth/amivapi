@@ -15,6 +15,6 @@ DESCRIPTION:{{ description_en }}
 {% endif -%}
 DTSTART:{{ time_start.strftime('%Y%m%dT%H%M%SZ') }}
 DTEND:{{ time_end.strftime('%Y%m%dT%H%M%SZ') }}
-DTSTAMP:{{ time_now_utc.strftime('%Y%m%dT%H%M%SZ') }}
+DTSTAMP:{{ time_now.strftime('%Y%m%dT%H%M%SZ') }}
 END:VEVENT
 END:VCALENDAR

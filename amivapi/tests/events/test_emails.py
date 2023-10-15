@@ -231,7 +231,7 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[1]
         for name, field in mail.items():
-            if name.startswith('nullable_'):
+            if name.startswith('nullable_') and field is None:
                 continue
             self.assertTrue('None' not in field)
 

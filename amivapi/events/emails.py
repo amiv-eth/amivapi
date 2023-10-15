@@ -58,7 +58,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
     location = (event['location'] or '')
     time_start = event['time_start']
     time_end = event['time_end']
-    time_now_utc = datetime.now(timezone.utc)
+    time_now = datetime.now(timezone.utc)
 
     signup_additional_info_en = event['signup_additional_info_en']
     signup_additional_info_de = event['signup_additional_info_de']
@@ -73,7 +73,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                 event_id=event_id,
                 time_start=time_start,
                 time_end=time_end,
-                time_now_utc=time_now_utc,
+                time_now=time_now,
                 description_en=(description_en or description_de or ''),
                 reply_to_email=reply_to_email,
                 location=location,
