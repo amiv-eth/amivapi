@@ -30,6 +30,7 @@ from amivapi.events.projections import (
 )
 from amivapi.events.queue import (
     add_accepted_before_insert,
+    notify_users_after_update,
     update_waiting_list_after_delete,
     update_waiting_list_after_insert,
 )
@@ -71,5 +72,8 @@ def init_app(app):
     app.on_inserted_eventsignups += update_waiting_list_after_insert
     app.on_deleted_item_eventsignups += notify_signup_deleted
     app.on_deleted_item_eventsignups += update_waiting_list_after_delete
+
+    # Notify users on manual updates
+    app.on_updated_eventsignups += notify_users_after_update
 
     app.register_blueprint(email_blueprint)
