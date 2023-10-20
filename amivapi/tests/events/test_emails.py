@@ -221,18 +221,14 @@ class EventMailTest(WebTestNoAuth):
 
         mail = self.app.test_mails[0]
 
-        for name, field in mail.items():
-            if name.startswith('nullable_') and field is None:
-                continue
+        for field in mail.values():
             self.assertTrue('None' not in field)
 
         token = re.search(r'/confirm_email/(.+)\n\n', mail['text']).group(1)
         self.api.get('/confirm_email/%s' % token, status_code=200)
 
         mail = self.app.test_mails[1]
-        for name, field in mail.items():
-            if name.startswith('nullable_') and field is None:
-                continue
+        for field in mail.values():
             self.assertTrue('None' not in field)
 
     def test_calendar_invite_format(self):
@@ -264,12 +260,12 @@ class EventMailTest(WebTestNoAuth):
         mail = self.app.test_mails[0]
 
         # No missing fields of importance
-        self.assertTrue(mail["nullable_calendar_invite"] is not None and
-                        'None' not in mail["nullable_calendar_invite"])
+        self.assertTrue(mail["calendar_invite"] is not None and
+                        'None' not in mail["calendar_invite"])
 
         # Check the overall format
         non_null_fields = []
-        for line in mail["nullable_calendar_invite"].splitlines():
+        for line in mail["calendar_invite"].splitlines():
             # Check that the line is not empty
             self.assertTrue(line)
             # Check the line format
@@ -286,6 +282,30 @@ class EventMailTest(WebTestNoAuth):
         self.assertTrue('DTSTART' in non_null_fields)
         self.assertTrue('DTEND' in non_null_fields)  # Not strictly required
         self.assertTrue('SUMMARY' in non_null_fields)  # Not strictly required
+
+    def test_no_calendar_if_time_not_set(self):
+        """Test that no calendar invite is created if the event has no time."""
+        event = self.new_object(
+            'events',
+            spots=100,
+            selection_strategy='fcfs',
+            allow_email_signup=True,
+            time_start=None,
+            time_end=None,
+        )
+
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups',
+                      data={
+                          'user': str(user['_id']),
+                          'event': str(event['_id'])
+                      },
+                      status_code=201)
+
+        mail = self.app.test_mails[0]
+
+        self.assertTrue(mail.get("calendar_invite") is None)
 
     def test_moderator_reply_to(self):
         """Check whether `reply-to` header is the moderator in email if set."""

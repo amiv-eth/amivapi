@@ -149,11 +149,12 @@ def mail(to, subject, text, html=None, reply_to=None, calendar_invite=None):
             'receivers': to,
             'text': text,
             'html': html,
-            'nullable_calendar_invite': calendar_invite,
         }
 
         if reply_to is not None:
             mail['reply-to'] = reply_to
+        if calendar_invite is not None:
+            mail['calendar_invite'] = calendar_invite
 
         app.test_mails.append(mail)
 
