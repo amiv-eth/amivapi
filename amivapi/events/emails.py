@@ -68,7 +68,7 @@ def notify_signup_accepted(event, signup, waiting_list=False):
     # Time is a required property for ics calendar events
     if time_start:
         calendar_invite = (
-            get_calendar_invite('events_accepted_calendar_invite', dict(
+            get_calendar_invite('events_accept_calendar_invite', dict(
                 title=(title_en or title_de),
                 event_id=event_id,
                 time_start=time_start,
