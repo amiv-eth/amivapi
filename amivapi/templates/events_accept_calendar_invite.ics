@@ -5,7 +5,6 @@ X-MS-OLK-FORCEINSPECTOROPEN:TRUE
 METHOD:PUBLISH
 BEGIN:VEVENT
 UID:{{ event_id }}@amiv.ethz.ch
-ORGANIZER:MAILTO:{{ reply_to_email }}
 LOCATION:{{ location }}
 SUMMARY:{{ title }}
 {% if signup_additional_info is not none and signup_additional_info|length -%}

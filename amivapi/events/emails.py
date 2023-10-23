@@ -75,7 +75,6 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                 time_end=time_end,
                 time_now=time_now,
                 description=(description_en or description_de or ''),
-                reply_to_email=reply_to_email,
                 location=location,
                 signup_additional_info=(signup_additional_info_en or
                                         signup_additional_info_de or
