@@ -6,11 +6,12 @@
 
 Needed when users are notified about their event signups.
 """
+from datetime import datetime, timezone
 from flask import current_app, url_for
 from itsdangerous import URLSafeSerializer
 
 from amivapi.events.utils import get_token_secret
-from amivapi.utils import mail_from_template
+from amivapi.utils import mail_from_template, get_calendar_invite
 
 
 def find_reply_to_email(event):
@@ -49,12 +50,38 @@ def notify_signup_accepted(event, signup, waiting_list=False):
 
     deletion_link = url_for('emails.on_delete_signup', token=token,
                             _external=True)
+    event_id = event[id_field]
     title_en = event['title_en']
     title_de = event['title_de']
+    description_en = event['description_en']
+    description_de = event['description_de']
+    location = (event['location'] or '')
+    time_start = event['time_start']
+    time_end = event['time_end']
+    time_now = datetime.now(timezone.utc)
+
     signup_additional_info_en = event['signup_additional_info_en']
     signup_additional_info_de = event['signup_additional_info_de']
 
     reply_to_email = find_reply_to_email(event)
+
+    # Time is a required property for ics calendar events
+    if time_start:
+        calendar_invite = (
+            get_calendar_invite('events_accept_calendar_invite', dict(
+                title=(title_en or title_de),
+                event_id=event_id,
+                time_start=time_start,
+                time_end=time_end,
+                time_now=time_now,
+                description=(description_en or description_de or ''),
+                location=location,
+                signup_additional_info=(signup_additional_info_en or
+                                        signup_additional_info_de or
+                                        ''),
+            )))
+    else:
+        calendar_invite = None
 
     if waiting_list:
         mail_from_template(
@@ -83,7 +110,8 @@ def notify_signup_accepted(event, signup, waiting_list=False):
                 signup_additional_info_de=(signup_additional_info_de or
                                            signup_additional_info_en),
                 deadline=event['time_deregister_end']),
-            reply_to=reply_to_email)
+            reply_to=reply_to_email,
+            calendar_invite=calendar_invite)
 
 
 def notify_signup_deleted(signup):
