@@ -1,0 +1,19 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:https://www.amiv.ethz.ch/
+X-MS-OLK-FORCEINSPECTOROPEN:TRUE
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:{{ event_id }}@amiv.ethz.ch
+LOCATION:{{ location }}
+SUMMARY:{{ title }}
+{% if signup_additional_info is not none and signup_additional_info|length -%}
+DESCRIPTION:{{ signup_additional_info }}\n\n{{ description }}
+{% else -%}
+DESCRIPTION:{{ description }}
+{% endif -%}
+DTSTART:{{ time_start.strftime('%Y%m%dT%H%M%SZ') }}
+DTEND:{{ time_end.strftime('%Y%m%dT%H%M%SZ') }}
+DTSTAMP:{{ time_now.strftime('%Y%m%dT%H%M%SZ') }}
+END:VEVENT
+END:VCALENDAR

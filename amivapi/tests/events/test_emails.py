@@ -4,6 +4,7 @@
 #          you to buy us beer if we meet and you like the software.
 """Test email confirmation system for external event signups."""
 
+import datetime
 import re
 
 from amivapi.tests.utils import WebTestNoAuth
@@ -229,6 +230,82 @@ class EventMailTest(WebTestNoAuth):
         mail = self.app.test_mails[1]
         for field in mail.values():
             self.assertTrue('None' not in field)
+
+    def test_calendar_invite_format(self):
+        """Test that the calendar invite format.
+        Specifically looks for the correct line format and the presence of
+        required and desired fields.
+        """
+        event = self.new_object(
+            'events',
+            spots=100,
+            selection_strategy='fcfs',
+            allow_email_signup=True,
+            time_start=datetime.datetime.strptime('2019-01-01T00:00:00Z',
+                                                  '%Y-%m-%dT%H:%M:%SZ'),
+            time_end=datetime.datetime.strptime('2019-01-01T01:00:00Z',
+                                                '%Y-%m-%dT%H:%M:%SZ'),
+            description_en=('Description\nSpanning\nmultiple\nlines.'),
+        )
+
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups',
+                      data={
+                          'user': str(user['_id']),
+                          'event': str(event['_id'])
+                      },
+                      status_code=201).json
+
+        mail = self.app.test_mails[0]
+
+        # No missing fields of importance
+        self.assertTrue(mail["calendar_invite"] is not None and
+                        'None' not in mail["calendar_invite"])
+
+        # Check the overall format
+        non_null_fields = []
+        for line in mail["calendar_invite"].splitlines():
+            # Check that the line is not empty
+            self.assertTrue(line)
+            # Check the line format
+            regex = r'^(?P<key>[A-Z\-]+)(?::|;(?P<params>.+?):)(?P<value>.*)$'
+            re_match = re.match(regex, line)
+            self.assertTrue(re_match)  # No empty or non-conforming lines
+            if len(re_match.group("value")) > 0:
+                non_null_fields.append(re_match.group("key"))
+        # Check that the required and desired fields are present
+        self.assertTrue('VERSION' in non_null_fields)
+        self.assertTrue('PRODID' in non_null_fields)
+        self.assertTrue('UID' in non_null_fields)
+        self.assertTrue('DTSTAMP' in non_null_fields)
+        self.assertTrue('DTSTART' in non_null_fields)
+        self.assertTrue('DTEND' in non_null_fields)  # Not strictly required
+        self.assertTrue('SUMMARY' in non_null_fields)  # Not strictly required
+
+    def test_no_calendar_if_time_not_set(self):
+        """Test that no calendar invite is created if the event has no time."""
+        event = self.new_object(
+            'events',
+            spots=100,
+            selection_strategy='fcfs',
+            allow_email_signup=True,
+            time_start=None,
+            time_end=None,
+        )
+
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups',
+                      data={
+                          'user': str(user['_id']),
+                          'event': str(event['_id'])
+                      },
+                      status_code=201)
+
+        mail = self.app.test_mails[0]
+
+        self.assertTrue(mail.get("calendar_invite") is None)
 
     def test_moderator_reply_to(self):
         """Check whether `reply-to` header is the moderator in email if set."""
