@@ -156,7 +156,7 @@ def _process_data(data):
     res = {'nethz': data.get('cn', [None])[0],
            'firstname': data.get('givenName', [None])[0],
            'lastname': data.get('sn', [None])[0]}
-    if ('swissEduPersonMatriculationNumber' in data and \
+    if ('swissEduPersonMatriculationNumber' in data and
             isinstance(data['swissEduPersonMatriculationNumber'], str)):
         # add legi only if the LDAP value is a string as it might also be an
         # empty array.
