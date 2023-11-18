@@ -17,13 +17,7 @@ from eve.utils import debug_error_message
 from flask import abort
 from flask import current_app as app
 from ldap3.core.exceptions import LDAPException
-
-
-# Change when we drop python3.5 support
-try:
-    from secrets import token_urlsafe
-except ImportError:
-    from amivapi.utils import token_urlsafe
+from secrets import token_urlsafe
 
 
 class SessionAuth(AmivTokenAuth):

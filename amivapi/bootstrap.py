@@ -7,6 +7,7 @@
 
 from os import getcwd, getenv
 from os.path import abspath
+import logging
 
 from eve import Eve
 from flask import Config
@@ -88,6 +89,7 @@ def create_app(config_file=None, **kwargs):
     app = Eve("amivapi",  # Flask needs this name to find the static folder
               settings=config,
               validator=ValidatorAMIV)
+    app.logger.setLevel(app.config.get('LOG_LEVEL') or logging.INFO)
     app.logger.info(config_status)
 
     # Set up error logging with sentry

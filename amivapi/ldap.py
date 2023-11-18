@@ -154,7 +154,7 @@ def _process_data(data):
     to the correct fields for the user resource.
     """
     res = {'nethz': data.get('cn', [None])[0],
-           'legi': data.get('swissEduPersonMatriculationNumber'),
+           'legi': data.get('swissEduPersonMatriculationNumber', None),
            'firstname': data.get('givenName', [None])[0],
            'lastname': data.get('sn', [None])[0]}
     if res['nethz'] is not None:
@@ -165,7 +165,7 @@ def _process_data(data):
         res['gender'] = \
             u"male" if int(data['swissEduPersonGender']) == 1 else u"female"
 
-    # See file docstring for explanation of `deparmentNumber` field
+    # See file docstring for explanation of `departmentNumber` field
     # In some rare cases, the departmentNumber field is either empty
     # or missing -> normalize to empty string
     department_info = next(iter(
@@ -210,7 +210,7 @@ def _create_or_update_user(ldap_data):
     with admin_permissions():
         if db_data:
             # Membership will not be downgraded and email not be overwritten
-            # Newletter settings will also not be adjusted
+            # Newsletter settings will also not be adjusted
             ldap_data.pop('email', None)
             if db_data.get('membership') != u"none":
                 ldap_data.pop('membership', None)
