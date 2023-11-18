@@ -154,9 +154,13 @@ def _process_data(data):
     to the correct fields for the user resource.
     """
     res = {'nethz': data.get('cn', [None])[0],
-           'legi': data.get('swissEduPersonMatriculationNumber', None),
            'firstname': data.get('givenName', [None])[0],
            'lastname': data.get('sn', [None])[0]}
+    if ('swissEduPersonMatriculationNumber' in data and \
+            isinstance(data['swissEduPersonMatriculationNumber'], str)):
+        # add legi only if the LDAP value is a string as it might also be an
+        # empty array.
+        res['legi'] = data['swissEduPersonMatriculationNumber']
     if res['nethz'] is not None:
         # email can be removed when Eve switches to Cerberus 1.x, then
         # We could do this as a default value in the user model
