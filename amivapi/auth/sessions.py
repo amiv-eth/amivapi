@@ -189,12 +189,12 @@ def process_login(items):
                 user = _find_user(ldap_username)
                 if user:
                     app.logger.error(
-                        f"User '{ldap_username}' authenticated with LDAP and found "
-                        "in db, but LDAP sync failed.")
+                        f"User '{ldap_username}' authenticated with LDAP and "
+                        "found in db, but LDAP sync failed.")
                 else:
-                    status = (f"Login failed: user '{ldap_username}' authenticated "
-                              "with LDAP but not found in db, and LDAP sync "
-                              "failed.")
+                    status = (f"Login failed: user '{ldap_username}' "
+                              "authenticated with LDAP but not found in db, "
+                              "and LDAP sync failed.")
                     app.logger.error(status)
                     abort(401, description=debug_error_message(status))
 
