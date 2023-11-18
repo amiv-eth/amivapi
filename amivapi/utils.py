@@ -22,24 +22,6 @@ from flask import render_template, current_app as app
 from flask import g
 
 
-def token_urlsafe(nbytes=32):
-    """Cryptographically random generate a token that can be passed in a URL.
-
-    This function is available as secrets.token_urlsafe in python3.6. We can
-    remove this function when we drop python3.5 support.
-
-    Args:
-        nbytes: Number of random bytes used to generate the token. Note that
-        this is not the resulting length of the token, just the amount of
-        randomness.
-
-    Returns:
-        str: A random string containing only urlsafe characters.
-    """
-    return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
-        "/", "_").rstrip("=")
-
-
 @contextmanager
 def admin_permissions():
     """Switch to a context with admin rights and restore state afterwards.
