@@ -4,7 +4,6 @@
 #          you to buy us beer if we meet and you like the software.
 """Utilities."""
 
-from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.multipart import MIMEMultipart
