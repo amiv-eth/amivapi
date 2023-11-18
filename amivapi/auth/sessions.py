@@ -5,6 +5,7 @@
 """Sessions endpoint."""
 
 import datetime
+import re
 
 from amivapi import ldap
 from amivapi.auth import AmivTokenAuth
@@ -167,28 +168,33 @@ def process_login(items):
         items (list): List of items as passed by EVE to post hooks.
     """
     for item in items:
-        username = item['username']
+        username = ldap_username = item['username']
         password = item['password']
+
+        # If the username matches an ethz email address, we just take the part
+        # before the @ as the username for the authentication against LDAP.
+        if re.match(r"^[^@]+@([^@]+[.]{1}){0,1}ethz.ch$", username):
+            ldap_username = username.split('@', 2)[0]
 
         # LDAP
         if (app.config.get('ldap_connector') and
-                ldap.authenticate_user(username, password)):
+                ldap.authenticate_user(ldap_username, password)):
             # Success, sync user and get token
             try:
-                user = ldap.sync_one(username)
+                user = ldap.sync_one(ldap_username)
                 app.logger.info(
-                    "User '%s' was authenticated with LDAP" % username)
+                    "User '%s' was authenticated with LDAP" % ldap_username)
             except LDAPException:
                 # Sync failed! Try to find user in db.
-                user = _find_user(username)
+                user = _find_user(ldap_username)
                 if user:
                     app.logger.error(
-                        f"User '{username}' authenticated with LDAP and found "
-                        "in db, but LDAP sync failed.")
+                        f"User '{ldap_username}' authenticated with LDAP and "
+                        "found in db, but LDAP sync failed.")
                 else:
-                    status = (f"Login failed: user '{username}' authenticated "
-                              "with LDAP but not found in db, and LDAP sync "
-                              "failed.")
+                    status = (f"Login failed: user '{ldap_username}' "
+                              "authenticated with LDAP but not found in db, "
+                              "and LDAP sync failed.")
                     app.logger.error(status)
                     abort(401, description=debug_error_message(status))
 
