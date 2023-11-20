@@ -7,7 +7,7 @@ git+https://github.com/amiv-eth/eve-swagger.git@de78e466fd34a0614d6f556a371e0ae8
 # Wontfix: With the upcoming migration, this library will not be needed anymore
 -e git+https://github.com/amiv-eth/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
 passlib==1.7.4
-jsonschema==4.19.2
+jsonschema==4.20.0
 freezegun==1.2.2
 sentry-sdk[flask]==1.34.0
 beautifulsoup4==4.12.2
