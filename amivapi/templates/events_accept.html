@@ -4,7 +4,8 @@
 {% block text_german %}
 <p>Hallo {{ name }}!</p>
 <p>Wir freuen uns, dir mitteilen zu können, dass deine Anmeldung für {{ title_de }} angenommen wurde und du an der Veranstaltung teilnehmen kannst!</p>
-<p>Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, melde dich <a href="{{ link }}">hier</a> ab, um deinen Platz für jemand anderen freizugeben.<br/>
+<p>Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, melde dich ab, um deinen Platz für jemand anderen freizugeben.<br/>
+<b>Drücke hier, um dich direkt abzumelden:<a href="{{ link }}">Abmelden!</a> </b>
 Du kannst dich nur bis {{ weekdays_de[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }} vom Event abmelden.</p>
 {% if signup_additional_info_de is not none and signup_additional_info_de|length %}
 <p>{{ signup_additional_info_de }}</p>
@@ -17,7 +18,8 @@ Du kannst dich nur bis {{ weekdays_de[deadline.weekday()] }}, {{ deadline.strfti
 {% block text_english %}
 <p>Hello {{ name }}!</p>
 <p>We are happy to inform you that your signup for {{ title_en }} was accepted and you can come to the event!</p>
-<p>If you do not have time to attend the event please click <a href="{{ link }}">here</a> to free your spot for someone else.<br/>
+<p>If you do not have time to attend the event please free your spot for someone else.<br/>
+<b>Click here to signoff directly:<a href="{{ link }}">Signoff!</a> </b>
 You cannot sign out of this event after {{ weekdays_en[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }}.</p>
 {% if signup_additional_info_en is not none and signup_additional_info_en|length %}
 <p>{{ signup_additional_info_en }}</p>
