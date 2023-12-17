@@ -231,6 +231,53 @@ class EventMailTest(WebTestNoAuth):
         for field in mail.values():
             self.assertTrue('None' not in field)
 
+    def test_signup_added_by_admin_accepted_emails(self):
+        """Test that an accepted email is sent when an admin has added a
+        signup manually."""
+        event = self.new_object('events', spots=1, selection_strategy='fcfs',
+                                allow_email_signup=True)
+
+        user = self.new_object('users')
+
+        self.api.post('/eventsignups', data={
+            'user': str(user['_id']),
+            'event': str(event['_id']),
+            'accepted': True
+        }, token=self.get_root_token(), status_code=201).json
+
+        mail = self.app.test_mails[0]
+        for field in mail.values():
+            # We check whether any field in the email structure contains the
+            # string 'None' as this is the string representation of the None
+            # value. This happens when a value inserted into the template
+            # string was (unexpectedly) None.
+            self.assertTrue('None' not in field)
+
+        self.assertTrue('accepted' in mail['subject'])
+
+        self.api.post('/eventsignups', data={
+            'email': 'a@example.com',
+            'event': str(event['_id']),
+            'accepted': True
+        }, token=self.get_root_token(), status_code=201).json
+
+        # accepted email and confirmation email should be sent.
+        self.assertIs(len(self.app.test_mails), 3)
+        for mail in self.app.test_mails[1:]:
+            for field in mail.values():
+                # We check whether any field in the email structure contains the
+                # string 'None' as this is the string representation of the None
+                # value. This happens when a value inserted into the template
+                # string was (unexpectedly) None.
+                self.assertTrue('None' not in field)
+
+            # We expect that the accepted email and the email to confirm the
+            # email address were sent.
+            # We check some unique phrases distinct to each of these messages.
+            self.assertTrue(
+                ('accepted' in mail['subject']) !=
+                ('confirm_email' in mail['text']))
+
     def test_calendar_invite_format(self):
         """Test that the calendar invite format.
         Specifically looks for the correct line format and the presence of
