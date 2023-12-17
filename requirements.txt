@@ -1,17 +1,20 @@
 eve==2.1.0
+# Set eve dependencies (flask, pymongo) to specific version as it is not restricted by eve itself
+flask==3.0.0
+pymongo==4.5.0
 git+https://github.com/amiv-eth/eve-swagger.git@de78e466fd34a0614d6f556a371e0ae8d973aca9#egg=Eve_Swagger
 # "nethz" must be installed in editable mode, otherwise some certs are not found
 # Wontfix: With the upcoming migration, this library will not be needed anymore
--e git+https://github.com/NotSpecial/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
+-e git+https://github.com/amiv-eth/nethz.git@fcd5ced2dd365f237047748abfedb9c35a468393#egg=nethz
 passlib==1.7.4
-jsonschema==4.19.0
-freezegun==1.2.2
-sentry-sdk[flask]==1.29.2
+jsonschema==4.20.0
+freezegun==1.3.1
+sentry-sdk[flask]==1.38.0
 beautifulsoup4==4.12.2
-Pillow==10.0.0
+Pillow==10.1.0
 
 # Test requirements. It's not worth the hassle to keep them separate.
-pytest==7.4.0
+pytest==7.4.3
 pytest-cov==4.1.0
-tox==4.8.0
+tox==4.11.4
 flake8==6.1.0
