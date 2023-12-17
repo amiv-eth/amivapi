@@ -42,15 +42,12 @@ class BlacklistEmailTest(WebTest):
         # Look for sent out mail
         mail = self.app.test_mails[0]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        expected_text = (
-            "Hello Paula\n\nYou have been blacklisted for the following reason:"
-            "\n\nTest\n\nThis means that you cannot register for any new amiv "
-            "events! To get removed from the blacklist, you have to pay 5.50 "
-            "CHF in the AMIV Office in CAB E37.\n\nIf you think that this is "
-            "an error, don't hesitate to contact bouncer@amiv.ethz.ch\n\n"
-            "Best Regards,\nAMIV"
-        )
-        self.assertEqual(mail['text'], expected_text)
+        self.assertIn(data['reason'], mail['text'])
+        self.assertIn(data['reason'], mail['html'])
+        self.assertIn("Paula", mail['text'])
+        self.assertIn("Paula", mail['html'])
+        self.assertIn("{:.2f}".format(data['price']/100), mail['text'])
+        self.assertIn("{:.2f}".format(data['price']/100), mail['html'])
 
     def test_receive_email_on_new_entry_wo_price(self):
         """Test if a user receives an email if he is added to the blacklist."""
@@ -73,13 +70,10 @@ class BlacklistEmailTest(WebTest):
         # Check mail
         mail = self.app.test_mails[0]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        expected_text = (
-            "Hello Paula\n\nYou have been blacklisted for the following reason:"
-            "\n\nTest\n\nThis means that you cannot register for any new amiv "
-            "events!\n\nIf you think that this is an error, don't hesitate to "
-            "contact bouncer@amiv.ethz.ch\n\nBest Regards,\nAMIV"
-        )
-        self.assertEqual(mail['text'], expected_text)
+        self.assertIn(data['reason'], mail['text'])
+        self.assertIn(data['reason'], mail['html'])
+        self.assertIn("Paula", mail['text'])
+        self.assertIn("Paula", mail['html'])
 
     def test_receive_email_on_patch(self):
         """Test if a user receives a mail if one of his entries is resolved."""
@@ -118,12 +112,10 @@ class BlacklistEmailTest(WebTest):
         # Check mail
         mail = self.app.test_mails[1]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        expected_text = (
-            "Hello Paula\n\nCongratulations, your blacklist entry with the "
-            "following reason has been removed:\n\nTest1\n\nBest Regards,\n"
-            "AMIV"
-        )
-        self.assertEqual(mail['text'], expected_text)
+        self.assertIn(patch['reason'], mail['text'])
+        self.assertIn(patch['reason'], mail['html'])
+        self.assertIn('removed', mail['text'])
+        self.assertIn('removed', mail['html'])
 
     def test_receive_email_on_delete(self):
         """Test if a user receives an email if one of his entries is deleted."""
@@ -155,12 +147,10 @@ class BlacklistEmailTest(WebTest):
         # Check mail
         mail = self.app.test_mails[1]
         self.assertEqual(mail['receivers'], 'bla@bla.bl')
-        expected_text = (
-            "Hello Paula\n\nCongratulations, your blacklist entry with the "
-            "following reason has been removed:\n\nTest1\n\nBest Regards,\n"
-            "AMIV"
-        )
-        self.assertEqual(mail['text'], expected_text)
+        self.assertIn("Test1", mail['text'])
+        self.assertIn("Test1", mail['html'])
+        self.assertIn('removed', mail['text'])
+        self.assertIn('removed', mail['html'])
 
     def test_receive_scheduled_email_on_create(self):
         """Test if a user receives an email if the end_time is reached"""
@@ -197,12 +187,10 @@ class BlacklistEmailTest(WebTest):
             # Check mail
             mail = self.app.test_mails[1]
             self.assertEqual(mail['receivers'], 'bla@bla.bl')
-            expected_text = (
-                "Hello Paula\n\nCongratulations, your blacklist entry with the "
-                "following reason has been removed:\n\nTest1\n\nBest Regards,\n"
-                "AMIV"
-            )
-            self.assertEqual(mail['text'], expected_text)
+            self.assertIn("Test1", mail['text'])
+            self.assertIn("Test1", mail['html'])
+            self.assertIn('removed', mail['text'])
+            self.assertIn('removed', mail['html'])
 
     def test_receive_scheduled_email_on_patch(self):
         """Test if a user receives an email if the end_time is reached"""
@@ -260,12 +248,10 @@ class BlacklistEmailTest(WebTest):
             # Check mail
             mail = self.app.test_mails[1]
             self.assertEqual(mail['receivers'], 'bla@bla.bl')
-            expected_text = (
-                "Hello Paula\n\nCongratulations, your blacklist entry with the "
-                "following reason has been removed:\n\nTest1\n\nBest Regards,\n"
-                "AMIV"
-            )
-            self.assertEqual(mail['text'], expected_text)
+            self.assertIn("Test1", mail['text'])
+            self.assertIn("Test1", mail['html'])
+            self.assertIn('removed', mail['text'])
+            self.assertIn('removed', mail['html'])
 
     def test_scheduled_email_on_delete(self):
         """Test that a user receives only one an email if an entry is deleted"""

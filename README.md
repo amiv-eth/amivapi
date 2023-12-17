@@ -86,6 +86,8 @@ Now it's time to configure AMIV API. Create a file `config.py`
 
 
 ```python
+import logging 
+
 # Root password, *definitely* change this!
 ROOT_PASSWORD = 'root'
 
@@ -95,6 +97,8 @@ MONGO_PORT = 27017
 MONGO_DBNAME = 'amivapi'
 MONGO_USERNAME = 'amivapi'
 MONGO_PASSWORD = 'amivapi'
+
+LOG_LEVEL = logging.INFO
 
 # Sentry error logging
 # SENTRY_DSN = "https://<key>@sentry.io/<project>"

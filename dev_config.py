@@ -1,3 +1,5 @@
+import logging
+
 # Mongo config. Do not change!
 MONGO_HOST = 'mongodb'
 MONGO_PORT = 27017
@@ -7,6 +9,8 @@ MONGO_PASSWORD = 'amivapi'
 
 # Add other config options as you need below.
 ROOT_PASSWORD = 'root'
+
+LOG_LEVEL = logging.DEBUG
 
 # Sentry error logging
 # SENTRY_DSN = "https://<key>@sentry.io/<project>"

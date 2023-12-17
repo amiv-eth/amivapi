@@ -1,0 +1,41 @@
+{% extends "base.txt" %}
+
+{% set weekdays_de = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"] %}
+{% block text_german %}
+Hallo {{ name }}!
+
+Wir freuen uns, dir mitteilen zu können, dass deine Anmeldung für {{ title_de }} angenommen wurde und du an der Veranstaltung teilnehmen kannst!
+
+Wenn du nicht mehr an der Veranstaltung teilnehmen kannst, klicke bitte auf diesen Link, um deinen Platz für jemand anderen freizugeben:
+{{ link }}
+Du kannst dich nur bis {{ weekdays_de[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }} vom Event abmelden.
+
+{% if signup_additional_info_de is not none and signup_additional_info_de|length %}
+{{ signup_additional_info_de }}
+
+{% endif %}
+Bei Fragen zum Event und/oder zu deiner Anmeldung antworte direkt auf diese E-Mail.
+
+Freundliche Grüsse,
+AMIV
+{% endblock %}
+
+{% set weekdays_en = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] %}
+{% block text_english %}
+Hello {{ name }}!
+
+We are happy to inform you that your signup for {{ title_en }} was accepted and you can come to the event!
+
+If you do not have time to attend the event please click this link to free your spot for someone else:
+{{ link }}
+You cannot sign out of this event after {{ weekdays_en[deadline.weekday()] }}, {{ deadline.strftime('%d.%m.%Y %H:%I') }}.
+
+{% if signup_additional_info_en is not none and signup_additional_info_en|length %}
+{{ signup_additional_info_en }}
+
+{% endif %}
+For questions about the event and/or your signup, reply directly to this email.
+
+Best Regards,
+AMIV
+{% endblock %}
