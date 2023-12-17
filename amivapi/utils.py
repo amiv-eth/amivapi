@@ -4,8 +4,6 @@
 #          you to buy us beer if we meet and you like the software.
 """Utilities."""
 
-
-from base64 import b64encode
 from contextlib import contextmanager
 from copy import deepcopy
 from email.mime.multipart import MIMEMultipart
@@ -21,24 +19,6 @@ from bson import ObjectId
 from eve.utils import config
 from flask import render_template, current_app as app
 from flask import g
-
-
-def token_urlsafe(nbytes=32):
-    """Cryptographically random generate a token that can be passed in a URL.
-
-    This function is available as secrets.token_urlsafe in python3.6. We can
-    remove this function when we drop python3.5 support.
-
-    Args:
-        nbytes: Number of random bytes used to generate the token. Note that
-        this is not the resulting length of the token, just the amount of
-        randomness.
-
-    Returns:
-        str: A random string containing only urlsafe characters.
-    """
-    return b64encode(urandom(nbytes)).decode("utf-8").replace("+", "-").replace(
-        "/", "_").rstrip("=")
 
 
 @contextmanager
@@ -77,7 +57,8 @@ def get_id(item):
 
 
 def mail_from_template(
-    to, subject, template_name, template_args, reply_to=None
+    to, subject, template_name, template_args, reply_to=None,
+    calendar_invite=None
 ):
     """Send a mail to a list of recipients by using the given jinja2 template.
 
@@ -102,10 +83,27 @@ def mail_from_template(
     except jinja2.exceptions.TemplateNotFound:
         html = None
 
-    mail(to, subject, text, html, reply_to)
+    mail(to, subject, text, html, reply_to, calendar_invite)
 
 
-def mail(to, subject, text, html=None, reply_to=None):
+def get_calendar_invite(template_name, template_args):
+    """ Get the calendar invite for an event.
+    Also performs escaping of necessary fields.
+
+    Args:
+        template_name(string): Jinja2 template name
+        template_args(dict): arguments passed to the templating engine
+    """
+
+    for key, value in template_args.items():
+        if isinstance(value, str):
+            template_args[key] = value.replace('\n', '\\n')
+    calendar_invite = render_template('{}.ics'.format(template_name),
+                                      **template_args)
+    return calendar_invite
+
+
+def mail(to, subject, text, html=None, reply_to=None, calendar_invite=None):
     """Send a mail to a list of recipients.
 
     The mail is sent from the address specified by `API_MAIL` in the config,
@@ -118,6 +116,7 @@ def mail(to, subject, text, html=None, reply_to=None):
         text(string): Mail content as plaintext
         html(string): Mail content as HTML
         reply_to(string): Address of event moderator
+        calendar_invite(string): ICS calendar event
     """
     sender_address = app.config['API_MAIL_ADDRESS']
     sender_name = app.config['API_MAIL_NAME']
@@ -135,16 +134,28 @@ def mail(to, subject, text, html=None, reply_to=None):
 
         if reply_to is not None:
             mail['reply-to'] = reply_to
+        if calendar_invite is not None:
+            mail['calendar_invite'] = calendar_invite
 
         app.test_mails.append(mail)
 
     elif config.SMTP_SERVER and config.SMTP_PORT:
         if html is not None:
-            msg = MIMEMultipart('alternative')
-            msg.attach(MIMEText(text, 'plain'))
-            msg.attach(MIMEText(html, 'html'))
+            msg = MIMEMultipart('mixed')
+            msg_body = MIMEMultipart('alternative')
+            msg_body.attach(MIMEText(text, 'plain'))
+            msg_body.attach(MIMEText(html, 'html'))
+            msg.attach(msg_body)
         else:
-            msg = MIMEText(text)
+            msg = MIMEMultipart('mixed')
+            msg.attach(MIMEText(text))
+
+        if calendar_invite is not None:
+            calendar_mime = MIMEText(calendar_invite, 'calendar', "utf-8")
+            calendar_mime['Content-Disposition'] = (
+                'attachment; filename="invite.ics"; ' +
+                'charset="utf-8"; method=PUBLISH')
+            msg.attach(calendar_mime)
 
         msg['Subject'] = subject
         msg['From'] = sender

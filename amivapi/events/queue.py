@@ -109,3 +109,15 @@ def update_waiting_list_after_delete(signup):
         return
 
     update_waiting_list(signup['event'])
+
+
+def notify_users_after_update(signup_updates, original_signup):
+    """Hook to notify users after a signup is updated."""
+    if signup_updates.get('accepted') and not original_signup.get('accepted'):
+        # User was on the waitinglist and got accepted: Notify him
+        lookup = {current_app.config['ID_FIELD']: original_signup.get('event')}
+        event = current_app.data.find_one('events', None, **lookup)
+        if event is not None:
+            new_signup = original_signup.copy()
+            new_signup.update(signup_updates)
+            notify_signup_accepted(event, new_signup, False)
