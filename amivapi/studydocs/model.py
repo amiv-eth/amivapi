@@ -182,8 +182,8 @@ studydocdomain = {
             'type': {
                 'example': 'cheat sheets',
                 'type': 'string',
-                'nullable': True,
-                'default': None,
+                'required': True,
+                'nullable': False,
                 'allowed': ['exams', 'oral exams',
                             'cheat sheets', 'study guides',
                             'lecture documents', 'exercises'],
