@@ -17,14 +17,17 @@ class StudydocsSummaryTest(WebTestNoAuth):
         self.load_fixture({
             'studydocuments': [{
                 'title': 'first',
+                'type': 'lecture documents',
                 'lecture': 'a',
                 'professor': 'a',
             }, {
                 'title': 'second',
+                'type': 'cheat sheets',
                 'lecture': 'a',
                 'professor': 'b',
             }, {
                 'title': 'third',
+                'type': 'lecture documents',
                 'professor': 'b',
             }]
         })
@@ -38,6 +41,10 @@ class StudydocsSummaryTest(WebTestNoAuth):
 
         assert '_summary' in response
         assert response['_summary'] == {
+            'type': {
+                'lecture documents': 2,
+                'cheat sheets': 1,
+            },
             'lecture': {
                 'a': 2,
             },
@@ -57,6 +64,11 @@ class StudydocsSummaryTest(WebTestNoAuth):
 
         assert '_summary' in response
         assert response['_summary'] == {
+            'type': {
+                # The document with title `third` is ignored
+                'lecture documents': 1,
+                'cheat sheets': 1,
+            },
             'lecture': {
                 'a': 2,
             },
