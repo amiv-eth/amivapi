@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     # Due to drop of out-of-the-box support in ubuntu-22.04 for MongoDB 5.0,
-    # we cannot use ubuntu-latest. have to consider this in the future.
+    # we cannot use ubuntu-latest. have to consider this in the future. as ubuntu-20.04 will be OBSOLETE in 2025.
     runs-on: ubuntu-20.04
     strategy:
       matrix:
