@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        python-version: ['3.8', '3.10','3.12']
+        python-version: ['3.10','3.12']
 
     services:
       mongodb:
-        image: mongo:5.0.14
+        image: mongo:7.0.14
         env:
           MONGO_INITDB_DATABASE: amivapi
         options: >-
