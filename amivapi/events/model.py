@@ -584,7 +584,8 @@ eventdomain = {
 
                 'data_relation': {
                     'resource': 'events',
-                    'embeddable': True
+                    'embeddable': True,
+                    'cascade_delete': True,
                 },
                 'not_patchable': True,
                 'required': True,
