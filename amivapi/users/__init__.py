@@ -20,6 +20,7 @@ from .security import (
 from .subscriberlist import init_subscriber_list
 from .usersync import init_user_sync
 
+
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
     register_domain(app, userdomain)

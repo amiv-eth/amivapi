@@ -9,17 +9,21 @@ from amivapi import ldap
 from amivapi.auth import authenticate
 from amivapi.groups import check_group_permissions
 
+
 blueprint = Blueprint('user_sync', __name__)
+
 
 @blueprint.route('/usersync', methods=['POST'])
 def usersync():
     """Sync user with LDAP as if they logged in.
-    
-    Runs the ldap sync if the user has readwrite permission on the users resource
-    
+
+    Runs the ldap sync if the user has readwrite
+    permission on the users resource
+
     request body:
     `{"nethz": "hmuster"}`
     """
+
     authenticate()
     check_group_permissions('users')
 
@@ -30,6 +34,7 @@ def usersync():
             return jsonify(res)
         abort(422)
     abort(401)
+
 
 def init_user_sync(app):
     """Register the user_sync blueprint."""
