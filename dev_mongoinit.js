@@ -11,6 +11,19 @@ db.createUser(
     }
 );
 
+db.getSiblingDB('test_amivapi').createUser(
+    {
+        user: "test_user",
+        pwd: "test_pw",
+        roles: [
+            {
+                role: "readWrite",
+                db: "test_amivapi"
+            }
+        ]
+    }
+);
+
 db = db.getSiblingDB('amivapi');
 
 // Create admin user with password admin
