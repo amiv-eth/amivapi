@@ -18,7 +18,7 @@ from .security import (
     restrict_filters,
 )
 from .subscriberlist import init_subscriber_list
-
+from .usersync import init_user_sync
 
 def init_app(app):
     """Register resources and blueprints, add hooks and validation."""
@@ -45,3 +45,4 @@ def init_app(app):
     app.on_fetched_item_users += hide_fields
 
     init_subscriber_list(app)
+    init_user_sync(app)
