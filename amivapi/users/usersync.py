@@ -3,7 +3,7 @@
 # license: AGPLv3, see LICENSE for details. In addition we strongly encourage
 #          you to buy us beer if we meet and you like the software.
 """Provide an endpoint to sync users as if they logged in on the Website."""
-from flask import abort, request, Blueprint, g, jsonify
+from flask import abort, request, Blueprint, g
 
 from amivapi import ldap
 from amivapi.auth import authenticate
@@ -31,7 +31,9 @@ def usersync():
         nethz = request.json.get('nethz')
         if nethz:
             res = ldap.sync_one(nethz)
-            return jsonify(res)
+            if res:
+                return {"nethz": nethz, "message": "success"}
+            return {"nethz": nethz, "message": "failed"}
         abort(422)
     abort(401)
 
