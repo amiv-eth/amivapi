@@ -1,0 +1,21 @@
+{% extends "base.txt" %}
+
+{% block text_german %}
+Hey {{ name }}!
+
+Deine Anmeldung für {{ title_de }} wurde auf die Warteliste gesetzt, da bei diesem Event die Teilnehmer manuell akzeptiert werden.
+Du erhältst eine E-Mail sobald deine Anmeldung definitiv aufgenommen wird.
+
+Freundliche Grüsse,
+AMIV
+{% endblock %}
+
+{% block text_english %}
+Hello {{ name }}!    
+
+Your signup for {{ title_en }} was put on the waiting list, as the signups for this event are manually reviewed.
+You will be notified as soon as your signup has been definitively accepted.
+
+Best Regards,
+AMIV
+{% endblock %}

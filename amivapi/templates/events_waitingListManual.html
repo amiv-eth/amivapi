@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block text_german %}
+  <p>Hey {{ name }}!</p>
+
+  <p>Deine Anmeldung für {{ title_de }} wurde auf die Warteliste gesetzt, da bei diesem Event die Teilnehmer manuell akzeptiert werden.</p>
+  <p>Du erhältst eine E-Mail sobald deine Anmeldung definitiv aufgenommen wird.</p>
+
+  <p>Freundliche Grüsse,</br>AMIV</p>
+{% endblock %}
+
+{% block text_english %}
+  <p>Hello {{ name }}!</p>
+
+  <p>Your signup for {{ title_en }} was put on the waiting list, as the signups for this event are manually reviewed.</p>
+  <p>You will be notified as soon as your signup has been definitively accepted.</p>
+
+  <p>Best Regards,</br>AMIV</p>
+{% endblock %}
