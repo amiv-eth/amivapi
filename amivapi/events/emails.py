@@ -28,7 +28,11 @@ def find_reply_to_email(event):
     return current_app.config.get('DEFAULT_EVENT_REPLY_TO')
 
 
-def notify_signup_accepted(event, signup, waiting_list=False, spots_available=False):
+def notify_signup_accepted(
+        event,
+        signup,
+        waiting_list=False,
+        spots_available=False):
     """Send an email to a user that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
 
