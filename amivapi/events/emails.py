@@ -28,7 +28,7 @@ def find_reply_to_email(event):
     return current_app.config.get('DEFAULT_EVENT_REPLY_TO')
 
 
-def notify_signup_accepted(event, signup, waiting_list=False):
+def notify_signup_accepted(event, signup, waiting_list=False, spots_available=False):
     """Send an email to a user that his signup was accepted"""
     id_field = current_app.config['ID_FIELD']
 
@@ -84,16 +84,28 @@ def notify_signup_accepted(event, signup, waiting_list=False):
         calendar_invite = None
 
     if waiting_list:
-        mail_from_template(
-            to=[email],
-            subject='Your signup for %s was put on the waiting list'
-                    % (title_en or title_de),
-            template_name='events_waitingList',
-            template_args=dict(
-                name=name,
-                title_en=(title_en or title_de),
-                title_de=(title_de or title_en)),
-            reply_to=reply_to_email)
+        if spots_available:
+            mail_from_template(
+                to=[email],
+                subject='Your signup for %s was put on the waiting list'
+                        % (title_en or title_de),
+                template_name='events_waitingListManual',
+                template_args=dict(
+                    name=name,
+                    title_en=(title_en or title_de),
+                    title_de=(title_de or title_en)),
+                reply_to=reply_to_email)
+        else:
+            mail_from_template(
+                to=[email],
+                subject='Your signup for %s was put on the waiting list'
+                        % (title_en or title_de),
+                template_name='events_waitingList',
+                template_args=dict(
+                    name=name,
+                    title_en=(title_en or title_de),
+                    title_de=(title_de or title_en)),
+                reply_to=reply_to_email)
     else:
         mail_from_template(
             to=[email],
