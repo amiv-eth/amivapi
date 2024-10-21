@@ -101,11 +101,11 @@ def update_waiting_list_after_insert(signups):
                 event = current_app.data.find_one('events', None, **lookup)
                 lookup = {'event': event_id, 'accepted': True}
                 signup_count = (
-                    current_app.data.driver.db['eventsignups']\
-                        .count_documents(lookup))
+                    current_app.data.driver.db['eventsignups']
+                    .count_documents(lookup))
                 if event is not None:
                     if event['selection_strategy'] == "manual" \
-                        and signup_count < event['spots']:
+                            and signup_count < event['spots']:
                         notify_signup_accepted(event, signup, True, True)
                     else:
                         notify_signup_accepted(event, signup, True, False)

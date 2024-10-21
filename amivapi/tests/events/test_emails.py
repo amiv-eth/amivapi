@@ -441,7 +441,8 @@ class EventMailTest(WebTestNoAuth):
                                       },
                                       status_code=201).json
         # this results in a different email
-        self.assertTrue('are manually reviewed' in self.app.test_mails[0]['text'])
+        self.assertTrue('are manually reviewed'
+                        in self.app.test_mails[0]['text'])
 
         # User manually accepted from waiting list
         self.api.patch('/eventsignups/%s' % manual_signup['_id'],
