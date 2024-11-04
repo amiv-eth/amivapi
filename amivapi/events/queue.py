@@ -96,10 +96,19 @@ def update_waiting_list_after_insert(signups):
             if signup['_id'] in accepted:
                 signup['accepted'] = True
             elif signup.get('user') is not None:
-                lookup = {current_app.config['ID_FIELD']: signup.get('event')}
+                event_id = signup.get('event')
+                lookup = {current_app.config['ID_FIELD']: event_id}
                 event = current_app.data.find_one('events', None, **lookup)
+                lookup = {'event': event_id, 'accepted': True}
+                signup_count = (
+                    current_app.data.driver.db['eventsignups']
+                    .count_documents(lookup))
                 if event is not None:
-                    notify_signup_accepted(event, signup, True)
+                    if event['selection_strategy'] == "manual" \
+                            and signup_count < event['spots']:
+                        notify_signup_accepted(event, signup, True, True)
+                    else:
+                        notify_signup_accepted(event, signup, True, False)
 
 
 def update_waiting_list_after_delete(signup):
