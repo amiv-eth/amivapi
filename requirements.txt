@@ -1,4 +1,4 @@
-eve==2.1.0
+eve==2.2.0
 # Set eve dependencies (flask, pymongo) to specific version as it is not restricted by eve itself
 flask==3.0.3
 pymongo==4.8.0
