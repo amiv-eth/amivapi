@@ -11,7 +11,7 @@ jsonschema==4.23.0
 freezegun==1.5.1
 sentry-sdk[flask]==2.14.0
 beautifulsoup4==4.12.3
-Pillow==10.4.0
+Pillow==11.0.0
 
 # Test requirements. It's not worth the hassle to keep them separate.
 pytest==8.3.3
