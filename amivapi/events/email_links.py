@@ -15,6 +15,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 
 from amivapi.events.queue import update_waiting_list
 from amivapi.events.utils import get_token_secret
+from amivapi.events.emails import notify_signup_accepted
 
 email_blueprint = Blueprint('emails', __name__)
 
@@ -52,6 +53,12 @@ def on_confirm_email(token):
     signup = current_app.data.find_one('eventsignups', None, **lookup)
 
     update_waiting_list(signup['event'])
+
+    # refresh the signup to get the updated data
+    signup = current_app.data.find_one('eventsignups', None, **lookup)
+    if signup.get["accepted"]==False:
+        # if the user is on the waitinglist he doesn't get notified automatically. 
+        notify_signup_accepted(signup['event'], signup,True)
 
     redirect_url = current_app.config.get('EMAIL_CONFIRMED_REDIRECT')
     if redirect_url:
