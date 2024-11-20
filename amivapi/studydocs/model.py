@@ -4,9 +4,10 @@
 #          you to buy us beer if we meet and you like the software.
 """Model for studydocuments."""
 
-from amivapi.settings import DEPARTMENT_LIST
+from flask import g
 
-from .authorization import StudydocsAuth
+from amivapi.settings import DEPARTMENT_LIST
+from .authorization import StudydocsAuth, StudydocratingsAuth
 
 
 description = ("""
@@ -23,16 +24,18 @@ All fields that do not apply can be `Null`.
 
 <br />
 
-## Security
+## Ratings
 
-In addition to the usual
-[permissions](#section/Authentication-and-Authorization/Authorization),
-file uploaders have additional permissions:
+Every **User** can rate study documents by either up- or downvoting, using the
+[Study Document Ratings](#tag/Study-Document-Rating) endpoint.
 
-- **Users** can modify all items they uploaded themselves (identified by the
-  user id in the `uploader` field).
+Ratings are not simply averages, but take the number of votes into account.
+Concretely, the rating is the lower bound of the wilson confidence interval.
 
-- **Admins** can modify items for all users.
+[You can read more here][1] if you are interested!
+
+[1]: http://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+
 
 <br />
 
@@ -58,6 +61,26 @@ _summary:
 The summary is only computed for documents matching the current `where` query,
 e.g. when searching for ITET documents, only professors related to ITET
 documents will show up in the summary.
+
+<br />
+
+## Security
+
+In addition to the usual
+[permissions](#section/Authentication-and-Authorization/Authorization),
+file uploaders have additional permissions, and rating access is restricted:
+
+- **Users** can modify all items they uploaded themselves (identified by the
+  user id in the `uploader` field). They can give ratings (only for themselves,
+  not for other users) and see their own ratings.
+
+- **Admins** can see and modify items and ratings for all users.
+
+""")
+
+
+description_rating = ("""
+
 """)
 
 
@@ -66,6 +89,20 @@ class StudyDocValidator(object):
 
     def _validate_allow_summary(self, *args, **kwargs):
         """{'type': 'boolean'}"""
+
+    def _validate_only_self(self, enabled, field, value):
+        """Validate if the id can be used for a rating.
+
+        Users can only sign up themselves
+        Moderators and admins can sign up everyone
+
+        The rule's arguments are validated against this schema:
+        {'type': 'boolean'}
+        """
+        user = g.get('current_user')
+        if enabled and not g.get('resource_admin') and (str(value) != user):
+            self._error(field, "You can only rate with your own id."
+                        "(Your id: %s)" % (user))
 
 
 studydocdomain = {
@@ -197,7 +234,73 @@ studydocdomain = {
                 'description': 'The year in which the course *was taken*, '
                                'to separate older from newer files.',
                 'allow_summary': True,
-            }
+            },
+
+            'rating': {
+                'title': 'Study Document Rating',
+                'description': 'The study document rating as a fraction of '
+                               'upvotes divided by all votes. Computed using '
+                               'a confidence interval. Null if no votes have '
+                               'been cast.',
+                'example': '0.9',
+
+                'type': 'float',
+                'readonly': True,
+            },
+        },
+    },
+
+    'studydocumentratings': {
+        'resource_title': "Study Document Ratings",
+        'item_title': "Study Document Rating",
+
+        'description': "A rating for a [Study Document](#tag/Study-Document).",
+
+        'resource_methods': ['GET', 'POST'],
+        'item_methods': ['GET', 'PATCH', 'DELETE'],
+
+        'authentication': StudydocratingsAuth,
+
+        'schema': {
+            'user': {
+                'description': 'The rating user. You can only use your own id.',
+                'example': '679ff66720812cdc2da4fb4a',
+
+                'type': 'objectid',
+                'data_relation': {
+                    'resource': 'users',
+                    'embeddable': True,
+                    'cascade_delete': True,
+                },
+                'not_patchable': True,
+                'required': True,
+                'only_self': True,
+                'unique_combination': ['studydocument'],
+            },
+
+            'studydocument': {
+                'title': 'Study Document',
+                'description': 'The rated study document.',
+                'example': '10d8e50e303049ecb856ae9b',
+
+                'data_relation': {
+                    'resource': 'studydocuments',
+                    'embeddable': True,
+                    'cascade_delete': True,
+                },
+                'not_patchable': True,
+                'required': True,
+                'type': 'objectid',
+            },
+            'rating': {
+                'description': 'The given rating, can be an up- or downvote.',
+                'example': 'up',
+
+                'type': 'string',
+                'allowed': ['up', 'down'],
+                'required': True
+            },
         },
     }
+
 }
