@@ -1,3 +1,7 @@
+> [!IMPORTANT]  
+> This Repo is Archived. The active development is now on Gitlab:
+> https://gitlab.ethz.ch/amiv/amivapi
+
 # amivapi
 
 [![CI](https://github.com/amiv-eth/amivapi/actions/workflows/ci.yml/badge.svg)](https://github.com/amiv-eth/amivapi/actions/workflows/ci.yml)
